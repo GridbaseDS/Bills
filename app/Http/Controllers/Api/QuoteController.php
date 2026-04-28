@@ -142,6 +142,8 @@ class QuoteController extends Controller
         }
 
         try {
+            InvoiceController::applyMailConfig($settings);
+
             $data = [
                 'invoice' => $quote->toArray(),
                 'is_quote' => true,
@@ -163,19 +165,15 @@ class QuoteController extends Controller
             $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('pdf.invoice', $data);
             $pdfContent = $pdf->output();
 
-            $fromEmail = !empty($settings['smtp_from_email']) ? $settings['smtp_from_email'] : 'bills@gridbase.com.do';
-            $fromName = !empty($settings['smtp_from_name']) ? $settings['smtp_from_name'] : 'Gridbase Bills';
             $subject = "Cotización {$quote->quote_number} de " . ($settings['company_name'] ?? 'GridBase');
+            $body = "Hola {$quote->client->contact_name},\n\nAdjunto encontrarás la cotización {$quote->quote_number} por el monto de {$quote->currency} {$quote->total}.\n\nSaludos cordiales.";
+            $filename = "Cotizacion-{$quote->quote_number}.pdf";
 
-            $email = (new \Symfony\Component\Mime\Email())
-                ->from(new \Symfony\Component\Mime\Address($fromEmail, $fromName))
-                ->to($quote->client->email)
-                ->subject($subject)
-                ->text("Hola {$quote->client->contact_name},\n\nAdjunto encontrarás la cotización {$quote->quote_number} por el monto de {$quote->currency} {$quote->total}.\n\nSaludos cordiales.")
-                ->attach($pdfContent, "Cotizacion-{$quote->quote_number}.pdf", 'application/pdf');
-
-            $mailer = new \Symfony\Component\Mailer\Mailer(InvoiceController::buildTransport($settings));
-            $mailer->send($email);
+            \Illuminate\Support\Facades\Mail::raw($body, function ($message) use ($quote, $subject, $pdfContent, $filename) {
+                $message->to($quote->client->email)
+                        ->subject($subject)
+                        ->attachData($pdfContent, $filename, ['mime' => 'application/pdf']);
+            });
 
             $quote->status = 'sent';
             $quote->sent_at = now();
@@ -188,4 +186,5 @@ class QuoteController extends Controller
         }
     }
 }
+
 

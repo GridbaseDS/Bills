@@ -120,6 +120,9 @@ class InvoiceController extends Controller
         }
 
         try {
+            // Apply SMTP settings from database at runtime
+            self::applyMailConfig($settings);
+
             $data = [
                 'invoice' => $invoice->toArray(),
                 'company' => [
@@ -140,19 +143,15 @@ class InvoiceController extends Controller
             $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('pdf.invoice', $data);
             $pdfContent = $pdf->output();
 
-            $fromEmail = !empty($settings['smtp_from_email']) ? $settings['smtp_from_email'] : 'bills@gridbase.com.do';
-            $fromName = !empty($settings['smtp_from_name']) ? $settings['smtp_from_name'] : 'Gridbase Bills';
             $subject = "Factura {$invoice->invoice_number} de " . ($settings['company_name'] ?? 'GridBase');
+            $body = "Hola {$invoice->client->contact_name},\n\nAdjunto encontrarás la factura {$invoice->invoice_number} por el monto de {$invoice->currency} {$invoice->total}.\n\nSaludos cordiales.";
+            $filename = "Factura-{$invoice->invoice_number}.pdf";
 
-            $email = (new \Symfony\Component\Mime\Email())
-                ->from(new \Symfony\Component\Mime\Address($fromEmail, $fromName))
-                ->to($invoice->client->email)
-                ->subject($subject)
-                ->text("Hola {$invoice->client->contact_name},\n\nAdjunto encontrarás la factura {$invoice->invoice_number} por el monto de {$invoice->currency} {$invoice->total}.\n\nSaludos cordiales.")
-                ->attach($pdfContent, "Factura-{$invoice->invoice_number}.pdf", 'application/pdf');
-
-            $mailer = new \Symfony\Component\Mailer\Mailer(self::buildTransport($settings));
-            $mailer->send($email);
+            \Illuminate\Support\Facades\Mail::raw($body, function ($message) use ($invoice, $subject, $pdfContent, $filename) {
+                $message->to($invoice->client->email)
+                        ->subject($subject)
+                        ->attachData($pdfContent, $filename, ['mime' => 'application/pdf']);
+            });
 
             $invoice->status = 'sent';
             $invoice->sent_at = now();
@@ -166,50 +165,33 @@ class InvoiceController extends Controller
     }
 
     /**
-     * Build the best available mail transport.
-     * On cPanel: connect to local Exim via SMTP on port 25/587 with credentials.
-     * This ensures proper authentication and email deliverability.
+     * Apply SMTP settings from the database to Laravel's mail config at runtime.
      */
-    public static function buildTransport(array $settings)
+    public static function applyMailConfig(array $settings)
     {
-        $host = trim($settings['smtp_host'] ?? '');
-        $port = (int)($settings['smtp_port'] ?? 25);
-        $encryption = $settings['smtp_encryption'] ?? '';
-        $username = $settings['smtp_username'] ?? '';
-        $password = $settings['smtp_password'] ?? '';
-
-        // For localhost: use SMTP without SSL wrapper, with auth if available
-        if (empty($host) || $host === 'localhost' || $host === '127.0.0.1') {
-            $transport = new \Symfony\Component\Mailer\Transport\Smtp\EsmtpTransport('localhost', 25, false);
-
-            // Disable SSL certificate verification for local connections
-            // (cPanel cert is *.web-hosting.com which doesn't match 'localhost')
-            $transport->getStream()->setStreamOptions([
-                'ssl' => [
-                    'verify_peer' => false,
-                    'verify_peer_name' => false,
-                    'allow_self_signed' => true,
-                ]
-            ]);
-
-            if (!empty($username) && !empty($password)) {
-                $transport->setUsername($username);
-                $transport->setPassword($password);
-            }
-
-            return $transport;
+        $host = trim($settings['smtp_host'] ?? '') ?: 'localhost';
+        $port = (int)($settings['smtp_port'] ?? 25) ?: 25;
+        $encryption = $settings['smtp_encryption'] ?? null;
+        
+        // For localhost, never use encryption
+        if ($host === 'localhost' || $host === '127.0.0.1') {
+            $encryption = null;
         }
 
-        // External SMTP with encryption
-        $tls = ($encryption === 'tls' || $encryption === 'ssl');
-        $transport = new \Symfony\Component\Mailer\Transport\Smtp\EsmtpTransport($host, $port, $tls);
+        config([
+            'mail.default' => 'smtp',
+            'mail.mailers.smtp.host' => $host,
+            'mail.mailers.smtp.port' => $port,
+            'mail.mailers.smtp.encryption' => $encryption,
+            'mail.mailers.smtp.username' => $settings['smtp_username'] ?? null,
+            'mail.mailers.smtp.password' => $settings['smtp_password'] ?? null,
+            'mail.from.address' => !empty($settings['smtp_from_email']) ? $settings['smtp_from_email'] : 'bills@gridbase.com.do',
+            'mail.from.name' => !empty($settings['smtp_from_name']) ? $settings['smtp_from_name'] : 'Gridbase Bills',
+        ]);
 
-        if (!empty($username)) {
-            $transport->setUsername($username);
-            $transport->setPassword($password);
-        }
-
-        return $transport;
+        // Force Laravel to rebuild the mailer with new config
+        app()->forgetInstance('mail.manager');
     }
 }
+
 

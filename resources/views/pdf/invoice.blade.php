@@ -236,16 +236,19 @@
 
         .footer-bar {
             background: #0B484C;
-            padding: 14px 45px;
+            padding: 16px 0;
             position: fixed;
             bottom: 0;
             left: 0;
             width: 100%;
         }
+        .footer-inner {
+            padding: 0 45px;
+        }
         .footer-bar td {
             vertical-align: middle;
             color: rgba(255,255,255,0.7);
-            font-size: 8px;
+            font-size: 10px;
         }
         .footer-bar .footer-icon {
             color: #00DF83;
@@ -402,17 +405,19 @@ if (!empty($invoice['status'])) {
 
 <!-- ══════════════════════════ FOOTER ══════════════════════════ -->
 <div class="footer-bar">
-    <table><tr>
-        <td style="width:33%;">
-            <span class="footer-icon">⊕</span> <?= htmlspecialchars($company['website'] ?? 'gridbase.com.do') ?>
-        </td>
-        <td style="width:34%; text-align:center;">
-            <span class="footer-icon">✉</span> <?= htmlspecialchars($company['email'] ?? '') ?>
-        </td>
-        <td style="width:33%; text-align:right;">
-            <span class="footer-icon">✆</span> <?= htmlspecialchars($company['phone'] ?? '') ?>
-        </td>
-    </tr></table>
+    <div class="footer-inner">
+        <table><tr>
+            <td style="width:33%;">
+                <span class="footer-icon">⊕</span> <?= htmlspecialchars($company['website'] ?? 'gridbase.com.do') ?>
+            </td>
+            <td style="width:34%; text-align:center;">
+                <span class="footer-icon">✉</span> <?= htmlspecialchars($company['email'] ?? '') ?>
+            </td>
+            <td style="width:33%; text-align:right;">
+                <span class="footer-icon">✆</span> <?= htmlspecialchars($company['phone'] ?? '') ?>
+            </td>
+        </tr></table>
+    </div>
 </div>
 
 </body>

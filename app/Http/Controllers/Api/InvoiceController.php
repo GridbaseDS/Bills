@@ -180,10 +180,18 @@ class InvoiceController extends Controller
 
         // For localhost: use SMTP without SSL wrapper, with auth if available
         if (empty($host) || $host === 'localhost' || $host === '127.0.0.1') {
-            // Connect to local Exim on port 25 with NO encryption
             $transport = new \Symfony\Component\Mailer\Transport\Smtp\EsmtpTransport('localhost', 25, false);
 
-            // Authenticate with cPanel email credentials for proper delivery
+            // Disable SSL certificate verification for local connections
+            // (cPanel cert is *.web-hosting.com which doesn't match 'localhost')
+            $transport->getStream()->setStreamOptions([
+                'ssl' => [
+                    'verify_peer' => false,
+                    'verify_peer_name' => false,
+                    'allow_self_signed' => true,
+                ]
+            ]);
+
             if (!empty($username) && !empty($password)) {
                 $transport->setUsername($username);
                 $transport->setPassword($password);

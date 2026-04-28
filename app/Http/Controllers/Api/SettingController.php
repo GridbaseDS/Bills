@@ -45,8 +45,8 @@ class SettingController extends Controller
 
             $email = (new \Symfony\Component\Mime\Email())
                 ->from(new \Symfony\Component\Mime\Address(
-                    $request->from_email ?? 'noreply@gridbase.com.do', 
-                    $request->from_name ?? 'Gridbase Bills'
+                    !empty($request->from_email) ? $request->from_email : 'noreply@gridbase.com.do', 
+                    !empty($request->from_name) ? $request->from_name : 'Gridbase Bills'
                 ))
                 ->to($request->test_email)
                 ->subject('Prueba de Conexión SMTP - Gridbase Bills')

@@ -157,8 +157,8 @@ class InvoiceController extends Controller
 
             $email = (new \Symfony\Component\Mime\Email())
                 ->from(new \Symfony\Component\Mime\Address(
-                    $settings['smtp_from_email'] ?? 'noreply@gridbase.com.do', 
-                    $settings['smtp_from_name'] ?? 'Gridbase Bills'
+                    !empty($settings['smtp_from_email']) ? $settings['smtp_from_email'] : 'noreply@gridbase.com.do', 
+                    !empty($settings['smtp_from_name']) ? $settings['smtp_from_name'] : 'Gridbase Bills'
                 ))
                 ->to($invoice->client->email)
                 ->subject($subject)

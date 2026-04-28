@@ -374,9 +374,10 @@ const QuotesModule = {
 
     async sendEmail(id) {
         if(!confirm('¿Deseas enviar esta cotización por correo al cliente?')) return;
+        App.showToast('Enviando correo, por favor espera...', 'success');
         try {
-            await window.App.api(`quotes/${id}/send-email`, { method: 'POST' });
-            window.App.showToast('Correo enviado exitosamente');
+            await App.api(`quotes/${id}/send-email`, { method: 'POST' });
+            App.showToast('Correo enviado exitosamente');
         } catch(e) {}
     }
 };

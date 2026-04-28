@@ -379,6 +379,7 @@ const InvoicesModule = {
 
     async sendEmail(id) {
         if(!confirm('¿Deseas enviar esta factura por correo al cliente?')) return;
+        App.showToast('Enviando correo, por favor espera...', 'success'); // using success style for info
         try {
             await App.api(`invoices/${id}/send-email`, { method: 'POST' });
             App.showToast('Correo enviado exitosamente');

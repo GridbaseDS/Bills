@@ -13,6 +13,56 @@ use App\Http\Controllers\Api\DashboardController;
 // Public Auth
 Route::post('/auth/login', [AuthController::class, 'login']);
 
+// Public debug route - TEMPORARY for SMTP testing
+Route::get('/debug/mail-test', function () {
+    try {
+        $settings = \App\Models\Setting::getAll();
+        
+        // Apply SMTP config
+        \App\Services\EmailService::applySmtpConfig($settings);
+        
+        $configInfo = [
+            'host' => config('mail.mailers.smtp.host'),
+            'port' => config('mail.mailers.smtp.port'),
+            'encryption' => config('mail.mailers.smtp.encryption'),
+            'username' => config('mail.mailers.smtp.username') ? '***set***' : '(empty)',
+            'from_address' => config('mail.from.address'),
+            'from_name' => config('mail.from.name'),
+            'db_smtp_host' => $settings['smtp_host'] ?? '(not set)',
+            'db_smtp_port' => $settings['smtp_port'] ?? '(not set)',
+            'db_smtp_encryption' => $settings['smtp_encryption'] ?? '(not set)',
+        ];
+        
+        // Try sending a test email
+        \Illuminate\Support\Facades\Mail::raw(
+            'Test email from debug endpoint at ' . now()->toDateTimeString(),
+            function ($message) {
+                $message->to('blasamueldiazpillier@gridbase.com.do')
+                        ->subject('Debug Test - ' . now()->toDateTimeString());
+            }
+        );
+        
+        return response()->json([
+            'success' => true,
+            'message' => 'Email sent successfully!',
+            'config' => $configInfo,
+        ]);
+    } catch (\Exception $e) {
+        return response()->json([
+            'success' => false,
+            'error' => $e->getMessage(),
+            'file' => $e->getFile() . ':' . $e->getLine(),
+            'trace' => array_slice(explode("\n", $e->getTraceAsString()), 0, 10),
+            'config' => [
+                'host' => config('mail.mailers.smtp.host'),
+                'port' => config('mail.mailers.smtp.port'),
+                'encryption' => config('mail.mailers.smtp.encryption'),
+            ],
+        ]);
+    }
+});
+
+
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/auth/logout', [AuthController::class, 'logout']);
     Route::get('/auth/session', function (Request $request) {

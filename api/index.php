@@ -13,9 +13,16 @@ date_default_timezone_set($appConfig['timezone'] ?? 'America/Santo_Domingo');
 
 // CORS headers (for subdomain setup)
 header('Content-Type: application/json; charset=utf-8');
-header('Access-Control-Allow-Origin: *');
+$allowedOrigins = ['https://bills.gridbase.com.do', 'https://gridbase.com.do'];
+$origin = $_SERVER['HTTP_ORIGIN'] ?? '';
+if (in_array($origin, $allowedOrigins)) {
+    header('Access-Control-Allow-Origin: ' . $origin);
+} else {
+    header('Access-Control-Allow-Origin: https://bills.gridbase.com.do');
+}
 header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
 header('Access-Control-Allow-Headers: Content-Type, Authorization');
+header('Access-Control-Allow-Credentials: true');
 
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     http_response_code(200);

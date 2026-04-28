@@ -1,5 +1,5 @@
 /**
- * Gridbase Digital Solutions - Invoice System
+ * GridBase Digital Solutions — Bills System
  * Main Frontend Application Logic
  */
 
@@ -34,7 +34,7 @@ window.App = {
         }
 
         try {
-            const response = await fetch(url, { ...options, headers });
+            const response = await fetch(url, { ...options, headers, credentials: 'same-origin' });
             const data = await response.json();
             
             if (!response.ok) {
@@ -118,6 +118,10 @@ window.App = {
             }
         });
 
+        // Close mobile sidebar
+        document.getElementById('sidebar')?.classList.remove('open');
+        document.getElementById('sidebar-overlay')?.classList.remove('open');
+
         // Load view
         const appContent = document.getElementById('app-content');
         if (!appContent) return;
@@ -138,7 +142,7 @@ window.App = {
                 case 'settings': SettingsModule.render(appContent); break;
                 default: appContent.innerHTML = '<h2>404 No Encontrado</h2>';
             }
-        }, 50); // slight delay to show spinner and avoid stutter
+        }, 50);
     },
 
     renderLogin() {
@@ -147,22 +151,25 @@ window.App = {
             <div class="login-page">
                 <div class="login-card">
                     <div class="login-logo">
-                        <svg width="48" height="48" viewBox="0 0 32 32"><rect width="32" height="32" rx="6" fill="#E63946"/><text x="50%" y="54%" dominant-baseline="middle" text-anchor="middle" fill="white" font-family="sans-serif" font-weight="700" font-size="18">G</text></svg>
+                        <img src="assets/img/logo.png" alt="GridBase Digital Solutions" height="56">
                     </div>
-                    <h1 class="login-title">Gridbase Invoices</h1>
+                    <h1 class="login-title">GridBase Bills</h1>
                     <p class="login-subtitle">Inicia sesión en tu cuenta</p>
                     <div id="login-error" class="login-error"></div>
                     <form id="login-form">
                         <div class="form-group text-left">
                             <label class="form-label">Correo Electrónico</label>
-                            <input type="email" id="login-email" class="form-control" value="samuel@gridbase.com.do" required>
+                            <input type="email" id="login-email" class="form-control" placeholder="tu@correo.com" required autocomplete="email">
                         </div>
                         <div class="form-group text-left">
                             <label class="form-label">Contraseña</label>
-                            <input type="password" id="login-password" class="form-control" value="SamDP9903" required>
+                            <input type="password" id="login-password" class="form-control" placeholder="••••••••" required autocomplete="current-password">
                         </div>
                         <button type="submit" class="btn btn-primary" style="width:100%;margin-top:8px;">Iniciar Sesión</button>
                     </form>
+                    <p style="margin-top: 20px; font-size: 11px; color: var(--text-muted);">
+                        Powered by <span style="color: var(--accent); font-weight: 600;">GridBase</span> Digital Solutions
+                    </p>
                 </div>
             </div>
         `;
@@ -175,14 +182,19 @@ window.App = {
 
     renderAppShell() {
         const app = document.getElementById('app');
+        const userInitial = this.state.user.name ? this.state.user.name.charAt(0).toUpperCase() : '?';
+        
         app.innerHTML = `
             <div class="app-layout">
+                <div class="sidebar-overlay" id="sidebar-overlay"></div>
                 <aside class="sidebar" id="sidebar">
                     <div class="sidebar-brand">
-                        <div class="sidebar-brand-icon">G</div>
+                        <div class="sidebar-brand-icon">
+                            <img src="assets/img/logo.png" alt="GridBase">
+                        </div>
                         <div>
-                            <div class="sidebar-brand-text">Gridbase</div>
-                            <div class="sidebar-brand-sub">Invoices</div>
+                            <div class="sidebar-brand-text">GridBase</div>
+                            <div class="sidebar-brand-sub">Bills</div>
                         </div>
                     </div>
                     <nav class="sidebar-nav">
@@ -199,7 +211,7 @@ window.App = {
                         </div>
                     </nav>
                     <div class="sidebar-footer">
-                        <div class="sidebar-avatar">${this.state.user.name.charAt(0)}</div>
+                        <div class="sidebar-avatar">${userInitial}</div>
                         <div style="flex:1; overflow:hidden;">
                             <div class="sidebar-user-name truncate">${this.state.user.name}</div>
                             <div class="sidebar-user-email truncate">${this.state.user.email}</div>
@@ -211,9 +223,14 @@ window.App = {
                 </aside>
                 <main class="main-content">
                     <header class="topbar">
-                        <div class="topbar-search">
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-                            <input type="text" placeholder="Buscar facturas, clientes...">
+                        <div style="display: flex; align-items: center; gap: 12px;">
+                            <button class="btn btn-icon btn-ghost sidebar-toggle" id="sidebar-toggle" onclick="App.toggleSidebar()">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+                            </button>
+                            <div class="topbar-search">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                                <input type="text" placeholder="Buscar facturas, clientes...">
+                            </div>
                         </div>
                         <div class="topbar-actions">
                             <button class="btn btn-primary" onclick="window.location.hash='invoices/new'">+ Nueva Factura</button>
@@ -225,6 +242,16 @@ window.App = {
                 </main>
             </div>
         `;
+
+        // Sidebar overlay click
+        document.getElementById('sidebar-overlay')?.addEventListener('click', () => {
+            this.toggleSidebar();
+        });
+    },
+
+    toggleSidebar() {
+        document.getElementById('sidebar')?.classList.toggle('open');
+        document.getElementById('sidebar-overlay')?.classList.toggle('open');
     },
 
     formatCurrency(amount, currency = 'USD') {

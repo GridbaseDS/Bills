@@ -1,4 +1,4 @@
-export default {
+const QuotesModule = {
     async render(container, id) {
         if (id === 'new') {
             this.renderForm(container);
@@ -266,7 +266,8 @@ export default {
                 currency: document.getElementById('q_currency').value,
                 issue_date: document.getElementById('q_issue_date').value,
                 expiry_date: document.getElementById('q_expiry_date').value,
-                discount_rate: document.getElementById('q_discount').value,
+                discount_type: 'percentage',
+                discount_value: document.getElementById('q_discount').value,
                 tax_rate: document.getElementById('q_tax').value,
                 notes: document.getElementById('q_notes').value,
                 items: itemsToSave
@@ -374,12 +375,12 @@ export default {
     async sendEmail(id) {
         if(!confirm('¿Deseas enviar esta cotización por correo al cliente?')) return;
         try {
-            await window.App.api(`quotes/${id}/send`);
+            await window.App.api(`quotes/${id}/send-email`, { method: 'POST' });
             window.App.showToast('Correo enviado exitosamente');
         } catch(e) {}
     }
 };
 
 // Export to window for inline onclick handlers
-import QuotesModule from './quotes.js';
 window.QuotesModule = QuotesModule;
+export default QuotesModule;

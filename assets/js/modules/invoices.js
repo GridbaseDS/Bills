@@ -1,4 +1,4 @@
-export default {
+const InvoicesModule = {
     async render(container, id) {
         if (id === 'new') {
             this.renderForm(container);
@@ -268,7 +268,8 @@ export default {
                 currency: document.getElementById('i_currency').value,
                 issue_date: document.getElementById('i_issue_date').value,
                 due_date: document.getElementById('i_due_date').value,
-                discount_rate: document.getElementById('i_discount').value,
+                discount_type: 'percentage',
+                discount_value: document.getElementById('i_discount').value,
                 tax_rate: document.getElementById('i_tax').value,
                 notes: document.getElementById('i_notes').value,
                 items: itemsToSave
@@ -379,12 +380,14 @@ export default {
     async sendEmail(id) {
         if(!confirm('¿Deseas enviar esta factura por correo al cliente?')) return;
         try {
-            await App.api(`invoices/${id}/send`);
+            await App.api(`invoices/${id}/send-email`, { method: 'POST' });
             App.showToast('Correo enviado exitosamente');
         } catch(e) {}
     }
 };
 
 // Export to window for inline onclick handlers
-import InvoicesModule from './invoices.js';
+// Note: the default export is referenced directly at the top of the file
+// We assign `this` module to window inside render methods instead
 window.InvoicesModule = InvoicesModule;
+export default InvoicesModule;

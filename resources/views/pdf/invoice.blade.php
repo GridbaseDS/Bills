@@ -188,18 +188,18 @@ $dateField = $isQuote ? $invoice['expiry_date'] : $invoice['due_date'];
     <div class="client-info">
         <div class="info-label">Facturado a</div>
         <div class="info-value">
-            <strong><?= htmlspecialchars($invoice['company_name'] ?: $invoice['contact_name']) ?></strong><br>
-            <?php if ($invoice['company_name']): ?>
-                <?= htmlspecialchars($invoice['contact_name']) ?><br>
+            <strong><?= htmlspecialchars($client['company_name'] ?: $client['contact_name']) ?></strong><br>
+            <?php if (!empty($client['company_name'])): ?>
+                <?= htmlspecialchars($client['contact_name']) ?><br>
             <?php endif; ?>
-            <?php if(!empty($invoice['address_line1'])): ?>
-                <?= htmlspecialchars($invoice['address_line1']) ?><br>
+            <?php if(!empty($client['address_line1'])): ?>
+                <?= htmlspecialchars($client['address_line1']) ?><br>
             <?php endif; ?>
-            <?php if(!empty($invoice['city'])): ?>
-                <?= htmlspecialchars($invoice['city']) ?>, <?= htmlspecialchars($invoice['country']) ?><br>
+            <?php if(!empty($client['city'])): ?>
+                <?= htmlspecialchars($client['city']) ?><?= !empty($client['country']) ? ', ' . htmlspecialchars($client['country']) : '' ?><br>
             <?php endif; ?>
-            <?php if(!empty($invoice['client_tax_id'])): ?>
-                RNC/Cédula: <?= htmlspecialchars($invoice['client_tax_id']) ?><br>
+            <?php if(!empty($client['tax_id'])): ?>
+                RNC/Cédula: <?= htmlspecialchars($client['tax_id']) ?><br>
             <?php endif; ?>
         </div>
     </div>

@@ -140,8 +140,12 @@ class InvoiceController extends Controller
             $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('pdf.invoice', $data);
             $pdfContent = $pdf->output();
 
+            if (empty($settings['smtp_host']) || empty($settings['smtp_username']) || empty($settings['smtp_password'])) {
+                return response()->json(['success' => false, 'error' => 'No hay credenciales SMTP configuradas. Ve a Configuración -> Email / SMTP para agregarlas antes de enviar correos.'], 400);
+            }
+
             $transport = new \Symfony\Component\Mailer\Transport\Smtp\EsmtpTransport(
-                $settings['smtp_host'] ?? '',
+                $settings['smtp_host'],
                 $settings['smtp_port'] ?? 587,
                 ($settings['smtp_encryption'] ?? 'tls') === 'tls' || ($settings['smtp_encryption'] ?? 'tls') === 'ssl'
             );

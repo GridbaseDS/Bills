@@ -167,28 +167,38 @@ class InvoiceController extends Controller
 
     /**
      * Build the best available mail transport.
-     * On cPanel shared hosting, SMTP ports are blocked by firewall,
-     * so we use the local sendmail/exim binary which always works.
+     * On cPanel: connect to local Exim via SMTP on port 25/587 with credentials.
+     * This ensures proper authentication and email deliverability.
      */
     public static function buildTransport(array $settings)
     {
         $host = trim($settings['smtp_host'] ?? '');
+        $port = (int)($settings['smtp_port'] ?? 25);
+        $encryption = $settings['smtp_encryption'] ?? '';
+        $username = $settings['smtp_username'] ?? '';
+        $password = $settings['smtp_password'] ?? '';
 
-        // Use PHP native mail() for local/empty host — universally works on cPanel
+        // For localhost: use SMTP without SSL wrapper, with auth if available
         if (empty($host) || $host === 'localhost' || $host === '127.0.0.1') {
-            return \Symfony\Component\Mailer\Transport::fromDsn('sendmail://default');
+            // Connect to local Exim on port 25 with NO encryption
+            $transport = new \Symfony\Component\Mailer\Transport\Smtp\EsmtpTransport('localhost', 25, false);
+
+            // Authenticate with cPanel email credentials for proper delivery
+            if (!empty($username) && !empty($password)) {
+                $transport->setUsername($username);
+                $transport->setPassword($password);
+            }
+
+            return $transport;
         }
 
-        // External SMTP
-        $port = (int)($settings['smtp_port'] ?? 587);
-        $encryption = $settings['smtp_encryption'] ?? 'tls';
+        // External SMTP with encryption
         $tls = ($encryption === 'tls' || $encryption === 'ssl');
-
         $transport = new \Symfony\Component\Mailer\Transport\Smtp\EsmtpTransport($host, $port, $tls);
 
-        if (!empty($settings['smtp_username'])) {
-            $transport->setUsername($settings['smtp_username']);
-            $transport->setPassword($settings['smtp_password'] ?? '');
+        if (!empty($username)) {
+            $transport->setUsername($username);
+            $transport->setPassword($password);
         }
 
         return $transport;

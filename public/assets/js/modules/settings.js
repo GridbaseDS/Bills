@@ -111,6 +111,17 @@ export default {
                                     <input type="email" id="s_smtp_from_email" class="form-control" value="${s.smtp_from_email || ''}">
                                 </div>
                             </div>
+                            
+                            <div class="mt-24 p-4" style="background: var(--bg-elevated); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px;">
+                                <h4 class="mb-16" style="font-size: 13px;">Probar Conexión</h4>
+                                <div style="display: flex; gap: 12px; align-items: flex-end;">
+                                    <div class="form-group" style="margin: 0; flex: 1; max-width: 300px;">
+                                        <label class="form-label">Enviar correo de prueba a:</label>
+                                        <input type="email" id="smtp_test_email" class="form-control" placeholder="tu@correo.com" value="${window.App.state.user?.email || ''}">
+                                    </div>
+                                    <button type="button" id="btn-test-smtp" class="btn btn-secondary">Probar Conexión</button>
+                                </div>
+                            </div>
                         </div>
 
                         <!-- TAB: WHATSAPP -->
@@ -242,6 +253,37 @@ export default {
                     await window.App.api('settings', { method: 'POST', body: settingsToUpdate });
                     window.App.showToast('Configuraciones guardadas y aplicadas');
                 } catch(err) {}
+            });
+
+            document.getElementById('btn-test-smtp').addEventListener('click', async () => {
+                const btn = document.getElementById('btn-test-smtp');
+                const testEmail = document.getElementById('smtp_test_email').value;
+                if (!testEmail) return window.App.showToast('Ingresa un correo de prueba', 'error');
+
+                const payload = {
+                    test_email: testEmail,
+                    host: document.getElementById('s_smtp_host').value,
+                    port: document.getElementById('s_smtp_port').value,
+                    username: document.getElementById('s_smtp_username').value,
+                    password: document.getElementById('s_smtp_password').value,
+                    encryption: document.getElementById('s_smtp_encryption').value,
+                    from_name: document.getElementById('s_smtp_from_name').value,
+                    from_email: document.getElementById('s_smtp_from_email').value
+                };
+
+                const originalText = btn.innerHTML;
+                btn.innerHTML = '<span class="spinner" style="width:14px;height:14px;border-width:2px;"></span> Probando...';
+                btn.disabled = true;
+
+                try {
+                    const res = await window.App.api('settings/test-smtp', { method: 'POST', body: payload });
+                    window.App.showToast(res.message, 'success');
+                } catch(err) {
+                    // The App.api already shows a toast on error, but we can catch it to reset the button
+                } finally {
+                    btn.innerHTML = originalText;
+                    btn.disabled = false;
+                }
             });
 
         } catch (e) {

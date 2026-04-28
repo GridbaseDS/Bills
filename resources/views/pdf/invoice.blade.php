@@ -72,7 +72,7 @@
 
         /* ── BODY ── */
         .body-content {
-            padding: 35px 45px 20px 45px;
+            padding: 35px 45px 60px 45px;
         }
 
         /* Document title */
@@ -236,32 +236,21 @@
 
         /* ── FOOTER ── */
         .footer {
-            margin-top: 30px;
-            padding-top: 14px;
-            border-top: 2px solid #0B484C;
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background: #0B484C;
+            padding: 12px 45px;
             text-align: center;
-        }
-        .footer-company {
-            font-size: 11px;
-            font-weight: 700;
-            color: #0B484C;
-            margin-bottom: 6px;
         }
         .footer-contact {
             font-size: 10px;
-            color: #666;
-            line-height: 1.8;
+            color: rgba(255,255,255,0.85);
         }
         .footer-contact span {
-            color: #999;
-            margin: 0 6px;
-        }
-        .footer-thanks {
-            font-size: 10px;
-            color: #0B484C;
-            font-weight: 600;
-            font-style: italic;
-            margin-top: 8px;
+            color: #00DF83;
+            margin: 0 8px;
         }
     </style>
 </head>
@@ -409,23 +398,21 @@ if (!empty($invoice['status'])) {
     </div>
     <?php endif; ?>
 
-    <!-- ══════════════════════════ FOOTER ══════════════════════════ -->
-    <div class="footer">
-        <div class="footer-company"><?= htmlspecialchars($company['name'] ?? 'Gridbase Digital Solutions') ?></div>
-        <div class="footer-contact">
-            <?php if (!empty($company['website'])): ?>
-                <?= htmlspecialchars($company['website']) ?>
-            <?php endif; ?>
-            <?php if (!empty($company['email'])): ?>
-                <span>&bull;</span> <?= htmlspecialchars($company['email']) ?>
-            <?php endif; ?>
-            <?php if (!empty($company['phone'])): ?>
-                <span>&bull;</span> <?= htmlspecialchars($company['phone']) ?>
-            <?php endif; ?>
-        </div>
-        <div class="footer-thanks">¡Gracias por su preferencia!</div>
-    </div>
+</div>
 
+<!-- FOOTER -->
+<div class="footer">
+    <div class="footer-contact">
+        <?php if (!empty($company['website'])): ?>
+            <?= htmlspecialchars($company['website']) ?>
+        <?php endif; ?>
+        <?php if (!empty($company['email'])): ?>
+            <span>&bull;</span><?= htmlspecialchars($company['email']) ?>
+        <?php endif; ?>
+        <?php if (!empty($company['phone'])): ?>
+            <span>&bull;</span><?= htmlspecialchars($company['phone']) ?>
+        <?php endif; ?>
+    </div>
 </div>
 
 </body>

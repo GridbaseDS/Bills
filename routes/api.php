@@ -27,11 +27,13 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Invoices
     Route::apiResource('invoices', InvoiceController::class);
+    Route::get('/invoices/{id}/pdf', [InvoiceController::class, 'pdf']);
     Route::post('/invoices/{id}/payment', [InvoiceController::class, 'addPayment']);
     Route::post('/invoices/{id}/send-email', [InvoiceController::class, 'sendEmail']);
 
     // Quotes
     Route::apiResource('quotes', QuoteController::class);
+    Route::get('/quotes/{id}/pdf', [QuoteController::class, 'pdf']);
     Route::post('/quotes/{id}/convert', [QuoteController::class, 'convertToInvoice']);
     Route::post('/quotes/{id}/send-email', [QuoteController::class, 'sendEmail']);
 

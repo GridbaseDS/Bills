@@ -109,4 +109,72 @@ class InvoiceController extends Controller
         }
         return $pdf->stream('Factura-' . $invoice->invoice_number . '.pdf');
     }
+
+    public function sendEmail($id)
+    {
+        $invoice = Invoice::with(['client', 'items'])->findOrFail($id);
+        $settings = Setting::getAll();
+
+        if (empty($invoice->client->email)) {
+            return response()->json(['success' => false, 'error' => 'El cliente no tiene un correo electrónico configurado.'], 400);
+        }
+
+        try {
+            $data = [
+                'invoice' => $invoice->toArray(),
+                'company' => [
+                    'name' => $settings['company_name'] ?? 'GridBase',
+                    'email' => $settings['company_email'] ?? '',
+                    'phone' => $settings['company_phone'] ?? '',
+                    'address' => $settings['company_address'] ?? '',
+                    'city' => $settings['company_city'] ?? '',
+                    'country' => $settings['company_country'] ?? '',
+                    'tax_id' => $settings['company_tax_id'] ?? '',
+                    'website' => $settings['company_website'] ?? '',
+                ],
+                'client' => $invoice->client->toArray(),
+                'items' => $invoice->items->toArray(),
+                'settings' => $settings
+            ];
+
+            $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('pdf.invoice', $data);
+            $pdfContent = $pdf->output();
+
+            $transport = new \Symfony\Component\Mailer\Transport\Smtp\EsmtpTransport(
+                $settings['smtp_host'] ?? '',
+                $settings['smtp_port'] ?? 587,
+                ($settings['smtp_encryption'] ?? 'tls') === 'tls' || ($settings['smtp_encryption'] ?? 'tls') === 'ssl'
+            );
+
+            if (!empty($settings['smtp_username'])) {
+                $transport->setUsername($settings['smtp_username']);
+                $transport->setPassword($settings['smtp_password']);
+            }
+
+            $mailer = new \Symfony\Component\Mailer\Mailer($transport);
+
+            $subject = "Factura {$invoice->invoice_number} de " . ($settings['company_name'] ?? 'GridBase');
+
+            $email = (new \Symfony\Component\Mime\Email())
+                ->from(new \Symfony\Component\Mime\Address(
+                    $settings['smtp_from_email'] ?? 'noreply@gridbase.com.do', 
+                    $settings['smtp_from_name'] ?? 'Gridbase Bills'
+                ))
+                ->to($invoice->client->email)
+                ->subject($subject)
+                ->text("Hola {$invoice->client->contact_name},\n\nAdjunto encontrarás la factura {$invoice->invoice_number} por el monto de {$invoice->currency} {$invoice->total}.\n\nSaludos cordiales.")
+                ->attach($pdfContent, "Factura-{$invoice->invoice_number}.pdf", 'application/pdf');
+
+            $mailer->send($email);
+
+            $invoice->status = 'sent';
+            $invoice->sent_at = now();
+            $invoice->sent_via = 'email';
+            $invoice->save();
+
+            return response()->json(['success' => true]);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'error' => $e->getMessage()], 500);
+        }
+    }
 }

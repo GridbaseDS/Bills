@@ -3,6 +3,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Setting;
+use App\Http\Controllers\Api\InvoiceController;
 
 class SettingController extends Controller
 {
@@ -26,38 +27,35 @@ class SettingController extends Controller
     {
         $request->validate([
             'test_email' => 'required|email',
-            'host' => 'required',
-            'port' => 'required',
-            'username' => 'required',
-            'password' => 'required',
         ]);
 
         try {
-            $transport = new \Symfony\Component\Mailer\Transport\Smtp\EsmtpTransport(
-                $request->host,
-                $request->port,
-                $request->encryption === 'tls' || $request->encryption === 'ssl'
-            );
+            $settings = [
+                'smtp_host' => $request->host ?? 'localhost',
+                'smtp_port' => $request->port ?? 587,
+                'smtp_encryption' => $request->encryption ?? 'tls',
+                'smtp_username' => $request->username ?? '',
+                'smtp_password' => $request->password ?? '',
+                'smtp_from_email' => $request->from_email,
+                'smtp_from_name' => $request->from_name,
+            ];
 
-            if ($request->username) {
-                $transport->setUsername($request->username);
-                $transport->setPassword($request->password);
-            }
-
+            $transport = InvoiceController::buildTransport($settings);
             $mailer = new \Symfony\Component\Mailer\Mailer($transport);
 
+            $fromEmail = !empty($request->from_email) ? $request->from_email : 'bills@gridbase.com.do';
+            $fromName = !empty($request->from_name) ? $request->from_name : 'Gridbase Bills';
+            $method = ($settings['smtp_host'] === 'localhost' || empty($settings['smtp_host'])) ? 'Sendmail (Local)' : "SMTP ({$settings['smtp_host']}:{$settings['smtp_port']})";
+
             $email = (new \Symfony\Component\Mime\Email())
-                ->from(new \Symfony\Component\Mime\Address(
-                    !empty($request->from_email) ? $request->from_email : 'noreply@gridbase.com.do', 
-                    !empty($request->from_name) ? $request->from_name : 'Gridbase Bills'
-                ))
+                ->from(new \Symfony\Component\Mime\Address($fromEmail, $fromName))
                 ->to($request->test_email)
-                ->subject('Prueba de Conexión SMTP - Gridbase Bills')
-                ->text("¡Felicidades! Tu configuración SMTP está funcionando perfectamente en Gridbase Bills.\n\nHost: {$request->host}\nPuerto: {$request->port}");
+                ->subject('Prueba de Conexión - Gridbase Bills')
+                ->text("¡Felicidades! Tu configuración de correo está funcionando perfectamente en Gridbase Bills.\n\nMétodo: {$method}");
 
             $mailer->send($email);
 
-            return response()->json(['success' => true, 'message' => 'Correo de prueba enviado con éxito']);
+            return response()->json(['success' => true, 'message' => "Correo de prueba enviado con éxito via {$method}"]);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false, 

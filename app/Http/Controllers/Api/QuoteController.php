@@ -4,6 +4,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Quote;
 use App\Models\Setting;
+use App\Http\Controllers\Api\InvoiceController;
 
 class QuoteController extends Controller
 {
@@ -162,35 +163,18 @@ class QuoteController extends Controller
             $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('pdf.invoice', $data);
             $pdfContent = $pdf->output();
 
-            if (empty($settings['smtp_host']) || empty($settings['smtp_username']) || empty($settings['smtp_password'])) {
-                return response()->json(['success' => false, 'error' => 'No hay credenciales SMTP configuradas. Ve a Configuración -> Email / SMTP para agregarlas antes de enviar correos.'], 400);
-            }
-
-            $transport = new \Symfony\Component\Mailer\Transport\Smtp\EsmtpTransport(
-                $settings['smtp_host'],
-                $settings['smtp_port'] ?? 587,
-                ($settings['smtp_encryption'] ?? 'tls') === 'tls' || ($settings['smtp_encryption'] ?? 'tls') === 'ssl'
-            );
-
-            if (!empty($settings['smtp_username'])) {
-                $transport->setUsername($settings['smtp_username']);
-                $transport->setPassword($settings['smtp_password']);
-            }
-
-            $mailer = new \Symfony\Component\Mailer\Mailer($transport);
-
+            $fromEmail = !empty($settings['smtp_from_email']) ? $settings['smtp_from_email'] : 'bills@gridbase.com.do';
+            $fromName = !empty($settings['smtp_from_name']) ? $settings['smtp_from_name'] : 'Gridbase Bills';
             $subject = "Cotización {$quote->quote_number} de " . ($settings['company_name'] ?? 'GridBase');
 
             $email = (new \Symfony\Component\Mime\Email())
-                ->from(new \Symfony\Component\Mime\Address(
-                    !empty($settings['smtp_from_email']) ? $settings['smtp_from_email'] : 'noreply@gridbase.com.do', 
-                    !empty($settings['smtp_from_name']) ? $settings['smtp_from_name'] : 'Gridbase Bills'
-                ))
+                ->from(new \Symfony\Component\Mime\Address($fromEmail, $fromName))
                 ->to($quote->client->email)
                 ->subject($subject)
                 ->text("Hola {$quote->client->contact_name},\n\nAdjunto encontrarás la cotización {$quote->quote_number} por el monto de {$quote->currency} {$quote->total}.\n\nSaludos cordiales.")
                 ->attach($pdfContent, "Cotizacion-{$quote->quote_number}.pdf", 'application/pdf');
 
+            $mailer = new \Symfony\Component\Mailer\Mailer(InvoiceController::buildTransport($settings));
             $mailer->send($email);
 
             $quote->status = 'sent';
@@ -204,3 +188,4 @@ class QuoteController extends Controller
         }
     }
 }
+

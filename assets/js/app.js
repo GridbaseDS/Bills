@@ -35,13 +35,22 @@ window.App = {
 
         try {
             const response = await fetch(url, { ...options, headers, credentials: 'same-origin' });
-            const data = await response.json();
+            
+            // Handle empty responses safely
+            const text = await response.text();
+            let data;
+            try {
+                data = text ? JSON.parse(text) : {};
+            } catch (parseErr) {
+                console.error('API response not JSON:', text.substring(0, 500));
+                throw new Error('Error del servidor. Revisa la consola para detalles.');
+            }
             
             if (!response.ok) {
                 if (response.status === 401 && this.state.currentRoute !== 'login') {
                     this.logout(false);
                 }
-                throw new Error(data.error || 'Error de la API');
+                throw new Error(data.error || `Error ${response.status}`);
             }
             return data;
         } catch (error) {

@@ -4,8 +4,20 @@
  * Routes all API requests to the appropriate controller.
  */
 
+// Error handling — ensure JSON output even on fatal errors
+error_reporting(E_ALL);
+ini_set('display_errors', 0);
+ini_set('log_errors', 1);
+
 // Composer autoload
-require_once __DIR__ . '/../vendor/autoload.php';
+$autoloadPath = __DIR__ . '/../vendor/autoload.php';
+if (!file_exists($autoloadPath)) {
+    header('Content-Type: application/json; charset=utf-8');
+    http_response_code(500);
+    echo json_encode(['error' => 'Server not configured. Run: composer install']);
+    exit;
+}
+require_once $autoloadPath;
 
 // Set timezone
 $appConfig = require __DIR__ . '/../config/app.php';

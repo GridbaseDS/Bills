@@ -299,7 +299,12 @@ INSERT INTO `settings` (`setting_key`, `setting_value`, `setting_group`) VALUES
 ('whatsapp_access_token', '', 'whatsapp'),
 ('whatsapp_phone_id', '', 'whatsapp'),
 ('whatsapp_business_id', '', 'whatsapp'),
-('whatsapp_enabled', '0', 'whatsapp');
+('whatsapp_enabled', '0', 'whatsapp'),
+('reminders_enabled', '1', 'automation'),
+('reminders_days_before', '3', 'automation'),
+('reminders_overdue_interval', '7', 'automation'),
+('payment_link_general', '', 'integrations'),
+('bank_instructions', '', 'integrations');
 
 -- -----------------------------------------------------------
 -- Default admin user (password: admin123 -- CHANGE ON FIRST LOGIN)

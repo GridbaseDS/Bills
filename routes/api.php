@@ -45,4 +45,5 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/settings', [SettingController::class, 'index']);
     Route::post('/settings', [SettingController::class, 'updateMultiple']);
     Route::post('/settings/test-smtp', [SettingController::class, 'testSmtp']);
+    Route::get('/settings/diagnose-smtp', [SettingController::class, 'diagnoseSmtp']);
 });

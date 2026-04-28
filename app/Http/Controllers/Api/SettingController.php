@@ -65,4 +65,31 @@ class SettingController extends Controller
             ], 500);
         }
     }
+
+    public function diagnoseSmtp()
+    {
+        $hosts = ['localhost', '127.0.0.1', 'mail.gridbase.com.do', gethostname()];
+        $ports = [25, 465, 587];
+        $results = [];
+
+        foreach ($hosts as $host) {
+            foreach ($ports as $port) {
+                $conn = @fsockopen($host, $port, $errno, $errstr, 3);
+                $results[] = [
+                    'host' => $host,
+                    'port' => $port,
+                    'status' => $conn ? 'OPEN' : 'CLOSED',
+                    'error' => $conn ? null : $errstr
+                ];
+                if ($conn) fclose($conn);
+            }
+        }
+
+        return response()->json([
+            'success' => true,
+            'hostname' => gethostname(),
+            'results' => $results,
+            'recommendation' => collect($results)->first(fn($r) => $r['status'] === 'OPEN')
+        ]);
+    }
 }

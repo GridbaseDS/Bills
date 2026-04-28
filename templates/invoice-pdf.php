@@ -5,18 +5,18 @@
     <title>Factura <?= htmlspecialchars($invoice['invoice_number']) ?></title>
     <style>
         body {
-            font-family: 'Helvetica', 'Arial', sans-serif;
-            font-size: 13px;
-            color: #333333;
-            line-height: 1.5;
+            font-family: 'Helvetica Neue', 'Helvetica', 'Arial', sans-serif;
+            font-size: 14px;
+            color: #374151;
+            line-height: 1.6;
             margin: 0;
-            padding: 20px;
+            padding: 30px;
         }
         .header {
             width: 100%;
-            border-bottom: 2px solid #00D690;
-            padding-bottom: 20px;
-            margin-bottom: 30px;
+            border-bottom: 3px solid #00D690;
+            padding-bottom: 25px;
+            margin-bottom: 40px;
         }
         .logo-container {
             float: left;
@@ -26,27 +26,29 @@
             float: right;
             width: 50%;
             text-align: right;
-            font-size: 11px;
-            color: #666666;
+            font-size: 13px;
+            color: #4B5563;
+            line-height: 1.5;
         }
         .company-name {
-            font-size: 20px;
+            font-size: 24px;
             font-weight: bold;
-            color: #1A1D26;
-            margin-bottom: 5px;
+            color: #111827;
+            margin-bottom: 8px;
+            letter-spacing: -0.5px;
         }
         .clear { clear: both; }
         .document-title {
-            font-size: 28px;
-            font-weight: bold;
-            color: #1A1D26;
+            font-size: 32px;
+            font-weight: 800;
+            color: #111827;
             text-transform: uppercase;
-            margin-bottom: 20px;
-            letter-spacing: 2px;
+            margin-bottom: 25px;
+            letter-spacing: 1px;
         }
         .info-section {
             width: 100%;
-            margin-bottom: 30px;
+            margin-bottom: 40px;
         }
         .client-info {
             float: left;
@@ -54,84 +56,103 @@
         }
         .invoice-info {
             float: right;
-            width: 40%;
+            width: 45%;
         }
         .info-label {
-            font-size: 10px;
+            font-size: 12px;
             font-weight: bold;
             text-transform: uppercase;
-            color: #94A3B8;
-            margin-bottom: 3px;
+            color: #6B7280;
+            margin-bottom: 6px;
+            letter-spacing: 0.5px;
         }
         .info-value {
+            font-size: 15px;
+            color: #111827;
             margin-bottom: 15px;
+            line-height: 1.5;
         }
         .table {
             width: 100%;
             border-collapse: collapse;
-            margin-bottom: 30px;
+            margin-bottom: 40px;
         }
         .table th {
-            background-color: #F0FAF6;
-            color: #0F6B5A;
-            font-size: 11px;
+            background-color: #F9FAFB;
+            color: #374151;
+            font-size: 13px;
             font-weight: bold;
             text-transform: uppercase;
-            padding: 12px 10px;
+            padding: 14px 12px;
             text-align: left;
-            border-bottom: 1px solid #B2E0D4;
+            border-bottom: 2px solid #E5E7EB;
         }
         .table td {
-            padding: 12px 10px;
-            border-bottom: 1px solid #E2E8F0;
+            padding: 14px 12px;
+            border-bottom: 1px solid #F3F4F6;
+            color: #4B5563;
+            font-size: 14px;
+        }
+        .table tr:last-child td {
+            border-bottom: 2px solid #E5E7EB;
         }
         .text-right { text-align: right !important; }
         .text-center { text-align: center !important; }
         .totals-section {
             float: right;
-            width: 40%;
+            width: 45%;
         }
         .totals-table {
             width: 100%;
             border-collapse: collapse;
         }
         .totals-table td {
-            padding: 8px 10px;
+            padding: 10px 12px;
+            color: #374151;
+            font-size: 15px;
         }
         .total-row {
-            font-size: 18px;
+            font-size: 20px;
             font-weight: bold;
-            border-top: 2px solid #1A1D26;
+            border-top: 2px solid #111827;
+        }
+        .total-row td {
+            padding-top: 15px;
+            padding-bottom: 15px;
+            color: #111827;
         }
         .accent { color: #00D690; }
         .notes-section {
             float: left;
-            width: 55%;
-            font-size: 11px;
-            color: #666666;
+            width: 50%;
+            font-size: 13px;
+            color: #4B5563;
+            padding-right: 20px;
+            line-height: 1.6;
         }
         .footer {
             position: fixed;
-            bottom: -30px;
+            bottom: -15px;
             left: 0;
             width: 100%;
             text-align: center;
-            font-size: 10px;
-            color: #94A3B8;
-            border-top: 1px solid #E2E8F0;
-            padding-top: 10px;
+            font-size: 12px;
+            color: #9CA3AF;
+            border-top: 1px solid #E5E7EB;
+            padding-top: 15px;
         }
         .badge {
             display: inline-block;
-            padding: 4px 8px;
-            border-radius: 4px;
-            font-size: 12px;
+            padding: 6px 14px;
+            border-radius: 6px;
+            font-size: 14px;
             font-weight: bold;
             text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
-        .badge-paid { background-color: #ECFDF5; color: #10B981; border: 1px solid #10B981; }
-        .badge-draft { background-color: #F8F9FB; color: #64748B; border: 1px solid #64748B; }
-        .badge-overdue { background-color: #FEF2F2; color: #EF4444; border: 1px solid #EF4444; }
+        .badge-paid { background-color: #D1FAE5; color: #065F46; border: 1px solid #34D399; }
+        .badge-draft { background-color: #F3F4F6; color: #374151; border: 1px solid #9CA3AF; }
+        .badge-overdue { background-color: #FEE2E2; color: #991B1B; border: 1px solid #F87171; }
     </style>
 </head>
 <body>
@@ -143,10 +164,10 @@
         if (file_exists($logoPath)):
             $logoData = base64_encode(file_get_contents($logoPath));
         ?>
-            <img src="data:image/png;base64,<?= $logoData ?>" alt="GridBase" style="height: 50px;">
+            <img src="data:image/png;base64,<?= $logoData ?>" alt="GridBase" style="height: 55px;">
         <?php else: ?>
-            <div style="font-size: 26px; font-weight: bold; color: #00D690;">
-                Grid<span style="color: #1A1D26;">Base</span>
+            <div style="font-size: 30px; font-weight: 800; color: #00D690; letter-spacing: -1px;">
+                Grid<span style="color: #111827;">Base</span>
             </div>
         <?php endif; ?>
     </div>
@@ -162,7 +183,7 @@
             <div><?= htmlspecialchars($company['company_email']) ?></div>
         <?php endif; ?>
         <?php if(!empty($company['company_tax_id'])): ?>
-            <div>RNC/Cédula: <?= htmlspecialchars($company['company_tax_id']) ?></div>
+            <div style="margin-top: 4px; font-weight: bold;">RNC/Cédula: <?= htmlspecialchars($company['company_tax_id']) ?></div>
         <?php endif; ?>
     </div>
     <div class="clear"></div>
@@ -180,7 +201,7 @@ $dateField = $isQuote ? $invoice['expiry_date'] : $invoice['due_date'];
     <?= $docName ?> <span class="accent">#<?= htmlspecialchars($docNum) ?></span>
     
     <?php if (!$isQuote && $invoice['status'] === 'paid'): ?>
-        <span class="badge badge-paid" style="float: right; margin-top: 5px;">PAGADA</span>
+        <span class="badge badge-paid" style="float: right; margin-top: 4px;">PAGADA</span>
     <?php endif; ?>
 </div>
 
@@ -188,37 +209,42 @@ $dateField = $isQuote ? $invoice['expiry_date'] : $invoice['due_date'];
     <div class="client-info">
         <div class="info-label">Facturado a</div>
         <div class="info-value">
-            <strong><?= htmlspecialchars($invoice['company_name'] ?: $invoice['contact_name']) ?></strong><br>
+            <div style="font-size: 18px; font-weight: bold; margin-bottom: 4px; color: #111827;">
+                <?= htmlspecialchars($invoice['company_name'] ?: $invoice['contact_name']) ?>
+            </div>
             <?php if ($invoice['company_name']): ?>
-                <?= htmlspecialchars($invoice['contact_name']) ?><br>
+                <div style="color: #4B5563; margin-bottom: 4px;"><?= htmlspecialchars($invoice['contact_name']) ?></div>
             <?php endif; ?>
-            <?php if(!empty($invoice['address_line1'])): ?>
-                <?= htmlspecialchars($invoice['address_line1']) ?><br>
-            <?php endif; ?>
-            <?php if(!empty($invoice['city'])): ?>
-                <?= htmlspecialchars($invoice['city']) ?>, <?= htmlspecialchars($invoice['country']) ?><br>
-            <?php endif; ?>
-            <?php if(!empty($invoice['client_tax_id'])): ?>
-                RNC/Cédula: <?= htmlspecialchars($invoice['client_tax_id']) ?><br>
-            <?php endif; ?>
+            
+            <div style="color: #4B5563;">
+                <?php if(!empty($invoice['address_line1'])): ?>
+                    <?= htmlspecialchars($invoice['address_line1']) ?><br>
+                <?php endif; ?>
+                <?php if(!empty($invoice['city'])): ?>
+                    <?= htmlspecialchars($invoice['city']) ?>, <?= htmlspecialchars($invoice['country']) ?><br>
+                <?php endif; ?>
+                <?php if(!empty($invoice['client_tax_id'])): ?>
+                    <div style="margin-top: 6px;"><strong>RNC/Cédula:</strong> <?= htmlspecialchars($invoice['client_tax_id']) ?></div>
+                <?php endif; ?>
+            </div>
         </div>
     </div>
     <div class="invoice-info">
-        <table style="width: 100%;">
+        <table style="width: 100%; border-collapse: collapse;">
             <tr>
-                <td style="text-align: right; padding-right: 15px;">
+                <td style="text-align: right; padding-right: 25px; border-right: 2px solid #F3F4F6;">
                     <div class="info-label">Fecha de Emisión</div>
-                    <div class="info-value"><?= date('d/m/Y', strtotime($invoice['issue_date'])) ?></div>
+                    <div class="info-value" style="margin-bottom: 0;"><strong><?= date('d/m/Y', strtotime($invoice['issue_date'])) ?></strong></div>
                 </td>
-                <td style="text-align: right;">
+                <td style="text-align: right; padding-left: 25px;">
                     <div class="info-label"><?= $dateLabel ?></div>
-                    <div class="info-value"><strong><?= date('d/m/Y', strtotime($dateField)) ?></strong></div>
+                    <div class="info-value" style="margin-bottom: 0;"><strong><?= date('d/m/Y', strtotime($dateField)) ?></strong></div>
                 </td>
             </tr>
             <tr>
-                <td colspan="2" style="text-align: right; padding-top: 15px;">
+                <td colspan="2" style="text-align: right; padding-top: 25px;">
                     <div class="info-label">Monto Total (<?= htmlspecialchars($invoice['currency']) ?>)</div>
-                    <div class="info-value" style="font-size: 20px; font-weight: bold; color: #00D690;">
+                    <div class="info-value" style="font-size: 28px; font-weight: bold; color: #00D690; margin-bottom: 0;">
                         <?= number_format($invoice['total'], 2) ?>
                     </div>
                 </td>
@@ -232,20 +258,22 @@ $dateField = $isQuote ? $invoice['expiry_date'] : $invoice['due_date'];
     <thead>
         <tr>
             <th style="width: 5%;">#</th>
-            <th style="width: 50%;">Descripción</th>
-            <th class="text-right" style="width: 15%;">Cant.</th>
+            <th style="width: 45%;">Descripción</th>
+            <th class="text-center" style="width: 15%;">Cant.</th>
             <th class="text-right" style="width: 15%;">Precio</th>
-            <th class="text-right" style="width: 15%;">Total</th>
+            <th class="text-right" style="width: 20%;">Total</th>
         </tr>
     </thead>
     <tbody>
         <?php foreach ($invoice['items'] as $index => $item): ?>
         <tr>
             <td><?= $index + 1 ?></td>
-            <td><?= nl2br(htmlspecialchars($item['description'])) ?></td>
-            <td class="text-right"><?= number_format($item['quantity'], 2) ?></td>
+            <td>
+                <span style="color: #111827;"><?= nl2br(htmlspecialchars($item['description'])) ?></span>
+            </td>
+            <td class="text-center"><?= number_format($item['quantity'], 2) ?></td>
             <td class="text-right"><?= number_format($item['unit_price'], 2) ?></td>
-            <td class="text-right"><?= number_format($item['amount'], 2) ?></td>
+            <td class="text-right" style="font-weight: 500; color: #111827;"><?= number_format($item['amount'], 2) ?></td>
         </tr>
         <?php endforeach; ?>
     </tbody>
@@ -254,31 +282,35 @@ $dateField = $isQuote ? $invoice['expiry_date'] : $invoice['due_date'];
 <div class="notes-section">
     <?php if(!empty($invoice['notes'])): ?>
         <div class="info-label">Notas</div>
-        <p style="margin-top: 5px;"><?= nl2br(htmlspecialchars($invoice['notes'])) ?></p>
+        <div style="margin-top: 8px; margin-bottom: 20px; color: #4B5563; background: #F9FAFB; padding: 15px; border-radius: 6px; border-left: 3px solid #D1D5DB;">
+            <?= nl2br(htmlspecialchars($invoice['notes'])) ?>
+        </div>
     <?php endif; ?>
     
     <?php if(!empty($invoice['terms'])): ?>
-        <div class="info-label" style="margin-top: 15px;">Términos y Condiciones</div>
-        <p style="margin-top: 5px;"><?= nl2br(htmlspecialchars($invoice['terms'])) ?></p>
+        <div class="info-label">Términos y Condiciones</div>
+        <div style="margin-top: 8px; color: #6B7280; font-size: 12px;">
+            <?= nl2br(htmlspecialchars($invoice['terms'])) ?>
+        </div>
     <?php endif; ?>
 </div>
 
 <div class="totals-section">
     <table class="totals-table">
         <tr>
-            <td class="text-right">Subtotal:</td>
-            <td class="text-right" style="width: 100px;"><?= number_format($invoice['subtotal'], 2) ?></td>
+            <td class="text-right" style="color: #6B7280;">Subtotal:</td>
+            <td class="text-right" style="width: 120px; font-weight: 500; color: #111827;"><?= number_format($invoice['subtotal'], 2) ?></td>
         </tr>
         <?php if ($invoice['discount_amount'] > 0): ?>
         <tr>
-            <td class="text-right">Descuento:</td>
-            <td class="text-right">-<?= number_format($invoice['discount_amount'], 2) ?></td>
+            <td class="text-right" style="color: #6B7280;">Descuento:</td>
+            <td class="text-right" style="color: #EF4444; font-weight: 500;">-<?= number_format($invoice['discount_amount'], 2) ?></td>
         </tr>
         <?php endif; ?>
         <?php if ($invoice['tax_amount'] > 0): ?>
         <tr>
-            <td class="text-right">Impuesto (<?= number_format($invoice['tax_rate'], 1) ?>%):</td>
-            <td class="text-right"><?= number_format($invoice['tax_amount'], 2) ?></td>
+            <td class="text-right" style="color: #6B7280;">Impuesto (<?= number_format($invoice['tax_rate'], 1) ?>%):</td>
+            <td class="text-right" style="font-weight: 500; color: #111827;"><?= number_format($invoice['tax_amount'], 2) ?></td>
         </tr>
         <?php endif; ?>
         <tr class="total-row">
@@ -287,12 +319,12 @@ $dateField = $isQuote ? $invoice['expiry_date'] : $invoice['due_date'];
         </tr>
         <?php if (!$isQuote && $invoice['amount_paid'] > 0): ?>
         <tr>
-            <td class="text-right" style="padding-top: 15px;">Monto Pagado:</td>
-            <td class="text-right" style="padding-top: 15px;">-<?= number_format($invoice['amount_paid'], 2) ?></td>
+            <td class="text-right" style="padding-top: 20px; color: #6B7280;">Monto Pagado:</td>
+            <td class="text-right" style="padding-top: 20px; color: #10B981; font-weight: 500;">-<?= number_format($invoice['amount_paid'], 2) ?></td>
         </tr>
         <tr>
-            <td class="text-right" style="font-weight: bold;">Balance Pendiente:</td>
-            <td class="text-right" style="font-weight: bold;"><?= htmlspecialchars($invoice['currency']) ?> <?= number_format($invoice['total'] - $invoice['amount_paid'], 2) ?></td>
+            <td class="text-right" style="font-weight: bold; font-size: 16px; color: #111827;">Balance Pendiente:</td>
+            <td class="text-right" style="font-weight: bold; font-size: 16px; color: #EF4444;"><?= htmlspecialchars($invoice['currency']) ?> <?= number_format($invoice['total'] - $invoice['amount_paid'], 2) ?></td>
         </tr>
         <?php endif; ?>
     </table>
@@ -301,8 +333,8 @@ $dateField = $isQuote ? $invoice['expiry_date'] : $invoice['due_date'];
 
 <div class="footer">
     <?= htmlspecialchars($company['company_name'] ?? 'Gridbase') ?> 
-    <?php if(!empty($company['company_website'])) echo " | " . htmlspecialchars($company['company_website']); ?>
-    <?php if(!empty($company['company_email'])) echo " | " . htmlspecialchars($company['company_email']); ?>
+    <?php if(!empty($company['company_website'])) echo " &bull; " . htmlspecialchars($company['company_website']); ?>
+    <?php if(!empty($company['company_email'])) echo " &bull; " . htmlspecialchars($company['company_email']); ?>
 </div>
 
 </body>

@@ -98,9 +98,11 @@ export default {
                                 <div class="form-group">
                                     <label class="form-label">Cifrado</label>
                                     <select id="s_smtp_encryption" class="form-control">
+                                        <option value="none" ${!s.smtp_encryption || s.smtp_encryption === 'none' || s.smtp_encryption === 'null' ? 'selected' : ''}>Ninguno (Sin cifrado)</option>
                                         <option value="tls" ${s.smtp_encryption === 'tls' ? 'selected' : ''}>TLS</option>
                                         <option value="ssl" ${s.smtp_encryption === 'ssl' ? 'selected' : ''}>SSL</option>
                                     </select>
+                                    <div class="form-hint">Para localhost/cPanel usa "Ninguno". Para servidores externos usa TLS o SSL.</div>
                                 </div>
                                 <div class="form-group">
                                     <label class="form-label">Nombre de Remitente</label>
@@ -260,13 +262,14 @@ export default {
                 const testEmail = document.getElementById('smtp_test_email').value;
                 if (!testEmail) return window.App.showToast('Ingresa un correo de prueba', 'error');
 
+                const encryptionVal = document.getElementById('s_smtp_encryption').value;
                 const payload = {
                     test_email: testEmail,
-                    host: document.getElementById('s_smtp_host').value,
-                    port: document.getElementById('s_smtp_port').value,
+                    host: document.getElementById('s_smtp_host').value || 'localhost',
+                    port: document.getElementById('s_smtp_port').value || '25',
                     username: document.getElementById('s_smtp_username').value,
                     password: document.getElementById('s_smtp_password').value,
-                    encryption: document.getElementById('s_smtp_encryption').value,
+                    encryption: encryptionVal === 'none' ? null : encryptionVal,
                     from_name: document.getElementById('s_smtp_from_name').value,
                     from_email: document.getElementById('s_smtp_from_email').value
                 };

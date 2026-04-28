@@ -4,7 +4,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Quote;
 use App\Models\Setting;
-use App\Http\Controllers\Api\InvoiceController;
+use App\Services\EmailService;
 
 class QuoteController extends Controller
 {
@@ -142,7 +142,8 @@ class QuoteController extends Controller
         }
 
         try {
-            InvoiceController::applyMailConfig($settings);
+            // Apply SMTP settings using the centralized method
+            EmailService::applySmtpConfig($settings);
 
             $data = [
                 'invoice' => $quote->toArray(),
@@ -180,11 +181,12 @@ class QuoteController extends Controller
             $quote->sent_via = 'email';
             $quote->save();
 
+            \Illuminate\Support\Facades\Log::info("Quote {$quote->quote_number} sent to {$quote->client->email}");
+
             return response()->json(['success' => true]);
         } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error("Failed to send quote {$quote->quote_number}: " . $e->getMessage());
             return response()->json(['success' => false, 'error' => $e->getMessage()], 500);
         }
     }
 }
-
-

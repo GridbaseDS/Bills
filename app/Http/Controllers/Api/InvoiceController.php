@@ -4,6 +4,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Invoice;
 use App\Models\Setting;
+use App\Services\EmailService;
 use Illuminate\Support\Str;
 
 class InvoiceController extends Controller
@@ -120,8 +121,8 @@ class InvoiceController extends Controller
         }
 
         try {
-            // Apply SMTP settings from database at runtime
-            self::applyMailConfig($settings);
+            // Apply SMTP settings from database using the centralized method
+            EmailService::applySmtpConfig($settings);
 
             $data = [
                 'invoice' => $invoice->toArray(),
@@ -158,65 +159,12 @@ class InvoiceController extends Controller
             $invoice->sent_via = 'email';
             $invoice->save();
 
+            \Illuminate\Support\Facades\Log::info("Invoice {$invoice->invoice_number} sent to {$invoice->client->email}");
+
             return response()->json(['success' => true]);
         } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error("Failed to send invoice {$invoice->invoice_number}: " . $e->getMessage());
             return response()->json(['success' => false, 'error' => $e->getMessage()], 500);
         }
     }
-
-    /**
-     * Apply SMTP settings from the database to Laravel's mail config at runtime.
-     */
-    public static function applyMailConfig(array $settings)
-    {
-        $host = trim($settings['smtp_host'] ?? '') ?: 'localhost';
-        $port = (int)($settings['smtp_port'] ?? 25) ?: 25;
-        $encryption = $settings['smtp_encryption'] ?? null;
-        
-        // For localhost, never use encryption
-        if ($host === 'localhost' || $host === '127.0.0.1') {
-            $encryption = null;
-        }
-
-        config([
-            'mail.default' => 'smtp',
-            'mail.mailers.smtp.transport' => 'smtp',
-            'mail.mailers.smtp.host' => $host,
-            'mail.mailers.smtp.port' => $port,
-            'mail.mailers.smtp.encryption' => $encryption,
-            'mail.mailers.smtp.username' => $settings['smtp_username'] ?? null,
-            'mail.mailers.smtp.password' => $settings['smtp_password'] ?? null,
-            'mail.mailers.smtp.timeout' => 15,
-            'mail.mailers.smtp.stream' => [
-                'ssl' => [
-                    'verify_peer' => false,
-                    'verify_peer_name' => false,
-                    'allow_self_signed' => true,
-                ],
-            ],
-            'mail.from.address' => !empty($settings['smtp_from_email']) ? $settings['smtp_from_email'] : 'bills@gridbase.com.do',
-            'mail.from.name' => !empty($settings['smtp_from_name']) ? $settings['smtp_from_name'] : 'Gridbase Bills',
-        ]);
-
-        // Force Laravel to rebuild the mailer with new config
-        app()->forgetInstance('mail.manager');
-
-        // Access the underlying Symfony transport and disable SSL verification directly
-        try {
-            $transport = app('mailer')->getSymfonyTransport();
-            if (method_exists($transport, 'getStream')) {
-                $transport->getStream()->setStreamOptions([
-                    'ssl' => [
-                        'verify_peer' => false,
-                        'verify_peer_name' => false,
-                        'allow_self_signed' => true,
-                    ]
-                ]);
-            }
-        } catch (\Exception $e) {
-            // Silently continue — the stream options in config may still work
-        }
-    }
 }
-
-

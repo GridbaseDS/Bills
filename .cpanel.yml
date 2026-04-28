@@ -2,4 +2,7 @@
 deployment:
   tasks:
     - export DEPLOYPATH=/home/grupaqgl/bills.gridbase.com.do/
-    - /usr/bin/rsync -rlpt --exclude='.git' --exclude='.cpanel.yml' --exclude='vendor' --exclude='.env' --exclude='storage' ./ $DEPLOYPATH
+    - /usr/bin/rsync -rlpt --exclude='.git' --exclude='.cpanel.yml' --exclude='legacy_*' ./ $DEPLOYPATH
+    - /usr/local/bin/composer install --no-dev --optimize-autoloader -d $DEPLOYPATH
+    - /usr/local/bin/php $DEPLOYPATH/artisan storage:link
+    - /usr/local/bin/php $DEPLOYPATH/artisan config:cache

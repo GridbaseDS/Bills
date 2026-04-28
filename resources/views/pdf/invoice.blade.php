@@ -12,11 +12,11 @@
         body {
             font-family: 'Helvetica', 'Arial', sans-serif;
             font-size: 11px;
-            color: #E0E8E0;
+            color: #333333;
             line-height: 1.5;
             margin: 0;
             padding: 0;
-            background: #0B1F1A;
+            background: #FFFFFF;
         }
 
         /* ── SIDEBAR ── */
@@ -24,140 +24,112 @@
             position: fixed;
             top: 0;
             left: 0;
-            width: 210px;
+            width: 200px;
             height: 100%;
-            background: #081A15;
-            padding: 35px 22px 25px 22px;
-            border-right: 1px solid rgba(180, 231, 23, 0.08);
+            background: #0B484C;
+            padding: 35px 20px 25px 20px;
         }
         .sidebar-logo {
-            margin-bottom: 25px;
+            margin-bottom: 22px;
             text-align: center;
         }
         .sidebar-logo img {
-            max-width: 150px;
+            max-width: 145px;
             height: auto;
         }
         .sidebar-divider {
-            width: 35px;
+            width: 32px;
             height: 2px;
-            background: #B4E717;
-            margin: 18px 0;
+            background: #00DF83;
+            margin: 16px 0;
             border-radius: 2px;
         }
         .sidebar-label {
             font-size: 8px;
             text-transform: uppercase;
             letter-spacing: 1.5px;
-            color: #B4E717;
+            color: #00DF83;
             margin-bottom: 5px;
             font-weight: bold;
         }
         .sidebar-value {
             font-size: 10px;
-            color: #8BA899;
+            color: rgba(255, 255, 255, 0.65);
             margin-bottom: 3px;
             line-height: 1.5;
         }
         .sidebar-value strong {
             font-size: 12px;
-            color: #F0F5F0;
+            color: #FFFFFF;
         }
         .sidebar-section {
-            margin-bottom: 20px;
+            margin-bottom: 18px;
         }
         .sidebar-sep {
-            margin-top: 20px;
-            padding-top: 15px;
-            border-top: 1px solid rgba(180, 231, 23, 0.08);
+            margin-top: 18px;
+            padding-top: 14px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
         }
         .sidebar-dot {
             display: inline-block;
             width: 5px;
             height: 5px;
-            background: #00D690;
+            background: #00DF83;
             border-radius: 50%;
             margin-right: 6px;
         }
 
         /* ── MAIN CONTENT ── */
         .main-content {
-            margin-left: 210px;
+            margin-left: 200px;
             padding: 35px 30px 25px 30px;
-            background: #0B1F1A;
+            background: #FFFFFF;
             min-height: 100%;
         }
 
         /* ── HEADER ── */
         .doc-title {
-            font-size: 32px;
-            font-weight: 900;
-            color: #F0F5F0;
+            font-size: 30px;
+            font-weight: 700;
+            color: #0B484C;
             text-transform: uppercase;
-            letter-spacing: 3px;
+            letter-spacing: 2px;
             margin-bottom: 0;
         }
         .doc-number-line {
             font-size: 10px;
-            color: #5C7A6A;
-            margin-bottom: 8px;
+            color: #7E7E7E;
+            margin-bottom: 10px;
             letter-spacing: 0.3px;
         }
         .doc-number-line strong {
-            color: #B4E717;
-        }
-
-        /* ── ACCENT CORNER ── */
-        .accent-corner {
-            position: fixed;
-            top: 0;
-            right: 0;
-            width: 90px;
-            height: 90px;
-        }
-        .accent-arc {
-            position: absolute;
-            border: 6px solid rgba(180, 231, 23, 0.2);
-            border-radius: 50%;
-            width: 110px;
-            height: 110px;
-            top: -30px;
-            right: -30px;
-        }
-        .accent-arc-inner {
-            position: absolute;
-            border: 4px solid rgba(0, 214, 144, 0.15);
-            border-radius: 50%;
-            width: 70px;
-            height: 70px;
-            top: -10px;
-            right: -10px;
+            color: #0B484C;
         }
 
         /* ── TOTAL DUE BOX ── */
         .total-due-box {
-            background: rgba(180, 231, 23, 0.06);
-            border: 1px solid rgba(180, 231, 23, 0.12);
-            border-left: 3px solid #B4E717;
-            border-radius: 6px;
+            background: #F6F5F2;
+            border: 1px solid rgba(0, 0, 0, 0.06);
+            border-left: 3px solid #0B484C;
+            border-radius: 8px;
             padding: 14px 18px;
             margin-bottom: 20px;
         }
         .total-due-label {
             font-size: 9px;
             text-transform: uppercase;
-            color: #5C7A6A;
+            color: #7E7E7E;
             letter-spacing: 1px;
             margin-bottom: 2px;
         }
         .total-due-amount {
             font-size: 26px;
-            font-weight: 900;
-            color: #F0F5F0;
+            font-weight: 800;
+            color: #0B484C;
         }
         .total-due-currency {
             font-size: 12px;
-            color: #8BA899;
+            color: #7E7E7E;
             font-weight: normal;
         }
 
@@ -168,12 +140,12 @@
             margin-bottom: 18px;
         }
         .items-table thead tr {
-            background: linear-gradient(135deg, #B4E717 0%, #9ACC10 100%);
+            background: #0B484C;
         }
         .items-table th {
-            color: #0B1F1A;
+            color: #FFFFFF;
             font-size: 9px;
-            font-weight: 700;
+            font-weight: 600;
             text-transform: uppercase;
             letter-spacing: 0.8px;
             padding: 9px 10px;
@@ -183,36 +155,36 @@
             text-align: right;
         }
         .items-table tbody tr {
-            border-bottom: 1px solid rgba(180, 231, 23, 0.06);
+            border-bottom: 1px solid rgba(0, 0, 0, 0.06);
         }
         .items-table tbody tr:nth-child(even) {
-            background: rgba(180, 231, 23, 0.02);
+            background: #FAFAF8;
         }
         .items-table td {
             padding: 10px 10px;
             vertical-align: top;
-            color: #E0E8E0;
+            color: #333333;
         }
         .item-number {
             display: inline-block;
-            width: 24px;
-            height: 24px;
-            background: linear-gradient(135deg, #B4E717 0%, #9ACC10 100%);
-            color: #0B1F1A;
-            font-size: 10px;
+            width: 22px;
+            height: 22px;
+            background: #0B484C;
+            color: #FFFFFF;
+            font-size: 9px;
             font-weight: bold;
             text-align: center;
-            line-height: 24px;
+            line-height: 22px;
             border-radius: 4px;
         }
         .item-desc {
             font-weight: 600;
-            color: #F0F5F0;
+            color: #1a1a1a;
             font-size: 11px;
         }
         .item-detail {
             font-size: 9px;
-            color: #5C7A6A;
+            color: #7E7E7E;
             margin-top: 2px;
         }
 
@@ -235,19 +207,19 @@
         }
         .totals-table .total-label {
             text-align: right;
-            color: #5C7A6A;
+            color: #7E7E7E;
         }
         .totals-table .total-value {
             text-align: right;
             font-weight: 600;
             width: 90px;
-            color: #E0E8E0;
+            color: #333333;
         }
         .grand-total-row {
-            background: linear-gradient(135deg, #B4E717 0%, #9ACC10 100%);
+            background: #0B484C;
         }
         .grand-total-row td {
-            color: #0B1F1A !important;
+            color: #FFFFFF !important;
             font-size: 13px !important;
             font-weight: 800 !important;
             padding: 9px 8px !important;
@@ -258,35 +230,35 @@
         .status-badge {
             display: inline-block;
             padding: 3px 10px;
-            border-radius: 12px;
+            border-radius: 100px;
             font-size: 8px;
             font-weight: 700;
             text-transform: uppercase;
             letter-spacing: 0.8px;
         }
-        .badge-paid { background: rgba(52, 211, 153, 0.15); color: #34D399; }
-        .badge-overdue { background: rgba(251, 113, 133, 0.15); color: #FB7185; }
-        .badge-draft { background: rgba(92, 122, 106, 0.2); color: #8BA899; }
-        .badge-sent { background: rgba(56, 189, 248, 0.15); color: #38BDF8; }
+        .badge-paid { background: rgba(0, 223, 131, 0.12); color: #0B484C; }
+        .badge-overdue { background: rgba(251, 113, 133, 0.12); color: #d32f2f; }
+        .badge-draft { background: rgba(0, 0, 0, 0.06); color: #7E7E7E; }
+        .badge-sent { background: rgba(56, 189, 248, 0.12); color: #0277bd; }
 
         /* ── TERMS ── */
         .terms-section {
             clear: both;
             padding-top: 12px;
-            border-top: 1px solid rgba(180, 231, 23, 0.06);
+            border-top: 1px solid rgba(0, 0, 0, 0.06);
             margin-top: 8px;
         }
         .terms-title {
             font-size: 9px;
             font-weight: 700;
             text-transform: uppercase;
-            color: #B4E717;
+            color: #0B484C;
             letter-spacing: 1px;
             margin-bottom: 4px;
         }
         .terms-text {
             font-size: 9px;
-            color: #5C7A6A;
+            color: #7E7E7E;
             line-height: 1.6;
         }
 
@@ -295,15 +267,16 @@
             position: fixed;
             bottom: 12px;
             right: 30px;
-            left: 240px;
+            left: 230px;
             text-align: center;
             font-size: 8px;
-            color: #5C7A6A;
-            border-top: 1px solid rgba(180, 231, 23, 0.06);
+            color: #7E7E7E;
+            border-top: 1px solid rgba(0, 0, 0, 0.06);
             padding-top: 6px;
         }
         .footer-accent {
-            color: #B4E717;
+            color: #0B484C;
+            font-weight: 600;
         }
 
         .clear { clear: both; }
@@ -327,20 +300,14 @@ if (file_exists($logoPath)) {
 
 <div class="page-wrapper">
 
-    <!-- ACCENT CORNER -->
-    <div class="accent-corner">
-        <div class="accent-arc"></div>
-        <div class="accent-arc-inner"></div>
-    </div>
-
-    <!-- DARK SIDEBAR -->
+    <!-- DARK TEAL SIDEBAR -->
     <div class="sidebar">
         <div class="sidebar-logo">
             <?php if ($logoData): ?>
                 <img src="data:image/png;base64,<?= $logoData ?>" alt="GridBase">
             <?php else: ?>
-                <div style="font-size: 20px; font-weight: bold; color: #B4E717;">
-                    Grid<span style="color: #F0F5F0;">Base</span>
+                <div style="font-size: 20px; font-weight: bold; color: #FFFFFF;">
+                    Grid<span style="color: #00DF83;">Base</span>
                 </div>
             <?php endif; ?>
         </div>
@@ -376,35 +343,35 @@ if (file_exists($logoPath)) {
             <?php if (!empty($company['name'])): ?>
                 <div class="sidebar-value" style="margin-top: 6px;">
                     <span class="sidebar-dot"></span>
-                    <span style="font-size: 9px; color: #5C7A6A;">Empresa</span><br>
-                    <span style="margin-left: 11px; color: #E0E8E0;"><?= htmlspecialchars($company['name']) ?></span>
+                    <span style="font-size: 9px; color: rgba(255,255,255,0.45);">Empresa</span><br>
+                    <span style="margin-left: 11px; color: #FFFFFF;"><?= htmlspecialchars($company['name']) ?></span>
                 </div>
             <?php endif; ?>
             <?php if (!empty($company['tax_id'])): ?>
                 <div class="sidebar-value">
                     <span class="sidebar-dot"></span>
-                    <span style="font-size: 9px; color: #5C7A6A;">RNC</span><br>
-                    <span style="margin-left: 11px; color: #E0E8E0;"><?= htmlspecialchars($company['tax_id']) ?></span>
+                    <span style="font-size: 9px; color: rgba(255,255,255,0.45);">RNC</span><br>
+                    <span style="margin-left: 11px; color: #FFFFFF;"><?= htmlspecialchars($company['tax_id']) ?></span>
                 </div>
             <?php endif; ?>
             <?php if (!empty($company['email'])): ?>
                 <div class="sidebar-value">
                     <span class="sidebar-dot"></span>
-                    <span style="font-size: 9px; color: #5C7A6A;">Email</span><br>
-                    <span style="margin-left: 11px; color: #E0E8E0;"><?= htmlspecialchars($company['email']) ?></span>
+                    <span style="font-size: 9px; color: rgba(255,255,255,0.45);">Email</span><br>
+                    <span style="margin-left: 11px; color: #FFFFFF;"><?= htmlspecialchars($company['email']) ?></span>
                 </div>
             <?php endif; ?>
             <?php if (!empty($company['phone'])): ?>
                 <div class="sidebar-value">
                     <span class="sidebar-dot"></span>
-                    <span style="font-size: 9px; color: #5C7A6A;">Teléfono</span><br>
-                    <span style="margin-left: 11px; color: #E0E8E0;"><?= htmlspecialchars($company['phone']) ?></span>
+                    <span style="font-size: 9px; color: rgba(255,255,255,0.45);">Teléfono</span><br>
+                    <span style="margin-left: 11px; color: #FFFFFF;"><?= htmlspecialchars($company['phone']) ?></span>
                 </div>
             <?php endif; ?>
         </div>
     </div>
 
-    <!-- MAIN CONTENT -->
+    <!-- MAIN CONTENT (WHITE) -->
     <div class="main-content">
 
         <div class="doc-header">
@@ -434,7 +401,7 @@ if (file_exists($logoPath)) {
         <div class="total-due-box">
             <div class="total-due-label">Monto Total</div>
             <div class="total-due-amount">
-                <span class="total-due-currency"><?= htmlspecialchars($invoice['currency'] ?? 'USD') ?> :</span>
+                <span class="total-due-currency"><?= htmlspecialchars($invoice['currency'] ?? 'USD') ?></span>
                 $<?= number_format($invoice['total'] ?? 0, 2) ?>
             </div>
         </div>
@@ -458,7 +425,7 @@ if (file_exists($logoPath)) {
                         <div class="item-desc"><?= htmlspecialchars($item['description']) ?></div>
                         <div class="item-detail"><?= number_format($item['quantity'], 0) ?> × $<?= number_format($item['unit_price'], 2) ?></div>
                     </td>
-                    <td class="text-right" style="font-weight: 600; color: #F0F5F0;">$<?= number_format($item['amount'] ?? ($item['quantity'] * $item['unit_price']), 2) ?></td>
+                    <td class="text-right" style="font-weight: 600; color: #1a1a1a;">$<?= number_format($item['amount'] ?? ($item['quantity'] * $item['unit_price']), 2) ?></td>
                 </tr>
                 <?php endforeach; ?>
             </tbody>
@@ -474,7 +441,7 @@ if (file_exists($logoPath)) {
                 <?php if (($invoice['discount_amount'] ?? 0) > 0): ?>
                 <tr>
                     <td class="total-label">Descuento</td>
-                    <td class="total-value" style="color: #00D690;">-$<?= number_format($invoice['discount_amount'], 2) ?></td>
+                    <td class="total-value" style="color: #00DF83;">-$<?= number_format($invoice['discount_amount'], 2) ?></td>
                 </tr>
                 <?php endif; ?>
                 <?php if (($invoice['tax_amount'] ?? 0) > 0): ?>
@@ -490,11 +457,11 @@ if (file_exists($logoPath)) {
                 <?php if (!$isQuote && ($invoice['amount_paid'] ?? 0) > 0): ?>
                 <tr>
                     <td class="total-label" style="padding-top: 8px;">Pagado</td>
-                    <td class="total-value" style="padding-top: 8px; color: #00D690;">-$<?= number_format($invoice['amount_paid'], 2) ?></td>
+                    <td class="total-value" style="padding-top: 8px; color: #00DF83;">-$<?= number_format($invoice['amount_paid'], 2) ?></td>
                 </tr>
                 <tr>
-                    <td class="total-label" style="font-weight: 800; color: #F0F5F0;">Balance</td>
-                    <td class="total-value" style="font-weight: 800; color: #FB7185;">$<?= number_format($invoice['total'] - $invoice['amount_paid'], 2) ?></td>
+                    <td class="total-label" style="font-weight: 800; color: #0B484C;">Balance</td>
+                    <td class="total-value" style="font-weight: 800; color: #d32f2f;">$<?= number_format($invoice['total'] - $invoice['amount_paid'], 2) ?></td>
                 </tr>
                 <?php endif; ?>
             </table>

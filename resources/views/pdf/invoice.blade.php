@@ -8,124 +8,223 @@
             size: A4 portrait;
             margin: 0;
         }
-
         * { margin: 0; padding: 0; box-sizing: border-box; }
-
         body {
             font-family: 'DejaVu Sans', sans-serif;
             font-size: 9px;
             color: #2D2D2D;
             background: #FFFFFF;
             line-height: 1.4;
-            width: 595px;
         }
-
         table { width: 100%; border-collapse: collapse; }
         td { vertical-align: top; }
         .text-right { text-align: right; }
         .text-center { text-align: center; }
 
-        /* ── HEADER ── */
-        .header {
+        /* ── HEADER BLOCK ── */
+        .header-block {
             background: #0B484C;
-            padding: 20px 35px;
+            padding: 35px 45px 30px 45px;
             color: #FFFFFF;
         }
-        .header td { vertical-align: middle; }
-        .header-logo img { height: 32px; }
-        .header-title {
-            font-size: 24px;
+        .header-block td { vertical-align: middle; }
+
+        .logo-area img { height: 40px; }
+        .logo-fallback {
+            font-size: 22px;
             font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-            text-align: right;
             color: #FFFFFF;
         }
-        .header-num {
-            font-size: 10px;
-            color: #00DF83;
-            text-align: right;
-            margin-top: 2px;
-            font-weight: 600;
-        }
-
-        /* Green bar */
-        .green-bar {
-            height: 3px;
-            background: #00DF83;
-        }
-
-        /* ── BODY AREA ── */
-        .body-area {
-            padding: 18px 35px 20px 35px;
-        }
-
-        /* ── INFO COLS ── */
-        .info-table { margin-bottom: 16px; }
-        .info-table td { padding-bottom: 0; }
-
-        .col-label {
-            font-size: 6.5px;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            color: #0B484C;
-            border-bottom: 1.5px solid #00DF83;
-            padding-bottom: 3px;
-            margin-bottom: 6px;
-            display: inline-block;
-        }
-
-        .col-name {
-            font-size: 10px;
-            font-weight: 700;
-            color: #0B484C;
+        .logo-fallback span { color: #00DF83; }
+        .company-label {
+            font-size: 14px;
+            color: #FFFFFF;
             margin-top: 6px;
-            margin-bottom: 2px;
+            font-weight: 400;
         }
-        .col-text {
-            font-size: 8px;
-            color: #666;
+        .company-label strong { font-weight: 700; }
+
+        .header-meta-box {
+            border: 1px solid rgba(255,255,255,0.25);
+            border-radius: 4px;
+            padding: 10px 16px;
+            text-align: right;
+            display: inline-block;
+            float: right;
+        }
+        .meta-row-item {
+            font-size: 9px;
+            color: rgba(255,255,255,0.6);
+            margin-bottom: 3px;
             line-height: 1.5;
         }
-        .col-client-name {
+        .meta-row-item strong {
+            color: #FFFFFF;
+            font-weight: 700;
+        }
+        .meta-label {
+            color: #00DF83;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-size: 8px;
+        }
+
+        /* ── BODY ── */
+        .body-content {
+            padding: 35px 45px 20px 45px;
+        }
+
+        /* Document title */
+        .doc-title {
+            font-size: 26px;
+            font-weight: 700;
+            color: #0B484C;
+            text-transform: uppercase;
+            border-bottom: 3px solid #0B484C;
+            display: inline-block;
+            padding-bottom: 4px;
+            margin-bottom: 25px;
+            letter-spacing: 1px;
+        }
+
+        /* Info columns */
+        .info-cols { margin-bottom: 25px; }
+        .info-cols td { padding-right: 25px; }
+        .info-col-title {
+            font-size: 10px;
+            font-weight: 700;
+            color: #00DF83;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 6px;
+        }
+        .info-col-name {
             font-size: 11px;
             font-weight: 700;
-            color: #0B484C;
-            margin-top: 6px;
+            color: #2D2D2D;
             margin-bottom: 2px;
         }
-        .col-client-text {
-            font-size: 8.5px;
-            color: #444;
-            line-height: 1.5;
+        .info-col-text {
+            font-size: 9px;
+            color: #666666;
+            line-height: 1.6;
         }
 
-        /* Details mini */
-        .det-table td {
-            padding: 3px 0;
+        /* ── ITEMS TABLE ── */
+        .items-table { margin-bottom: 25px; }
+        .items-table thead tr { background: #00DF83; }
+        .items-table th {
+            color: #0B484C;
             font-size: 8px;
-        }
-        .det-label {
-            color: #999;
-            font-size: 7px;
-            font-weight: 600;
+            font-weight: 700;
             text-transform: uppercase;
-            letter-spacing: 0.3px;
+            letter-spacing: 0.5px;
+            padding: 8px 12px;
+            text-align: left;
         }
-        .det-value {
-            text-align: right;
+        .items-table tbody tr {
+            border-bottom: 1px solid #E8E8E8;
+        }
+        .items-table td {
+            padding: 10px 12px;
+            font-size: 9px;
+            color: #444444;
+            vertical-align: middle;
+        }
+        .items-table td.item-desc {
+            color: #2D2D2D;
+            font-size: 10px;
+        }
+        .items-table td.item-total {
             font-weight: 700;
             color: #2D2D2D;
-            font-size: 9px;
         }
 
-        /* Badge */
+        /* ── BOTTOM AREA ── */
+        .bottom-area { margin-bottom: 25px; }
+        .bottom-area td { vertical-align: top; }
+
+        /* Payment / Notes left side */
+        .payment-title {
+            font-size: 11px;
+            font-weight: 700;
+            color: #00DF83;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 6px;
+        }
+        .payment-text {
+            font-size: 9px;
+            color: #444;
+            line-height: 1.6;
+        }
+
+        /* Totals right side */
+        .totals-mini { width: 100%; }
+        .totals-mini td {
+            padding: 5px 0;
+            font-size: 10px;
+        }
+        .totals-mini .tl {
+            text-align: right;
+            color: #888;
+            padding-right: 15px;
+            font-weight: 500;
+            text-transform: uppercase;
+            font-size: 9px;
+        }
+        .totals-mini .tv {
+            text-align: right;
+            font-weight: 600;
+            color: #2D2D2D;
+            width: 80px;
+        }
+        .totals-mini .grand td {
+            border-top: 1.5px solid #2D2D2D;
+            padding-top: 8px;
+            font-weight: 700;
+            font-size: 12px;
+        }
+        .totals-mini .grand .tl { color: #2D2D2D; font-size: 11px; }
+        .totals-mini .grand .tv { color: #0B484C; font-size: 12px; }
+
+        .totals-mini .paid-row td { padding-top: 10px; }
+        .totals-mini .balance-row td {
+            background: #FEF2F2;
+            padding: 6px 8px;
+            border-radius: 3px;
+        }
+        .totals-mini .balance-row .tl { color: #991B1B; }
+        .totals-mini .balance-row .tv { color: #DC2626; font-weight: 700; }
+
+        /* ── TERMS ── */
+        .terms-section { margin-top: 20px; }
+        .terms-title {
+            font-size: 11px;
+            font-weight: 700;
+            color: #00DF83;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 4px;
+        }
+        .terms-line {
+            border-top: 1.5px solid #E0E0E0;
+            margin-bottom: 8px;
+        }
+        .terms-text {
+            font-size: 9px;
+            color: #666;
+            line-height: 1.65;
+            font-style: italic;
+        }
+
+        /* Status */
         .badge {
             display: inline-block;
-            padding: 2px 8px;
+            padding: 3px 10px;
             border-radius: 50px;
-            font-size: 7px;
+            font-size: 8px;
             font-weight: 700;
             text-transform: uppercase;
             letter-spacing: 0.3px;
@@ -135,130 +234,24 @@
         .badge-draft   { background: #F3F4F6; color: #6B7280; }
         .badge-sent    { background: #DBEAFE; color: #1E40AF; }
 
-        /* ── TOTAL BOX ── */
-        .total-box {
-            background: #F6F5F2;
-            border-left: 3px solid #0B484C;
-            padding: 10px 16px;
-            margin-bottom: 16px;
-        }
-        .total-box td { vertical-align: middle; }
-        .total-box-label {
-            font-size: 7px;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.8px;
-            color: #7E7E7E;
-        }
-        .total-box-amount {
-            font-size: 20px;
-            font-weight: 700;
-            color: #0B484C;
-            text-align: right;
-        }
-        .total-box-currency {
-            font-size: 9px;
-            color: #999;
-            font-weight: 400;
-        }
-
-        /* ── ITEMS ── */
-        .items { margin-bottom: 14px; }
-        .items thead tr { background: #0B484C; }
-        .items th {
-            color: #FFF;
-            font-size: 7px;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            padding: 6px 8px;
-            text-align: left;
-            border-bottom: 2px solid #00DF83;
-        }
-        .items tbody tr { border-bottom: 1px solid #F0F0F0; }
-        .items tbody tr:nth-child(even) { background: #FAFAF8; }
-        .items td {
-            padding: 7px 8px;
-            font-size: 9px;
-            vertical-align: middle;
-        }
-        .item-idx {
-            display: inline-block;
-            width: 15px; height: 15px;
-            background: #0B484C;
-            color: #FFF;
-            font-size: 6.5px;
-            font-weight: 700;
-            text-align: center;
-            line-height: 15px;
-            border-radius: 2px;
-        }
-        .item-name {
-            font-weight: 700;
-            color: #0B484C;
-            font-size: 9px;
-        }
-
-        /* ── BOTTOM ── */
-        .bottom-table { margin-top: 2px; }
-        .bottom-table td { vertical-align: top; }
-
-        .notes-area { padding-right: 20px; }
-        .notes-title {
-            font-size: 7px;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.6px;
-            color: #0B484C;
-            margin-bottom: 4px;
-        }
-        .notes-body {
-            font-size: 8px;
-            color: #888;
-            line-height: 1.5;
-        }
-
-        /* Totals */
-        .totals td {
-            padding: 4px 8px;
-            font-size: 9px;
-        }
-        .t-label { text-align: right; color: #999; font-weight: 500; }
-        .t-value { text-align: right; font-weight: 600; color: #2D2D2D; width: 80px; }
-        .t-sep td { border-top: 1px solid #EEE; }
-
-        .t-grand td {
-            background: #0B484C;
-            color: #FFF !important;
-            font-size: 10px !important;
-            font-weight: 700 !important;
-            padding: 7px 8px !important;
-        }
-        .t-grand .t-value { color: #00DF83 !important; }
-
-        .t-paid td { padding-top: 8px !important; }
-        .t-balance td {
-            background: #FEF2F2;
-            color: #DC2626 !important;
-            font-weight: 700;
-        }
-
         /* ── FOOTER ── */
-        .footer-area {
-            border-top: 1.5px solid #F0F0F0;
-            padding: 12px 35px;
-            text-align: center;
-            margin-top: 14px;
+        .footer-bar {
+            background: #0B484C;
+            padding: 14px 45px;
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
         }
-        .footer-thanks {
-            font-size: 10px;
-            font-weight: 700;
-            color: #0B484C;
-            margin-bottom: 3px;
-        }
-        .footer-info {
+        .footer-bar td {
+            vertical-align: middle;
+            color: rgba(255,255,255,0.7);
             font-size: 8px;
-            color: #AAA;
+        }
+        .footer-bar .footer-icon {
+            color: #00DF83;
+            font-weight: 700;
+            margin-right: 4px;
         }
     </style>
 </head>
@@ -279,27 +272,54 @@ if (!empty($invoice['status'])) {
 }
 ?>
 
-<!-- HEADER -->
-<div class="header">
+<!-- ══════════════════════════ HEADER ══════════════════════════ -->
+<div class="header-block">
     <table><tr>
-        <td style="width:50%;"><div class="header-logo"><img src="<?= $logoUrl ?>" alt="GridBase"></div></td>
-        <td>
-            <div class="header-title"><?= $docName ?></div>
-            <div class="header-num">Nº <?= htmlspecialchars($docNum) ?></div>
+        <td style="width:55%;">
+            <div class="logo-area">
+                <img src="<?= $logoUrl ?>" alt="GridBase"><br>
+            </div>
+            <div class="company-label">
+                <?= htmlspecialchars($company['name'] ?? 'Gridbase Digital Solutions') ?>
+            </div>
+        </td>
+        <td style="width:45%; text-align:right;">
+            <div class="header-meta-box">
+                <div class="meta-row-item"><span class="meta-label">NÚMERO/</span> <strong><?= htmlspecialchars($docNum) ?></strong></div>
+                <div class="meta-row-item"><span class="meta-label">FECHA/</span> <strong><?= !empty($invoice['issue_date']) ? date('d/ m/ Y', strtotime($invoice['issue_date'])) : '' ?></strong></div>
+                <?php if (!$isQuote && !empty($invoice['status'])): ?>
+                <div style="margin-top:5px;"><span class="badge <?= $badgeClass ?>"><?= $badgeText ?></span></div>
+                <?php endif; ?>
+            </div>
         </td>
     </tr></table>
 </div>
-<div class="green-bar"></div>
 
-<!-- BODY -->
-<div class="body-area">
+<!-- ══════════════════════════ BODY ══════════════════════════ -->
+<div class="body-content">
 
-    <!-- 3-COL INFO -->
-    <table class="info-table"><tr>
-        <td style="width:30%; padding-right:12px;">
-            <div class="col-label">Emisor</div>
-            <?php if (!empty($company['name'])): ?><div class="col-name"><?= htmlspecialchars($company['name']) ?></div><?php endif; ?>
-            <div class="col-text">
+    <!-- Title -->
+    <div class="doc-title"><?= $docName ?></div>
+
+    <!-- Info Columns -->
+    <table class="info-cols"><tr>
+        <td style="width:50%;">
+            <div class="info-col-title">Facturar A</div>
+            <div class="info-col-name"><?= htmlspecialchars($client['company_name'] ?: $client['contact_name']) ?></div>
+            <div class="info-col-text">
+                <?php if (!empty($client['company_name']) && !empty($client['contact_name'])): ?>
+                    <?= htmlspecialchars($client['contact_name']) ?><br>
+                <?php endif; ?>
+                <?php if (!empty($client['address_line1'])): ?><?= htmlspecialchars($client['address_line1']) ?><br><?php endif; ?>
+                <?php if (!empty($client['city'])): ?><?= htmlspecialchars($client['city']) ?><?= !empty($client['country']) ? ', ' . htmlspecialchars($client['country']) : '' ?><br><?php endif; ?>
+                <?php if (!empty($client['email'])): ?><?= htmlspecialchars($client['email']) ?><br><?php endif; ?>
+                <?php if (!empty($client['tax_id'])): ?>RNC: <?= htmlspecialchars($client['tax_id']) ?><?php endif; ?>
+            </div>
+        </td>
+        <td style="width:50%;">
+            <div class="info-col-title">Emisor</div>
+            <div class="info-col-name"><?= htmlspecialchars($company['name'] ?? '') ?></div>
+            <div class="info-col-text">
                 <?php if (!empty($company['address'])): ?><?= htmlspecialchars($company['address']) ?><br><?php endif; ?>
                 <?php if (!empty($company['city'])): ?><?= htmlspecialchars($company['city']) ?><?= !empty($company['country']) ? ', ' . htmlspecialchars($company['country']) : '' ?><br><?php endif; ?>
                 <?php if (!empty($company['email'])): ?><?= htmlspecialchars($company['email']) ?><br><?php endif; ?>
@@ -307,104 +327,96 @@ if (!empty($invoice['status'])) {
                 <?php if (!empty($company['tax_id'])): ?>RNC: <?= htmlspecialchars($company['tax_id']) ?><?php endif; ?>
             </div>
         </td>
-        <td style="width:35%; padding-right:12px;">
-            <div class="col-label">Facturar A</div>
-            <div class="col-client-name"><?= htmlspecialchars($client['company_name'] ?: $client['contact_name']) ?></div>
-            <div class="col-client-text">
-                <?php if (!empty($client['company_name']) && !empty($client['contact_name'])): ?>Attn: <?= htmlspecialchars($client['contact_name']) ?><br><?php endif; ?>
-                <?php if (!empty($client['address_line1'])): ?><?= htmlspecialchars($client['address_line1']) ?><br><?php endif; ?>
-                <?php if (!empty($client['city'])): ?><?= htmlspecialchars($client['city']) ?><?= !empty($client['country']) ? ', ' . htmlspecialchars($client['country']) : '' ?><br><?php endif; ?>
-                <?php if (!empty($client['email'])): ?><?= htmlspecialchars($client['email']) ?><br><?php endif; ?>
-                <?php if (!empty($client['phone'])): ?>Tel: <?= htmlspecialchars($client['phone']) ?><br><?php endif; ?>
-                <?php if (!empty($client['tax_id'])): ?>RNC: <?= htmlspecialchars($client['tax_id']) ?><?php endif; ?>
-            </div>
-        </td>
-        <td style="width:35%;">
-            <div class="col-label">Detalles</div>
-            <table class="det-table" style="margin-top:6px;">
-                <tr><td class="det-label">Emisión</td><td class="det-value"><?= !empty($invoice['issue_date']) ? date('d/m/Y', strtotime($invoice['issue_date'])) : '' ?></td></tr>
-                <tr><td class="det-label"><?= $dateLabel ?></td><td class="det-value"><?= !empty($dateField) ? date('d/m/Y', strtotime($dateField)) : '' ?></td></tr>
-                <?php if (!empty($company['tax_id'])): ?>
-                <tr><td class="det-label">RNC</td><td class="det-value"><?= htmlspecialchars($company['tax_id']) ?></td></tr>
-                <?php endif; ?>
-                <?php if (!$isQuote): ?>
-                <tr><td class="det-label">Estado</td><td class="det-value"><span class="badge <?= $badgeClass ?>"><?= $badgeText ?></span></td></tr>
-                <?php endif; ?>
-            </table>
-        </td>
     </tr></table>
 
-    <!-- TOTAL BOX -->
-    <div class="total-box">
-        <table><tr>
-            <td><div class="total-box-label"><?= $isQuote ? 'Valor Total' : 'Monto Total a Pagar' ?></div></td>
-            <td class="text-right"><div class="total-box-amount"><span class="total-box-currency"><?= htmlspecialchars($invoice['currency'] ?? 'DOP') ?></span> $<?= number_format($invoice['total'] ?? 0, 2) ?></div></td>
-        </tr></table>
-    </div>
-
-    <!-- ITEMS -->
-    <table class="items">
+    <!-- Items Table -->
+    <table class="items-table">
         <thead><tr>
-            <th style="width:26px;">#</th>
-            <th>Descripción</th>
-            <th class="text-center" style="width:50px;">Cant.</th>
-            <th class="text-right" style="width:70px;">Precio</th>
-            <th class="text-right" style="width:75px;">Monto</th>
+            <th style="width:45%;">DESCRIPCIÓN</th>
+            <th class="text-center" style="width:15%;">CANT.</th>
+            <th class="text-right" style="width:20%;">PRECIO</th>
+            <th class="text-right" style="width:20%;">TOTAL</th>
         </tr></thead>
         <tbody>
             <?php foreach (($invoice['items'] ?? $items ?? []) as $index => $item): ?>
             <tr>
-                <td class="text-center"><span class="item-idx"><?= str_pad($index + 1, 2, '0', STR_PAD_LEFT) ?></span></td>
-                <td><span class="item-name"><?= htmlspecialchars($item['description']) ?></span></td>
+                <td class="item-desc"><?= htmlspecialchars($item['description']) ?></td>
                 <td class="text-center"><?= number_format($item['quantity'], 0) ?></td>
                 <td class="text-right">$<?= number_format($item['unit_price'], 2) ?></td>
-                <td class="text-right" style="font-weight:700;">$<?= number_format($item['amount'] ?? ($item['quantity'] * $item['unit_price']), 2) ?></td>
+                <td class="text-right item-total">$<?= number_format($item['amount'] ?? ($item['quantity'] * $item['unit_price']), 2) ?></td>
             </tr>
             <?php endforeach; ?>
         </tbody>
     </table>
 
-    <!-- NOTES + TOTALS -->
-    <table class="bottom-table"><tr>
-        <td style="width:55%;" class="notes-area">
+    <!-- Payment + Totals -->
+    <table class="bottom-area"><tr>
+        <td style="width:55%; padding-right:30px;">
             <?php if (!empty($invoice['notes'])): ?>
-                <div class="notes-title">Notas</div>
-                <div class="notes-body"><?= nl2br(htmlspecialchars($invoice['notes'])) ?></div>
-            <?php endif; ?>
-            <?php if (!empty($invoice['terms'])): ?>
-                <div class="notes-title" style="margin-top:8px;">Términos y Condiciones</div>
-                <div class="notes-body"><?= nl2br(htmlspecialchars($invoice['terms'])) ?></div>
+                <div class="payment-title">Notas</div>
+                <div class="payment-text"><?= nl2br(htmlspecialchars($invoice['notes'])) ?></div>
             <?php endif; ?>
         </td>
         <td style="width:45%;">
-            <table class="totals">
-                <tr><td class="t-label">Subtotal</td><td class="t-value">$<?= number_format($invoice['subtotal'] ?? 0, 2) ?></td></tr>
+            <table class="totals-mini">
+                <tr>
+                    <td class="tl">SUBTOTAL</td>
+                    <td class="tv">$<?= number_format($invoice['subtotal'] ?? 0, 2) ?></td>
+                </tr>
                 <?php if (($invoice['discount_amount'] ?? 0) > 0): ?>
-                <tr><td class="t-label">Descuento</td><td class="t-value" style="color:#00DF83;">-$<?= number_format($invoice['discount_amount'], 2) ?></td></tr>
+                <tr>
+                    <td class="tl">DESCUENTO</td>
+                    <td class="tv" style="color:#00DF83;">-$<?= number_format($invoice['discount_amount'], 2) ?></td>
+                </tr>
                 <?php endif; ?>
                 <?php if (($invoice['tax_amount'] ?? 0) > 0): ?>
-                <tr class="t-sep"><td class="t-label">ITBIS (<?= number_format($invoice['tax_rate'] ?? 0, 0) ?>%)</td><td class="t-value">$<?= number_format($invoice['tax_amount'], 2) ?></td></tr>
+                <tr>
+                    <td class="tl">ITBIS (<?= number_format($invoice['tax_rate'] ?? 0, 0) ?>%)</td>
+                    <td class="tv">$<?= number_format($invoice['tax_amount'], 2) ?></td>
+                </tr>
                 <?php endif; ?>
-                <tr class="t-grand"><td class="t-label" style="text-align:right;color:#fff;">TOTAL</td><td class="t-value"><?= htmlspecialchars($invoice['currency'] ?? 'DOP') ?> $<?= number_format($invoice['total'] ?? 0, 2) ?></td></tr>
+                <tr class="grand">
+                    <td class="tl">TOTAL</td>
+                    <td class="tv">$<?= number_format($invoice['total'] ?? 0, 2) ?></td>
+                </tr>
                 <?php if (!$isQuote && ($invoice['amount_paid'] ?? 0) > 0): ?>
-                <tr class="t-paid"><td class="t-label">Pagado</td><td class="t-value" style="color:#059669;">-$<?= number_format($invoice['amount_paid'], 2) ?></td></tr>
-                <tr class="t-balance"><td class="t-label" style="color:#991B1B;">Saldo</td><td class="t-value">$<?= number_format($invoice['total'] - $invoice['amount_paid'], 2) ?></td></tr>
+                <tr class="paid-row">
+                    <td class="tl">PAGADO</td>
+                    <td class="tv" style="color:#059669;">-$<?= number_format($invoice['amount_paid'], 2) ?></td>
+                </tr>
+                <tr class="balance-row">
+                    <td class="tl">SALDO</td>
+                    <td class="tv">$<?= number_format($invoice['total'] - $invoice['amount_paid'], 2) ?></td>
+                </tr>
                 <?php endif; ?>
             </table>
         </td>
     </tr></table>
 
-    <!-- FOOTER -->
-    <div class="footer-area">
-        <div class="footer-thanks">¡Gracias por su preferencia!</div>
-        <div class="footer-info">
-            <?= htmlspecialchars($company['name'] ?? 'Gridbase') ?>
-            <?php if (!empty($company['website'])) echo " &bull; " . htmlspecialchars($company['website']); ?>
-            <?php if (!empty($company['email'])) echo " &bull; " . htmlspecialchars($company['email']); ?>
-            <?php if (!empty($company['phone'])) echo " &bull; " . htmlspecialchars($company['phone']); ?>
-        </div>
+    <!-- Terms -->
+    <?php if (!empty($invoice['terms'])): ?>
+    <div class="terms-section">
+        <div class="terms-title">Términos y Condiciones</div>
+        <div class="terms-line"></div>
+        <div class="terms-text"><?= nl2br(htmlspecialchars($invoice['terms'])) ?></div>
     </div>
+    <?php endif; ?>
 
+</div>
+
+<!-- ══════════════════════════ FOOTER ══════════════════════════ -->
+<div class="footer-bar">
+    <table><tr>
+        <td style="width:33%;">
+            <span class="footer-icon">⊕</span> <?= htmlspecialchars($company['website'] ?? 'gridbase.com.do') ?>
+        </td>
+        <td style="width:34%; text-align:center;">
+            <span class="footer-icon">✉</span> <?= htmlspecialchars($company['email'] ?? '') ?>
+        </td>
+        <td style="width:33%; text-align:right;">
+            <span class="footer-icon">✆</span> <?= htmlspecialchars($company['phone'] ?? '') ?>
+        </td>
+    </tr></table>
 </div>
 
 </body>

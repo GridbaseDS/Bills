@@ -180,17 +180,42 @@ class InvoiceController extends Controller
 
         config([
             'mail.default' => 'smtp',
+            'mail.mailers.smtp.transport' => 'smtp',
             'mail.mailers.smtp.host' => $host,
             'mail.mailers.smtp.port' => $port,
             'mail.mailers.smtp.encryption' => $encryption,
             'mail.mailers.smtp.username' => $settings['smtp_username'] ?? null,
             'mail.mailers.smtp.password' => $settings['smtp_password'] ?? null,
+            'mail.mailers.smtp.timeout' => 15,
+            'mail.mailers.smtp.stream' => [
+                'ssl' => [
+                    'verify_peer' => false,
+                    'verify_peer_name' => false,
+                    'allow_self_signed' => true,
+                ],
+            ],
             'mail.from.address' => !empty($settings['smtp_from_email']) ? $settings['smtp_from_email'] : 'bills@gridbase.com.do',
             'mail.from.name' => !empty($settings['smtp_from_name']) ? $settings['smtp_from_name'] : 'Gridbase Bills',
         ]);
 
         // Force Laravel to rebuild the mailer with new config
         app()->forgetInstance('mail.manager');
+
+        // Access the underlying Symfony transport and disable SSL verification directly
+        try {
+            $transport = app('mailer')->getSymfonyTransport();
+            if (method_exists($transport, 'getStream')) {
+                $transport->getStream()->setStreamOptions([
+                    'ssl' => [
+                        'verify_peer' => false,
+                        'verify_peer_name' => false,
+                        'allow_self_signed' => true,
+                    ]
+                ]);
+            }
+        } catch (\Exception $e) {
+            // Silently continue — the stream options in config may still work
+        }
     }
 }
 

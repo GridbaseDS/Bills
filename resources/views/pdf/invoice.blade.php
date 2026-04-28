@@ -6,7 +6,7 @@
     <style>
         @page {
             size: A4 portrait;
-            margin: 0 0 45px 0;
+            margin: 0;
         }
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -237,11 +237,9 @@
         /* ── FOOTER ── */
         .footer-bar {
             background: #0B484C;
-            padding: 14px 45px;
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            width: 100%;
+            padding: 14px 0;
+            margin-top: 25px;
+            border-radius: 0;
         }
         .footer-bar td {
             vertical-align: middle;
@@ -399,21 +397,21 @@ if (!empty($invoice['status'])) {
     </div>
     <?php endif; ?>
 
-</div>
+    <!-- ══════════════════════════ FOOTER ══════════════════════════ -->
+    <div class="footer-bar">
+        <table><tr>
+            <td style="width:33%; padding-left:10px;">
+                <span class="footer-icon">⊕</span> <?= htmlspecialchars($company['website'] ?? 'gridbase.com.do') ?>
+            </td>
+            <td style="width:34%; text-align:center;">
+                <span class="footer-icon">✉</span> <?= htmlspecialchars($company['email'] ?? '') ?>
+            </td>
+            <td style="width:33%; text-align:right; padding-right:10px;">
+                <span class="footer-icon">✆</span> <?= htmlspecialchars($company['phone'] ?? '') ?>
+            </td>
+        </tr></table>
+    </div>
 
-<!-- ══════════════════════════ FOOTER ══════════════════════════ -->
-<div class="footer-bar">
-    <table><tr>
-        <td style="width:33%;">
-            <span class="footer-icon">⊕</span> <?= htmlspecialchars($company['website'] ?? 'gridbase.com.do') ?>
-        </td>
-        <td style="width:34%; text-align:center;">
-            <span class="footer-icon">✉</span> <?= htmlspecialchars($company['email'] ?? '') ?>
-        </td>
-        <td style="width:33%; text-align:right;">
-            <span class="footer-icon">✆</span> <?= htmlspecialchars($company['phone'] ?? '') ?>
-        </td>
-    </tr></table>
 </div>
 
 </body>

@@ -11,8 +11,8 @@ return [
     'host'     => 'localhost',
     'port'     => 3306,
     'database' => 'grupaqgl_bills',
-    'username' => 'root',
-    'password' => '',
+    'username' => 'grupaqgl_sam',
+    'password' => 'SamDP_9903',
     'charset'  => 'utf8mb4',
     'options'  => [
         PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,

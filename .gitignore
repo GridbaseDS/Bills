@@ -1,0 +1,5 @@
+/vendor/
+/storage/pdf/*
+!/storage/pdf/.gitkeep
+/Archivo.zip
+.DS_Store

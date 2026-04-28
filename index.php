@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Gridbase Digital Solutions - Invoice & Billing System">
+    <title>Gridbase Invoices</title>
+    <link rel="stylesheet" href="assets/css/app.css">
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23E63946'/%3E%3Ctext x='50%25' y='54%25' dominant-baseline='middle' text-anchor='middle' fill='white' font-family='sans-serif' font-weight='700' font-size='18'%3EG%3C/text%3E%3C/svg%3E">
+</head>
+<body>
+    <div id="app"></div>
+    <div class="toast-container" id="toast-container"></div>
+    <script type="module" src="assets/js/app.js"></script>
+</body>
+</html>

@@ -37,7 +37,7 @@ Route::get('/debug/mail-test', function () {
         \Illuminate\Support\Facades\Mail::raw(
             'Test email from debug endpoint at ' . now()->toDateTimeString(),
             function ($message) {
-                $message->to('blasamueldiazpillier@gridbase.com.do')
+                $message->to('admin@gridbase.com.do')
                         ->subject('Debug Test - ' . now()->toDateTimeString());
             }
         );

@@ -2,7 +2,7 @@ export default {
     async render(container) {
         try {
             const data = await window.App.api('settings');
-            const s = data.reduce((acc, curr) => { acc[curr.setting_key] = curr.setting_value; return acc; }, {});
+            const s = data;
 
             container.innerHTML = `
                 <div class="page-header">

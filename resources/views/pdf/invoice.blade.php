@@ -6,12 +6,12 @@
     <style>
         @page {
             size: A4 portrait;
-            margin: 0;
+            margin: 0 0 50px 0;
         }
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             font-family: 'DejaVu Sans', sans-serif;
-            font-size: 9px;
+            font-size: 11px;
             color: #2D2D2D;
             background: #FFFFFF;
             line-height: 1.4;
@@ -53,7 +53,7 @@
             float: right;
         }
         .meta-row-item {
-            font-size: 9px;
+            font-size: 11px;
             color: rgba(255,255,255,0.6);
             margin-bottom: 3px;
             line-height: 1.5;
@@ -67,7 +67,7 @@
             font-weight: 700;
             text-transform: uppercase;
             letter-spacing: 0.5px;
-            font-size: 8px;
+            font-size: 9px;
         }
 
         /* ── BODY ── */
@@ -77,7 +77,7 @@
 
         /* Document title */
         .doc-title {
-            font-size: 26px;
+            font-size: 28px;
             font-weight: 700;
             color: #0B484C;
             text-transform: uppercase;
@@ -92,21 +92,21 @@
         .info-cols { margin-bottom: 25px; }
         .info-cols td { padding-right: 25px; }
         .info-col-title {
-            font-size: 10px;
+            font-size: 12px;
             font-weight: 700;
-            color: #00DF83;
+            color: #0B484C;
             text-transform: uppercase;
             letter-spacing: 0.5px;
             margin-bottom: 6px;
         }
         .info-col-name {
-            font-size: 11px;
+            font-size: 13px;
             font-weight: 700;
             color: #2D2D2D;
             margin-bottom: 2px;
         }
         .info-col-text {
-            font-size: 9px;
+            font-size: 11px;
             color: #666666;
             line-height: 1.6;
         }
@@ -116,11 +116,11 @@
         .items-table thead tr { background: #00DF83; }
         .items-table th {
             color: #0B484C;
-            font-size: 8px;
+            font-size: 9px;
             font-weight: 700;
             text-transform: uppercase;
             letter-spacing: 0.5px;
-            padding: 8px 12px;
+            padding: 10px 12px;
             text-align: left;
         }
         .items-table tbody tr {
@@ -128,13 +128,13 @@
         }
         .items-table td {
             padding: 10px 12px;
-            font-size: 9px;
+            font-size: 11px;
             color: #444444;
             vertical-align: middle;
         }
         .items-table td.item-desc {
             color: #2D2D2D;
-            font-size: 10px;
+            font-size: 12px;
         }
         .items-table td.item-total {
             font-weight: 700;
@@ -149,13 +149,13 @@
         .payment-title {
             font-size: 11px;
             font-weight: 700;
-            color: #00DF83;
+            color: #0B484C;
             text-transform: uppercase;
             letter-spacing: 0.5px;
             margin-bottom: 6px;
         }
         .payment-text {
-            font-size: 9px;
+            font-size: 11px;
             color: #444;
             line-height: 1.6;
         }
@@ -164,7 +164,7 @@
         .totals-mini { width: 100%; }
         .totals-mini td {
             padding: 5px 0;
-            font-size: 10px;
+            font-size: 12px;
         }
         .totals-mini .tl {
             text-align: right;
@@ -172,7 +172,7 @@
             padding-right: 15px;
             font-weight: 500;
             text-transform: uppercase;
-            font-size: 9px;
+            font-size: 10px;
         }
         .totals-mini .tv {
             text-align: right;
@@ -203,7 +203,7 @@
         .terms-title {
             font-size: 11px;
             font-weight: 700;
-            color: #00DF83;
+            color: #0B484C;
             text-transform: uppercase;
             letter-spacing: 0.5px;
             margin-bottom: 4px;
@@ -213,7 +213,7 @@
             margin-bottom: 8px;
         }
         .terms-text {
-            font-size: 9px;
+            font-size: 11px;
             color: #666;
             line-height: 1.65;
             font-style: italic;
@@ -234,12 +234,13 @@
         .badge-draft   { background: #F3F4F6; color: #6B7280; }
         .badge-sent    { background: #DBEAFE; color: #1E40AF; }
 
-        /* ── FOOTER ── */
         .footer-bar {
             background: #0B484C;
-            padding: 14px 0;
-            margin-top: 25px;
-            border-radius: 0;
+            padding: 14px 45px;
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
         }
         .footer-bar td {
             vertical-align: middle;
@@ -397,21 +398,21 @@ if (!empty($invoice['status'])) {
     </div>
     <?php endif; ?>
 
-    <!-- ══════════════════════════ FOOTER ══════════════════════════ -->
-    <div class="footer-bar">
-        <table><tr>
-            <td style="width:33%; padding-left:10px;">
-                <span class="footer-icon">⊕</span> <?= htmlspecialchars($company['website'] ?? 'gridbase.com.do') ?>
-            </td>
-            <td style="width:34%; text-align:center;">
-                <span class="footer-icon">✉</span> <?= htmlspecialchars($company['email'] ?? '') ?>
-            </td>
-            <td style="width:33%; text-align:right; padding-right:10px;">
-                <span class="footer-icon">✆</span> <?= htmlspecialchars($company['phone'] ?? '') ?>
-            </td>
-        </tr></table>
-    </div>
+</div>
 
+<!-- ══════════════════════════ FOOTER ══════════════════════════ -->
+<div class="footer-bar">
+    <table><tr>
+        <td style="width:33%;">
+            <span class="footer-icon">⊕</span> <?= htmlspecialchars($company['website'] ?? 'gridbase.com.do') ?>
+        </td>
+        <td style="width:34%; text-align:center;">
+            <span class="footer-icon">✉</span> <?= htmlspecialchars($company['email'] ?? '') ?>
+        </td>
+        <td style="width:33%; text-align:right;">
+            <span class="footer-icon">✆</span> <?= htmlspecialchars($company['phone'] ?? '') ?>
+        </td>
+    </tr></table>
 </div>
 
 </body>

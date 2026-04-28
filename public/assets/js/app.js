@@ -162,7 +162,7 @@ window.App = {
             <div class="login-page">
                 <div class="login-card">
                     <div class="login-logo">
-                        <img src="assets/img/logo.png" alt="GridBase Digital Solutions" height="56">
+                        <img src="assets/img/logo.png" alt="GridBase Digital Solutions" style="max-height: 56px; max-width: 100%; object-fit: contain;">
                     </div>
                     <h1 class="login-title">GridBase Bills</h1>
                     <p class="login-subtitle">Inicia sesión en tu cuenta</p>
@@ -201,7 +201,7 @@ window.App = {
                 <aside class="sidebar" id="sidebar">
                     <div class="sidebar-brand">
                         <div class="sidebar-brand-logo">
-                            <img src="assets/img/logo.png" alt="GridBase Digital Solutions">
+                            <img src="assets/img/logo.png" alt="GridBase Digital Solutions" style="max-height: 36px; max-width: 100%; object-fit: contain;">
                         </div>
                     </div>
                     <nav class="sidebar-nav">

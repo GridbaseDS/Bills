@@ -109,16 +109,7 @@ class QuoteController extends Controller
         $data = [
             'invoice' => $quote->toArray(),
             'is_quote' => true,
-            'company' => [
-                'name' => $settings['company_name'] ?? 'GridBase',
-                'email' => $settings['company_email'] ?? '',
-                'phone' => $settings['company_phone'] ?? '',
-                'address' => $settings['company_address'] ?? '',
-                'city' => $settings['company_city'] ?? '',
-                'country' => $settings['company_country'] ?? '',
-                'tax_id' => $settings['company_tax_id'] ?? '',
-                'website' => $settings['company_website'] ?? '',
-            ],
+            'company' => InvoiceController::buildCompanyData($settings),
             'client' => $quote->client->toArray(),
             'items' => $quote->items->toArray(),
             'settings' => $settings
@@ -145,32 +136,51 @@ class QuoteController extends Controller
             // Apply SMTP settings using the centralized method
             EmailService::applySmtpConfig($settings);
 
-            $data = [
+            $companyData = InvoiceController::buildCompanyData($settings);
+
+            // Generate PDF
+            $pdfData = [
                 'invoice' => $quote->toArray(),
                 'is_quote' => true,
-                'company' => [
-                    'name' => $settings['company_name'] ?? 'GridBase',
-                    'email' => $settings['company_email'] ?? '',
-                    'phone' => $settings['company_phone'] ?? '',
-                    'address' => $settings['company_address'] ?? '',
-                    'city' => $settings['company_city'] ?? '',
-                    'country' => $settings['company_country'] ?? '',
-                    'tax_id' => $settings['company_tax_id'] ?? '',
-                    'website' => $settings['company_website'] ?? '',
-                ],
+                'company' => $companyData,
                 'client' => $quote->client->toArray(),
                 'items' => $quote->items->toArray(),
                 'settings' => $settings
             ];
 
-            $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('pdf.invoice', $data);
+            $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('pdf.invoice', $pdfData);
             $pdfContent = $pdf->output();
 
+            // Build styled email data
             $subject = "Cotización {$quote->quote_number} de " . ($settings['company_name'] ?? 'GridBase');
-            $body = "Hola {$quote->client->contact_name},\n\nAdjunto encontrarás la cotización {$quote->quote_number} por el monto de {$quote->currency} {$quote->total}.\n\nSaludos cordiales.";
             $filename = "Cotizacion-{$quote->quote_number}.pdf";
 
-            \Illuminate\Support\Facades\Mail::raw($body, function ($message) use ($quote, $subject, $pdfContent, $filename) {
+            $emailData = [
+                'subject' => $subject,
+                'logoUrl' => 'https://gridbase.com.do/wp-content/uploads/2025/02/cropped-imagen_2026-03-16_154126791.png',
+                'clientName' => $quote->client->contact_name,
+                'companyName' => $settings['company_name'] ?? 'GridBase',
+                'companyEmail' => $settings['company_email'] ?? '',
+                'companyPhone' => $settings['company_phone'] ?? '',
+                'companyWebsite' => $settings['company_website'] ?? '',
+                'isQuote' => true,
+                'docNumber' => $quote->quote_number,
+                'status' => $quote->status ?? 'draft',
+                'issueDate' => date('d/m/Y', strtotime($quote->issue_date ?? $quote->created_at)),
+                'dueDate' => date('d/m/Y', strtotime($quote->expiry_date ?? $quote->due_date ?? now()->addDays(30))),
+                'items' => $quote->items->toArray(),
+                'subtotal' => $quote->subtotal,
+                'discountAmount' => $quote->discount_amount ?? 0,
+                'taxRate' => $quote->tax_rate ?? 0,
+                'taxAmount' => $quote->tax_amount ?? 0,
+                'total' => $quote->total,
+                'currency' => $quote->currency ?? 'USD',
+                'notes' => $quote->notes ?? '',
+            ];
+
+            $htmlBody = view('emails.document', $emailData)->render();
+
+            \Illuminate\Support\Facades\Mail::html($htmlBody, function ($message) use ($quote, $subject, $pdfContent, $filename) {
                 $message->to($quote->client->email)
                         ->subject($subject)
                         ->attachData($pdfContent, $filename, ['mime' => 'application/pdf']);
@@ -190,3 +200,4 @@ class QuoteController extends Controller
         }
     }
 }
+

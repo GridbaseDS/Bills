@@ -88,16 +88,7 @@ class InvoiceController extends Controller
         
         $data = [
             'invoice' => $invoice->toArray(),
-            'company' => [
-                'name' => $settings['company_name'] ?? 'GridBase',
-                'email' => $settings['company_email'] ?? '',
-                'phone' => $settings['company_phone'] ?? '',
-                'address' => $settings['company_address'] ?? '',
-                'city' => $settings['company_city'] ?? '',
-                'country' => $settings['company_country'] ?? '',
-                'tax_id' => $settings['company_tax_id'] ?? '',
-                'website' => $settings['company_website'] ?? '',
-            ],
+            'company' => self::buildCompanyData($settings),
             'client' => $invoice->client->toArray(),
             'items' => $invoice->items->toArray(),
             'settings' => $settings
@@ -124,31 +115,49 @@ class InvoiceController extends Controller
             // Apply SMTP settings from database using the centralized method
             EmailService::applySmtpConfig($settings);
 
-            $data = [
+            $companyData = self::buildCompanyData($settings);
+
+            // Generate PDF
+            $pdfData = [
                 'invoice' => $invoice->toArray(),
-                'company' => [
-                    'name' => $settings['company_name'] ?? 'GridBase',
-                    'email' => $settings['company_email'] ?? '',
-                    'phone' => $settings['company_phone'] ?? '',
-                    'address' => $settings['company_address'] ?? '',
-                    'city' => $settings['company_city'] ?? '',
-                    'country' => $settings['company_country'] ?? '',
-                    'tax_id' => $settings['company_tax_id'] ?? '',
-                    'website' => $settings['company_website'] ?? '',
-                ],
+                'company' => $companyData,
                 'client' => $invoice->client->toArray(),
                 'items' => $invoice->items->toArray(),
                 'settings' => $settings
             ];
-
-            $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('pdf.invoice', $data);
+            $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('pdf.invoice', $pdfData);
             $pdfContent = $pdf->output();
 
+            // Build styled email data
             $subject = "Factura {$invoice->invoice_number} de " . ($settings['company_name'] ?? 'GridBase');
-            $body = "Hola {$invoice->client->contact_name},\n\nAdjunto encontrarás la factura {$invoice->invoice_number} por el monto de {$invoice->currency} {$invoice->total}.\n\nSaludos cordiales.";
             $filename = "Factura-{$invoice->invoice_number}.pdf";
 
-            \Illuminate\Support\Facades\Mail::raw($body, function ($message) use ($invoice, $subject, $pdfContent, $filename) {
+            $emailData = [
+                'subject' => $subject,
+                'logoUrl' => 'https://gridbase.com.do/wp-content/uploads/2025/02/cropped-imagen_2026-03-16_154126791.png',
+                'clientName' => $invoice->client->contact_name,
+                'companyName' => $settings['company_name'] ?? 'GridBase',
+                'companyEmail' => $settings['company_email'] ?? '',
+                'companyPhone' => $settings['company_phone'] ?? '',
+                'companyWebsite' => $settings['company_website'] ?? '',
+                'isQuote' => false,
+                'docNumber' => $invoice->invoice_number,
+                'status' => $invoice->status,
+                'issueDate' => date('d/m/Y', strtotime($invoice->issue_date)),
+                'dueDate' => date('d/m/Y', strtotime($invoice->due_date)),
+                'items' => $invoice->items->toArray(),
+                'subtotal' => $invoice->subtotal,
+                'discountAmount' => $invoice->discount_amount ?? 0,
+                'taxRate' => $invoice->tax_rate ?? 0,
+                'taxAmount' => $invoice->tax_amount ?? 0,
+                'total' => $invoice->total,
+                'currency' => $invoice->currency ?? 'USD',
+                'notes' => $invoice->notes ?? '',
+            ];
+
+            $htmlBody = view('emails.document', $emailData)->render();
+
+            \Illuminate\Support\Facades\Mail::html($htmlBody, function ($message) use ($invoice, $subject, $pdfContent, $filename) {
                 $message->to($invoice->client->email)
                         ->subject($subject)
                         ->attachData($pdfContent, $filename, ['mime' => 'application/pdf']);
@@ -166,5 +175,22 @@ class InvoiceController extends Controller
             \Illuminate\Support\Facades\Log::error("Failed to send invoice {$invoice->invoice_number}: " . $e->getMessage());
             return response()->json(['success' => false, 'error' => $e->getMessage()], 500);
         }
+    }
+
+    /**
+     * Build company data array from settings for PDF/email rendering
+     */
+    public static function buildCompanyData(array $settings): array
+    {
+        return [
+            'name' => $settings['company_name'] ?? 'GridBase',
+            'email' => $settings['company_email'] ?? '',
+            'phone' => $settings['company_phone'] ?? '',
+            'address' => $settings['company_address'] ?? '',
+            'city' => $settings['company_city'] ?? '',
+            'country' => $settings['company_country'] ?? '',
+            'tax_id' => $settings['company_tax_id'] ?? '',
+            'website' => $settings['company_website'] ?? '',
+        ];
     }
 }

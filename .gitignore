@@ -1,5 +1,6 @@
 /vendor/
-/storage/pdf/*
-!/storage/pdf/.gitkeep
-/Archivo.zip
+/storage/
 .DS_Store
+Thumbs.db
+*.log
+.env

@@ -4,3 +4,4 @@ deployment:
     - export DEPLOYPATH=/home/grupaqgl/bills.gridbase.com.do/
     - /bin/cp -R * $DEPLOYPATH
     - /bin/cp .htaccess $DEPLOYPATH
+    - /bin/cp .gitignore $DEPLOYPATH

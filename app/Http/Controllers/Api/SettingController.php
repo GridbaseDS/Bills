@@ -14,7 +14,10 @@ class SettingController extends Controller
     public function updateMultiple(Request $request)
     {
         foreach ($request->all() as $key => $value) {
-            Setting::where('setting_key', $key)->update(['setting_value' => $value]);
+            Setting::updateOrCreate(
+                ['setting_key' => $key],
+                ['setting_value' => $value ?? '']
+            );
         }
         return response()->json(['success' => true]);
     }

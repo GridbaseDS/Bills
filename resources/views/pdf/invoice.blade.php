@@ -45,7 +45,7 @@
         .company-label strong { font-weight: 700; }
 
         .header-meta-box {
-            border: 1px solid rgba(255,255,255,0.25);
+
             border-radius: 4px;
             padding: 10px 16px;
             text-align: right;

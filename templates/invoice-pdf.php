@@ -2,569 +2,454 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title><?= htmlspecialchars($isQuote ?? false ? 'Cotización' : 'Factura') ?> <?= htmlspecialchars($invoice['invoice_number'] ?? $invoice['quote_number'] ?? '') ?></title>
+    <?php
+    $isQuote   = isset($document_type) && $document_type === 'quote';
+    $docName   = $isQuote ? 'Cotización' : 'Factura';
+    $docNum    = $isQuote ? ($invoice['quote_number'] ?? '') : ($invoice['invoice_number'] ?? '');
+    $dateLabel = $isQuote ? 'Válida Hasta' : 'Fecha de Vencimiento';
+    $dateField = $isQuote ? ($invoice['expiry_date'] ?? '') : ($invoice['due_date'] ?? '');
+    $status    = $invoice['status'] ?? 'draft';
+    ?>
+    <title><?= $docName ?> <?= htmlspecialchars($docNum) ?></title>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
+        @page {
+            size: A4 portrait;
+            margin: 40px 50px;
+        }
 
         body {
-            font-family: 'Helvetica Neue', 'Helvetica', 'Arial', sans-serif;
-            font-size: 13px;
-            color: #1F2937;
-            background: #ffffff;
-            line-height: 1.5;
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            font-size: 14px;
+            color: #1f2124;
+            margin: 0;
+            padding: 0;
+            background-color: #ffffff;
         }
 
-        /* ── OUTER WRAPPER ── */
-        .page {
+        table {
             width: 100%;
-            min-height: 100%;
-            display: table;
             border-collapse: collapse;
         }
 
-        /* ── LEFT SIDEBAR ── */
-        .sidebar {
-            width: 220px;
-            background-color: #0D7560;
-            color: #ffffff;
-            vertical-align: top;
-            padding: 50px 28px;
-        }
+        /* Utilidades de Texto */
+        .text-right { text-align: right; }
+        .text-left { text-align: left; }
+        .text-center { text-align: center; }
+        .color-primary { color: #0B484C; }
+        .color-accent { color: #00DF83; }
+        .color-gray { color: #7E7E7E; }
 
-        .sidebar-logo {
+        /* Cabecera de la Factura */
+        .header-table {
             margin-bottom: 40px;
         }
-        .sidebar-logo img { height: 50px; }
-        .sidebar-logo .logo-text {
-            font-size: 24px;
-            font-weight: 900;
-            color: #ffffff;
-            letter-spacing: -0.5px;
-            line-height: 1;
-        }
-        .sidebar-logo .logo-text span {
-            color: #7EFFD4;
-        }
 
-        .sidebar-section {
-            margin-bottom: 36px;
-        }
-        .sidebar-label {
-            font-size: 10px;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 1.2px;
-            color: #7EFFD4;
-            margin-bottom: 10px;
-        }
-        .sidebar-value {
-            font-size: 13px;
-            color: #E0FFF5;
-            line-height: 1.65;
-        }
-        .sidebar-value strong {
-            color: #ffffff;
-            font-size: 14px;
-        }
-
-        .sidebar-divider {
-            border: none;
-            border-top: 1px solid rgba(255,255,255,0.15);
-            margin: 28px 0;
-        }
-
-        /* Big total on sidebar */
-        .sidebar-total-box {
-            background: rgba(0,0,0,0.18);
-            border-radius: 10px;
-            padding: 20px 18px;
-            margin-top: 8px;
-        }
-        .sidebar-total-label {
-            font-size: 10px;
-            font-weight: 700;
-            letter-spacing: 1.2px;
-            text-transform: uppercase;
-            color: #7EFFD4;
-            margin-bottom: 8px;
-        }
-        .sidebar-total-amount {
-            font-size: 28px;
-            font-weight: 900;
-            color: #ffffff;
-            line-height: 1;
-        }
-        .sidebar-currency {
-            font-size: 14px;
-            font-weight: 500;
-            color: #A8FFE0;
-            margin-right: 3px;
-        }
-
-        /* ── MAIN CONTENT ── */
-        .main {
+        .header-table td {
             vertical-align: top;
-            padding: 50px 48px 100px 48px;
         }
 
-        /* ── MAIN HEADER ── */
-        .main-header {
-            width: 100%;
-            border-collapse: collapse;
-            margin-bottom: 48px;
-        }
-        .main-header td { vertical-align: bottom; }
-
-        .doc-type {
-            font-size: 11px;
+        .company-logo {
+            font-size: 32px;
             font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-            color: #6B7280;
-            margin-bottom: 6px;
+            color: #0B484C;
+            margin-bottom: 5px;
+            letter-spacing: -0.5px;
         }
-        .doc-number {
-            font-size: 36px;
-            font-weight: 900;
-            color: #111827;
-            letter-spacing: -1px;
-            line-height: 1;
-        }
-        .doc-number span { color: #0D7560; }
 
+        .company-logo span {
+            color: #00DF83;
+        }
+
+        .company-details {
+            color: #7E7E7E;
+            font-size: 13px;
+            line-height: 1.6;
+        }
+
+        .invoice-title {
+            font-size: 42px;
+            color: #0B484C;
+            margin: 0 0 5px 0;
+            text-transform: uppercase;
+            font-weight: 700;
+            letter-spacing: 1px;
+        }
+
+        .invoice-meta {
+            font-size: 13px;
+            color: #1f2124;
+            line-height: 1.6;
+        }
+
+        .invoice-meta strong {
+            color: #0B484C;
+            font-weight: 600;
+        }
+
+        /* Status Badge */
         .status-badge {
             display: inline-block;
-            padding: 7px 16px;
+            padding: 5px 14px;
             border-radius: 50px;
-            font-size: 11px;
-            font-weight: 800;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-        .status-paid    { background: #D1FAE5; color: #065F46; border: 1.5px solid #34D399; }
-        .status-pending { background: #FEF3C7; color: #92400E; border: 1.5px solid #F59E0B; }
-        .status-overdue { background: #FEE2E2; color: #991B1B; border: 1.5px solid #F87171; }
-        .status-draft   { background: #F3F4F6; color: #374151; border: 1.5px solid #9CA3AF; }
-
-        /* ── SECTION LABEL ── */
-        .section-label {
-            font-size: 10px;
+            font-size: 12px;
             font-weight: 700;
             text-transform: uppercase;
-            letter-spacing: 1.5px;
-            color: #9CA3AF;
+            letter-spacing: 0.5px;
+            margin-top: 10px;
+        }
+        .status-paid    { background: #D1FAE5; color: #065F46; border: 1px solid #34D399; }
+        .status-pending { background: #FEF3C7; color: #92400E; border: 1px solid #F59E0B; }
+        .status-overdue { background: #FEE2E2; color: #991B1B; border: 1px solid #F87171; }
+        .status-draft   { background: #F3F4F6; color: #374151; border: 1px solid #9CA3AF; }
+
+        /* Sección de Cliente (Facturar A) */
+        .bill-to-table {
+            margin-bottom: 40px;
+            width: 100%;
+        }
+
+        .bill-to-box {
+            background-color: #F6F5F2;
+            padding: 20px;
+            border-radius: 9px;
+            border-left: 4px solid #0B484C;
+        }
+
+        .bill-to-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #0B484C;
+            text-transform: uppercase;
             margin-bottom: 10px;
         }
 
-        /* ── BILL TO / DATES ── */
-        .meta-row {
-            width: 100%;
-            border-collapse: collapse;
-            margin-bottom: 44px;
+        .client-details {
+            font-size: 14px;
+            line-height: 1.6;
+            color: #1f2124;
         }
-        .meta-row td { vertical-align: top; }
-        .meta-block { padding-right: 30px; }
-        .meta-block:last-child { padding-right: 0; }
 
-        .bill-name {
-            font-size: 17px;
-            font-weight: 700;
-            color: #111827;
+        .client-name {
+            font-size: 16px;
+            font-weight: 600;
+            color: #0B484C;
             margin-bottom: 4px;
         }
-        .bill-contact {
-            font-size: 13px;
-            color: #6B7280;
-            margin-bottom: 2px;
-        }
-        .bill-detail {
-            font-size: 13px;
-            color: #4B5563;
-        }
 
-        .date-value {
-            font-size: 16px;
-            font-weight: 700;
-            color: #111827;
-        }
-        .date-sub {
-            font-size: 12px;
-            color: #6B7280;
-        }
-
-        /* ── ITEMS TABLE ── */
+        /* Tabla de Artículos */
         .items-table {
-            width: 100%;
-            border-collapse: collapse;
+            margin-bottom: 30px;
         }
-        .items-table thead tr {
-            background-color: #F3F4F6;
-            border-radius: 6px;
-        }
-        .items-table th {
-            font-size: 10px;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            color: #6B7280;
-            padding: 12px 14px;
-            text-align: left;
-            border: none;
-        }
-        .items-table th:first-child { border-radius: 6px 0 0 6px; }
-        .items-table th:last-child  { border-radius: 0 6px 6px 0; }
 
-        .items-table tbody tr { border-bottom: 1px solid #F3F4F6; }
-        .items-table tbody tr:last-child { border-bottom: 2px solid #E5E7EB; }
+        .items-table th {
+            background-color: #0B484C;
+            color: #FFFFFF;
+            padding: 12px 15px;
+            text-align: left;
+            font-weight: 600;
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-bottom: 3px solid #00DF83;
+        }
 
         .items-table td {
-            padding: 16px 14px;
-            font-size: 13px;
-            color: #374151;
+            padding: 15px;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+            color: #1f2124;
             vertical-align: middle;
-        }
-        .item-name {
-            font-size: 14px;
-            font-weight: 600;
-            color: #111827;
-        }
-        .item-total {
-            font-size: 14px;
-            font-weight: 700;
-            color: #111827;
-        }
-
-        .text-right { text-align: right !important; }
-        .text-center { text-align: center !important; }
-
-        /* ── TOTALS ── */
-        .bottom-section {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 36px;
-        }
-        .bottom-section td { vertical-align: top; }
-
-        .notes-block {
-            padding-right: 40px;
-        }
-        .notes-content {
             font-size: 13px;
-            color: #4B5563;
-            line-height: 1.65;
-            background: #F9FAFB;
-            padding: 18px 20px;
-            border-radius: 8px;
-            border-left: 3px solid #0D7560;
-            margin-top: 10px;
         }
-        .terms-content {
+
+        .items-table tr:nth-child(even) td {
+            background-color: #fcfcfc;
+        }
+
+        .item-name {
+            font-weight: 600;
+            color: #0B484C;
+            font-size: 14px;
+            display: block;
+            margin-bottom: 4px;
+        }
+
+        .item-desc {
             font-size: 12px;
-            color: #9CA3AF;
-            line-height: 1.65;
-            margin-top: 10px;
+            color: #7E7E7E;
+            line-height: 1.4;
+        }
+
+        /* Totales */
+        .totals-container {
+            width: 100%;
         }
 
         .totals-table {
-            width: 100%;
+            width: 45%;
+            float: right;
             border-collapse: collapse;
         }
+
         .totals-table td {
-            padding: 10px 0;
+            padding: 10px 15px;
+            color: #1f2124;
             font-size: 14px;
         }
-        .totals-table .t-label { color: #6B7280; }
-        .totals-table .t-value { text-align: right; font-weight: 500; color: #111827; width: 130px; }
-        .totals-table .t-discount { color: #EF4444; font-weight: 500; text-align: right; }
-        .totals-table .t-paid { color: #059669; font-weight: 500; text-align: right; }
 
-        .totals-table .grand-row td {
-            border-top: 2px solid #111827;
-            padding-top: 18px;
-            padding-bottom: 18px;
+        .totals-table .total-border td {
+            border-top: 1px solid rgba(0, 0, 0, 0.1);
         }
-        .grand-label {
-            font-size: 16px;
-            font-weight: 800;
-            color: #111827;
-        }
-        .grand-value {
-            font-size: 22px;
-            font-weight: 900;
-            color: #0D7560;
+
+        .totals-table .total-label {
             text-align: right;
+            font-weight: 500;
+            color: #7E7E7E;
         }
 
-        .balance-row td {
-            background-color: #FEF2F2;
-            padding: 14px 12px;
-            border-radius: 6px;
+        .totals-table .total-amount {
+            text-align: right;
+            font-weight: 600;
+            color: #1f2124;
         }
-        .balance-label {
-            font-size: 13px;
-            font-weight: 700;
-            color: #991B1B;
-        }
-        .balance-value {
+
+        .totals-table .grand-total td {
+            background-color: #0B484C;
+            color: #FFFFFF;
             font-size: 18px;
-            font-weight: 900;
-            color: #DC2626;
-            text-align: right;
+            font-weight: 700;
+            padding: 15px;
         }
 
-        /* ── FOOTER ── */
+        .totals-table .grand-total .total-amount {
+            color: #00DF83;
+        }
+
+        /* Balance pendiente */
+        .totals-table .balance-row td {
+            background-color: #FEF2F2;
+            font-weight: 700;
+            padding: 12px 15px;
+        }
+        .totals-table .balance-row .total-label { color: #991B1B; }
+        .totals-table .balance-row .total-amount { color: #DC2626; }
+
+        /* Limpiar flotados */
+        .clearfix::after {
+            content: "";
+            clear: both;
+            display: table;
+        }
+
+        /* Notas y Pie de página */
+        .notes-section {
+            margin-top: 20px;
+            width: 50%;
+            float: left;
+        }
+
+        .notes-title {
+            font-weight: 600;
+            color: #0B484C;
+            margin-bottom: 5px;
+            font-size: 14px;
+        }
+
+        .notes-text {
+            font-size: 12px;
+            color: #7E7E7E;
+            line-height: 1.5;
+        }
+
         .footer {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            border-top: 1px solid #E5E7EB;
-            padding: 14px 48px;
-            font-size: 11px;
-            color: #9CA3AF;
+            margin-top: 60px;
+            text-align: center;
+            font-size: 12px;
+            color: #7E7E7E;
+            border-top: 1px solid rgba(0, 0, 0, 0.1);
+            padding-top: 20px;
+            clear: both;
         }
-        .footer-inner {
-            width: 100%;
-            border-collapse: collapse;
+
+        .footer-thank-you {
+            color: #0B484C;
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 5px;
         }
-        .footer-inner td { vertical-align: middle; }
-        .footer-dot { color: #D1D5DB; margin: 0 8px; }
     </style>
 </head>
 <body>
-<?php
-$isQuote   = isset($document_type) && $document_type === 'quote';
-$docName   = $isQuote ? 'Cotización' : 'Factura';
-$docNum    = $isQuote ? ($invoice['quote_number'] ?? '') : ($invoice['invoice_number'] ?? '');
-$dateLabel = $isQuote ? 'Válida Hasta' : 'Vencimiento';
-$dateField = $isQuote ? ($invoice['expiry_date'] ?? '') : ($invoice['due_date'] ?? '');
-$status    = $invoice['status'] ?? 'draft';
-$badgeClass = 'status-draft';
-$badgeText  = 'Borrador';
-if ($status === 'paid')    { $badgeClass = 'status-paid';    $badgeText = 'Pagada'; }
-if ($status === 'pending') { $badgeClass = 'status-pending'; $badgeText = 'Pendiente'; }
-if ($status === 'overdue') { $badgeClass = 'status-overdue'; $badgeText = 'Vencida'; }
-?>
 
-<table class="page" cellspacing="0" cellpadding="0">
-<tr>
-
-<!-- ═══════════════════════════════ SIDEBAR ═══════════════════════════════ -->
-<td class="sidebar">
-
-    <!-- Logo -->
-    <div class="sidebar-logo">
-        <?php
-        $logoPath = __DIR__ . '/../assets/img/logo.png';
-        if (file_exists($logoPath)):
-            $logoData = base64_encode(file_get_contents($logoPath));
-        ?>
-            <img src="data:image/png;base64,<?= $logoData ?>" alt="Logo">
-        <?php else: ?>
-            <div class="logo-text">Grid<span>Base</span></div>
-        <?php endif; ?>
-    </div>
-
-    <!-- Company Info -->
-    <div class="sidebar-section">
-        <div class="sidebar-label">Emisor</div>
-        <div class="sidebar-value">
-            <strong><?= htmlspecialchars($company['company_name'] ?? 'Gridbase Digital Solutions') ?></strong><br>
-            <?php if(!empty($company['company_address'])): ?>
-                <?= htmlspecialchars($company['company_address']) ?><br>
-            <?php endif; ?>
-            <?php if(!empty($company['company_city'])): ?>
-                <?= htmlspecialchars($company['company_city']) ?>
-                <?= !empty($company['company_country']) ? ', ' . htmlspecialchars($company['company_country']) : '' ?><br>
-            <?php endif; ?>
-            <?php if(!empty($company['company_email'])): ?>
-                <?= htmlspecialchars($company['company_email']) ?>
-            <?php endif; ?>
-        </div>
-    </div>
-
-    <?php if(!empty($company['company_tax_id'])): ?>
-    <div class="sidebar-section">
-        <div class="sidebar-label">RNC / Cédula</div>
-        <div class="sidebar-value">
-            <strong><?= htmlspecialchars($company['company_tax_id']) ?></strong>
-        </div>
-    </div>
-    <?php endif; ?>
-
-    <hr class="sidebar-divider">
-
-    <!-- Dates -->
-    <div class="sidebar-section">
-        <div class="sidebar-label">Fecha de Emisión</div>
-        <div class="sidebar-value">
-            <strong><?= date('d/m/Y', strtotime($invoice['issue_date'])) ?></strong>
-        </div>
-    </div>
-
-    <div class="sidebar-section">
-        <div class="sidebar-label"><?= $dateLabel ?></div>
-        <div class="sidebar-value">
-            <strong><?= date('d/m/Y', strtotime($dateField)) ?></strong>
-        </div>
-    </div>
-
-    <hr class="sidebar-divider">
-
-    <!-- Total -->
-    <div class="sidebar-total-box">
-        <div class="sidebar-total-label">
-            <?= $isQuote ? 'Valor Total' : 'Monto Total' ?>
-        </div>
-        <div class="sidebar-total-amount">
-            <span class="sidebar-currency"><?= htmlspecialchars($invoice['currency'] ?? 'DOP') ?></span>
-            <?= number_format($invoice['total'], 2) ?>
-        </div>
-    </div>
-
-</td>
-
-<!-- ═══════════════════════════════ MAIN ═══════════════════════════════ -->
-<td class="main">
-
-    <!-- Doc Title Row -->
-    <table class="main-header" cellspacing="0" cellpadding="0">
+    <!-- Cabecera -->
+    <table class="header-table">
         <tr>
-            <td>
-                <div class="doc-type"><?= $docName ?></div>
-                <div class="doc-number">#<span><?= htmlspecialchars($docNum) ?></span></div>
+            <td width="50%">
+                <?php
+                $logoPath = __DIR__ . '/../assets/img/logo.png';
+                if (file_exists($logoPath)):
+                    $logoData = base64_encode(file_get_contents($logoPath));
+                ?>
+                    <div style="margin-bottom: 5px;">
+                        <img src="data:image/png;base64,<?= $logoData ?>" alt="Logo" style="height: 55px;">
+                    </div>
+                <?php else: ?>
+                    <div class="company-logo">GridBase<span>.</span></div>
+                <?php endif; ?>
+                <div class="company-details">
+                    <?= htmlspecialchars($company['company_name'] ?? 'Gridbase Digital Solutions') ?><br>
+                    <?php if(!empty($company['company_address'])): ?>
+                        <?= htmlspecialchars($company['company_address']) ?><br>
+                    <?php endif; ?>
+                    <?php if(!empty($company['company_city'])): ?>
+                        <?= htmlspecialchars($company['company_city']) ?><?= !empty($company['company_country']) ? ', ' . htmlspecialchars($company['company_country']) : '' ?><br>
+                    <?php endif; ?>
+                    <?php if(!empty($company['company_email'])): ?>
+                        <?= htmlspecialchars($company['company_email']) ?><br>
+                    <?php endif; ?>
+                    <?php if(!empty($company['company_phone'])): ?>
+                        <?= htmlspecialchars($company['company_phone']) ?>
+                    <?php endif; ?>
+                </div>
             </td>
-            <td style="text-align: right;">
+            <td width="50%" class="text-right">
+                <div class="invoice-title"><?= $docName ?></div>
+                <div class="invoice-meta">
+                    <strong><?= $docName ?> Nº:</strong> <?= htmlspecialchars($docNum) ?><br>
+                    <strong>Fecha de Emisión:</strong> <?= date('d/m/Y', strtotime($invoice['issue_date'])) ?><br>
+                    <strong><?= $dateLabel ?>:</strong> <?= date('d/m/Y', strtotime($dateField)) ?><br>
+                    <?php if(!empty($company['company_tax_id'])): ?>
+                        <strong>RNC:</strong> <?= htmlspecialchars($company['company_tax_id']) ?>
+                    <?php endif; ?>
+                </div>
                 <?php if (!$isQuote): ?>
+                    <?php
+                    $badgeClass = 'status-draft';
+                    $badgeText  = 'Borrador';
+                    if ($status === 'paid')    { $badgeClass = 'status-paid';    $badgeText = 'Pagada'; }
+                    if ($status === 'sent' || $status === 'pending') { $badgeClass = 'status-pending'; $badgeText = 'Pendiente'; }
+                    if ($status === 'overdue') { $badgeClass = 'status-overdue'; $badgeText = 'Vencida'; }
+                    ?>
                     <span class="status-badge <?= $badgeClass ?>"><?= $badgeText ?></span>
                 <?php endif; ?>
             </td>
         </tr>
     </table>
 
-    <!-- Bill To + Dates -->
-    <table class="meta-row" cellspacing="0" cellpadding="0">
+    <!-- Información del Cliente -->
+    <table class="bill-to-table">
         <tr>
-            <td style="width: 55%;">
-                <div class="section-label">Facturado a</div>
-                <div class="bill-name"><?= htmlspecialchars($invoice['company_name'] ?: $invoice['contact_name']) ?></div>
-                <?php if ($invoice['company_name']): ?>
-                    <div class="bill-contact"><?= htmlspecialchars($invoice['contact_name']) ?></div>
-                <?php endif; ?>
-                <?php if(!empty($invoice['address_line1'])): ?>
-                    <div class="bill-detail"><?= htmlspecialchars($invoice['address_line1']) ?></div>
-                <?php endif; ?>
-                <?php if(!empty($invoice['city'])): ?>
-                    <div class="bill-detail"><?= htmlspecialchars($invoice['city']) ?>, <?= htmlspecialchars($invoice['country'] ?? '') ?></div>
-                <?php endif; ?>
-                <?php if(!empty($invoice['client_tax_id'])): ?>
-                    <div class="bill-detail" style="margin-top:8px; font-weight:600; color:#374151;">RNC/Cédula: <?= htmlspecialchars($invoice['client_tax_id']) ?></div>
-                <?php endif; ?>
+            <td width="100%">
+                <div class="bill-to-box">
+                    <div class="bill-to-title">Facturar A:</div>
+                    <div class="client-details">
+                        <div class="client-name"><?= htmlspecialchars($invoice['company_name'] ?: $invoice['contact_name']) ?></div>
+                        <?php if ($invoice['company_name'] && $invoice['contact_name']): ?>
+                            Atención: <?= htmlspecialchars($invoice['contact_name']) ?><br>
+                        <?php endif; ?>
+                        <?php if(!empty($invoice['address_line1'])): ?>
+                            <?= htmlspecialchars($invoice['address_line1']) ?><br>
+                        <?php endif; ?>
+                        <?php if(!empty($invoice['city'])): ?>
+                            <?= htmlspecialchars($invoice['city']) ?><?= !empty($invoice['country']) ? ', ' . htmlspecialchars($invoice['country']) : '' ?><br>
+                        <?php endif; ?>
+                        <?php if(!empty($invoice['client_tax_id'])): ?>
+                            RNC/Cédula: <?= htmlspecialchars($invoice['client_tax_id']) ?>
+                        <?php endif; ?>
+                    </div>
+                </div>
             </td>
         </tr>
     </table>
 
-    <!-- Items Table -->
-    <table class="items-table" cellspacing="0" cellpadding="0">
+    <!-- Tabla de Artículos -->
+    <table class="items-table">
         <thead>
             <tr>
-                <th style="width:4%">#</th>
-                <th style="width:44%">Descripción</th>
-                <th class="text-center" style="width:14%">Cant.</th>
-                <th class="text-right" style="width:18%">Precio Unit.</th>
-                <th class="text-right" style="width:20%">Total</th>
+                <th width="45%">Descripción del Servicio</th>
+                <th width="15%" class="text-center">Cant.</th>
+                <th width="20%" class="text-right">Precio Unit.</th>
+                <th width="20%" class="text-right">Monto</th>
             </tr>
         </thead>
         <tbody>
-            <?php foreach ($invoice['items'] as $index => $item): ?>
+            <?php foreach ($invoice['items'] as $item): ?>
             <tr>
-                <td style="color:#9CA3AF; font-size:12px;"><?= $index + 1 ?></td>
-                <td><span class="item-name"><?= nl2br(htmlspecialchars($item['description'])) ?></span></td>
+                <td>
+                    <span class="item-name"><?= htmlspecialchars($item['description']) ?></span>
+                </td>
                 <td class="text-center"><?= number_format($item['quantity'], 2) ?></td>
                 <td class="text-right"><?= number_format($item['unit_price'], 2) ?></td>
-                <td class="text-right"><span class="item-total"><?= number_format($item['amount'], 2) ?></span></td>
+                <td class="text-right"><?= number_format($item['amount'], 2) ?></td>
             </tr>
             <?php endforeach; ?>
         </tbody>
     </table>
 
-    <!-- Notes + Totals -->
-    <table class="bottom-section" cellspacing="0" cellpadding="0">
-        <tr>
-            <!-- Notes -->
-            <td style="width:50%;">
-                <div class="notes-block">
-                    <?php if(!empty($invoice['notes'])): ?>
-                        <div class="section-label">Notas</div>
-                        <div class="notes-content">
-                            <?= nl2br(htmlspecialchars($invoice['notes'])) ?>
-                        </div>
-                    <?php endif; ?>
+    <!-- Sección Inferior: Notas y Totales -->
+    <div class="totals-container clearfix">
 
-                    <?php if(!empty($invoice['terms'])): ?>
-                        <div class="section-label" style="margin-top:24px;">Términos y Condiciones</div>
-                        <div class="terms-content">
-                            <?= nl2br(htmlspecialchars($invoice['terms'])) ?>
-                        </div>
-                    <?php endif; ?>
+        <!-- Notas (Lado Izquierdo) -->
+        <div class="notes-section">
+            <?php if(!empty($invoice['notes'])): ?>
+                <div class="notes-title">Notas</div>
+                <div class="notes-text">
+                    <?= nl2br(htmlspecialchars($invoice['notes'])) ?>
                 </div>
-            </td>
+                <br>
+            <?php endif; ?>
 
-            <!-- Totals -->
-            <td style="width:50%;">
-                <table class="totals-table" cellspacing="0" cellpadding="0">
-                    <tr>
-                        <td class="t-label">Subtotal</td>
-                        <td class="t-value"><?= htmlspecialchars($invoice['currency'] ?? '') ?> <?= number_format($invoice['subtotal'], 2) ?></td>
-                    </tr>
+            <?php if(!empty($invoice['terms'])): ?>
+                <div class="notes-title">Términos y Condiciones</div>
+                <div class="notes-text">
+                    <?= nl2br(htmlspecialchars($invoice['terms'])) ?>
+                </div>
+            <?php endif; ?>
+        </div>
 
-                    <?php if ($invoice['discount_amount'] > 0): ?>
-                    <tr>
-                        <td class="t-label">Descuento</td>
-                        <td class="t-discount">− <?= htmlspecialchars($invoice['currency'] ?? '') ?> <?= number_format($invoice['discount_amount'], 2) ?></td>
-                    </tr>
-                    <?php endif; ?>
+        <!-- Tabla de Totales (Lado Derecho) -->
+        <table class="totals-table">
+            <tr>
+                <td class="total-label">Subtotal:</td>
+                <td class="total-amount"><?= htmlspecialchars($invoice['currency'] ?? 'DOP') ?> <?= number_format($invoice['subtotal'], 2) ?></td>
+            </tr>
+            <?php if (($invoice['tax_amount'] ?? 0) > 0): ?>
+            <tr class="total-border">
+                <td class="total-label">ITBIS (<?= number_format($invoice['tax_rate'], 1) ?>%):</td>
+                <td class="total-amount"><?= htmlspecialchars($invoice['currency'] ?? 'DOP') ?> <?= number_format($invoice['tax_amount'], 2) ?></td>
+            </tr>
+            <?php endif; ?>
+            <?php if (($invoice['discount_amount'] ?? 0) > 0): ?>
+            <tr>
+                <td class="total-label">Descuento:</td>
+                <td class="total-amount color-accent">-<?= htmlspecialchars($invoice['currency'] ?? 'DOP') ?> <?= number_format($invoice['discount_amount'], 2) ?></td>
+            </tr>
+            <?php endif; ?>
+            <tr class="grand-total">
+                <td class="total-label" style="color: #ffffff;">TOTAL A PAGAR:</td>
+                <td class="total-amount"><?= htmlspecialchars($invoice['currency'] ?? 'DOP') ?> <?= number_format($invoice['total'], 2) ?></td>
+            </tr>
+            <?php if (!$isQuote && ($invoice['amount_paid'] ?? 0) > 0): ?>
+            <tr>
+                <td class="total-label">Monto Pagado:</td>
+                <td class="total-amount" style="color: #059669;">-<?= htmlspecialchars($invoice['currency'] ?? 'DOP') ?> <?= number_format($invoice['amount_paid'], 2) ?></td>
+            </tr>
+            <tr class="balance-row">
+                <td class="total-label">Saldo Pendiente:</td>
+                <td class="total-amount"><?= htmlspecialchars($invoice['currency'] ?? 'DOP') ?> <?= number_format($invoice['total'] - $invoice['amount_paid'], 2) ?></td>
+            </tr>
+            <?php endif; ?>
+        </table>
+    </div>
 
-                    <?php if ($invoice['tax_amount'] > 0): ?>
-                    <tr>
-                        <td class="t-label">ITBIS (<?= number_format($invoice['tax_rate'], 1) ?>%)</td>
-                        <td class="t-value"><?= htmlspecialchars($invoice['currency'] ?? '') ?> <?= number_format($invoice['tax_amount'], 2) ?></td>
-                    </tr>
-                    <?php endif; ?>
-
-                    <tr class="grand-row">
-                        <td class="grand-label">Total</td>
-                        <td class="grand-value"><?= htmlspecialchars($invoice['currency'] ?? '') ?> <?= number_format($invoice['total'], 2) ?></td>
-                    </tr>
-
-                    <?php if (!$isQuote && ($invoice['amount_paid'] ?? 0) > 0): ?>
-                    <tr>
-                        <td class="t-label" style="padding-top:16px;">Monto Pagado</td>
-                        <td class="t-paid" style="padding-top:16px;">− <?= htmlspecialchars($invoice['currency'] ?? '') ?> <?= number_format($invoice['amount_paid'], 2) ?></td>
-                    </tr>
-                    <tr class="balance-row">
-                        <td class="balance-label">Saldo Pendiente</td>
-                        <td class="balance-value"><?= htmlspecialchars($invoice['currency'] ?? '') ?> <?= number_format($invoice['total'] - $invoice['amount_paid'], 2) ?></td>
-                    </tr>
-                    <?php endif; ?>
-                </table>
-            </td>
-        </tr>
-    </table>
-
-</td>
-</tr>
-</table>
-
-<!-- FOOTER -->
-<div class="footer">
-    <table class="footer-inner" cellspacing="0" cellpadding="0">
-        <tr>
-            <td><?= htmlspecialchars($company['company_name'] ?? 'Gridbase') ?><?php if(!empty($company['company_website'])): ?><span class="footer-dot">&bull;</span><?= htmlspecialchars($company['company_website']) ?><?php endif; ?><?php if(!empty($company['company_email'])): ?><span class="footer-dot">&bull;</span><?= htmlspecialchars($company['company_email']) ?><?php endif; ?></td>
-            <td style="text-align:right; color:#D1D5DB;">Documento generado el <?= date('d/m/Y') ?></td>
-        </tr>
-    </table>
-</div>
+    <!-- Pie de página -->
+    <div class="footer">
+        <div class="footer-thank-you">¡Gracias por hacer negocios con nosotros!</div>
+        <p>
+            <?= htmlspecialchars($company['company_name'] ?? 'Gridbase') ?>
+            <?php if(!empty($company['company_website'])): ?> &bull; <?= htmlspecialchars($company['company_website']) ?><?php endif; ?>
+            <?php if(!empty($company['company_email'])): ?> &bull; <?= htmlspecialchars($company['company_email']) ?><?php endif; ?>
+        </p>
+    </div>
 
 </body>
 </html>

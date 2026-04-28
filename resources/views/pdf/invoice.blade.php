@@ -11,9 +11,9 @@
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             font-family: 'Helvetica', 'Arial', sans-serif;
-            font-size: 11px;
+            font-size: 10px;
             color: #333333;
-            line-height: 1.5;
+            line-height: 1.4;
             margin: 0;
             padding: 0;
             background: #FFFFFF;
@@ -24,50 +24,50 @@
             position: fixed;
             top: 0;
             left: 0;
-            width: 200px;
+            width: 185px;
             height: 100%;
             background: #0B484C;
-            padding: 35px 20px 25px 20px;
+            padding: 25px 16px 20px 16px;
         }
         .sidebar-logo {
-            margin-bottom: 22px;
+            margin-bottom: 14px;
             text-align: center;
         }
         .sidebar-logo img {
-            max-width: 145px;
+            max-width: 130px;
             height: auto;
         }
         .sidebar-divider {
-            width: 32px;
+            width: 28px;
             height: 2px;
             background: #00DF83;
-            margin: 16px 0;
+            margin: 10px 0;
             border-radius: 2px;
         }
         .sidebar-label {
-            font-size: 8px;
+            font-size: 7px;
             text-transform: uppercase;
-            letter-spacing: 1.5px;
+            letter-spacing: 1.2px;
             color: #00DF83;
-            margin-bottom: 5px;
+            margin-bottom: 3px;
             font-weight: bold;
         }
         .sidebar-value {
-            font-size: 10px;
+            font-size: 9px;
             color: rgba(255, 255, 255, 0.65);
-            margin-bottom: 3px;
-            line-height: 1.5;
+            margin-bottom: 2px;
+            line-height: 1.4;
         }
         .sidebar-value strong {
-            font-size: 12px;
+            font-size: 11px;
             color: #FFFFFF;
         }
         .sidebar-section {
-            margin-bottom: 18px;
+            margin-bottom: 12px;
         }
         .sidebar-sep {
-            margin-top: 18px;
-            padding-top: 14px;
+            margin-top: 10px;
+            padding-top: 10px;
             border-top: 1px solid rgba(255, 255, 255, 0.1);
         }
         .sidebar-dot {
@@ -81,15 +81,15 @@
 
         /* ── MAIN CONTENT ── */
         .main-content {
-            margin-left: 200px;
-            padding: 35px 30px 25px 30px;
+            margin-left: 185px;
+            padding: 22px 25px 20px 25px;
             background: #FFFFFF;
             min-height: 100%;
         }
 
         /* ── HEADER ── */
         .doc-title {
-            font-size: 30px;
+            font-size: 24px;
             font-weight: 700;
             color: #0B484C;
             text-transform: uppercase;
@@ -97,9 +97,9 @@
             margin-bottom: 0;
         }
         .doc-number-line {
-            font-size: 10px;
+            font-size: 9px;
             color: #7E7E7E;
-            margin-bottom: 10px;
+            margin-bottom: 6px;
             letter-spacing: 0.3px;
         }
         .doc-number-line strong {
@@ -111,9 +111,9 @@
             background: #F6F5F2;
             border: 1px solid rgba(0, 0, 0, 0.06);
             border-left: 3px solid #0B484C;
-            border-radius: 8px;
-            padding: 14px 18px;
-            margin-bottom: 20px;
+            border-radius: 6px;
+            padding: 10px 14px;
+            margin-bottom: 14px;
         }
         .total-due-label {
             font-size: 9px;
@@ -123,7 +123,7 @@
             margin-bottom: 2px;
         }
         .total-due-amount {
-            font-size: 26px;
+            font-size: 20px;
             font-weight: 800;
             color: #0B484C;
         }
@@ -137,7 +137,7 @@
         .items-table {
             width: 100%;
             border-collapse: collapse;
-            margin-bottom: 18px;
+            margin-bottom: 10px;
         }
         .items-table thead tr {
             background: #0B484C;
@@ -148,7 +148,7 @@
             font-weight: 600;
             text-transform: uppercase;
             letter-spacing: 0.8px;
-            padding: 9px 10px;
+            padding: 6px 8px;
             text-align: left;
         }
         .items-table th.text-right {
@@ -161,26 +161,26 @@
             background: #FAFAF8;
         }
         .items-table td {
-            padding: 10px 10px;
+            padding: 7px 8px;
             vertical-align: top;
             color: #333333;
         }
         .item-number {
             display: inline-block;
-            width: 22px;
-            height: 22px;
+            width: 18px;
+            height: 18px;
             background: #0B484C;
             color: #FFFFFF;
-            font-size: 9px;
+            font-size: 8px;
             font-weight: bold;
             text-align: center;
-            line-height: 22px;
-            border-radius: 4px;
+            line-height: 18px;
+            border-radius: 3px;
         }
         .item-desc {
             font-weight: 600;
             color: #1a1a1a;
-            font-size: 11px;
+            font-size: 10px;
         }
         .item-detail {
             font-size: 9px;
@@ -194,7 +194,7 @@
         /* ── TOTALS ── */
         .totals-wrapper {
             width: 100%;
-            margin-bottom: 20px;
+            margin-bottom: 10px;
         }
         .totals-table {
             width: 230px;
@@ -202,8 +202,8 @@
             border-collapse: collapse;
         }
         .totals-table td {
-            padding: 5px 8px;
-            font-size: 10px;
+            padding: 3px 8px;
+            font-size: 9px;
         }
         .totals-table .total-label {
             text-align: right;
@@ -220,9 +220,9 @@
         }
         .grand-total-row td {
             color: #FFFFFF !important;
-            font-size: 13px !important;
+            font-size: 11px !important;
             font-weight: 800 !important;
-            padding: 9px 8px !important;
+            padding: 7px 8px !important;
             border-radius: 4px;
         }
 
@@ -244,9 +244,9 @@
         /* ── TERMS ── */
         .terms-section {
             clear: both;
-            padding-top: 12px;
+            padding-top: 8px;
             border-top: 1px solid rgba(0, 0, 0, 0.06);
-            margin-top: 8px;
+            margin-top: 4px;
         }
         .terms-title {
             font-size: 9px;
@@ -265,14 +265,14 @@
         /* ── FOOTER ── */
         .footer {
             position: fixed;
-            bottom: 12px;
-            right: 30px;
-            left: 230px;
+            bottom: 8px;
+            right: 25px;
+            left: 210px;
             text-align: center;
-            font-size: 8px;
+            font-size: 7px;
             color: #7E7E7E;
             border-top: 1px solid rgba(0, 0, 0, 0.06);
-            padding-top: 6px;
+            padding-top: 4px;
         }
         .footer-accent {
             color: #0B484C;

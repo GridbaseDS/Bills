@@ -6,7 +6,7 @@
     <style>
         @page {
             size: A4 portrait;
-            margin: 0 0 50px 0;
+            margin: 0;
         }
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -234,26 +234,34 @@
         .badge-draft   { background: #F3F4F6; color: #6B7280; }
         .badge-sent    { background: #DBEAFE; color: #1E40AF; }
 
-        .footer-bar {
-            background: #0B484C;
-            padding: 16px 0;
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            width: 100%;
+        /* ── FOOTER ── */
+        .footer {
+            margin-top: 30px;
+            padding-top: 14px;
+            border-top: 2px solid #0B484C;
+            text-align: center;
         }
-        .footer-inner {
-            padding: 0 45px;
-        }
-        .footer-bar td {
-            vertical-align: middle;
-            color: rgba(255,255,255,0.7);
-            font-size: 10px;
-        }
-        .footer-bar .footer-icon {
-            color: #00DF83;
+        .footer-company {
+            font-size: 11px;
             font-weight: 700;
-            margin-right: 4px;
+            color: #0B484C;
+            margin-bottom: 6px;
+        }
+        .footer-contact {
+            font-size: 10px;
+            color: #666;
+            line-height: 1.8;
+        }
+        .footer-contact span {
+            color: #999;
+            margin: 0 6px;
+        }
+        .footer-thanks {
+            font-size: 10px;
+            color: #0B484C;
+            font-weight: 600;
+            font-style: italic;
+            margin-top: 8px;
         }
     </style>
 </head>
@@ -401,23 +409,23 @@ if (!empty($invoice['status'])) {
     </div>
     <?php endif; ?>
 
-</div>
-
-<!-- ══════════════════════════ FOOTER ══════════════════════════ -->
-<div class="footer-bar">
-    <div class="footer-inner">
-        <table><tr>
-            <td style="width:33%;">
-                <span class="footer-icon">⊕</span> <?= htmlspecialchars($company['website'] ?? 'gridbase.com.do') ?>
-            </td>
-            <td style="width:34%; text-align:center;">
-                <span class="footer-icon">✉</span> <?= htmlspecialchars($company['email'] ?? '') ?>
-            </td>
-            <td style="width:33%; text-align:right;">
-                <span class="footer-icon">✆</span> <?= htmlspecialchars($company['phone'] ?? '') ?>
-            </td>
-        </tr></table>
+    <!-- ══════════════════════════ FOOTER ══════════════════════════ -->
+    <div class="footer">
+        <div class="footer-company"><?= htmlspecialchars($company['name'] ?? 'Gridbase Digital Solutions') ?></div>
+        <div class="footer-contact">
+            <?php if (!empty($company['website'])): ?>
+                <?= htmlspecialchars($company['website']) ?>
+            <?php endif; ?>
+            <?php if (!empty($company['email'])): ?>
+                <span>&bull;</span> <?= htmlspecialchars($company['email']) ?>
+            <?php endif; ?>
+            <?php if (!empty($company['phone'])): ?>
+                <span>&bull;</span> <?= htmlspecialchars($company['phone']) ?>
+            <?php endif; ?>
+        </div>
+        <div class="footer-thanks">¡Gracias por su preferencia!</div>
     </div>
+
 </div>
 
 </body>

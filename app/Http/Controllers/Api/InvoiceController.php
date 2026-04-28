@@ -174,9 +174,9 @@ class InvoiceController extends Controller
     {
         $host = trim($settings['smtp_host'] ?? '');
 
-        // Use sendmail for local or empty host (always works on cPanel)
+        // Use PHP native mail() for local/empty host — universally works on cPanel
         if (empty($host) || $host === 'localhost' || $host === '127.0.0.1') {
-            return new \Symfony\Component\Mailer\Transport\SendmailTransport();
+            return \Symfony\Component\Mailer\Transport::fromDsn('sendmail://default');
         }
 
         // External SMTP

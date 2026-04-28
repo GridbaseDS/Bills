@@ -198,12 +198,8 @@ window.App = {
                 <div class="sidebar-overlay" id="sidebar-overlay"></div>
                 <aside class="sidebar" id="sidebar">
                     <div class="sidebar-brand">
-                        <div class="sidebar-brand-icon">
-                            <img src="assets/img/logo.png" alt="GridBase">
-                        </div>
-                        <div>
-                            <div class="sidebar-brand-text">GridBase</div>
-                            <div class="sidebar-brand-sub">Bills</div>
+                        <div class="sidebar-brand-logo">
+                            <img src="assets/img/logo.png" alt="GridBase Digital Solutions">
                         </div>
                     </div>
                     <nav class="sidebar-nav">

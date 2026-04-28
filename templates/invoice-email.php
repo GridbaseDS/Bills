@@ -8,12 +8,12 @@
         body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #F8F9FB; margin: 0; padding: 0; -webkit-font-smoothing: antialiased; }
         .wrapper { width: 100%; table-layout: fixed; background-color: #F8F9FB; padding-bottom: 40px; }
         .main { background: #ffffff; margin: 0 auto; width: 100%; max-width: 600px; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-top: 40px; }
-        .header { background-color: #E63946; padding: 30px 40px; text-align: center; color: #ffffff; }
+        .header { background-color: #0F6B5A; padding: 30px 40px; text-align: center; color: #ffffff; }
         .content { padding: 40px; color: #333333; line-height: 1.6; font-size: 15px; }
-        .btn { display: inline-block; background-color: #E63946; color: #ffffff !important; text-decoration: none; padding: 12px 24px; border-radius: 6px; font-weight: bold; margin-top: 20px; }
+        .btn { display: inline-block; background-color: #00D690; color: #0B1F1A !important; text-decoration: none; padding: 12px 24px; border-radius: 6px; font-weight: bold; margin-top: 20px; }
         .footer { text-align: center; padding: 20px; color: #94A3B8; font-size: 12px; }
-        .invoice-details { background-color: #F8F9FB; padding: 20px; border-radius: 6px; margin: 20px 0; border: 1px solid #E2E8F0; }
-        .amount { font-size: 24px; font-weight: bold; color: #E63946; margin: 10px 0; }
+        .invoice-details { background-color: #F0FAF6; padding: 20px; border-radius: 6px; margin: 20px 0; border: 1px solid #B2E0D4; }
+        .amount { font-size: 24px; font-weight: bold; color: #00D690; margin: 10px 0; }
     </style>
 </head>
 <body>
@@ -32,9 +32,9 @@
                             <p>Adjunto encontrarás la factura <strong><?= htmlspecialchars($invoice['invoice_number']) ?></strong> por el monto de <?= htmlspecialchars($invoice['currency']) ?> <?= number_format($invoice['total'], 2) ?>.</p>
                             
                             <div class="invoice-details">
-                                <p style="margin: 0 0 5px 0; color: #64748B; font-size: 13px; text-transform: uppercase;">Balance Pendiente</p>
+                                <p style="margin: 0 0 5px 0; color: #0F6B5A; font-size: 13px; text-transform: uppercase;">Balance Pendiente</p>
                                 <div class="amount"><?= htmlspecialchars($invoice['currency']) ?> <?= number_format($invoice['total'] - $invoice['amount_paid'], 2) ?></div>
-                                <p style="margin: 5px 0 0 0; color: #64748B; font-size: 13px;">Fecha de Vencimiento: <strong><?= date('d/m/Y', strtotime($invoice['due_date'])) ?></strong></p>
+                                <p style="margin: 5px 0 0 0; color: #0F6B5A; font-size: 13px;">Fecha de Vencimiento: <strong><?= date('d/m/Y', strtotime($invoice['due_date'])) ?></strong></p>
                             </div>
 
                             <p>Una copia en PDF de la factura ha sido adjuntada a este correo.</p>

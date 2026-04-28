@@ -14,7 +14,7 @@
         }
         .header {
             width: 100%;
-            border-bottom: 2px solid #E63946;
+            border-bottom: 2px solid #00D690;
             padding-bottom: 20px;
             margin-bottom: 30px;
         }
@@ -72,14 +72,14 @@
             margin-bottom: 30px;
         }
         .table th {
-            background-color: #F8F9FB;
-            color: #64748B;
+            background-color: #F0FAF6;
+            color: #0F6B5A;
             font-size: 11px;
             font-weight: bold;
             text-transform: uppercase;
             padding: 12px 10px;
             text-align: left;
-            border-bottom: 1px solid #E2E8F0;
+            border-bottom: 1px solid #B2E0D4;
         }
         .table td {
             padding: 12px 10px;
@@ -103,7 +103,7 @@
             font-weight: bold;
             border-top: 2px solid #1A1D26;
         }
-        .accent { color: #E63946; }
+        .accent { color: #00D690; }
         .notes-section {
             float: left;
             width: 55%;
@@ -138,10 +138,17 @@
 
 <div class="header">
     <div class="logo-container">
-        <!-- Text Logo Fallback -->
-        <div style="font-size: 26px; font-weight: bold; color: #E63946;">
-            Grid<span style="color: #1A1D26;">base</span>
-        </div>
+        <?php
+        $logoPath = __DIR__ . '/../assets/img/logo.png';
+        if (file_exists($logoPath)):
+            $logoData = base64_encode(file_get_contents($logoPath));
+        ?>
+            <img src="data:image/png;base64,<?= $logoData ?>" alt="GridBase" style="height: 50px;">
+        <?php else: ?>
+            <div style="font-size: 26px; font-weight: bold; color: #00D690;">
+                Grid<span style="color: #1A1D26;">Base</span>
+            </div>
+        <?php endif; ?>
     </div>
     <div class="company-details">
         <div class="company-name"><?= htmlspecialchars($company['company_name'] ?? 'Gridbase Digital Solutions') ?></div>
@@ -211,7 +218,7 @@ $dateField = $isQuote ? $invoice['expiry_date'] : $invoice['due_date'];
             <tr>
                 <td colspan="2" style="text-align: right; padding-top: 15px;">
                     <div class="info-label">Monto Total (<?= htmlspecialchars($invoice['currency']) ?>)</div>
-                    <div class="info-value" style="font-size: 20px; font-weight: bold; color: #E63946;">
+                    <div class="info-value" style="font-size: 20px; font-weight: bold; color: #00D690;">
                         <?= number_format($invoice['total'], 2) ?>
                     </div>
                 </td>

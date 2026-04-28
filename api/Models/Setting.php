@@ -35,12 +35,7 @@ class Setting
 
     public function getAll(): array
     {
-        $rows = $this->db->fetchAll("SELECT setting_key, setting_value, setting_group FROM settings ORDER BY setting_group, setting_key");
-        $result = [];
-        foreach ($rows as $row) {
-            $result[$row['setting_group']][$row['setting_key']] = $row['setting_value'];
-        }
-        return $result;
+        return $this->db->fetchAll("SELECT setting_key, setting_value, setting_group FROM settings ORDER BY setting_group, setting_key");
     }
 
     public function updateBulk(array $settings): void

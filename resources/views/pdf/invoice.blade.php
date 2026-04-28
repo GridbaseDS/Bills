@@ -6,7 +6,7 @@
     <style>
         @page {
             size: A4 portrait;
-            margin: 0;
+            margin: 0 0 45px 0;
         }
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -29,7 +29,7 @@
         }
         .header-block td { vertical-align: middle; }
 
-        .logo-area img { height: 40px; }
+        .logo-area img { height: 55px; }
         .logo-fallback {
             font-size: 22px;
             font-weight: 700;
@@ -277,10 +277,7 @@ if (!empty($invoice['status'])) {
     <table><tr>
         <td style="width:55%;">
             <div class="logo-area">
-                <img src="<?= $logoUrl ?>" alt="GridBase"><br>
-            </div>
-            <div class="company-label">
-                <?= htmlspecialchars($company['name'] ?? 'Gridbase Digital Solutions') ?>
+                <img src="<?= $logoUrl ?>" alt="GridBase">
             </div>
         </td>
         <td style="width:45%; text-align:right;">

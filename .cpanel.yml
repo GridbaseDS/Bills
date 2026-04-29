@@ -3,3 +3,4 @@ deployment:
   tasks:
     - export DEPLOYPATH=/home/grupaqgl/bills.gridbase.com.do/
     - /usr/bin/rsync -rlpt --exclude='.git' --exclude='.cpanel.yml' --exclude='legacy_*' --exclude='vendor' --exclude='node_modules' ./ $DEPLOYPATH
+    - /usr/local/bin/php $DEPLOYPATH/artisan view:clear --no-interaction

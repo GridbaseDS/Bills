@@ -16,7 +16,7 @@ window.App = {
         token: null,
         currentRoute: 'dashboard'
     },
-    
+
     init() {
         this.checkAuth();
         this.setupRouter();
@@ -29,14 +29,14 @@ window.App = {
             'Content-Type': 'application/json',
             'Accept': 'application/json'
         };
-        
+
         if (options.body && typeof options.body !== 'string') {
             options.body = JSON.stringify(options.body);
         }
 
         try {
             const response = await fetch(url, { ...options, headers, credentials: 'same-origin' });
-            
+
             // Handle empty responses safely
             const text = await response.text();
             let data;
@@ -46,7 +46,7 @@ window.App = {
                 console.error('API response not JSON:', text.substring(0, 500));
                 throw new Error('Error del servidor. Revisa la consola para detalles.');
             }
-            
+
             if (!response.ok) {
                 if (response.status === 401 && this.state.currentRoute !== 'login') {
                     this.logout(false);
@@ -95,7 +95,7 @@ window.App = {
 
     async logout(callApi = true) {
         if (callApi) {
-            try { await this.api('auth/logout', { method: 'POST' }); } catch (e) {}
+            try { await this.api('auth/logout', { method: 'POST' }); } catch (e) { }
         }
         this.state.user = null;
         this.state.currentRoute = 'login';
@@ -116,10 +116,10 @@ window.App = {
         if (!this.state.user) {
             return this.renderLogin();
         }
-        
+
         this.state.currentRoute = route;
         window.location.hash = route;
-        
+
         // Update sidebar active state
         document.querySelectorAll('.sidebar-link').forEach(link => {
             link.classList.remove('active');
@@ -137,19 +137,19 @@ window.App = {
         if (!appContent) return;
 
         appContent.innerHTML = `<div class="text-center mt-24"><div class="spinner mx-auto"></div></div>`;
-        
+
         // Dynamic loading based on route
         const parts = route.split('/');
         const view = parts[0];
         const id = parts[1];
 
         setTimeout(() => {
-            switch(view) {
+            switch (view) {
                 case 'dashboard': DashboardModule.render(appContent); break;
                 case 'invoices': InvoicesModule.render(appContent, id); break;
                 case 'quotes': QuotesModule.render(appContent, id); break;
                 case 'clients': ClientsModule.render(appContent, id); break;
-                case 'recurring': RecurringModule.render(appContent, parts.slice(1).join('/')||undefined); break;
+                case 'recurring': RecurringModule.render(appContent, parts.slice(1).join('/') || undefined); break;
                 case 'settings': SettingsModule.render(appContent); break;
                 default: appContent.innerHTML = '<h2>404 No Encontrado</h2>';
             }
@@ -194,14 +194,14 @@ window.App = {
     renderAppShell() {
         const app = document.getElementById('app');
         const userInitial = this.state.user.name ? this.state.user.name.charAt(0).toUpperCase() : '?';
-        
+
         app.innerHTML = `
             <div class="app-layout">
                 <div class="sidebar-overlay" id="sidebar-overlay"></div>
                 <aside class="sidebar" id="sidebar">
                     <div class="sidebar-brand">
                         <div class="sidebar-brand-logo">
-                            <img src="https://gridbase.com.do/wp-content/uploads/2025/02/imagen_2026-03-16_154236217-1024x228.png" alt="GridBase Digital Solutions" style="max-height: 36px; max-width: 100%; object-fit: contain;">
+                            <img src="https://gridbase.com.do/wp-content/uploads/2025/02/cropped-imagen_2026-03-16_154126791.png" alt="GridBase Digital Solutions" style="max-height: 36px; max-width: 100%; object-fit: contain;">
                         </div>
                     </div>
                     <nav class="sidebar-nav">
@@ -282,11 +282,11 @@ window.App = {
         if (!container) return;
         const toast = document.createElement('div');
         toast.className = `toast toast-${type}`;
-        
+
         let icon = '';
         if (type === 'success') icon = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>`;
         else if (type === 'error') icon = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>`;
-        
+
         toast.innerHTML = `${icon} <span>${message}</span>`;
         container.appendChild(toast);
         setTimeout(() => { toast.style.opacity = '0'; setTimeout(() => toast.remove(), 300); }, 3000);

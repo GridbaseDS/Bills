@@ -162,7 +162,7 @@ window.App = {
             <div class="login-page">
                 <div class="login-card">
                     <div class="login-logo">
-                        <img src="assets/img/logo.png" onerror="this.src='https://gridbase.com.do/wp-content/uploads/2025/02/imagen_2026-03-16_154236217-1024x228.png'" alt="GridBase Digital Solutions" style="max-height: 56px; max-width: 100%; object-fit: contain;">
+                        <img src="https://gridbase.com.do/wp-content/uploads/2025/02/imagen_2026-03-16_154236217-1024x228.png" alt="GridBase Digital Solutions" style="max-height: 56px; max-width: 100%; object-fit: contain;">
                     </div>
                     <h1 class="login-title">GridBase Bills</h1>
                     <p class="login-subtitle">Inicia sesión en tu cuenta</p>
@@ -201,7 +201,7 @@ window.App = {
                 <aside class="sidebar" id="sidebar">
                     <div class="sidebar-brand">
                         <div class="sidebar-brand-logo">
-                            <img src="assets/img/logo.png" onerror="this.src='https://gridbase.com.do/wp-content/uploads/2025/02/imagen_2026-03-16_154236217-1024x228.png'" alt="GridBase Digital Solutions" style="max-height: 36px; max-width: 100%; object-fit: contain;">
+                            <img src="https://gridbase.com.do/wp-content/uploads/2025/02/imagen_2026-03-16_154236217-1024x228.png" alt="GridBase Digital Solutions" style="max-height: 36px; max-width: 100%; object-fit: contain;">
                         </div>
                     </div>
                     <nav class="sidebar-nav">

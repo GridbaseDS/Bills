@@ -104,7 +104,7 @@ input, select, textarea, button {
 .sidebar-brand-logo img {
   height: 36px;
   object-fit: contain;
-  filter: brightness(10) drop-shadow(0 0 12px rgba(255,255,255,0.2));
+  filter: drop-shadow(0 0 12px rgba(255,255,255,0.1));
 }
 
 .sidebar-nav { flex: 1; padding: 16px 12px; overflow-y: auto; }

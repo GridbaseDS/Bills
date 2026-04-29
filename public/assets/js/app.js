@@ -149,7 +149,7 @@ window.App = {
                 case 'invoices': InvoicesModule.render(appContent, id); break;
                 case 'quotes': QuotesModule.render(appContent, id); break;
                 case 'clients': ClientsModule.render(appContent, id); break;
-                case 'recurring': RecurringModule.render(appContent, id); break;
+                case 'recurring': RecurringModule.render(appContent, parts.slice(1).join('/')||undefined); break;
                 case 'settings': SettingsModule.render(appContent); break;
                 default: appContent.innerHTML = '<h2>404 No Encontrado</h2>';
             }

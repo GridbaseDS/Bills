@@ -426,10 +426,11 @@ const InvoicesModule = {
                 <div class="form-group" style="margin-bottom:20px;">
                     <label class="form-label">Método de pago</label>
                     <select id="payment-method" class="form-control">
-                        <option value="transfer">Transferencia</option>
+                        <option value="bank_transfer">Transferencia Bancaria</option>
                         <option value="cash">Efectivo</option>
-                        <option value="card">Tarjeta</option>
+                        <option value="credit_card">Tarjeta de Crédito</option>
                         <option value="check">Cheque</option>
+                        <option value="paypal">PayPal</option>
                         <option value="other">Otro</option>
                     </select>
                 </div>

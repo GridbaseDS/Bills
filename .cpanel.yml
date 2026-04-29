@@ -1,4 +1,4 @@
 ---
 deployment:
   tasks:
-    - /usr/bin/rsync -rlpt --exclude='.git' --exclude='.cpanel.yml' --exclude='legacy_*' --exclude='vendor' --exclude='node_modules' ./ /home/grupaqgl/bills.gridbase.com.do/
+    - /usr/bin/rsync -rlpt --exclude='.git' --exclude='.cpanel.yml' --exclude='.env' --exclude='legacy_*' --exclude='vendor' --exclude='node_modules' --exclude='storage' --exclude='database/database.sqlite' ./ /home/grupaqgl/bills.gridbase.com.do/

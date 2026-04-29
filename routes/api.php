@@ -24,24 +24,27 @@ Route::middleware('auth:sanctum')->group(function () {
     // Dashboard
     Route::get('/dashboard', [DashboardController::class, 'index']);
 
-    // Clients
-    Route::apiResource('clients', ClientController::class);
-
     // Invoices
     Route::apiResource('invoices', InvoiceController::class);
     Route::get('/invoices/{id}/pdf', [InvoiceController::class, 'pdf']);
     Route::post('/invoices/{id}/payment', [InvoiceController::class, 'addPayment']);
     Route::post('/invoices/{id}/send-email', [InvoiceController::class, 'sendEmail']);
+    Route::post('/invoices/{id}/duplicate', [InvoiceController::class, 'duplicate']);
 
     // Quotes
     Route::apiResource('quotes', QuoteController::class);
     Route::get('/quotes/{id}/pdf', [QuoteController::class, 'pdf']);
     Route::post('/quotes/{id}/convert', [QuoteController::class, 'convertToInvoice']);
     Route::post('/quotes/{id}/send-email', [QuoteController::class, 'sendEmail']);
+    Route::post('/quotes/{id}/duplicate', [QuoteController::class, 'duplicate']);
 
     // Recurring Invoices
     Route::apiResource('recurring', RecurringController::class);
     Route::post('/recurring/{id}/toggle', [RecurringController::class, 'toggleStatus']);
+
+    // Clients
+    Route::apiResource('clients', ClientController::class);
+    Route::get('/clients/{id}/profile', [ClientController::class, 'profile']);
 
     // Settings
     Route::get('/settings', [SettingController::class, 'index']);

@@ -209,5 +209,43 @@ class QuoteController extends Controller
             return response()->json(['success' => false, 'error' => $e->getMessage()], 500);
         }
     }
+
+    /**
+     * Duplicate a quote.
+     */
+    public function duplicate($id)
+    {
+        $original = Quote::with('items')->findOrFail($id);
+        $newNumber = Setting::where('setting_key', 'quote_prefix')->value('setting_value')
+                   . Setting::where('setting_key', 'quote_next_number')->value('setting_value');
+        Setting::where('setting_key', 'quote_next_number')->increment('setting_value');
+
+        $new = $original->replicate();
+        $new->quote_number = $newNumber;
+        $new->status = 'draft';
+        $new->issue_date = now();
+        $new->expiry_date = now()->addDays(30);
+        $new->sent_at = null;
+        $new->sent_via = null;
+        $new->converted_invoice_id = null;
+        $new->save();
+
+        foreach ($original->items as $item) {
+            $new->items()->create($item->only(['description', 'quantity', 'unit_price', 'amount', 'sort_order']));
+        }
+
+        return response()->json(['success' => true, 'quote' => $new->load('client')]);
+    }
+
+    /**
+     * Delete a quote.
+     */
+    public function destroy($id)
+    {
+        $quote = Quote::findOrFail($id);
+        $quote->items()->delete();
+        $quote->delete();
+        return response()->json(['success' => true, 'message' => 'Cotización eliminada.']);
+    }
 }
 

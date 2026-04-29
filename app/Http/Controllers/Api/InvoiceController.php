@@ -118,6 +118,39 @@ class InvoiceController extends Controller
         return response()->json($invoice);
     }
 
+    public function update(Request $request, $id)
+    {
+        $invoice = Invoice::findOrFail($id);
+        $data = $request->all();
+
+        $subtotal = collect($data['items'])->sum(function($i) { return $i['quantity'] * $i['unit_price']; });
+        $discountValue = $data['discount_value'] ?? 0;
+        $discountAmount = $data['discount_type'] === 'percentage' ? ($subtotal * ($discountValue/100)) : $discountValue;
+        $taxRate = $data['tax_rate'] ?? 0;
+        $taxAmount = ($subtotal - $discountAmount) * ($taxRate/100);
+        $total = $subtotal - $discountAmount + $taxAmount;
+
+        $invoice->update([
+            'client_id' => $data['client_id'], 'currency' => $data['currency'],
+            'issue_date' => $data['issue_date'], 'due_date' => $data['due_date'],
+            'discount_type' => $data['discount_type'] ?? 'percentage',
+            'discount_value' => $discountValue, 'discount_amount' => $discountAmount,
+            'tax_rate' => $taxRate, 'tax_amount' => $taxAmount,
+            'subtotal' => $subtotal, 'total' => $total,
+            'notes' => $data['notes'] ?? null,
+        ]);
+
+        // Rebuild items
+        $invoice->items()->delete();
+        foreach ($data['items'] as $idx => $item) {
+            $item['amount'] = $item['quantity'] * $item['unit_price'];
+            $item['sort_order'] = $idx;
+            $invoice->items()->create($item);
+        }
+
+        return response()->json(['success' => true, 'invoice' => $invoice->fresh()]);
+    }
+
     public function addPayment(Request $request, $id)
     {
         $invoice = Invoice::with('client')->findOrFail($id);
@@ -322,5 +355,46 @@ class InvoiceController extends Controller
             'tax_id' => $settings['company_tax_id'] ?? '',
             'website' => $settings['company_website'] ?? '',
         ];
+    }
+
+    /**
+     * Duplicate an invoice.
+     */
+    public function duplicate($id)
+    {
+        $original = Invoice::with('items')->findOrFail($id);
+        $newNumber = Setting::where('setting_key', 'invoice_prefix')->value('setting_value')
+                   . Setting::where('setting_key', 'invoice_next_number')->value('setting_value');
+        Setting::where('setting_key', 'invoice_next_number')->increment('setting_value');
+
+        $new = $original->replicate();
+        $new->invoice_number = $newNumber;
+        $new->status = 'draft';
+        $new->issue_date = now();
+        $new->due_date = now()->addDays(30);
+        $new->amount_paid = 0;
+        $new->sent_at = null;
+        $new->sent_via = null;
+        $new->viewed_at = null;
+        $new->paid_at = null;
+        $new->save();
+
+        foreach ($original->items as $item) {
+            $new->items()->create($item->only(['description', 'quantity', 'unit_price', 'amount', 'sort_order']));
+        }
+
+        return response()->json(['success' => true, 'invoice' => $new->load('client')]);
+    }
+
+    /**
+     * Delete an invoice.
+     */
+    public function destroy($id)
+    {
+        $invoice = Invoice::findOrFail($id);
+        $invoice->items()->delete();
+        $invoice->payments()->delete();
+        $invoice->delete();
+        return response()->json(['success' => true, 'message' => 'Factura eliminada.']);
     }
 }

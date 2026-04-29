@@ -409,49 +409,113 @@ const InvoicesModule = {
 
     showPaymentModal(id, balance) {
         balance = parseFloat(balance) || 0;
-        const amount = prompt(`Monto a registrar (Balance: ${App.formatCurrency(balance, '')}):`, balance.toFixed(2));
-        if (amount === null) return;
-        const parsedAmount = parseFloat(amount);
-        if (isNaN(parsedAmount) || parsedAmount <= 0) { App.showToast('Monto inválido', 'error'); return; }
-        this.markAsPaid(id, parsedAmount);
+        // Remove existing modal if any
+        document.getElementById('payment-modal')?.remove();
+
+        const modal = document.createElement('div');
+        modal.id = 'payment-modal';
+        modal.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:9999;';
+        modal.innerHTML = `
+            <div style="background:var(--bg-card);border-radius:12px;padding:32px;width:420px;max-width:90vw;box-shadow:0 20px 60px rgba(0,0,0,0.3);">
+                <h3 style="margin:0 0 8px 0;font-size:18px;">💰 Registrar Pago</h3>
+                <p style="margin:0 0 20px 0;color:var(--text-muted);font-size:14px;">Balance pendiente: <strong style="color:var(--red)">${App.formatCurrency(balance, '')}</strong></p>
+                <div class="form-group" style="margin-bottom:16px;">
+                    <label class="form-label">Monto a registrar</label>
+                    <input type="number" id="payment-amount" class="form-control" value="${balance.toFixed(2)}" min="0.01" step="0.01" style="font-size:18px;font-weight:600;text-align:center;">
+                </div>
+                <div class="form-group" style="margin-bottom:20px;">
+                    <label class="form-label">Método de pago</label>
+                    <select id="payment-method" class="form-control">
+                        <option value="transfer">Transferencia</option>
+                        <option value="cash">Efectivo</option>
+                        <option value="card">Tarjeta</option>
+                        <option value="check">Cheque</option>
+                        <option value="other">Otro</option>
+                    </select>
+                </div>
+                <div style="display:flex;gap:12px;justify-content:flex-end;">
+                    <button class="btn btn-ghost" id="payment-cancel">Cancelar</button>
+                    <button class="btn btn-primary" id="payment-confirm">Confirmar Pago</button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(modal);
+
+        // Focus amount input
+        setTimeout(() => document.getElementById('payment-amount')?.focus(), 100);
+
+        // Close on backdrop click
+        modal.addEventListener('click', (e) => { if (e.target === modal) modal.remove(); });
+        document.getElementById('payment-cancel').addEventListener('click', () => modal.remove());
+        document.getElementById('payment-confirm').addEventListener('click', () => {
+            const amount = parseFloat(document.getElementById('payment-amount').value);
+            const method = document.getElementById('payment-method').value;
+            if (isNaN(amount) || amount <= 0) { App.showToast('Monto inválido', 'error'); return; }
+            modal.remove();
+            this.markAsPaid(id, amount, method);
+        });
     },
 
-    async markAsPaid(id, amount) {
+    async markAsPaid(id, amount, method = 'other') {
         try {
-            await App.api(`invoices/${id}/payment`, { method: 'POST', body: { amount, payment_method: 'other' } });
+            await App.api(`invoices/${id}/payment`, { method: 'POST', body: { amount, payment_method: method } });
             App.showToast('Pago registrado correctamente');
             App.navigate(`invoices/${id}`);
         } catch(e) {}
     },
 
     async sendEmail(id) {
-        if(!confirm('¿Deseas enviar esta factura por correo al cliente?')) return;
-        App.showToast('Enviando correo...', 'success');
-        try {
-            await App.api(`invoices/${id}/send-email`, { method: 'POST' });
-            App.showToast('Correo enviado exitosamente');
-            App.navigate(`invoices/${id}`);
-        } catch(e) {}
+        this._showConfirm('¿Deseas enviar esta factura por correo al cliente?', async () => {
+            App.showToast('Enviando correo...', 'success');
+            try {
+                await App.api(`invoices/${id}/send-email`, { method: 'POST' });
+                App.showToast('Correo enviado exitosamente');
+                App.navigate(`invoices/${id}`);
+            } catch(e) {}
+        });
     },
 
     async duplicateInvoice(id) {
-        if(!confirm('¿Duplicar esta factura?')) return;
-        try {
-            const res = await App.api(`invoices/${id}/duplicate`, { method: 'POST' });
-            App.showToast('Factura duplicada correctamente');
-            window.location.hash = 'invoices';
-        } catch(e) {}
+        this._showConfirm('¿Duplicar esta factura?', async () => {
+            try {
+                await App.api(`invoices/${id}/duplicate`, { method: 'POST' });
+                App.showToast('Factura duplicada correctamente');
+                window.location.hash = 'invoices';
+            } catch(e) {}
+        });
     },
 
     async deleteInvoice(id) {
-        if(!confirm('⚠️ ¿Estás seguro de eliminar esta factura? Esta acción no se puede deshacer.')) return;
-        try {
-            await App.api(`invoices/${id}`, { method: 'DELETE' });
-            App.showToast('Factura eliminada');
-            window.location.hash = 'invoices';
-        } catch(e) {}
+        this._showConfirm('⚠️ ¿Estás seguro de eliminar esta factura? Esta acción no se puede deshacer.', async () => {
+            try {
+                await App.api(`invoices/${id}`, { method: 'DELETE' });
+                App.showToast('Factura eliminada');
+                window.location.hash = 'invoices';
+            } catch(e) {}
+        });
+    },
+
+    _showConfirm(message, onConfirm) {
+        document.getElementById('confirm-modal')?.remove();
+        const modal = document.createElement('div');
+        modal.id = 'confirm-modal';
+        modal.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:9999;';
+        modal.innerHTML = `
+            <div style="background:var(--bg-card);border-radius:12px;padding:32px;width:400px;max-width:90vw;box-shadow:0 20px 60px rgba(0,0,0,0.3);text-align:center;">
+                <p style="font-size:16px;margin:0 0 24px 0;line-height:1.5;">${message}</p>
+                <div style="display:flex;gap:12px;justify-content:center;">
+                    <button class="btn btn-ghost" id="confirm-no">Cancelar</button>
+                    <button class="btn btn-primary" id="confirm-yes">Confirmar</button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(modal);
+        modal.addEventListener('click', (e) => { if (e.target === modal) modal.remove(); });
+        document.getElementById('confirm-no').addEventListener('click', () => modal.remove());
+        document.getElementById('confirm-yes').addEventListener('click', () => { modal.remove(); onConfirm(); });
     }
 };
 
 window.InvoicesModule = InvoicesModule;
 export default InvoicesModule;
+

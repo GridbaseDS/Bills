@@ -258,9 +258,30 @@ const ClientsModule = {
     },
 
     async deleteClient(id) {
-        if(!confirm('⚠️ ¿Eliminar este cliente?')) return;
-        try { await window.App.api(`clients/${id}`, { method: 'DELETE' }); window.App.showToast('Cliente eliminado'); window.location.hash = 'clients'; }
-        catch(e) {}
+        this._showConfirm('⚠️ ¿Eliminar este cliente? Esta acción no se puede deshacer.', async () => {
+            try { await window.App.api(`clients/${id}`, { method: 'DELETE' }); window.App.showToast('Cliente eliminado'); window.location.hash = 'clients'; }
+            catch(e) {}
+        });
+    },
+
+    _showConfirm(message, onConfirm) {
+        document.getElementById('confirm-modal')?.remove();
+        const modal = document.createElement('div');
+        modal.id = 'confirm-modal';
+        modal.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:9999;';
+        modal.innerHTML = `
+            <div style="background:var(--bg-card);border-radius:12px;padding:32px;width:400px;max-width:90vw;box-shadow:0 20px 60px rgba(0,0,0,0.3);text-align:center;">
+                <p style="font-size:16px;margin:0 0 24px 0;line-height:1.5;">${message}</p>
+                <div style="display:flex;gap:12px;justify-content:center;">
+                    <button class="btn btn-ghost" id="confirm-no">Cancelar</button>
+                    <button class="btn btn-primary" id="confirm-yes">Confirmar</button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(modal);
+        modal.addEventListener('click', (e) => { if (e.target === modal) modal.remove(); });
+        document.getElementById('confirm-no').addEventListener('click', () => modal.remove());
+        document.getElementById('confirm-yes').addEventListener('click', () => { modal.remove(); onConfirm(); });
     }
 };
 

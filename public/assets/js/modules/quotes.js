@@ -301,28 +301,52 @@ const QuotesModule = {
     },
 
     async convertToInvoice(id) {
-        if(!confirm('¿Convertir esta cotización en factura? Se enviará al cliente por email.')) return;
-        try {
-            const res = await window.App.api(`quotes/${id}/convert`, { method: 'POST' });
-            window.App.showToast(res.email_sent ? 'Cotización convertida y factura enviada por email' : 'Cotización convertida en factura');
-            window.location.hash = 'invoices';
-        } catch(e) {}
+        this._showConfirm('¿Convertir esta cotización en factura? Se enviará al cliente por email.', async () => {
+            try {
+                const res = await window.App.api(`quotes/${id}/convert`, { method: 'POST' });
+                window.App.showToast(res.email_sent ? 'Cotización convertida y factura enviada por email' : 'Cotización convertida en factura');
+                window.location.hash = 'invoices';
+            } catch(e) {}
+        });
     },
 
     async sendEmail(id) {
-        if(!confirm('¿Enviar cotización por correo?')) return;
-        App.showToast('Enviando...', 'success');
-        try { await App.api(`quotes/${id}/send-email`, { method: 'POST' }); App.showToast('Correo enviado'); } catch(e) {}
+        this._showConfirm('¿Enviar cotización por correo al cliente?', async () => {
+            App.showToast('Enviando...', 'success');
+            try { await App.api(`quotes/${id}/send-email`, { method: 'POST' }); App.showToast('Correo enviado'); } catch(e) {}
+        });
     },
 
     async duplicateQuote(id) {
-        if(!confirm('¿Duplicar esta cotización?')) return;
-        try { await window.App.api(`quotes/${id}/duplicate`, { method: 'POST' }); window.App.showToast('Cotización duplicada'); window.location.hash = 'quotes'; } catch(e) {}
+        this._showConfirm('¿Duplicar esta cotización?', async () => {
+            try { await window.App.api(`quotes/${id}/duplicate`, { method: 'POST' }); window.App.showToast('Cotización duplicada'); window.location.hash = 'quotes'; } catch(e) {}
+        });
     },
 
     async deleteQuote(id) {
-        if(!confirm('⚠️ ¿Eliminar esta cotización?')) return;
-        try { await window.App.api(`quotes/${id}`, { method: 'DELETE' }); window.App.showToast('Cotización eliminada'); window.location.hash = 'quotes'; } catch(e) {}
+        this._showConfirm('⚠️ ¿Eliminar esta cotización? Esta acción no se puede deshacer.', async () => {
+            try { await window.App.api(`quotes/${id}`, { method: 'DELETE' }); window.App.showToast('Cotización eliminada'); window.location.hash = 'quotes'; } catch(e) {}
+        });
+    },
+
+    _showConfirm(message, onConfirm) {
+        document.getElementById('confirm-modal')?.remove();
+        const modal = document.createElement('div');
+        modal.id = 'confirm-modal';
+        modal.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:9999;';
+        modal.innerHTML = `
+            <div style="background:var(--bg-card);border-radius:12px;padding:32px;width:400px;max-width:90vw;box-shadow:0 20px 60px rgba(0,0,0,0.3);text-align:center;">
+                <p style="font-size:16px;margin:0 0 24px 0;line-height:1.5;">${message}</p>
+                <div style="display:flex;gap:12px;justify-content:center;">
+                    <button class="btn btn-ghost" id="confirm-no">Cancelar</button>
+                    <button class="btn btn-primary" id="confirm-yes">Confirmar</button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(modal);
+        modal.addEventListener('click', (e) => { if (e.target === modal) modal.remove(); });
+        document.getElementById('confirm-no').addEventListener('click', () => modal.remove());
+        document.getElementById('confirm-yes').addEventListener('click', () => { modal.remove(); onConfirm(); });
     }
 };
 

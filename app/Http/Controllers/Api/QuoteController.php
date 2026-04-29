@@ -157,7 +157,7 @@ class QuoteController extends Controller
 
             $emailData = [
                 'subject' => $subject,
-                'logoUrl' => 'https://gridbase.com.do/wp-content/uploads/2025/02/cropped-imagen_2026-03-16_154126791.png',
+                'logoUrl' => 'https://gridbase.com.do/wp-content/uploads/2025/02/imagen_2026-03-16_154236217-1024x228.png',
                 'clientName' => $quote->client->contact_name,
                 'companyName' => $settings['company_name'] ?? 'GridBase',
                 'companyEmail' => $settings['company_email'] ?? '',

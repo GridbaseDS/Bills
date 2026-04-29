@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="GridBase Bills - Sistema de facturación y cotizaciones de GridBase Digital Solutions">
-    <meta name="theme-color" content="#0B1F1A">
+    <meta name="theme-color" content="#F4F6F8">
     <title>GridBase Bills</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>

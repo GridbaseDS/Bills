@@ -326,7 +326,8 @@
                     $badgeClass = 'status-draft';
                     $badgeText  = 'Borrador';
                     if ($status === 'paid')    { $badgeClass = 'status-paid';    $badgeText = 'Pagada'; }
-                    if ($status === 'sent' || $status === 'pending') { $badgeClass = 'status-pending'; $badgeText = 'Pendiente'; }
+                    if ($status === 'sent' || $status === 'pending') { $badgeClass = 'status-pending'; $badgeText = 'Pendiente de Pago'; }
+                    if ($status === 'partial') { $badgeClass = 'status-pending'; $badgeText = 'Pago Parcial'; }
                     if ($status === 'overdue') { $badgeClass = 'status-overdue'; $badgeText = 'Vencida'; }
                     ?>
                     <span class="status-badge <?= $badgeClass ?>"><?= $badgeText ?></span>

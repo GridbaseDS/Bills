@@ -63,7 +63,7 @@
                                                         if ($status === 'paid') { $bgColor = 'rgba(0,223,131,0.2)'; $textColor = '#00DF83'; }
                                                         elseif ($status === 'overdue') { $bgColor = 'rgba(251,113,133,0.2)'; $textColor = '#FB7185'; }
                                                         elseif ($status === 'sent') { $bgColor = 'rgba(56,189,248,0.2)'; $textColor = '#38BDF8'; }
-                                                        $statusLabel = match($status) { 'paid' => 'PAGADA', 'overdue' => 'VENCIDA', 'sent' => 'ENVIADA', 'draft' => 'BORRADOR', default => strtoupper($status) };
+                                                        $statusLabel = match($status) { 'paid' => 'PAGADA', 'overdue' => 'VENCIDA', 'sent' => 'PENDIENTE DE PAGO', 'partial' => 'PAGO PARCIAL', 'draft' => 'BORRADOR', default => strtoupper($status) };
                                                     @endphp
                                                     <span style="background: {{ $bgColor }}; color: {{ $textColor }}; font-size: 9px; font-weight: 700; padding: 4px 10px; border-radius: 100px; text-transform: uppercase; letter-spacing: 0.5px;">{{ $statusLabel }}</span>
                                                 @endif

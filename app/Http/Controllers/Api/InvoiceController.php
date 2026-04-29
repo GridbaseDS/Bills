@@ -61,7 +61,7 @@ class InvoiceController extends Controller
 
     public function addPayment(Request $request, $id)
     {
-        $invoice = Invoice::findOrFail($id);
+        $invoice = Invoice::with('client')->findOrFail($id);
         $amount = $request->amount;
         $invoice->payments()->create([
             'amount' => $amount,
@@ -70,15 +70,86 @@ class InvoiceController extends Controller
         ]);
         
         $invoice->amount_paid += $amount;
+        $wasPaid = false;
         if ($invoice->amount_paid >= $invoice->total) {
             $invoice->status = 'paid';
             $invoice->paid_at = now();
+            $wasPaid = true;
         } else {
             $invoice->status = 'partial';
         }
         $invoice->save();
 
-        return response()->json(['success' => true]);
+        // Send payment confirmation email when fully paid
+        if ($wasPaid && !empty($invoice->client->email)) {
+            try {
+                $this->sendPaymentConfirmationEmail($invoice);
+            } catch (\Exception $e) {
+                \Illuminate\Support\Facades\Log::error("Failed to send payment confirmation for {$invoice->invoice_number}: " . $e->getMessage());
+            }
+        }
+
+        return response()->json(['success' => true, 'paid' => $wasPaid]);
+    }
+
+    /**
+     * Send a payment confirmation email with the updated PDF (showing PAGADA status).
+     */
+    private function sendPaymentConfirmationEmail(Invoice $invoice): void
+    {
+        $invoice->load(['client', 'items']);
+        $settings = Setting::getAll();
+        EmailService::applySmtpConfig($settings);
+
+        $companyData = self::buildCompanyData($settings);
+        $companyName = $settings['company_name'] ?? 'GridBase';
+
+        // Generate PDF with "PAGADA" status
+        $pdfData = [
+            'invoice'  => $invoice->toArray(),
+            'company'  => $companyData,
+            'client'   => $invoice->client->toArray(),
+            'items'    => $invoice->items->toArray(),
+            'settings' => $settings,
+        ];
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('pdf.invoice', $pdfData);
+        $pdfContent = $pdf->output();
+
+        $subject = "✅ Pago confirmado — Factura {$invoice->invoice_number}";
+        $filename = "Factura-{$invoice->invoice_number}-PAGADA.pdf";
+
+        $emailData = [
+            'subject'        => $subject,
+            'logoUrl'        => 'https://gridbase.com.do/wp-content/uploads/2025/02/cropped-imagen_2026-03-16_154126791.png',
+            'clientName'     => $invoice->client->contact_name,
+            'companyName'    => $companyName,
+            'companyEmail'   => $settings['company_email'] ?? '',
+            'companyPhone'   => $settings['company_phone'] ?? '',
+            'companyWebsite' => $settings['company_website'] ?? '',
+            'isQuote'        => false,
+            'docNumber'      => $invoice->invoice_number,
+            'status'         => 'paid',
+            'issueDate'      => date('d/m/Y', strtotime($invoice->issue_date)),
+            'dueDate'        => date('d/m/Y', strtotime($invoice->due_date)),
+            'items'          => $invoice->items->toArray(),
+            'subtotal'       => $invoice->subtotal,
+            'discountAmount' => $invoice->discount_amount ?? 0,
+            'taxRate'        => $invoice->tax_rate ?? 0,
+            'taxAmount'      => $invoice->tax_amount ?? 0,
+            'total'          => $invoice->total,
+            'currency'       => $invoice->currency ?? 'USD',
+            'notes'          => '¡Gracias por su pago! Esta factura ha sido saldada en su totalidad.',
+        ];
+
+        $htmlBody = view('emails.document', $emailData)->render();
+
+        \Illuminate\Support\Facades\Mail::html($htmlBody, function ($message) use ($invoice, $subject, $pdfContent, $filename) {
+            $message->to($invoice->client->email)
+                    ->subject($subject)
+                    ->attachData($pdfContent, $filename, ['mime' => 'application/pdf']);
+        });
+
+        \Illuminate\Support\Facades\Log::info("Payment confirmation sent for {$invoice->invoice_number} to {$invoice->client->email}");
     }
 
     public function pdf($id)

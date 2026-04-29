@@ -4,6 +4,11 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\RecurringInvoice;
 use App\Models\RecurringInvoiceItem;
+use App\Models\Invoice;
+use App\Models\Setting;
+use App\Services\EmailService;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Log;
 use Carbon\Carbon;
 
 class RecurringController extends Controller
@@ -51,15 +56,18 @@ class RecurringController extends Controller
             'auto_send', 'send_via', 'notes', 'terms'
         ]);
 
-        // Calculate subtotal from items
         $subtotal = collect($request->items)->sum(function ($i) {
             return $i['quantity'] * $i['unit_price'];
         });
 
+        $taxRate = $request->tax_rate ?? 0;
+        $taxAmount = $subtotal * ($taxRate / 100);
+        $total = $subtotal + $taxAmount;
+
         $data['subtotal']        = $subtotal;
         $data['next_issue_date'] = $request->start_date;
         $data['status']          = 'active';
-        $data['tax_rate']        = $request->tax_rate ?? 0;
+        $data['tax_rate']        = $taxRate;
         $data['currency']        = $request->currency ?? 'USD';
         $data['auto_send']       = $request->auto_send ?? false;
         $data['send_via']        = $request->send_via ?? 'email';
@@ -71,7 +79,6 @@ class RecurringController extends Controller
 
         $recurring = RecurringInvoice::create($data);
 
-        // Create items
         foreach ($request->items as $idx => $item) {
             $recurring->items()->create([
                 'description' => $item['description'],
@@ -84,11 +91,163 @@ class RecurringController extends Controller
 
         $recurring->load(['client', 'items']);
 
+        // ── Generate the first invoice immediately ──
+        $firstInvoice = null;
+        $emailSent = false;
+        try {
+            $firstInvoice = $this->generateInvoiceFromRecurring($recurring);
+
+            // Send the invoice by email
+            if ($recurring->client && !empty($recurring->client->email)) {
+                $emailSent = $this->sendInvoiceEmail($firstInvoice);
+            }
+        } catch (\Exception $e) {
+            Log::error('Error generating first invoice for recurring #' . $recurring->id . ': ' . $e->getMessage());
+        }
+
         return response()->json([
-            'success' => true,
-            'data'    => $recurring,
-            'message' => 'Suscripción recurrente creada exitosamente.'
+            'success'       => true,
+            'data'          => $recurring,
+            'first_invoice' => $firstInvoice,
+            'email_sent'    => $emailSent,
+            'message'       => 'Suscripción creada' . ($firstInvoice ? '. Primera factura generada' : '') . ($emailSent ? ' y enviada por email.' : '.')
         ], 201);
+    }
+
+    /**
+     * Generate an invoice from a recurring template.
+     */
+    private function generateInvoiceFromRecurring(RecurringInvoice $recurring): Invoice
+    {
+        $settings = Setting::getAll();
+        $issueDate = Carbon::today();
+        $defaultDueDays = (int)($settings['default_due_days'] ?? 30);
+        $dueDate = $issueDate->copy()->addDays($defaultDueDays);
+
+        $invoiceNumber = ($settings['invoice_prefix'] ?? 'FAC-')
+            . str_pad($settings['invoice_next_number'] ?? '1', 4, '0', STR_PAD_LEFT);
+        Setting::where('setting_key', 'invoice_next_number')->increment('setting_value');
+
+        $subtotal = $recurring->items->sum(fn($i) => $i->quantity * $i->unit_price);
+        $taxRate = $recurring->tax_rate ?? 0;
+        $taxAmount = $subtotal * ($taxRate / 100);
+        $total = $subtotal + $taxAmount;
+
+        $invoice = Invoice::create([
+            'invoice_number' => $invoiceNumber,
+            'client_id'      => $recurring->client_id,
+            'status'         => 'sent',
+            'issue_date'     => $issueDate,
+            'due_date'       => $dueDate,
+            'subtotal'       => $subtotal,
+            'tax_rate'       => $taxRate,
+            'tax_amount'     => $taxAmount,
+            'total'          => $total,
+            'currency'       => $recurring->currency,
+            'notes'          => $recurring->notes,
+            'terms'          => $recurring->terms,
+            'recurring_id'   => $recurring->id,
+            'created_by'     => $recurring->created_by,
+        ]);
+
+        foreach ($recurring->items as $item) {
+            $invoice->items()->create([
+                'description' => $item->description,
+                'quantity'    => $item->quantity,
+                'unit_price'  => $item->unit_price,
+                'amount'      => $item->quantity * $item->unit_price,
+                'sort_order'  => $item->sort_order,
+            ]);
+        }
+
+        // Update recurring: advance next_issue_date and increment count
+        $nextDate = $issueDate->copy();
+        switch ($recurring->frequency) {
+            case 'weekly':     $nextDate->addWeek(); break;
+            case 'biweekly':   $nextDate->addWeeks(2); break;
+            case 'monthly':    $nextDate->addMonth(); break;
+            case 'quarterly':  $nextDate->addMonths(3); break;
+            case 'semiannual': $nextDate->addMonths(6); break;
+            case 'annual':     $nextDate->addYear(); break;
+        }
+
+        $recurring->update([
+            'next_issue_date'  => $nextDate,
+            'occurrences_count' => $recurring->occurrences_count + 1,
+        ]);
+
+        $invoice->load(['client', 'items']);
+        return $invoice;
+    }
+
+    /**
+     * Send an invoice by email using the styled template.
+     */
+    private function sendInvoiceEmail(Invoice $invoice): bool
+    {
+        try {
+            $settings = Setting::getAll();
+            EmailService::applySmtpConfig($settings);
+
+            $companyData = InvoiceController::buildCompanyData($settings);
+
+            // Generate PDF
+            $pdfData = [
+                'invoice'  => $invoice->toArray(),
+                'company'  => $companyData,
+                'client'   => $invoice->client->toArray(),
+                'items'    => $invoice->items->toArray(),
+                'settings' => $settings,
+            ];
+            $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('pdf.invoice', $pdfData);
+            $pdfContent = $pdf->output();
+
+            $companyName = $settings['company_name'] ?? 'GridBase';
+            $subject = "Factura {$invoice->invoice_number} de {$companyName}";
+            $filename = "Factura-{$invoice->invoice_number}.pdf";
+
+            $emailData = [
+                'subject'        => $subject,
+                'logoUrl'        => 'https://gridbase.com.do/wp-content/uploads/2025/02/cropped-imagen_2026-03-16_154126791.png',
+                'clientName'     => $invoice->client->contact_name,
+                'companyName'    => $companyName,
+                'companyEmail'   => $settings['company_email'] ?? '',
+                'companyPhone'   => $settings['company_phone'] ?? '',
+                'companyWebsite' => $settings['company_website'] ?? '',
+                'isQuote'        => false,
+                'docNumber'      => $invoice->invoice_number,
+                'status'         => $invoice->status,
+                'issueDate'      => date('d/m/Y', strtotime($invoice->issue_date)),
+                'dueDate'        => date('d/m/Y', strtotime($invoice->due_date)),
+                'items'          => $invoice->items->toArray(),
+                'subtotal'       => $invoice->subtotal,
+                'discountAmount' => $invoice->discount_amount ?? 0,
+                'taxRate'        => $invoice->tax_rate ?? 0,
+                'taxAmount'      => $invoice->tax_amount ?? 0,
+                'total'          => $invoice->total,
+                'currency'       => $invoice->currency ?? 'USD',
+                'notes'          => $invoice->notes ?? '',
+            ];
+
+            $htmlBody = view('emails.document', $emailData)->render();
+
+            Mail::html($htmlBody, function ($message) use ($invoice, $subject, $pdfContent, $filename) {
+                $message->to($invoice->client->email)
+                        ->subject($subject)
+                        ->attachData($pdfContent, $filename, ['mime' => 'application/pdf']);
+            });
+
+            $invoice->update([
+                'sent_at'  => now(),
+                'sent_via' => 'email',
+            ]);
+
+            Log::info("First invoice {$invoice->invoice_number} sent to {$invoice->client->email} (recurring #{$invoice->recurring_id})");
+            return true;
+        } catch (\Exception $e) {
+            Log::error("Failed to send first invoice {$invoice->invoice_number}: " . $e->getMessage());
+            return false;
+        }
     }
 
     /**

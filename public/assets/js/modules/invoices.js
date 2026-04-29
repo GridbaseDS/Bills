@@ -131,7 +131,7 @@ const InvoicesModule = {
                         <button class="btn btn-ghost" onclick="InvoicesModule.sendEmail(${id})">✉️ Enviar</button>
                         <button class="btn btn-ghost" onclick="InvoicesModule.duplicateInvoice(${id})">📋 Duplicar</button>
                         <a href="#invoices/edit/${id}" class="btn btn-ghost">✏️ Editar</a>
-                        ${inv.status !== 'paid' ? `<button class="btn btn-primary" onclick="InvoicesModule.showPaymentModal(${id}, ${inv.total - inv.amount_paid})">💰 Registrar Pago</button>` : ''}
+                        ${inv.status !== 'paid' ? `<button class="btn btn-primary" onclick="InvoicesModule.showPaymentModal(${id}, ${(inv.total || 0) - (inv.amount_paid || 0)})">💰 Registrar Pago</button>` : ''}
                     </div>
                 </div>
 
@@ -408,6 +408,7 @@ const InvoicesModule = {
     },
 
     showPaymentModal(id, balance) {
+        balance = parseFloat(balance) || 0;
         const amount = prompt(`Monto a registrar (Balance: ${App.formatCurrency(balance, '')}):`, balance.toFixed(2));
         if (amount === null) return;
         const parsedAmount = parseFloat(amount);

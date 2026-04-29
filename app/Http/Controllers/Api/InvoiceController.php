@@ -38,6 +38,7 @@ class InvoiceController extends Controller
         $data['discount_amount'] = $discountAmount;
         $data['tax_amount'] = $taxAmount;
         $data['total'] = $total;
+        $data['status'] = 'sent';
         if ($request->user()) { $data['created_by'] = $request->user()->id; }
 
         $invoice = Invoice::create($data);
@@ -48,7 +49,65 @@ class InvoiceController extends Controller
             $invoice->items()->create($item);
         }
 
-        return response()->json(['success' => true, 'invoice' => $invoice], 201);
+        // Auto-send email to client
+        $emailSent = false;
+        $invoice->load('client');
+        if ($invoice->client && !empty($invoice->client->email)) {
+            try {
+                $this->autoSendInvoiceEmail($invoice);
+                $emailSent = true;
+            } catch (\Exception $e) {
+                \Illuminate\Support\Facades\Log::error("Auto-send failed for {$invoice->invoice_number}: " . $e->getMessage());
+            }
+        }
+
+        return response()->json(['success' => true, 'invoice' => $invoice, 'email_sent' => $emailSent], 201);
+    }
+
+    /**
+     * Auto-send invoice email on creation or conversion.
+     */
+    public function autoSendInvoiceEmail(Invoice $invoice): void
+    {
+        $invoice->load(['client', 'items']);
+        $settings = Setting::getAll();
+        EmailService::applySmtpConfig($settings);
+
+        $companyData = self::buildCompanyData($settings);
+        $companyName = $settings['company_name'] ?? 'GridBase';
+        $subject = "Factura {$invoice->invoice_number} de {$companyName}";
+        $filename = "Factura-{$invoice->invoice_number}.pdf";
+
+        $pdfData = [
+            'invoice' => $invoice->toArray(), 'company' => $companyData,
+            'client' => $invoice->client->toArray(), 'items' => $invoice->items->toArray(),
+            'settings' => $settings,
+        ];
+        $pdfContent = \Barryvdh\DomPDF\Facade\Pdf::loadView('pdf.invoice', $pdfData)->output();
+
+        $emailData = [
+            'subject' => $subject,
+            'logoUrl' => 'https://gridbase.com.do/wp-content/uploads/2025/02/imagen_2026-03-16_154236217-1024x228.png',
+            'clientName' => $invoice->client->contact_name,
+            'companyName' => $companyName, 'companyEmail' => $settings['company_email'] ?? '',
+            'companyPhone' => $settings['company_phone'] ?? '', 'companyWebsite' => $settings['company_website'] ?? '',
+            'isQuote' => false, 'docNumber' => $invoice->invoice_number, 'status' => $invoice->status,
+            'issueDate' => date('d/m/Y', strtotime($invoice->issue_date)),
+            'dueDate' => date('d/m/Y', strtotime($invoice->due_date)),
+            'items' => $invoice->items->toArray(), 'subtotal' => $invoice->subtotal,
+            'discountAmount' => $invoice->discount_amount ?? 0, 'taxRate' => $invoice->tax_rate ?? 0,
+            'taxAmount' => $invoice->tax_amount ?? 0, 'total' => $invoice->total,
+            'currency' => $invoice->currency ?? 'USD', 'notes' => $invoice->notes ?? '',
+        ];
+
+        $htmlBody = view('emails.document', $emailData)->render();
+        \Illuminate\Support\Facades\Mail::html($htmlBody, function ($message) use ($invoice, $subject, $pdfContent, $filename) {
+            $message->to($invoice->client->email)->subject($subject)
+                    ->attachData($pdfContent, $filename, ['mime' => 'application/pdf']);
+        });
+
+        $invoice->update(['sent_at' => now(), 'sent_via' => 'email', 'status' => 'sent']);
+        \Illuminate\Support\Facades\Log::info("Invoice {$invoice->invoice_number} auto-sent to {$invoice->client->email}");
     }
 
     public function show($id)

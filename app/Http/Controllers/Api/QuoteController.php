@@ -69,7 +69,7 @@ class QuoteController extends Controller
         $invoice = \App\Models\Invoice::create([
             'invoice_number' => $invoiceNumber,
             'client_id' => $quote->client_id,
-            'status' => 'draft',
+            'status' => 'sent',
             'issue_date' => now(),
             'due_date' => now()->addDays((int)Setting::where('setting_key', 'default_due_days')->value('setting_value') ?: 30),
             'subtotal' => $quote->subtotal,
@@ -98,7 +98,17 @@ class QuoteController extends Controller
         $quote->converted_invoice_id = $invoice->id;
         $quote->save();
 
-        return response()->json(['success' => true, 'invoice_id' => $invoice->id]);
+        // Auto-send email to client
+        $emailSent = false;
+        try {
+            $invoiceCtrl = new InvoiceController();
+            $invoiceCtrl->autoSendInvoiceEmail($invoice);
+            $emailSent = true;
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error("Auto-send on convert failed for {$invoice->invoice_number}: " . $e->getMessage());
+        }
+
+        return response()->json(['success' => true, 'invoice_id' => $invoice->id, 'email_sent' => $emailSent]);
     }
 
     public function pdf($id)

@@ -12,6 +12,7 @@ const InvoicesModule = {
     },
 
     async renderList(container) {
+        const statusLabel = (s) => ({draft:'Borrador',sent:'Pendiente de Pago',paid:'Pagada',overdue:'Vencida',partial:'Pago Parcial',cancelled:'Cancelada'}[s]||s);
         try {
             const data = await App.api('invoices');
             container.innerHTML = `
@@ -33,6 +34,7 @@ const InvoicesModule = {
                                     <th>Vencimiento</th>
                                     <th>Monto</th>
                                     <th>Estado</th>
+                                    <th>Correo</th>
                                     <th>Acciones</th>
                                 </tr>
                             </thead>
@@ -44,13 +46,14 @@ const InvoicesModule = {
                                         <td>${App.formatDate(i.issue_date)}</td>
                                         <td style="${i.status === 'overdue' ? 'color: var(--red)' : ''}">${App.formatDate(i.due_date)}</td>
                                         <td class="font-semibold">${App.formatCurrency(i.total, i.currency)}</td>
-                                        <td><span class="badge badge-${i.status}">${i.status}</span></td>
+                                        <td><span class="badge badge-${i.status}">${statusLabel(i.status)}</span></td>
+                                        <td>${i.sent_at ? '<span title="Enviado: '+App.formatDate(i.sent_at)+'" style="color:var(--green);font-size:18px">✉️</span>' : '<span style="color:var(--text-muted);font-size:12px">—</span>'}</td>
                                         <td>
                                             <a href="#invoices/${i.id}" class="btn btn-ghost btn-sm" title="Ver Detalles">Ver</a>
                                             <a href="/api/invoices/${i.id}/pdf?download=1" target="_blank" class="btn btn-ghost btn-sm" title="Descargar PDF"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg></a>
                                         </td>
                                     </tr>
-                                `).join('') || `<tr><td colspan="7" class="text-center py-8 text-muted">No se encontraron facturas</td></tr>`}
+                                `).join('') || `<tr><td colspan="8" class="text-center py-8 text-muted">No se encontraron facturas</td></tr>`}
                             </tbody>
                         </table>
                     </div>
@@ -89,7 +92,8 @@ const InvoicesModule = {
                             <div class="text-right">
                                 <h3 style="font-size: 14px; color: var(--text-muted); text-transform: uppercase; margin-bottom: 8px;">Detalles</h3>
                                 <p style="margin: 0;"><strong>Vence:</strong> ${App.formatDate(inv.due_date)}</p>
-                                <p style="margin: 4px 0 0 0;"><strong>Estado:</strong> <span class="badge badge-${inv.status}">${inv.status}</span></p>
+                                <p style="margin: 4px 0 0 0;"><strong>Estado:</strong> <span class="badge badge-${inv.status}">${({draft:'Borrador',sent:'Pendiente de Pago',paid:'Pagada',overdue:'Vencida',partial:'Pago Parcial'}[inv.status])||inv.status}</span></p>
+                                ${inv.sent_at ? `<p style="margin: 4px 0 0 0; color: var(--green); font-size: 13px;">✉️ Email enviado el ${App.formatDate(inv.sent_at)}</p>` : `<p style="margin: 4px 0 0 0; color: var(--text-muted); font-size: 13px;">📭 No se ha enviado email</p>`}
                             </div>
                         </div>
 
@@ -276,8 +280,12 @@ const InvoicesModule = {
             };
 
             try {
-                await App.api('invoices', { method: 'POST', body: payload });
-                App.showToast('Factura creada correctamente');
+                const result = await App.api('invoices', { method: 'POST', body: payload });
+                if (result.email_sent) {
+                    App.showToast('Factura creada y enviada por email al cliente');
+                } else {
+                    App.showToast('Factura creada correctamente');
+                }
                 window.location.hash = 'invoices';
             } catch (err) {}
         });

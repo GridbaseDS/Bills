@@ -213,9 +213,12 @@ export default {
                 });
             });
 
-            document.getElementById('s_company_tax_id')?.addEventListener('change', async (e) => {
+            document.getElementById('s_company_tax_id')?.addEventListener('input', async (e) => {
                 const val = e.target.value.replace(/[^0-9]/g, '');
                 if (val.length === 9 || val.length === 11) {
+                    if (e.target.dataset.lastFetch === val) return;
+                    e.target.dataset.lastFetch = val;
+
                     const isRnc = val.length === 9;
                     const endpoint = isRnc ? 'rnc' : 'cedula';
                     try {

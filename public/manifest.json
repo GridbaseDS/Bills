@@ -1,6 +1,6 @@
 {
-  "name": "GridBase Bills",
-  "short_name": "GridBase",
+  "name": "Gridbase Bills",
+  "short_name": "Gridbase Bills",
   "description": "Sistema de facturación y cotizaciones de GridBase Digital Solutions",
   "start_url": "/",
   "display": "standalone",
@@ -8,12 +8,12 @@
   "theme_color": "#0B484C",
   "icons": [
     {
-      "src": "https://gridbase.com.do/wp-content/uploads/2025/02/cropped-imagen_2026-03-16_154126791.png",
+      "src": "https://gridbase.com.do/wp-content/uploads/2026/03/cropped-imagen_2026-03-18_101800374-180x180.png",
       "sizes": "192x192",
       "type": "image/png"
     },
     {
-      "src": "https://gridbase.com.do/wp-content/uploads/2025/02/cropped-imagen_2026-03-16_154126791.png",
+      "src": "https://gridbase.com.do/wp-content/uploads/2026/03/cropped-imagen_2026-03-18_101800374-180x180.png",
       "sizes": "512x512",
       "type": "image/png"
     }

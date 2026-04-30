@@ -760,7 +760,9 @@ textarea.form-control { resize: vertical; min-height: 80px; }
 }
 
 /* Hide tab bar on desktop */
-.mobile-tab-bar { display: none; }
+@media (min-width: 641px) {
+    .mobile-tab-bar { display: none !important; }
+}
 
 /* ═══════════════════════════════════════════════════════════
    PRINT

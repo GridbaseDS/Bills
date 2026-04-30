@@ -686,8 +686,10 @@ textarea.form-control { resize: vertical; min-height: 80px; }
       justify-content: flex-end;
   }
   .topbar::before {
-      content: 'Gridbase Bills'; position: absolute; left: 50%; transform: translateX(-50%);
-      font-weight: 600; font-size: 17px; color: #000; letter-spacing: -0.4px;
+      content: ''; position: absolute; left: 50%; transform: translateX(-50%);
+      width: 120px; height: 24px; top: calc(env(safe-area-inset-top, 0px) + 14px);
+      background-image: url('https://gridbase.com.do/wp-content/uploads/2025/02/cropped-imagen_2026-03-16_154126791.png');
+      background-size: contain; background-repeat: no-repeat; background-position: center;
   }
   .topbar-search { display: none; }
   .topbar-actions .btn { background: transparent; color: var(--primary); font-size: 17px; padding: 0; box-shadow: none; border: none; font-weight: 500; }

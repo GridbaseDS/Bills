@@ -172,10 +172,10 @@ class InvoiceController extends Controller
         }
         $invoice->save();
 
-        // Send payment confirmation email when fully paid
-        if ($wasPaid && !empty($invoice->client->email)) {
+        // Send payment confirmation email for full and partial payments
+        if (!empty($invoice->client->email)) {
             try {
-                $this->sendPaymentConfirmationEmail($invoice);
+                $this->sendPaymentConfirmationEmail($invoice, $amount);
             } catch (\Exception $e) {
                 \Illuminate\Support\Facades\Log::error("Failed to send payment confirmation for {$invoice->invoice_number}: " . $e->getMessage());
             }
@@ -185,9 +185,9 @@ class InvoiceController extends Controller
     }
 
     /**
-     * Send a payment confirmation email with the updated PDF (showing PAGADA status).
+     * Send a payment confirmation email with the updated PDF (showing PAGADA or PARTIAL status).
      */
-    private function sendPaymentConfirmationEmail(Invoice $invoice): void
+    private function sendPaymentConfirmationEmail(Invoice $invoice, $paymentAmount = null): void
     {
         $invoice->load(['client', 'items']);
         $settings = Setting::getAll();
@@ -196,7 +196,7 @@ class InvoiceController extends Controller
         $companyData = self::buildCompanyData($settings);
         $companyName = $settings['company_name'] ?? 'GridBase';
 
-        // Generate PDF with "PAGADA" status
+        // Generate PDF
         $pdfData = [
             'invoice'  => $invoice->toArray(),
             'company'  => $companyData,
@@ -207,8 +207,18 @@ class InvoiceController extends Controller
         $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('pdf.invoice', $pdfData);
         $pdfContent = $pdf->output();
 
-        $subject = "✅ Pago confirmado — Factura {$invoice->invoice_number}";
-        $filename = "Factura-{$invoice->invoice_number}-PAGADA.pdf";
+        $statusStr = strtoupper($invoice->status);
+        $subject = "✅ Pago registrado — Factura {$invoice->invoice_number}";
+        $filename = "Factura-{$invoice->invoice_number}-{$statusStr}.pdf";
+
+        $notes = '¡Gracias por su pago! ';
+        if ($invoice->status === 'paid') {
+            $notes .= 'Esta factura ha sido saldada en su totalidad.';
+        } else {
+            $formattedAmount = number_format((float)$paymentAmount, 2);
+            $pendingAmount = number_format((float)($invoice->total - $invoice->amount_paid), 2);
+            $notes .= "Hemos registrado su abono de {$invoice->currency} {$formattedAmount}. Pendiente a pagar: {$invoice->currency} {$pendingAmount}.";
+        }
 
         $emailData = [
             'subject'        => $subject,
@@ -220,7 +230,7 @@ class InvoiceController extends Controller
             'companyWebsite' => $settings['company_website'] ?? '',
             'isQuote'        => false,
             'docNumber'      => $invoice->invoice_number,
-            'status'         => 'paid',
+            'status'         => $invoice->status,
             'issueDate'      => date('d/m/Y', strtotime($invoice->issue_date)),
             'dueDate'        => date('d/m/Y', strtotime($invoice->due_date)),
             'items'          => $invoice->items->toArray(),
@@ -230,7 +240,7 @@ class InvoiceController extends Controller
             'taxAmount'      => $invoice->tax_amount ?? 0,
             'total'          => $invoice->total,
             'currency'       => $invoice->currency ?? 'USD',
-            'notes'          => '¡Gracias por su pago! Esta factura ha sido saldada en su totalidad.',
+            'notes'          => $notes,
         ];
 
         $htmlBody = view('emails.document', $emailData)->render();

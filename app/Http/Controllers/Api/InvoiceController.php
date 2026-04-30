@@ -22,8 +22,9 @@ class InvoiceController extends Controller
     public function store(Request $request)
     {
         $data = $request->all();
-        $data['invoice_number'] = Setting::where('setting_key', 'invoice_prefix')->value('setting_value') 
-                                . Setting::where('setting_key', 'invoice_next_number')->value('setting_value');
+        $prefix = Setting::where('setting_key', 'invoice_prefix')->value('setting_value') ?? 'FAC-';
+        $nextNum = Setting::where('setting_key', 'invoice_next_number')->value('setting_value') ?? '1';
+        $data['invoice_number'] = $prefix . str_pad($nextNum, 4, '0', STR_PAD_LEFT);
         
         Setting::where('setting_key', 'invoice_next_number')->increment('setting_value');
         
@@ -373,8 +374,9 @@ class InvoiceController extends Controller
     public function duplicate($id)
     {
         $original = Invoice::with('items')->findOrFail($id);
-        $newNumber = Setting::where('setting_key', 'invoice_prefix')->value('setting_value')
-                   . Setting::where('setting_key', 'invoice_next_number')->value('setting_value');
+        $prefix = Setting::where('setting_key', 'invoice_prefix')->value('setting_value') ?? 'FAC-';
+        $nextNum = Setting::where('setting_key', 'invoice_next_number')->value('setting_value') ?? '1';
+        $newNumber = $prefix . str_pad($nextNum, 4, '0', STR_PAD_LEFT);
         Setting::where('setting_key', 'invoice_next_number')->increment('setting_value');
 
         $new = $original->replicate();

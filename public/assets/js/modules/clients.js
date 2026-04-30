@@ -235,6 +235,33 @@ const ClientsModule = {
             </form>
         `;
 
+        document.getElementById('c_tax_id')?.addEventListener('change', async (e) => {
+            const val = e.target.value.replace(/[^0-9]/g, '');
+            if (val.length === 9 || val.length === 11) {
+                const isRnc = val.length === 9;
+                const endpoint = isRnc ? 'rnc' : 'cedula';
+                try {
+                    window.App.showToast('Buscando identificación...', 'info');
+                    const res = await window.App.api(`lookup/${endpoint}/${val}`);
+                    if (res.found && res.data) {
+                        const d = res.data;
+                        if (isRnc) {
+                            if (d.nombre) document.getElementById('c_company_name').value = d.nombre;
+                        } else {
+                            const fullName = `${d.nombres} ${d.apellido1} ${d.apellido2}`.trim();
+                            document.getElementById('c_contact_name').value = fullName;
+                            if (!document.getElementById('c_company_name').value) {
+                                document.getElementById('c_company_name').value = fullName;
+                            }
+                        }
+                        window.App.showToast('Información autocompletada', 'success');
+                    }
+                } catch (err) {
+                    window.App.showToast('RNC o Cédula no encontrada', 'error');
+                }
+            }
+        });
+
         document.getElementById('client-form').addEventListener('submit', async (e) => {
             e.preventDefault();
             const payload = {

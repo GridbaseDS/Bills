@@ -669,12 +669,13 @@ textarea.form-control { resize: vertical; min-height: 80px; }
 
 @media (max-width: 640px) {
   /* iOS App Layout */
-  html, body { max-width: 100vw; overflow-x: hidden; }
+  html, body { max-width: 100vw; overflow-x: hidden; width: 100%; }
   body { background-color: #F2F2F7; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
   
   /* Hide sidebar and toggle */
   .sidebar, .sidebar-overlay, .sidebar-toggle { display: none !important; }
-  .main-content { margin-left: 0; }
+  .app-layout { width: 100%; max-width: 100vw; overflow-x: hidden; }
+  .main-content { margin-left: 0; width: 100%; max-width: 100vw; box-sizing: border-box; }
   
   /* Topbar as iOS Navigation Bar */
   .topbar { 
@@ -735,12 +736,7 @@ textarea.form-control { resize: vertical; min-height: 80px; }
   .item-row > div { width: 100% !important; }
   .item-row .btn-icon { width: 100%; height: auto; text-align: center; justify-content: center; background: #fff; border: 1px solid #E5E5EA; margin-top: 8px; color: var(--red) !important; border-radius: 10px; }
   
-  /* Detail View Tables Override */
-  .page-content > .card table { display: table; }
-  .page-content > .card tbody { display: table-row-group; gap: 0; }
-  .page-content > .card tbody tr { display: table-row; background: transparent; box-shadow: none; padding: 0; border-radius: 0; border-bottom: 0.5px solid #E5E5EA; }
-  .page-content > .card tbody td { display: table-cell; border: none; padding: 12px 8px; }
-  
+
   /* KPI Grid */
   .kpi-grid { display: flex; flex-direction: column; gap: 16px; }
   .kpi-card { background: #fff; border-radius: 12px; border: none; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }

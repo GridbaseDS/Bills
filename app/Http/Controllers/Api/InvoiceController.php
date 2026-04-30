@@ -23,10 +23,16 @@ class InvoiceController extends Controller
     {
         $data = $request->all();
         $prefix = Setting::where('setting_key', 'invoice_prefix')->value('setting_value') ?? 'FAC-';
-        $nextNum = Setting::where('setting_key', 'invoice_next_number')->value('setting_value') ?? '1';
-        $data['invoice_number'] = $prefix . str_pad($nextNum, 4, '0', STR_PAD_LEFT);
+        $nextNum = (int)(Setting::where('setting_key', 'invoice_next_number')->value('setting_value') ?? 1);
+        $invoiceNumber = $prefix . str_pad((string)$nextNum, 4, '0', STR_PAD_LEFT);
         
-        Setting::where('setting_key', 'invoice_next_number')->increment('setting_value');
+        while (Invoice::where('invoice_number', $invoiceNumber)->exists()) {
+            $nextNum++;
+            $invoiceNumber = $prefix . str_pad((string)$nextNum, 4, '0', STR_PAD_LEFT);
+        }
+        
+        $data['invoice_number'] = $invoiceNumber;
+        Setting::where('setting_key', 'invoice_next_number')->update(['setting_value' => $nextNum + 1]);
         
         $subtotal = collect($data['items'])->sum(function($i) { return $i['quantity'] * $i['unit_price']; });
         $discountValue = $data['discount_value'] ?? 0;
@@ -375,9 +381,15 @@ class InvoiceController extends Controller
     {
         $original = Invoice::with('items')->findOrFail($id);
         $prefix = Setting::where('setting_key', 'invoice_prefix')->value('setting_value') ?? 'FAC-';
-        $nextNum = Setting::where('setting_key', 'invoice_next_number')->value('setting_value') ?? '1';
-        $newNumber = $prefix . str_pad($nextNum, 4, '0', STR_PAD_LEFT);
-        Setting::where('setting_key', 'invoice_next_number')->increment('setting_value');
+        $nextNum = (int)(Setting::where('setting_key', 'invoice_next_number')->value('setting_value') ?? 1);
+        $newNumber = $prefix . str_pad((string)$nextNum, 4, '0', STR_PAD_LEFT);
+        
+        while (Invoice::where('invoice_number', $newNumber)->exists()) {
+            $nextNum++;
+            $newNumber = $prefix . str_pad((string)$nextNum, 4, '0', STR_PAD_LEFT);
+        }
+        
+        Setting::where('setting_key', 'invoice_next_number')->update(['setting_value' => $nextNum + 1]);
 
         $new = $original->replicate();
         $new->invoice_number = $newNumber;

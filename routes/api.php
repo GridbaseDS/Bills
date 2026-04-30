@@ -9,9 +9,14 @@ use App\Http\Controllers\Api\QuoteController;
 use App\Http\Controllers\Api\RecurringController;
 use App\Http\Controllers\Api\SettingController;
 use App\Http\Controllers\Api\DashboardController;
+use App\Http\Controllers\Api\LookupController;
 
 // Public Auth
 Route::post('/auth/login', [AuthController::class, 'login']);
+
+// Lookups (Public or Protected, placing them here as public, but could be protected)
+Route::get('/lookup/rnc/{rnc}', [LookupController::class, 'rnc']);
+Route::get('/lookup/cedula/{cedula}', [LookupController::class, 'cedula']);
 
 
 

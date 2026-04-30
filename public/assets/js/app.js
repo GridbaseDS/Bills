@@ -310,7 +310,88 @@ window.App = {
     },
 
     bindEvents() {
-        // Global event delegation if needed
+        const searchInput = document.querySelector('.topbar-search input');
+        if (searchInput) {
+            searchInput.addEventListener('input', async (e) => {
+                const q = e.target.value.trim().toLowerCase();
+                
+                // Remove existing dropdown
+                document.getElementById('global-search-results')?.remove();
+                
+                if (q.length < 2) return;
+                
+                // We'll create a simple dropdown
+                const searchContainer = document.querySelector('.topbar-search');
+                searchContainer.style.position = 'relative';
+                
+                const dropdown = document.createElement('div');
+                dropdown.id = 'global-search-results';
+                dropdown.style.cssText = 'position:absolute;top:100%;left:0;right:0;background:var(--bg-card);border:1px solid var(--border-color);border-radius:6px;box-shadow:0 10px 30px rgba(0,0,0,0.2);margin-top:8px;z-index:9999;max-height:400px;overflow-y:auto;padding:8px 0;';
+                dropdown.innerHTML = '<div style="padding:12px 16px;color:var(--text-muted);font-size:13px;text-align:center;">Buscando...</div>';
+                searchContainer.appendChild(dropdown);
+                
+                try {
+                    // Fetch data to search
+                    const [invRes, cliRes] = await Promise.all([
+                        this.api('invoices').catch(()=>({data:[]})),
+                        this.api('clients').catch(()=>({data:[]}))
+                    ]);
+                    
+                    const invoices = (invRes.data || []).filter(i => 
+                        (i.invoice_number||'').toLowerCase().includes(q) || 
+                        (i.company_name||'').toLowerCase().includes(q) ||
+                        (i.contact_name||'').toLowerCase().includes(q)
+                    );
+                    
+                    const clients = (cliRes.data || []).filter(c => 
+                        (c.company_name||'').toLowerCase().includes(q) || 
+                        (c.contact_name||'').toLowerCase().includes(q) ||
+                        (c.email||'').toLowerCase().includes(q)
+                    );
+                    
+                    let html = '';
+                    
+                    if (invoices.length > 0) {
+                        html += '<div style="padding:4px 16px;font-size:11px;text-transform:uppercase;color:var(--text-muted);font-weight:700;">Facturas</div>';
+                        invoices.slice(0, 5).forEach(i => {
+                            html += `<a href="#invoices/${i.id}" style="display:block;padding:8px 16px;text-decoration:none;color:inherit;border-bottom:1px solid var(--border-color);font-size:13px;" onclick="document.getElementById('global-search-results').remove();document.querySelector('.topbar-search input').value=''">
+                                <div style="display:flex;justify-content:space-between;">
+                                    <strong>${i.invoice_number}</strong>
+                                    <span style="color:var(--primary);font-weight:600;">${this.formatCurrency(i.total, i.currency)}</span>
+                                </div>
+                                <div style="color:var(--text-muted);font-size:12px;margin-top:2px;">${i.company_name || i.contact_name}</div>
+                            </a>`;
+                        });
+                    }
+                    
+                    if (clients.length > 0) {
+                        html += '<div style="padding:4px 16px;font-size:11px;text-transform:uppercase;color:var(--text-muted);font-weight:700;margin-top:8px;">Clientes</div>';
+                        clients.slice(0, 5).forEach(c => {
+                            html += `<a href="#clients/profile/${c.id}" style="display:block;padding:8px 16px;text-decoration:none;color:inherit;border-bottom:1px solid var(--border-color);font-size:13px;" onclick="document.getElementById('global-search-results').remove();document.querySelector('.topbar-search input').value=''">
+                                <div><strong>${c.company_name || c.contact_name}</strong></div>
+                                <div style="color:var(--text-muted);font-size:12px;margin-top:2px;">${c.email}</div>
+                            </a>`;
+                        });
+                    }
+                    
+                    if (html === '') {
+                        html = '<div style="padding:12px 16px;color:var(--text-muted);font-size:13px;text-align:center;">No se encontraron resultados</div>';
+                    }
+                    
+                    dropdown.innerHTML = html;
+                    
+                } catch(e) {
+                    dropdown.innerHTML = '<div style="padding:12px 16px;color:var(--red);font-size:13px;text-align:center;">Error al buscar</div>';
+                }
+            });
+            
+            // Close dropdown when clicking outside
+            document.addEventListener('click', (e) => {
+                if (!e.target.closest('.topbar-search')) {
+                    document.getElementById('global-search-results')?.remove();
+                }
+            });
+        }
     }
 };
 

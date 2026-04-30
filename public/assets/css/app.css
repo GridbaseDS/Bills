@@ -714,12 +714,12 @@ textarea.form-control { resize: vertical; min-height: 80px; }
   thead { display: none; }
   tbody { display: flex; flex-direction: column; gap: 16px; width: 100%; }
   tbody tr { display: flex; flex-wrap: wrap; align-items: center; background: #fff; border-radius: 12px; padding: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); border: none; width: 100%; box-sizing: border-box; }
-  tbody td { border: none; padding: 4px 0; font-size: 15px; box-sizing: border-box; max-width: 100%; word-break: break-word; }
+  tbody td { display: block; border: none; padding: 4px 0; font-size: 14px; box-sizing: border-box; }
   
-  tbody tr > td:nth-child(1) { width: 100%; font-size: 17px; font-weight: 600; color: #000; }
-  tbody tr > td:nth-child(2) { width: 100%; font-size: 15px; color: #8E8E93; padding-bottom: 12px; border-bottom: 0.5px solid #E5E5EA; margin-bottom: 8px; }
-  tbody tr > td:not(:nth-child(1)):not(:nth-child(2)):not(:last-child) { flex: 1; min-width: 45%; }
-  tbody tr > td:last-child { width: 100%; display: flex; justify-content: flex-end; gap: 12px; padding-top: 12px; margin-top: 8px; border-top: 0.5px solid #E5E5EA; }
+  tbody tr > td:nth-child(1) { flex: 0 0 100%; width: 100%; font-size: 17px; font-weight: 600; color: #000; }
+  tbody tr > td:nth-child(2) { flex: 0 0 100%; width: 100%; font-size: 14px; color: #8E8E93; padding-bottom: 12px; border-bottom: 0.5px solid #E5E5EA; margin-bottom: 8px; }
+  tbody tr > td:not(:nth-child(1)):not(:nth-child(2)):not(:last-child) { flex: 1 1 45%; max-width: 50%; padding-right: 8px; }
+  tbody tr > td:last-child { flex: 0 0 100%; width: 100%; display: flex; justify-content: flex-end; gap: 12px; padding-top: 12px; margin-top: 8px; border-top: 0.5px solid #E5E5EA; }
   
   /* Prevent any inline width from breaking layout */
   .card [style*="display:flex"] { flex-wrap: wrap !important; }

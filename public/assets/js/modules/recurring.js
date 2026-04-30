@@ -282,7 +282,7 @@ const RecurringModule = {
         });
 
         container.innerHTML = this.items.map(item => `
-            <div style="display:flex;gap:12px;margin-bottom:12px;align-items:flex-start">
+            <div class="item-row" style="display:flex;gap:12px;margin-bottom:12px;align-items:flex-start">
                 <div style="flex:1"><input type="text" id="ritem_desc_${item.id}" class="form-control" placeholder="Descripción..." required></div>
                 <div style="width:100px"><input type="number" id="ritem_qty_${item.id}" class="form-control" placeholder="Cant." min="0.01" step="0.01" value="1" required onchange="window.RecurringModule.calculateTotals()" onkeyup="window.RecurringModule.calculateTotals()"></div>
                 <div style="width:150px"><input type="number" id="ritem_price_${item.id}" class="form-control" placeholder="Precio" min="0" step="0.01" required onchange="window.RecurringModule.calculateTotals()" onkeyup="window.RecurringModule.calculateTotals()"></div>

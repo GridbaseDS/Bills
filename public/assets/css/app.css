@@ -675,6 +675,20 @@ textarea.form-control { resize: vertical; min-height: 80px; }
   .filter-bar { flex-direction: column; align-items: stretch; }
   .filter-bar .form-control { width: 100%; }
   .login-card { margin: 16px; padding: 28px; }
+  
+  /* Form tables */
+  .item-row { flex-direction: column; gap: 8px !important; margin-bottom: 20px !important; background: var(--bg-hover); padding: 12px; border-radius: var(--radius-sm); }
+  .item-row > div { width: 100% !important; }
+  .item-row .btn-icon { width: 100%; height: auto; text-align: center; justify-content: center; background: var(--bg-card); border: 1px solid var(--border); margin-top: 8px; }
+  
+  .topbar { padding: 12px 16px; }
+  .topbar-actions .btn { font-size: 11px; padding: 6px 10px; }
+  
+  .table-wrapper { margin: 0 -20px; border-radius: 0; border-left: none; border-right: none; }
+  .table-wrapper table { min-width: 600px; }
+  
+  /* Adjust modal width on small screens */
+  .modal { width: 100%; height: 100vh; max-height: 100vh; border-radius: 0; }
 }
 
 /* ═══════════════════════════════════════════════════════════

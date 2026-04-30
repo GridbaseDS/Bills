@@ -366,7 +366,7 @@ const InvoicesModule = {
         });
 
         container.innerHTML = this.items.map(item => `
-            <div style="display:flex;gap:12px;margin-bottom:12px;align-items:flex-start;">
+            <div class="item-row" style="display:flex;gap:12px;margin-bottom:12px;align-items:flex-start;">
                 <div style="flex:1"><input type="text" id="item_desc_${item.id}" class="form-control" placeholder="Descripción del concepto..." required></div>
                 <div style="width:100px"><input type="number" id="item_qty_${item.id}" class="form-control" placeholder="Cant." min="0.01" step="0.01" value="${item.qty || 1}" required oninput="InvoicesModule.calculateTotals()"></div>
                 <div style="width:150px"><input type="number" id="item_price_${item.id}" class="form-control" placeholder="Precio" min="0" step="0.01" value="${item.price || ''}" required oninput="InvoicesModule.calculateTotals()"></div>

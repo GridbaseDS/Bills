@@ -279,7 +279,7 @@ const QuotesModule = {
         const c = document.getElementById('quote-items-container'); if(!c) return;
         const v = {}; this.items.forEach(item => { const d = document.getElementById(`q_item_desc_${item.id}`); if(d) v[item.id] = { desc: d.value, qty: document.getElementById(`q_item_qty_${item.id}`).value, price: document.getElementById(`q_item_price_${item.id}`).value }; });
         c.innerHTML = this.items.map(item => `
-            <div style="display:flex;gap:12px;margin-bottom:12px;align-items:flex-start;">
+            <div class="item-row" style="display:flex;gap:12px;margin-bottom:12px;align-items:flex-start;">
                 <div style="flex:1"><input type="text" id="q_item_desc_${item.id}" class="form-control" placeholder="Descripción..." required></div>
                 <div style="width:100px"><input type="number" id="q_item_qty_${item.id}" class="form-control" placeholder="Cant." min="0.01" step="0.01" value="1" required oninput="QuotesModule.calculateTotals()"></div>
                 <div style="width:150px"><input type="number" id="q_item_price_${item.id}" class="form-control" placeholder="Precio" min="0" step="0.01" required oninput="QuotesModule.calculateTotals()"></div>

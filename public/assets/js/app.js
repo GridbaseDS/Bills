@@ -203,7 +203,7 @@ window.App = {
                 <aside class="sidebar" id="sidebar">
                     <div class="sidebar-brand">
                         <div class="sidebar-brand-logo">
-                            <img src="https://gridbase.com.do/wp-content/uploads/2025/02/cropped-imagen_2026-03-16_154126791.png" alt="GridBase Digital Solutions" style="max-height: 36px; max-width: 100%; object-fit: contain;">
+                            <img src="https://gridbase.com.do/wp-content/uploads/2025/02/imagen_2026-03-16_154236217-1024x228.png" alt="GridBase Digital Solutions" style="max-height: 36px; max-width: 100%; object-fit: contain;">
                         </div>
                     </div>
                     <nav class="sidebar-nav">

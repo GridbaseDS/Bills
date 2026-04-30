@@ -668,28 +668,99 @@ textarea.form-control { resize: vertical; min-height: 80px; }
 }
 
 @media (max-width: 640px) {
-  .page-content { padding: 16px; }
-  .kpi-grid { grid-template-columns: 1fr; }
+  /* iOS App Layout */
+  body { background-color: #F2F2F7; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+  
+  /* Hide sidebar and toggle */
+  .sidebar, .sidebar-overlay, .sidebar-toggle { display: none !important; }
+  .main-content { margin-left: 0; }
+  
+  /* Topbar as iOS Navigation Bar */
+  .topbar { 
+      position: sticky; top: 0; z-index: 100;
+      background: rgba(255,255,255,0.85); backdrop-filter: saturate(180%) blur(20px); -webkit-backdrop-filter: saturate(180%) blur(20px);
+      border-bottom: 0.5px solid rgba(0,0,0,0.15);
+      padding: calc(env(safe-area-inset-top, 0px) + 12px) 16px 12px;
+      justify-content: flex-end;
+  }
+  .topbar::before {
+      content: 'Gridbase Bills'; position: absolute; left: 50%; transform: translateX(-50%);
+      font-weight: 600; font-size: 17px; color: #000; letter-spacing: -0.4px;
+  }
   .topbar-search { display: none; }
-  .page-header { flex-direction: column; align-items: flex-start; gap: 12px; }
-  .filter-bar { flex-direction: column; align-items: stretch; }
-  .filter-bar .form-control { width: 100%; }
-  .login-card { margin: 16px; padding: 28px; }
+  .topbar-actions .btn { background: transparent; color: var(--primary); font-size: 17px; padding: 0; box-shadow: none; border: none; font-weight: 500; }
+  .topbar-actions .btn:active { opacity: 0.7; transform: none; }
+  
+  /* Page Layout */
+  .page-content { padding: 16px 16px calc(90px + env(safe-area-inset-bottom, 0px)); }
+  .page-title { font-size: 34px; font-weight: 700; letter-spacing: -0.04em; color: #000; margin-bottom: 4px; }
+  .page-subtitle { font-size: 15px; color: #8E8E93; }
+  .page-header { display: flex; flex-direction: column; align-items: flex-start; margin-bottom: 16px; gap: 12px; }
+  
+  /* Filter Bar */
+  .filter-bar { background: #fff; padding: 16px; border-radius: 12px; display: flex; flex-direction: column; gap: 12px; margin-bottom: 16px; border: none; }
+  .filter-bar .form-control { background: #F2F2F7; border: none; width: 100%; border-radius: 10px; }
+  
+  /* Cards as iOS Inset Grouped */
+  .card { background: transparent; border: none; box-shadow: none; padding: 0; margin-bottom: 24px; }
+  .card-body, .card-header { background: #fff; padding: 16px; }
+  .card-body { border-radius: 12px; }
+  .card-header { border-radius: 12px 12px 0 0; border-bottom: 0.5px solid #E5E5EA; }
+  
+  /* Generic Table to iOS Card transformation */
+  .table-wrapper { overflow: visible !important; border: none; margin: 0; background: transparent; border-radius: 0; }
+  table { display: block; min-width: 100% !important; }
+  thead { display: none; }
+  tbody { display: flex; flex-direction: column; gap: 16px; }
+  tbody tr { display: flex; flex-wrap: wrap; align-items: center; background: #fff; border-radius: 12px; padding: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); border: none; }
+  tbody td { border: none; padding: 4px 0; font-size: 15px; }
+  
+  tbody tr > td:nth-child(1) { width: 100%; font-size: 17px; font-weight: 600; color: #000; }
+  tbody tr > td:nth-child(2) { width: 100%; font-size: 15px; color: #8E8E93; padding-bottom: 12px; border-bottom: 0.5px solid #E5E5EA; margin-bottom: 8px; }
+  tbody tr > td:not(:nth-child(1)):not(:nth-child(2)):not(:last-child) { flex: 1; min-width: 45%; }
+  tbody tr > td:last-child { width: 100%; display: flex; justify-content: flex-end; gap: 12px; padding-top: 12px; margin-top: 8px; border-top: 0.5px solid #E5E5EA; }
+  
+  /* iOS Input Forms */
+  .form-control { background: #fff; border: 1px solid #E5E5EA; border-radius: 10px; padding: 12px 14px; font-size: 17px; }
+  .form-group { margin-bottom: 16px; }
+  .form-label { font-size: 13px; text-transform: uppercase; color: #8E8E93; margin-left: 12px; margin-bottom: 6px; font-weight: 500; }
   
   /* Form tables */
-  .item-row { flex-direction: column; gap: 8px !important; margin-bottom: 20px !important; background: var(--bg-hover); padding: 12px; border-radius: var(--radius-sm); }
+  .item-row { flex-direction: column; gap: 8px !important; margin-bottom: 16px !important; background: #fff; padding: 16px; border-radius: 12px; border: 1px solid #E5E5EA; }
   .item-row > div { width: 100% !important; }
-  .item-row .btn-icon { width: 100%; height: auto; text-align: center; justify-content: center; background: var(--bg-card); border: 1px solid var(--border); margin-top: 8px; }
+  .item-row .btn-icon { width: 100%; height: auto; text-align: center; justify-content: center; background: #fff; border: 1px solid #E5E5EA; margin-top: 8px; color: var(--red) !important; border-radius: 10px; }
   
-  .topbar { padding: 12px 16px; }
-  .topbar-actions .btn { font-size: 11px; padding: 6px 10px; }
+  /* Detail View Tables Override */
+  .page-content > .card table { display: table; }
+  .page-content > .card tbody { display: table-row-group; gap: 0; }
+  .page-content > .card tbody tr { display: table-row; background: transparent; box-shadow: none; padding: 0; border-radius: 0; border-bottom: 0.5px solid #E5E5EA; }
+  .page-content > .card tbody td { display: table-cell; border: none; padding: 12px 8px; }
   
-  .table-wrapper { margin: 0 -20px; border-radius: 0; border-left: none; border-right: none; }
-  .table-wrapper table { min-width: 600px; }
+  /* KPI Grid */
+  .kpi-grid { display: flex; flex-direction: column; gap: 16px; }
+  .kpi-card { background: #fff; border-radius: 12px; border: none; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
   
-  /* Adjust modal width on small screens */
+  .login-card { margin: 16px; padding: 28px; border-radius: 16px; }
   .modal { width: 100%; height: 100vh; max-height: 100vh; border-radius: 0; }
+  
+  /* Bottom Tab Bar */
+  .mobile-tab-bar {
+      display: flex; position: fixed; bottom: 0; left: 0; right: 0; height: calc(65px + env(safe-area-inset-bottom, 0px));
+      background: rgba(255,255,255,0.85); backdrop-filter: saturate(180%) blur(20px); -webkit-backdrop-filter: saturate(180%) blur(20px);
+      border-top: 0.5px solid rgba(0,0,0,0.15); justify-content: space-around; align-items: center;
+      padding-bottom: env(safe-area-inset-bottom, 0px); z-index: 1000;
+  }
+  .tab-link {
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      color: #999999; text-decoration: none; font-size: 10px; font-weight: 500; flex: 1; height: 100%; padding-top: 6px;
+  }
+  .tab-link.active { color: var(--primary); }
+  .tab-link svg { width: 26px; height: 26px; margin-bottom: 4px; stroke-width: 1.5; }
+  .tab-link.active svg { stroke-width: 2; }
 }
+
+/* Hide tab bar on desktop */
+.mobile-tab-bar { display: none; }
 
 /* ═══════════════════════════════════════════════════════════
    PRINT

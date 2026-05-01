@@ -457,20 +457,20 @@
                             <tr style="border-bottom: 1px solid #E5E7EB;">
                                 <td style="padding: 12px;">
                                     <strong>${payment.invoice_number}</strong><br>
-                                    <small style="color: #6B7280;">Total: ${payment.invoice_total.toFixed(2)} ${payment.invoice_currency}</small>
+                                    <small style="color: #6B7280;">Total: ${parseFloat(payment.invoice_total).toFixed(2)} ${payment.invoice_currency}</small>
                                 </td>
                                 <td style="padding: 12px;">
-                                    <span style="color: #EF4444; font-weight: 600;">${payment.payment_amount.toFixed(2)} ${payment.invoice_currency}</span>
+                                    <span style="color: #EF4444; font-weight: 600;">${parseFloat(payment.payment_amount).toFixed(2)} ${payment.invoice_currency}</span>
                                 </td>
                                 <td style="padding: 12px;">
-                                    <span style="color: #10B981; font-weight: 600;">${payment.estimated_original.toFixed(2)} ${payment.invoice_currency}</span>
+                                    <span style="color: #10B981; font-weight: 600;">${parseFloat(payment.estimated_original).toFixed(2)} ${payment.invoice_currency}</span>
                                 </td>
                                 <td style="padding: 12px;">
-                                    <span style="color: #F59E0B; font-weight: 600;">+${payment.difference.toFixed(2)}</span>
+                                    <span style="color: #F59E0B; font-weight: 600;">+${parseFloat(payment.difference).toFixed(2)}</span>
                                 </td>
                                 <td style="padding: 12px;">
                                     <button 
-                                        onclick="fixPayment(${payment.payment_id}, ${payment.estimated_original})"
+                                        onclick="fixPayment(${payment.payment_id}, ${parseFloat(payment.estimated_original)})"
                                         class="btn btn-primary"
                                         style="padding: 8px 16px; font-size: 0.9rem;">
                                         ✅ Corregir

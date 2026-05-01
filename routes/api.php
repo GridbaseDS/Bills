@@ -10,6 +10,7 @@ use App\Http\Controllers\Api\RecurringController;
 use App\Http\Controllers\Api\SettingController;
 use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\LookupController;
+use App\Http\Controllers\Api\PaymentLinkController;
 
 // Public Auth
 Route::post('/auth/login', [AuthController::class, 'login']);
@@ -50,6 +51,17 @@ Route::middleware('auth:sanctum')->group(function () {
     // Clients
     Route::apiResource('clients', ClientController::class);
     Route::get('/clients/{id}/profile', [ClientController::class, 'profile']);
+
+    // Payment Links
+    Route::prefix('invoices/{id}/payment-link')->group(function () {
+        Route::post('/generate', [PaymentLinkController::class, 'generate']);
+        Route::post('/send-email', [PaymentLinkController::class, 'sendEmail']);
+        Route::post('/send-whatsapp', [PaymentLinkController::class, 'sendWhatsApp']);
+        Route::post('/send-both', [PaymentLinkController::class, 'sendBoth']);
+        Route::post('/regenerate', [PaymentLinkController::class, 'regenerate']);
+        Route::get('/check', [PaymentLinkController::class, 'checkValidity']);
+        Route::get('/info', [PaymentLinkController::class, 'getPaymentInfo']);
+    });
 
     // Settings
     Route::get('/settings', [SettingController::class, 'index']);

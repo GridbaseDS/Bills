@@ -276,7 +276,8 @@ class PaymentController extends Controller
                 ]);
                 
                 // Get original amount from custom_id (for currency conversion)
-                $customId = $response['purchase_units'][0]['custom_id'] ?? null;
+                // IMPORTANT: custom_id is in the capture object, not purchase_unit
+                $customId = $capture['custom_id'] ?? null;
                 $originalAmount = $capturedAmount;
                 $originalCurrency = $capturedCurrency;
                 $conversionRate = 1.0;

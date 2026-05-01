@@ -11,6 +11,63 @@ use Illuminate\Support\Facades\Log;
 class PaymentController extends Controller
 {
     /**
+     * Show the invoice search page
+     */
+    public function searchPage()
+    {
+        return view('payment.search');
+    }
+    
+    /**
+     * Search for an invoice by number
+     */
+    public function searchInvoice(Request $request)
+    {
+        $request->validate([
+            'invoice_number' => 'required|string'
+        ]);
+        
+        $invoiceNumber = strtoupper(trim($request->input('invoice_number')));
+        
+        $invoice = Invoice::where('invoice_number', '=', $invoiceNumber)->first();
+        
+        if (!$invoice) {
+            return response()->json([
+                'success' => false,
+                'message' => 'No se encontró ninguna factura con el número: ' . $invoiceNumber
+            ], 404);
+        }
+        
+        // Check if invoice can be paid
+        if (in_array($invoice->status, ['cancelled'])) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Esta factura ha sido cancelada y no puede ser pagada'
+            ], 400);
+        }
+        
+        if ($invoice->status === 'paid' && $invoice->getRemainingBalance() <= 0) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Esta factura ya está completamente pagada'
+            ], 400);
+        }
+        
+        // Generate payment token if not exists or expired
+        if (!$invoice->isPaymentTokenValid()) {
+            $invoice->generatePaymentToken();
+        }
+        
+        return response()->json([
+            'success' => true,
+            'payment_url' => $invoice->getPaymentUrl(),
+            'invoice_number' => $invoice->invoice_number,
+            'total' => $invoice->total,
+            'remaining' => $invoice->getRemainingBalance()
+        ]);
+    }
+    
+    /**
      * Show the payment page for a specific invoice
      */
     public function show($token)

@@ -114,8 +114,50 @@ class EmailService
 
     public function sendInvoice($invoice, string $pdfPath): array
     {
+        // Generate payment link if not exists
+        if (!$invoice->isPaymentTokenValid()) {
+            $invoice->generatePaymentToken();
+        }
+        
+        $paymentUrl = $invoice->getPaymentUrl();
+        
         $subject = "Factura {$invoice->invoice_number} de {$this->config['from_name']}";
-        $body = "<p>Hola {$invoice->client->contact_name},</p><p>Adjuntamos la factura {$invoice->invoice_number}.</p>";
+        
+        $body = "
+        <div style='font-family: Arial, sans-serif; color: #333;'>
+            <h2>Hola {$invoice->client->contact_name},</h2>
+            
+            <p>Adjuntamos la factura <strong>{$invoice->invoice_number}</strong> por el monto de {$invoice->currency} " . number_format($invoice->total, 2) . ".</p>
+            
+            <div style='background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;'>
+                <p style='margin: 0 0 5px 0; color: #666; font-size: 13px;'>Balance Pendiente</p>
+                <p style='margin: 0; font-size: 24px; font-weight: bold; color: #667eea;'>{$invoice->currency} " . number_format($invoice->getRemainingBalance(), 2) . "</p>
+                <p style='margin: 10px 0 0 0; color: #666; font-size: 13px;'>Fecha de Vencimiento: <strong>{$invoice->due_date->format('d/m/Y')}</strong></p>
+            </div>
+            
+            <p>Puede pagar esta factura de forma segura usando el siguiente enlace:</p>
+            
+            <p style='text-align: center; margin: 30px 0;'>
+                <a href='{$paymentUrl}' 
+                   style='background: #667eea; color: white; padding: 14px 28px; 
+                          text-decoration: none; border-radius: 6px; display: inline-block; 
+                          font-weight: bold; font-size: 16px;'>
+                    💳 Pagar Ahora
+                </a>
+            </p>
+            
+            <p style='font-size: 13px; color: #666;'>
+                <strong>Nota:</strong> Este enlace es válido hasta el {$invoice->payment_token_expires_at->format('d/m/Y')}.
+                También puede pagar ingresando el código de factura en nuestro portal de pagos.
+            </p>
+            
+            <p>Una copia en PDF de la factura ha sido adjuntada a este correo.</p>
+            
+            <p>Si tiene alguna pregunta, por favor responda a este correo.</p>
+            
+            <p style='margin-top: 30px;'>Gracias,<br><strong>{$this->config['from_name']}</strong></p>
+        </div>
+        ";
 
         return $this->send($invoice->client->email, $invoice->client->contact_name, $subject, $body, $pdfPath, "Factura-{$invoice->invoice_number}.pdf");
     }
@@ -130,8 +172,43 @@ class EmailService
 
     public function sendReminder($invoice): array
     {
+        // Generate payment link if not exists
+        if (!$invoice->isPaymentTokenValid()) {
+            $invoice->generatePaymentToken();
+        }
+        
+        $paymentUrl = $invoice->getPaymentUrl();
+        
         $subject = "Recordatorio de Pago: Factura {$invoice->invoice_number}";
-        $body = "<p>Hola {$invoice->client->contact_name},</p><p>Este es un recordatorio de pago para la factura {$invoice->invoice_number}.</p>";
+        
+        $body = "
+        <div style='font-family: Arial, sans-serif; color: #333;'>
+            <h2>Hola {$invoice->client->contact_name},</h2>
+            
+            <p>Este es un recordatorio de pago para la factura <strong>{$invoice->invoice_number}</strong>.</p>
+            
+            <div style='background: #fff3cd; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #ffc107;'>
+                <p style='margin: 0 0 5px 0; color: #856404; font-size: 13px;'>Balance Pendiente</p>
+                <p style='margin: 0; font-size: 24px; font-weight: bold; color: #856404;'>{$invoice->currency} " . number_format($invoice->getRemainingBalance(), 2) . "</p>
+                <p style='margin: 10px 0 0 0; color: #856404; font-size: 13px;'>Fecha de Vencimiento: <strong>{$invoice->due_date->format('d/m/Y')}</strong></p>
+            </div>
+            
+            <p>Puede realizar el pago de forma rápida y segura:</p>
+            
+            <p style='text-align: center; margin: 30px 0;'>
+                <a href='{$paymentUrl}' 
+                   style='background: #28a745; color: white; padding: 14px 28px; 
+                          text-decoration: none; border-radius: 6px; display: inline-block; 
+                          font-weight: bold; font-size: 16px;'>
+                    💳 Pagar Ahora
+                </a>
+            </p>
+            
+            <p>Si ya realizó el pago, por favor ignore este mensaje.</p>
+            
+            <p style='margin-top: 30px;'>Gracias por su atención,<br><strong>{$this->config['from_name']}</strong></p>
+        </div>
+        ";
 
         return $this->send($invoice->client->email, $invoice->client->contact_name, $subject, $body);
     }

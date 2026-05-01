@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Invoice;
 use App\Models\Payment;
+use App\Models\Setting;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -102,9 +103,12 @@ class PaymentController extends Controller
         
         $invoice->load(['client', 'items']);
         
+        $paypalConfig = $this->getPayPalConfig();
+        
         return view('payment.show', [
             'invoice' => $invoice,
-            'paypalClientId' => config('services.paypal.client_id'),
+            'paypalClientId' => $paypalConfig['client_id'] ?? null,
+            'paypalConfigured' => !empty($paypalConfig['client_id']) && !empty($paypalConfig['client_secret']),
         ]);
     }
     
@@ -226,13 +230,31 @@ class PaymentController extends Controller
     }
     
     /**
+     * Get PayPal configuration from DB or .env
+     */
+    private function getPayPalConfig()
+    {
+        // Try to get from database first
+        $clientId = Setting::get('paypal_client_id', config('services.paypal.client_id'));
+        $clientSecret = Setting::get('paypal_client_secret', config('services.paypal.client_secret'));
+        $mode = Setting::get('paypal_mode', config('services.paypal.mode', 'sandbox'));
+        
+        return [
+            'client_id' => $clientId,
+            'client_secret' => $clientSecret,
+            'mode' => $mode,
+        ];
+    }
+    
+    /**
      * Get PayPal access token
      */
     private function getPayPalAccessToken()
     {
-        $clientId = config('services.paypal.client_id');
-        $clientSecret = config('services.paypal.client_secret');
-        $mode = config('services.paypal.mode', 'sandbox');
+        $config = $this->getPayPalConfig();
+        $clientId = $config['client_id'];
+        $clientSecret = $config['client_secret'];
+        $mode = $config['mode'];
         
         $baseUrl = $mode === 'live' 
             ? 'https://api-m.paypal.com' 
@@ -266,7 +288,8 @@ class PaymentController extends Controller
      */
     private function makePayPalRequest($method, $endpoint, $accessToken, $data = null)
     {
-        $mode = config('services.paypal.mode', 'sandbox');
+        $config = $this->getPayPalConfig();
+        $mode = $config['mode'];
         $baseUrl = $mode === 'live' 
             ? 'https://api-m.paypal.com' 
             : 'https://api-m.sandbox.paypal.com';

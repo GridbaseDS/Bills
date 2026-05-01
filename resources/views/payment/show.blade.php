@@ -621,12 +621,19 @@
             <div class="payment-amount">{{ $symbol }}{{ number_format($invoice->getRemainingBalance(), 2) }}</div>
             <div class="payment-description">🔒 Pago seguro con PayPal Checkout • Tarjetas de crédito/débito • PayPal • Venmo</div>
             
+            @if(!$paypalConfigured)
+            <div class="alert alert-error show" style="margin-top: 20px;">
+                <strong>⚠️ PayPal no configurado</strong><br>
+                El sistema de pagos PayPal no está configurado correctamente. Por favor, contacte al administrador para habilitar los pagos en línea.
+            </div>
+            @else
             <div class="loading" id="loading">
                 <div class="spinner"></div>
                 <div class="loading-text">Procesando pago...</div>
             </div>
             
             <div id="paypal-button-container"></div>
+            @endif
         </div>
         @else
         <div class="paid-notice">
@@ -641,9 +648,13 @@
         </div>
     </div>
     
-    @if($invoice->getRemainingBalance() > 0)
+    @if($invoice->getRemainingBalance() > 0 && $paypalConfigured)
     <script src="https://www.paypal.com/sdk/js?client-id={{ $paypalClientId }}&currency={{ $invoice->currency }}&intent=capture&enable-funding=venmo,card&disable-funding=paylater&locale=es_ES"></script>
     <script>
+        console.log('PayPal SDK loaded successfully');
+        console.log('Currency:', '{{ $invoice->currency }}');
+        console.log('Amount:', '{{ number_format($invoice->getRemainingBalance(), 2, '.', '') }}');
+        
         const stepReview = document.getElementById('step-review');
         const stepPay = document.getElementById('step-pay');
         
@@ -748,8 +759,25 @@
                 
                 document.getElementById('loading').classList.remove('active');
                 document.getElementById('paypal-button-container').style.display = 'block';
-                showMessage('❌ Error al procesar el pago. Por favor, intente nuevamente.', 'error');
-                console.error(err);
+                
+                console.error('PayPal SDK Error:', err);
+                
+                // Show more descriptive error message
+                let errorMessage = '❌ Error al procesar el pago.';
+                
+                if (err && typeof err === 'string') {
+                    if (err.includes('INVALID_CLIENT_CREDENTIALS')) {
+                        errorMessage = '❌ Error de configuración: Las credenciales de PayPal no son válidas. Contacte al administrador.';
+                    } else if (err.includes('Timeout')) {
+                        errorMessage = '⏱️ La conexión tardó demasiado. Por favor, intente nuevamente.';
+                    } else {
+                        errorMessage += ' ' + err;
+                    }
+                } else if (err && err.message) {
+                    errorMessage += ' ' + err.message;
+                }
+                
+                showMessage(errorMessage, 'error');
             },
             
             onCancel: function(data) {

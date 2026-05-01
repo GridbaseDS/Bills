@@ -501,8 +501,8 @@
                 <div>
                     <div class="invoice-number-large">{{ $invoice->invoice_number }}</div>
                     <div class="invoice-subtitle">
-                        Emitida: {{ $invoice->invoice_date->format('d/m/Y') }} · 
-                        Vence: {{ $invoice->due_date->format('d/m/Y') }}
+                        Emitida: {{ $invoice->issue_date ? $invoice->issue_date->format('d/m/Y') : 'N/A' }} · 
+                        Vence: {{ $invoice->due_date ? $invoice->due_date->format('d/m/Y') : 'N/A' }}
                     </div>
                 </div>
                 <div>

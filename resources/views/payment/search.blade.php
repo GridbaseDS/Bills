@@ -658,7 +658,7 @@
             currentInvoiceUrl = paymentUrl;
             
             document.getElementById('preview-number').textContent = invoice.number;
-            document.getElementById('preview-date').textContent = 'Fecha: ' + formatDate(invoice.date) + ' · Vence: ' + formatDate(invoice.due_date);
+            document.getElementById('preview-date').textContent = 'Fecha: ' + formatDate(invoice.issue_date) + ' · Vence: ' + formatDate(invoice.due_date);
             document.getElementById('preview-client').textContent = invoice.client.name;
             
             const statusBadge = document.getElementById('preview-status');
@@ -684,7 +684,7 @@
             
             document.getElementById('preview-subtotal').textContent = formatCurrency(invoice.subtotal, invoice.currency);
             document.getElementById('preview-tax-rate').textContent = invoice.tax_rate;
-            document.getElementById('preview-tax').textContent = formatCurrency(invoice.tax, invoice.currency);
+            document.getElementById('preview-tax').textContent = formatCurrency(invoice.tax_amount, invoice.currency);
             
             if (invoice.amount_paid > 0) {
                 document.getElementById('paid-row').style.display = 'flex';

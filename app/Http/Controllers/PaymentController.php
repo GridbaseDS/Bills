@@ -63,7 +63,7 @@ class PaymentController extends Controller
             'invoice' => [
                 'number' => $invoice->invoice_number,
                 'status' => $invoice->status,
-                'date' => $invoice->invoice_date,
+                'issue_date' => $invoice->issue_date,
                 'due_date' => $invoice->due_date,
                 'client' => [
                     'name' => $invoice->client->name ?? 'N/A',
@@ -73,13 +73,13 @@ class PaymentController extends Controller
                     return [
                         'description' => $item->description,
                         'quantity' => $item->quantity,
-                        'price' => $item->price,
-                        'total' => $item->quantity * $item->price
+                        'price' => $item->unit_price,
+                        'total' => $item->amount
                     ];
                 }),
                 'subtotal' => $invoice->subtotal,
                 'tax_rate' => $invoice->tax_rate,
-                'tax' => $invoice->tax,
+                'tax_amount' => $invoice->tax_amount,
                 'total' => $invoice->total,
                 'amount_paid' => $invoice->amount_paid,
                 'remaining' => $invoice->getRemainingBalance(),

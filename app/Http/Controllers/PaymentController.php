@@ -269,12 +269,23 @@ class PaymentController extends Controller
                 $capturedAmount = (float) $capture['amount']['value'];
                 $capturedCurrency = $capture['amount']['currency_code'];
                 
+                Log::info('PayPal capture response details', [
+                    'captured_amount' => $capturedAmount,
+                    'captured_currency' => $capturedCurrency,
+                    'purchase_unit' => $response['purchase_units'][0]
+                ]);
+                
                 // Get original amount from custom_id (for currency conversion)
                 $customId = $response['purchase_units'][0]['custom_id'] ?? null;
                 $originalAmount = $capturedAmount;
                 $originalCurrency = $capturedCurrency;
                 $conversionRate = 1.0;
                 $paymentNote = 'Pago procesado automáticamente vía PayPal';
+                
+                Log::info('Custom ID extraction', [
+                    'custom_id_found' => $customId !== null,
+                    'custom_id_value' => $customId
+                ]);
                 
                 if ($customId) {
                     $customData = json_decode($customId, true);
@@ -312,6 +323,14 @@ class PaymentController extends Controller
                         'payment_date' => now(),
                         'reference' => $capture['id'],
                         'notes' => $paymentNote
+                    ]);
+                    
+                    Log::info('Payment created in database', [
+                        'payment_id' => $payment->id,
+                        'amount_saved' => $payment->amount,
+                        'original_amount' => $originalAmount,
+                        'captured_amount' => $capturedAmount,
+                        'invoice_currency' => $invoice->currency
                     ]);
                     
                     // Update invoice with ORIGINAL amount

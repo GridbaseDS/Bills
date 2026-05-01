@@ -3,9 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Buscar Factura - Gridbase Bills</title>
+    <title>Pago de Factura - Gridbase Bills</title>
     <link rel="icon" type="image/png" href="https://gridbase.com.do/wp-content/uploads/2026/03/cropped-imagen_2026-03-18_101800374-180x180.png">
     <style>
+        :root {
+            --primary: #0B484C;
+            --primary-dark: #094044;
+            --accent: #00DF83;
+            --bg: #F9FAFB;
+            --text: #111827;
+            --text-light: #6B7280;
+            --border: #E5E7EB;
+        }
+        
         * {
             margin: 0;
             padding: 0;
@@ -13,267 +23,214 @@
         }
         
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-            background: linear-gradient(135deg, #F4F6F8 0%, #E5E7EB 100%);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
             min-height: 100vh;
             padding: 20px;
+        }
+        
+        .checkout-container {
+            max-width: 700px;
+            margin: 0 auto;
+            animation: fadeIn 0.4s;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .checkout-header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        
+        .logo {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 8px;
+        }
+        
+        .logo .accent {
+            color: var(--accent);
+        }
+        
+        .checkout-title {
+            font-size: 15px;
+            color: var(--text-light);
+        }
+        
+        .steps {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 40px;
+            position: relative;
+        }
+        
+        .steps::before {
+            content: '';
+            position: absolute;
+            top: 20px;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: var(--border);
+            z-index: 0;
+        }
+        
+        .step {
+            flex: 1;
+            text-align: center;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .step-circle {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: white;
+            border: 2px solid var(--border);
+            color: #9CA3AF;
             display: flex;
             align-items: center;
             justify-content: center;
+            font-weight: 700;
+            margin: 0 auto 10px;
+            transition: all 0.3s;
         }
         
-        .container {
-            max-width: 560px;
-            width: 100%;
-            animation: fadeInUp 0.5s ease;
+        .step.active .step-circle {
+            background: var(--primary);
+            border-color: var(--primary);
+            color: white;
+            box-shadow: 0 0 0 4px rgba(11, 72, 76, 0.1);
         }
         
-        @keyframes fadeInUp {
-            from {
-                opacity: 0;
-                transform: translateY(20px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
+        .step.completed .step-circle {
+            background: #10B981;
+            border-color: #10B981;
+            color: white;
+        }
+        
+        .step-label {
+            font-size: 13px;
+            color: #9CA3AF;
+            font-weight: 500;
+        }
+        
+        .step.active .step-label {
+            color: var(--primary);
+            font-weight: 600;
         }
         
         .card {
             background: white;
-            border-radius: 16px;
-            box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
-            overflow: hidden;
+            border-radius: 12px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            padding: 32px;
             margin-bottom: 20px;
         }
         
-        .header {
-            background: linear-gradient(135deg, #0B484C 0%, #094044 100%);
-            color: white;
-            padding: 40px 30px;
-            text-align: center;
-            position: relative;
-        }
-        
-        .header::after {
-            content: '';
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            height: 4px;
-            background: linear-gradient(90deg, #00DF83 0%, #00B96B 100%);
-        }
-        
-        .header .logo {
-            font-size: 32px;
-            font-weight: 700;
-            margin-bottom: 16px;
-            text-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-        }
-        
-        .header .logo .accent {
-            color: #00DF83;
-        }
-        
-        .icon {
-            font-size: 48px;
-            margin-bottom: 16px;
-            animation: pulse 2s ease-in-out infinite;
-        }
-        
-        @keyframes pulse {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.05); }
-        }
-        
-        .header h1 {
-            font-size: 26px;
-            margin-bottom: 10px;
+        .card-title {
+            font-size: 18px;
             font-weight: 600;
-        }
-        
-        .header p {
-            font-size: 15px;
-            opacity: 0.9;
-            line-height: 1.5;
-        }
-        
-        .content {
-            padding: 40px 30px;
+            margin-bottom: 24px;
         }
         
         .form-group {
-            margin-bottom: 25px;
+            margin-bottom: 20px;
         }
         
         label {
-            display: flex;
-            align-items: center;
+            display: block;
             font-size: 14px;
             font-weight: 600;
-            color: #1F2937;
-            margin-bottom: 10px;
-        }
-        
-        label::before {
-            content: '📄';
-            margin-right: 8px;
-            font-size: 18px;
-        }
-        
-        .input-wrapper {
-            position: relative;
+            color: var(--text);
+            margin-bottom: 8px;
         }
         
         input[type="text"] {
             width: 100%;
-            padding: 16px 48px 16px 16px;
-            border: 2px solid #E5E7EB;
-            border-radius: 10px;
-            font-size: 17px;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            padding: 14px 16px;
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            font-size: 16px;
+            transition: all 0.2s;
             text-transform: uppercase;
             font-weight: 600;
-            color: #0B484C;
-            letter-spacing: 0.5px;
+            color: var(--primary);
         }
         
         input[type="text"]:focus {
             outline: none;
-            border-color: #0B484C;
-            box-shadow: 0 0 0 4px rgba(11, 72, 76, 0.1);
-            transform: translateY(-2px);
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(11, 72, 76, 0.1);
         }
         
-        .clear-btn {
-            position: absolute;
-            right: 12px;
-            top: 50%;
-            transform: translateY(-50%);
-            background: none;
-            border: none;
-            font-size: 20px;
-            cursor: pointer;
-            opacity: 0;
-            transition: all 0.2s;
-            padding: 8px;
-            color: #9CA3AF;
-        }
-        
-        .clear-btn.show {
-            opacity: 1;
-        }
-        
-        .clear-btn:hover {
-            color: #DC2626;
-            transform: translateY(-50%) scale(1.2);
+        .input-hint {
+            font-size: 13px;
+            color: var(--text-light);
+            margin-top: 6px;
         }
         
         .btn {
             width: 100%;
-            padding: 18px;
-            background: linear-gradient(135deg, #0B484C 0%, #094044 100%);
-            color: white;
+            padding: 16px;
             border: none;
-            border-radius: 10px;
+            border-radius: 8px;
             font-size: 16px;
             font-weight: 600;
             cursor: pointer;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            position: relative;
-            overflow: hidden;
+            transition: all 0.2s;
             display: flex;
             align-items: center;
             justify-content: center;
             gap: 8px;
         }
         
-        .btn-secondary {
-            background: #F3F4F6;
-            color: #374151;
-            margin-top: 12px;
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: white;
         }
         
-        .btn-secondary:hover {
-            background: #E5E7EB;
-        }
-        
-        .btn::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
-            transition: left 0.6s;
-        }
-        
-        .btn:hover::before {
-            left: 100%;
-        }
-        
-        .btn:hover {
+        .btn-primary:hover:not(:disabled) {
             transform: translateY(-2px);
-            box-shadow: 0 8px 20px rgba(11, 72, 76, 0.4);
+            box-shadow: 0 8px 16px rgba(11, 72, 76, 0.2);
         }
         
-        .btn:active {
-            transform: translateY(0);
-        }
-        
-        .btn:disabled {
+        .btn-primary:disabled {
             opacity: 0.6;
             cursor: not-allowed;
-            transform: none;
         }
         
         .alert {
-            padding: 16px 18px;
-            border-radius: 10px;
+            padding: 14px 16px;
+            border-radius: 8px;
             margin-bottom: 20px;
             font-size: 14px;
             display: none;
-            animation: slideDown 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-            font-weight: 500;
-        }
-        
-        @keyframes slideDown {
-            from {
-                opacity: 0;
-                transform: translateY(-15px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
         }
         
         .alert.show {
             display: flex;
             align-items: center;
             gap: 10px;
+            animation: slideDown 0.3s;
+        }
+        
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
         }
         
         .alert-error {
             background: #FEE2E2;
             color: #991B1B;
-            border-left: 4px solid #DC2626;
-        }
-        
-        .alert-error::before {
-            content: '❌';
-        }
-        
-        .alert-info {
-            background: #DBEAFE;
-            color: #1E40AF;
-            border-left: 4px solid #2563EB;
-        }
-        
-        .alert-info::before {
-            content: 'ℹ️';
+            border-left: 4px solid #EF4444;
         }
         
         .alert-success {
@@ -282,37 +239,195 @@
             border-left: 4px solid #10B981;
         }
         
-        .alert-success::before {
-            content: '✅';
+        .invoice-preview {
+            display: none;
         }
         
-        .examples {
-            margin-top: 25px;
-            padding: 20px;
-            background: linear-gradient(135deg, #F9FAFB 0%, #F3F4F6 100%);
-            border-radius: 10px;
-            font-size: 13px;
-            color: #6B7280;
-            border: 1px solid #E5E7EB;
+        .invoice-preview.show {
+            display: block;
         }
         
-        .examples strong {
-            color: #0B484C;
+        .invoice-header {
             display: flex;
-            align-items: center;
+            justify-content: space-between;
+            align-items: start;
+            padding-bottom: 20px;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #F3F4F6;
+        }
+        
+        .invoice-number-large {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--primary);
+        }
+        
+        .invoice-date {
+            font-size: 13px;
+            color: var(--text-light);
+            margin-top: 4px;
+        }
+        
+        .status-badge {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        
+        .status-pending { background: #FEF3C7; color: #92400E; }
+        .status-paid { background: #D1FAE5; color: #065F46; }
+        .status-overdue { background: #FEE2E2; color: #991B1B; }
+        
+        .client-info {
+            background: #F9FAFB;
+            padding: 16px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        
+        .client-label {
+            font-size: 12px;
+            color: #9CA3AF;
+            text-transform: uppercase;
+            margin-bottom: 6px;
+        }
+        
+        .client-name {
+            font-size: 16px;
+            font-weight: 600;
+        }
+        
+        .section-title {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-light);
             margin-bottom: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .item {
+            display: flex;
+            justify-content: space-between;
+            padding: 12px 0;
+            border-bottom: 1px solid #F3F4F6;
+        }
+        
+        .item:last-child {
+            border-bottom: none;
+        }
+        
+        .item-description {
+            flex: 1;
             font-size: 14px;
         }
         
-        .examples div {
-            line-height: 2;
-            padding-left: 8px;
+        .item-qty {
+            font-size: 13px;
+            color: var(--text-light);
+            margin-top: 4px;
+        }
+        
+        .item-amount {
+            font-size: 14px;
+            font-weight: 600;
+            margin-left: 20px;
+        }
+        
+        .summary {
+            border-top: 2px solid var(--border);
+            padding-top: 16px;
+            margin-top: 16px;
+        }
+        
+        .summary-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            font-size: 14px;
+        }
+        
+        .summary-label {
+            color: var(--text-light);
+        }
+        
+        .summary-value {
+            font-weight: 600;
+        }
+        
+        .summary-total {
+            display: flex;
+            justify-content: space-between;
+            padding-top: 16px;
+            margin-top: 12px;
+            border-top: 2px solid var(--primary);
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--primary);
+        }
+        
+        .payment-box {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: white;
+            padding: 24px;
+            border-radius: 12px;
+            text-align: center;
+            margin-top: 24px;
+        }
+        
+        .payment-amount {
+            font-size: 14px;
+            opacity: 0.9;
+            margin-bottom: 8px;
+        }
+        
+        .payment-total {
+            font-size: 40px;
+            font-weight: 700;
+            margin-bottom: 20px;
+        }
+        
+        .btn-pay {
+            background: white;
+            color: var(--primary);
+            width: 100%;
+            padding: 18px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        
+        .btn-pay:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+        }
+        
+        .btn-back {
+            display: inline-block;
+            color: rgba(255,255,255,0.8);
+            text-decoration: none;
+            font-size: 14px;
+            margin-top: 16px;
+            transition: all 0.2s;
+        }
+        
+        .btn-back:hover {
+            color: white;
         }
         
         .loading {
             display: none;
             text-align: center;
-            padding: 30px 20px;
+            padding: 40px;
         }
         
         .loading.active {
@@ -321,12 +436,12 @@
         
         .spinner {
             border: 4px solid #F3F4F6;
-            border-top: 4px solid #0B484C;
+            border-top: 4px solid var(--primary);
             border-radius: 50%;
             width: 50px;
             height: 50px;
             animation: spin 0.8s linear infinite;
-            margin: 0 auto 15px;
+            margin: 0 auto 16px;
         }
         
         @keyframes spin {
@@ -334,292 +449,155 @@
             100% { transform: rotate(360deg); }
         }
         
-        .help-text {
+        .secure-badge {
+            text-align: center;
+            padding: 16px;
             font-size: 13px;
-            color: #6B7280;
-            margin-top: 10px;
-            line-height: 1.6;
-            padding-left: 4px;
-        }
-        
-        .recent-searches {
-            margin-top: 20px;
-            padding: 18px;
-            background: white;
-            border-radius: 10px;
-            border: 2px dashed #E5E7EB;
-        }
-        
-        .recent-searches h4 {
-            font-size: 13px;
-            color: #6B7280;
-            margin-bottom: 12px;
+            color: var(--text-light);
             display: flex;
             align-items: center;
+            justify-content: center;
             gap: 6px;
-        }
-        
-        .recent-item {
-            padding: 10px 14px;
-            background: #F9FAFB;
-            border-radius: 8px;
-            margin-bottom: 8px;
-            cursor: pointer;
-            transition: all 0.2s;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            font-size: 14px;
-            color: #374151;
-            font-weight: 500;
-        }
-        
-        .recent-item:hover {
-            background: #0B484C;
-            color: white;
-            transform: translateX(4px);
-        }
-        
-        .recent-item:last-child {
-            margin-bottom: 0;
-        }
-        
-        .recent-item time {
-            font-size: 12px;
-            opacity: 0.7;
-        }
-        
-        .invoice-preview {
-            display: none;
-            animation: slideDown 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-        
-        .invoice-preview.show {
-            display: block;
-        }
-        
-        .preview-card {
-            background: linear-gradient(135deg, #F9FAFB 0%, #FFFFFF 100%);
-            border: 2px solid #E5E7EB;
-            border-radius: 12px;
-            padding: 24px;
-            margin-bottom: 20px;
-        }
-        
-        .preview-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: start;
-            margin-bottom: 20px;
-            padding-bottom: 16px;
-            border-bottom: 2px dashed #E5E7EB;
-        }
-        
-        .preview-number {
-            font-size: 20px;
-            font-weight: 700;
-            color: #0B484C;
-            margin-bottom: 4px;
-        }
-        
-        .status-badge {
-            padding: 6px 14px;
-            border-radius: 20px;
-            font-size: 12px;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-        
-        .status-pending {
-            background: #FEF3C7;
-            color: #92400E;
-        }
-        
-        .status-paid {
-            background: #D1FAE5;
-            color: #065F46;
-        }
-        
-        .status-overdue {
-            background: #FEE2E2;
-            color: #991B1B;
-        }
-        
-        .preview-row {
-            display: flex;
-            justify-content: space-between;
-            padding: 12px 0;
-            border-bottom: 1px solid #F3F4F6;
-        }
-        
-        .preview-row:last-child {
-            border-bottom: none;
-            padding-top: 16px;
-            margin-top: 8px;
-            border-top: 2px solid #E5E7EB;
-        }
-        
-        .preview-label {
-            color: #6B7280;
-            font-size: 14px;
-        }
-        
-        .preview-value {
-            font-weight: 600;
-            color: #1F2937;
-            font-size: 14px;
-        }
-        
-        .preview-total {
-            font-size: 24px;
-            color: #0B484C;
-        }
-        
-        .back-btn {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            color: #6B7280;
-            text-decoration: none;
-            font-size: 14px;
-            margin-bottom: 16px;
-            transition: all 0.2s;
-            font-weight: 500;
-        }
-        
-        .back-btn:hover {
-            color: #0B484C;
-            transform: translateX(-4px);
         }
         
         @media (max-width: 768px) {
-            body {
-                padding: 10px;
-            }
-            
-            .header {
-                padding: 30px 20px;
-            }
-            
-            .header .logo {
-                font-size: 28px;
-            }
-            
-            .icon {
-                font-size: 40px;
-            }
-            
-            .header h1 {
-                font-size: 22px;
-            }
-            
-            .content {
-                padding: 30px 20px;
-            }
-            
-            .preview-header {
-                flex-direction: column;
-                gap: 12px;
-            }
+            body { padding: 10px; }
+            .card { padding: 24px 20px; }
+            .steps { margin-bottom: 30px; }
+            .invoice-header { flex-direction: column; gap: 12px; }
+            .payment-total { font-size: 36px; }
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="card">
-            <div class="header">
-                <div class="logo">Grid<span class="accent">Base</span></div>
-                <div class="icon">🔍</div>
-                <h1>Buscar Factura</h1>
-                <p>Ingrese el número de su factura para proceder con el pago seguro</p>
+    <div class="checkout-container">
+        <div class="checkout-header">
+            <div class="logo">Grid<span class="accent">Base</span></div>
+            <div class="checkout-title">Portal de Pagos Seguro</div>
+        </div>
+        
+        <div class="steps">
+            <div class="step active" id="step1">
+                <div class="step-circle">1</div>
+                <div class="step-label">Buscar</div>
             </div>
-            
-            <div class="content">
-                <div id="alert-container"></div>
-                
-                <div id="search-section">
-                    <form id="invoiceSearchForm">
-                        <div class="form-group">
-                            <label for="invoice_number">Número de Factura</label>
-                            <div class="input-wrapper">
-                                <input 
-                                    type="text" 
-                                    id="invoice_number" 
-                                    name="invoice_number" 
-                                    placeholder="Ej: INV-2026-001"
-                                    required
-                                    autocomplete="off"
-                                    autofocus
-                                />
-                                <button type="button" class="clear-btn" id="clearBtn">✕</button>
-                            </div>
-                            <div class="help-text">
-                                💡 Ingrese el código exacto como aparece en su factura
-                            </div>
-                        </div>
-                        
-                        <button type="submit" class="btn" id="searchBtn">
-                            <span>🔎</span>
-                            <span>Buscar Factura</span>
-                        </button>
-                    </form>
-                    
-                    <div class="examples">
-                        <strong>📋 Formatos de búsqueda aceptados</strong>
-                        <div>
-                            • INV-2026-001<br>
-                            • FACT-2026-001<br>
-                            • 2026-001
-                        </div>
-                    </div>
-                    
-                    <div id="recent-searches" class="recent-searches" style="display: none;">
-                        <h4>🕐 Búsquedas recientes</h4>
-                        <div id="recent-list"></div>
+            <div class="step" id="step2">
+                <div class="step-circle">2</div>
+                <div class="step-label">Revisar</div>
+            </div>
+            <div class="step" id="step3">
+                <div class="step-circle">3</div>
+                <div class="step-label">Pagar</div>
+            </div>
+        </div>
+        
+        <div id="alert-container"></div>
+        
+        <!-- Step 1: Search Form -->
+        <div id="search-form" class="card">
+            <div class="card-title">🔍 Encuentra tu factura</div>
+            <form id="invoiceSearchForm">
+                <div class="form-group">
+                    <label for="invoice_number">Número de Factura</label>
+                    <input 
+                        type="text" 
+                        id="invoice_number" 
+                        name="invoice_number" 
+                        placeholder="INV-2026-001"
+                        required
+                        autofocus
+                    />
+                    <div class="input-hint">
+                        Ingrese el número exacto como aparece en su factura
                     </div>
                 </div>
-                
-                <div class="loading" id="loading">
-                    <div class="spinner"></div>
-                    <p style="color: #6B7280; font-weight: 500;">Buscando factura...</p>
+                <button type="submit" class="btn btn-primary" id="searchBtn">
+                    <span>🔎</span>
+                    <span>Buscar Factura</span>
+                </button>
+            </form>
+        </div>
+        
+        <!-- Loading -->
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p style="color: var(--text-light); font-weight: 500;">Buscando factura...</p>
+        </div>
+        
+        <!-- Step 2: Invoice Preview -->
+        <div id="invoice-preview" class="invoice-preview">
+            <div class="card">
+                <div class="invoice-header">
+                    <div>
+                        <div class="invoice-number-large" id="preview-number"></div>
+                        <div class="invoice-date" id="preview-date"></div>
+                    </div>
+                    <div class="status-badge" id="preview-status"></div>
                 </div>
                 
-                <div id="invoice-preview" class="invoice-preview">
-                    <!-- Preview content will be injected here -->
+                <div class="client-info">
+                    <div class="client-label">Facturado a</div>
+                    <div class="client-name" id="preview-client"></div>
+                </div>
+                
+                <div class="items-section">
+                    <div class="section-title">Conceptos</div>
+                    <div id="preview-items"></div>
+                </div>
+                
+                <div class="summary">
+                    <div class="summary-row">
+                        <span class="summary-label">Subtotal</span>
+                        <span class="summary-value" id="preview-subtotal"></span>
+                    </div>
+                    <div class="summary-row" id="tax-row">
+                        <span class="summary-label">Impuesto (<span id="preview-tax-rate"></span>%)</span>
+                        <span class="summary-value" id="preview-tax"></span>
+                    </div>
+                    <div class="summary-row" id="paid-row" style="display: none;">
+                        <span class="summary-label">Pagado</span>
+                        <span class="summary-value" id="preview-paid"></span>
+                    </div>
+                    <div class="summary-total">
+                        <span class="summary-label">A Pagar</span>
+                        <span class="summary-value" id="preview-remaining"></span>
+                    </div>
+                </div>
+                
+                <div class="payment-box">
+                    <div class="payment-amount">Total a pagar ahora</div>
+                    <div class="payment-total" id="payment-total"></div>
+                    <button class="btn-pay" id="proceedBtn">
+                        <span>🔒</span>
+                        <span>Proceder al Pago Seguro</span>
+                    </button>
+                    <a href="#" class="btn-back" id="backBtn">← Buscar otra factura</a>
                 </div>
             </div>
+        </div>
+        
+        <div class="secure-badge">
+            🔒 Conexión segura · Pagos procesados por PayPal
         </div>
     </div>
     
     <script>
         const form = document.getElementById('invoiceSearchForm');
         const searchBtn = document.getElementById('searchBtn');
-        const clearBtn = document.getElementById('clearBtn');
         const loading = document.getElementById('loading');
-        const searchSection = document.getElementById('search-section');
+        const searchForm = document.getElementById('search-form');
         const invoicePreview = document.getElementById('invoice-preview');
         const alertContainer = document.getElementById('alert-container');
         const invoiceInput = document.getElementById('invoice_number');
-        const recentSearches = document.getElementById('recent-searches');
-        const recentList = document.getElementById('recent-list');
         
-        // Load recent searches on page load
-        loadRecentSearches();
+        const step1 = document.getElementById('step1');
+        const step2 = document.getElementById('step2');
+        const step3 = document.getElementById('step3');
         
-        // Clear button functionality
+        let currentInvoiceUrl = '';
+        
+        // Auto-uppercase
         invoiceInput.addEventListener('input', function() {
-            clearBtn.classList.toggle('show', this.value.length > 0);
-        });
-        
-        clearBtn.addEventListener('click', function() {
-            invoiceInput.value = '';
-            invoiceInput.focus();
-            clearBtn.classList.remove('show');
-        });
-        
-        // Auto-uppercase and format
-        invoiceInput.addEventListener('input', function(e) {
             this.value = this.value.toUpperCase();
         });
         
@@ -635,11 +613,10 @@
                 return;
             }
             
-            // Show loading
             searchBtn.disabled = true;
             searchBtn.innerHTML = '<span>⏳</span><span>Buscando...</span>';
             loading.classList.add('active');
-            searchSection.style.display = 'none';
+            searchForm.style.display = 'none';
             alertContainer.innerHTML = '';
             
             try {
@@ -656,91 +633,114 @@
                 
                 loading.classList.remove('active');
                 
-                if (data.success && data.payment_url) {
-                    // Save to recent searches
-                    saveRecentSearch(invoiceNumber);
-                    
-                    // Show success and redirect
-                    showAlert('✅ ¡Factura encontrada! Redirigiendo al portal de pago...', 'success');
-                    setTimeout(() => {
-                        window.location.href = data.payment_url;
-                    }, 1500);
+                if (data.success && data.invoice) {
+                    displayInvoice(data.invoice, data.payment_url);
+                    step1.classList.add('completed');
+                    step1.classList.remove('active');
+                    step2.classList.add('active');
                 } else {
-                    // Show error and restore form
-                    showAlert(data.message || '❌ No se encontró una factura con ese número. Verifique e intente nuevamente.', 'error');
-                    searchSection.style.display = 'block';
+                    showAlert(data.message || 'No se encontró una factura con ese número', 'error');
+                    searchForm.style.display = 'block';
                     searchBtn.disabled = false;
                     searchBtn.innerHTML = '<span>🔎</span><span>Buscar Factura</span>';
                     invoiceInput.select();
                 }
             } catch (error) {
                 loading.classList.remove('active');
-                showAlert('⚠️ Error de conexión. Por favor verifique su internet e intente nuevamente.', 'error');
-                searchSection.style.display = 'block';
+                showAlert('Error de conexión. Por favor intente nuevamente.', 'error');
+                searchForm.style.display = 'block';
                 searchBtn.disabled = false;
                 searchBtn.innerHTML = '<span>🔎</span><span>Buscar Factura</span>';
             }
         });
         
+        function displayInvoice(invoice, paymentUrl) {
+            currentInvoiceUrl = paymentUrl;
+            
+            document.getElementById('preview-number').textContent = invoice.number;
+            document.getElementById('preview-date').textContent = 'Fecha: ' + formatDate(invoice.date) + ' · Vence: ' + formatDate(invoice.due_date);
+            document.getElementById('preview-client').textContent = invoice.client.name;
+            
+            const statusBadge = document.getElementById('preview-status');
+            const statusMap = {
+                pending: 'Pendiente',
+                paid: 'Pagada',
+                overdue: 'Vencida',
+                partial: 'Pago Parcial'
+            };
+            statusBadge.textContent = statusMap[invoice.status] || invoice.status;
+            statusBadge.className = 'status-badge status-' + invoice.status;
+            
+            const itemsHtml = invoice.items.map(item => `
+                <div class="item">
+                    <div>
+                        <div class="item-description">${item.description}</div>
+                        <div class="item-qty">${item.quantity} × ${formatCurrency(item.price, invoice.currency)}</div>
+                    </div>
+                    <div class="item-amount">${formatCurrency(item.total, invoice.currency)}</div>
+                </div>
+            `).join('');
+            document.getElementById('preview-items').innerHTML = itemsHtml;
+            
+            document.getElementById('preview-subtotal').textContent = formatCurrency(invoice.subtotal, invoice.currency);
+            document.getElementById('preview-tax-rate').textContent = invoice.tax_rate;
+            document.getElementById('preview-tax').textContent = formatCurrency(invoice.tax, invoice.currency);
+            
+            if (invoice.amount_paid > 0) {
+                document.getElementById('paid-row').style.display = 'flex';
+                document.getElementById('preview-paid').textContent = '-' + formatCurrency(invoice.amount_paid, invoice.currency);
+            }
+            
+            document.getElementById('preview-remaining').textContent = formatCurrency(invoice.remaining, invoice.currency);
+            document.getElementById('payment-total').textContent = formatCurrency(invoice.remaining, invoice.currency);
+            
+            invoicePreview.classList.add('show');
+        }
+        
+        document.getElementById('proceedBtn').addEventListener('click', function() {
+            if (currentInvoiceUrl) {
+                step2.classList.add('completed');
+                step2.classList.remove('active');
+                step3.classList.add('active');
+                
+                setTimeout(() => {
+                    window.location.href = currentInvoiceUrl;
+                }, 500);
+            }
+        });
+        
+        document.getElementById('backBtn').addEventListener('click', function(e) {
+            e.preventDefault();
+            invoicePreview.classList.remove('show');
+            searchForm.style.display = 'block';
+            searchBtn.disabled = false;
+            searchBtn.innerHTML = '<span>🔎</span><span>Buscar Factura</span>';
+            invoiceInput.value = '';
+            invoiceInput.focus();
+            alertContainer.innerHTML = '';
+            
+            step1.classList.add('active');
+            step1.classList.remove('completed');
+            step2.classList.remove('active');
+            step2.classList.remove('completed');
+            step3.classList.remove('active');
+        });
+        
+        function formatCurrency(amount, currency) {
+            const symbols = { USD: '$', DOP: 'RD$', EUR: '€' };
+            return (symbols[currency] || currency + ' ') + parseFloat(amount).toFixed(2);
+        }
+        
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleDateString('es-DO', { year: 'numeric', month: 'short', day: 'numeric' });
+        }
+        
         function showAlert(message, type) {
-            const alertClass = type === 'error' ? 'alert-error' : (type === 'success' ? 'alert-success' : 'alert-info');
+            const alertClass = type === 'error' ? 'alert-error' : 'alert-success';
             alertContainer.innerHTML = `<div class="alert ${alertClass} show">${message}</div>`;
         }
         
-        function saveRecentSearch(invoiceNumber) {
-            let recent = JSON.parse(localStorage.getItem('recentSearches') || '[]');
-            recent = recent.filter(item => item.number !== invoiceNumber);
-            recent.unshift({
-                number: invoiceNumber,
-                timestamp: new Date().toISOString()
-            });
-            recent = recent.slice(0, 5); // Keep only last 5
-            localStorage.setItem('recentSearches', JSON.stringify(recent));
-        }
-        
-        function loadRecentSearches() {
-            const recent = JSON.parse(localStorage.getItem('recentSearches') || '[]');
-            if (recent.length > 0) {
-                recentSearches.style.display = 'block';
-                recentList.innerHTML = recent.map(item => {
-                    const date = new Date(item.timestamp);
-                    const timeAgo = getTimeAgo(date);
-                    return `
-                        <div class="recent-item" onclick="searchRecent('${item.number}')">
-                            <span>${item.number}</span>
-                            <time>${timeAgo}</time>
-                        </div>
-                    `;
-                }).join('');
-            }
-        }
-        
-        function searchRecent(invoiceNumber) {
-            invoiceInput.value = invoiceNumber;
-            clearBtn.classList.add('show');
-            form.dispatchEvent(new Event('submit'));
-        }
-        
-        function getTimeAgo(date) {
-            const seconds = Math.floor((new Date() - date) / 1000);
-            const intervals = {
-                'año': 31536000,
-                'mes': 2592000,
-                'día': 86400,
-                'hora': 3600,
-                'minuto': 60
-            };
-            
-            for (const [name, value] of Object.entries(intervals)) {
-                const interval = Math.floor(seconds / value);
-                if (interval >= 1) {
-                    return `Hace ${interval} ${name}${interval > 1 ? 's' : ''}`;
-                }
-            }
-            return 'Hace un momento';
-        }
-        
-        // Focus on input on page load
         setTimeout(() => invoiceInput.focus(), 300);
     </script>
 </body>

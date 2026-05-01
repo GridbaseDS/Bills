@@ -29,7 +29,7 @@ class PaymentController extends Controller
         
         $invoiceNumber = strtoupper(trim($request->input('invoice_number')));
         
-        $invoice = Invoice::where('invoice_number', '=', $invoiceNumber)->first();
+        $invoice = Invoice::with(['client', 'items'])->where('invoice_number', '=', $invoiceNumber)->first();
         
         if (!$invoice) {
             return response()->json([
@@ -60,10 +60,32 @@ class PaymentController extends Controller
         
         return response()->json([
             'success' => true,
-            'payment_url' => $invoice->getPaymentUrl(),
-            'invoice_number' => $invoice->invoice_number,
-            'total' => $invoice->total,
-            'remaining' => $invoice->getRemainingBalance()
+            'invoice' => [
+                'number' => $invoice->invoice_number,
+                'status' => $invoice->status,
+                'date' => $invoice->invoice_date,
+                'due_date' => $invoice->due_date,
+                'client' => [
+                    'name' => $invoice->client->name ?? 'N/A',
+                    'email' => $invoice->client->email ?? null,
+                ],
+                'items' => $invoice->items->map(function($item) {
+                    return [
+                        'description' => $item->description,
+                        'quantity' => $item->quantity,
+                        'price' => $item->price,
+                        'total' => $item->quantity * $item->price
+                    ];
+                }),
+                'subtotal' => $invoice->subtotal,
+                'tax_rate' => $invoice->tax_rate,
+                'tax' => $invoice->tax,
+                'total' => $invoice->total,
+                'amount_paid' => $invoice->amount_paid,
+                'remaining' => $invoice->getRemainingBalance(),
+                'currency' => $invoice->currency
+            ],
+            'payment_url' => $invoice->getPaymentUrl()
         ]);
     }
     

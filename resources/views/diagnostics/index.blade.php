@@ -321,6 +321,22 @@
             <div id="test-result" class="result-box"></div>
         </div>
         
+        <!-- Fix Problematic Payments -->
+        <div class="card">
+            <h2>🔧 Corregir Pagos con Problemas de Conversión</h2>
+            <p style="color: #6B7280; margin-bottom: 16px;">Encuentra y corrige pagos de PayPal donde el monto se registró en la moneda incorrecta</p>
+            
+            <button type="button" class="btn btn-primary" onclick="loadProblematicPayments()" style="margin-bottom: 20px;">
+                🔍 Buscar Pagos Problemáticos
+            </button>
+            
+            <div id="payments-container" style="display: none;">
+                <div id="payments-list"></div>
+            </div>
+            
+            <div id="payments-result" class="result-box"></div>
+        </div>
+        
         <!-- Instructions -->
         <div class="card">
             <h2>📝 Pasos para Resolver Problemas</h2>
@@ -329,6 +345,7 @@
                 <li>Asegúrate de usar credenciales de <strong>Sandbox</strong> para pruebas</li>
                 <li>Verifica que la moneda de tus facturas sea soportada por PayPal (USD recomendado)</li>
                 <li>Prueba crear una orden con el formulario de arriba</li>
+                <li>Si tienes pagos con conversión incorrecta, usa la herramienta de corrección</li>
                 <li>Si el error persiste, revisa los logs en <code>storage/logs/laravel.log</code></li>
                 <li>Verifica que cURL esté habilitado y pueda hacer peticiones HTTPS</li>
             </ol>
@@ -403,6 +420,141 @@
                 btn.textContent = 'Probar Orden';
             }
         });
+        
+        async function loadProblematicPayments() {
+            const container = document.getElementById('payments-container');
+            const listDiv = document.getElementById('payments-list');
+            const resultBox = document.getElementById('payments-result');
+            
+            listDiv.innerHTML = '<p>Cargando...</p>';
+            container.style.display = 'block';
+            resultBox.classList.remove('show');
+            
+            try {
+                const response = await fetch('/diagnostics/problematic-payments');
+                const data = await response.json();
+                
+                if (data.success && data.payments.length > 0) {
+                    let html = `
+                        <div style="background: #FEF2F2; border: 2px solid #EF4444; border-radius: 12px; padding: 16px; margin-bottom: 16px;">
+                            <strong style="color: #991B1B;">⚠️ ${data.payments.length} pago(s) con posibles problemas encontrados</strong>
+                        </div>
+                        <table style="width: 100%; border-collapse: collapse;">
+                            <thead>
+                                <tr style="background: #F3F4F6; text-align: left;">
+                                    <th style="padding: 12px; border-bottom: 2px solid #E5E7EB;">Factura</th>
+                                    <th style="padding: 12px; border-bottom: 2px solid #E5E7EB;">Registrado</th>
+                                    <th style="padding: 12px; border-bottom: 2px solid #E5E7EB;">Debería ser</th>
+                                    <th style="padding: 12px; border-bottom: 2px solid #E5E7EB;">Diferencia</th>
+                                    <th style="padding: 12px; border-bottom: 2px solid #E5E7EB;">Acción</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                    `;
+                    
+                    data.payments.forEach(payment => {
+                        html += `
+                            <tr style="border-bottom: 1px solid #E5E7EB;">
+                                <td style="padding: 12px;">
+                                    <strong>${payment.invoice_number}</strong><br>
+                                    <small style="color: #6B7280;">Total: ${payment.invoice_total.toFixed(2)} ${payment.invoice_currency}</small>
+                                </td>
+                                <td style="padding: 12px;">
+                                    <span style="color: #EF4444; font-weight: 600;">${payment.payment_amount.toFixed(2)} ${payment.invoice_currency}</span>
+                                </td>
+                                <td style="padding: 12px;">
+                                    <span style="color: #10B981; font-weight: 600;">${payment.estimated_original.toFixed(2)} ${payment.invoice_currency}</span>
+                                </td>
+                                <td style="padding: 12px;">
+                                    <span style="color: #F59E0B; font-weight: 600;">+${payment.difference.toFixed(2)}</span>
+                                </td>
+                                <td style="padding: 12px;">
+                                    <button 
+                                        onclick="fixPayment(${payment.payment_id}, ${payment.estimated_original})"
+                                        class="btn btn-primary"
+                                        style="padding: 8px 16px; font-size: 0.9rem;">
+                                        ✅ Corregir
+                                    </button>
+                                </td>
+                            </tr>
+                        `;
+                    });
+                    
+                    html += `
+                            </tbody>
+                        </table>
+                    `;
+                    
+                    listDiv.innerHTML = html;
+                } else {
+                    listDiv.innerHTML = `
+                        <div style="background: #ECFDF5; border: 2px solid #10B981; border-radius: 12px; padding: 16px; text-align: center;">
+                            <strong style="color: #065F46;">✅ No se encontraron pagos con problemas</strong>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                listDiv.innerHTML = `
+                    <div style="background: #FEF2F2; border: 2px solid #EF4444; border-radius: 12px; padding: 16px;">
+                        <strong style="color: #991B1B;">❌ Error al cargar pagos</strong><br>
+                        ${error.message}
+                    </div>
+                `;
+            }
+        }
+        
+        async function fixPayment(paymentId, correctAmount) {
+            if (!confirm(`¿Estás seguro de corregir este pago a ${correctAmount.toFixed(2)} DOP?`)) {
+                return;
+            }
+            
+            const resultBox = document.getElementById('payments-result');
+            resultBox.classList.remove('show', 'success', 'error');
+            
+            try {
+                const response = await fetch('/diagnostics/fix-payment', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                    },
+                    body: JSON.stringify({
+                        payment_id: paymentId,
+                        correct_amount: correctAmount
+                    })
+                });
+                
+                const data = await response.json();
+                
+                resultBox.classList.add('show');
+                
+                if (data.success) {
+                    resultBox.classList.add('success');
+                    resultBox.innerHTML = `
+                        <div class="result-title">${data.message}</div>
+                        <p><strong>Monto anterior:</strong> ${data.old_amount} DOP</p>
+                        <p><strong>Monto corregido:</strong> ${data.new_amount} DOP</p>
+                        <p><strong>Estado factura:</strong> ${data.invoice_status}</p>
+                        <p><strong>Total pagado:</strong> ${data.invoice_amount_paid} DOP</p>
+                    `;
+                    
+                    // Reload payments list
+                    setTimeout(() => loadProblematicPayments(), 2000);
+                } else {
+                    resultBox.classList.add('error');
+                    resultBox.innerHTML = `
+                        <div class="result-title">❌ Error</div>
+                        <p>${data.message}</p>
+                    `;
+                }
+            } catch (error) {
+                resultBox.classList.add('show', 'error');
+                resultBox.innerHTML = `
+                    <div class="result-title">❌ Error de red</div>
+                    <p>${error.message}</p>
+                `;
+            }
+        }
     </script>
 </body>
 </html>

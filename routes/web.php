@@ -17,6 +17,8 @@ Route::post('/pay/{token}/capture-order', [PaymentController::class, 'captureOrd
 // Diagnostics routes (public for troubleshooting)
 Route::get('/diagnostics', [DiagnosticsController::class, 'index'])->name('diagnostics.index');
 Route::post('/diagnostics/test-order', [DiagnosticsController::class, 'testOrderCreation'])->name('diagnostics.test-order');
+Route::get('/diagnostics/problematic-payments', [DiagnosticsController::class, 'listProblematicPayments'])->name('diagnostics.problematic-payments');
+Route::post('/diagnostics/fix-payment', [DiagnosticsController::class, 'fixPayment'])->name('diagnostics.fix-payment');
 
 // Settings routes (protected by auth middleware)
 Route::middleware('auth:sanctum')->group(function () {

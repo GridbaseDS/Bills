@@ -3,8 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Models\Invoice;
+use App\Models\Payment;
 use App\Models\Setting;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class DiagnosticsController extends Controller
 {
@@ -169,6 +171,102 @@ class DiagnosticsController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Excepción: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+    
+    /**
+     * List payments with potential conversion issues
+     */
+    public function listProblematicPayments()
+    {
+        // Find PayPal payments that might have conversion issues
+        $suspiciousPayments = Payment::where('payment_method', 'paypal')
+            ->whereRaw('amount < 1000') // Suspiciously low for DOP invoices
+            ->with(['invoice' => function($query) {
+                $query->where('currency', 'DOP')
+                      ->where('total', '>', 5000);
+            }])
+            ->get()
+            ->filter(function($payment) {
+                return $payment->invoice !== null;
+            });
+        
+        $payments = $suspiciousPayments->map(function($payment) {
+            $invoice = $payment->invoice;
+            $conversionRate = 0.017;
+            $estimatedOriginal = round($payment->amount / $conversionRate, 2);
+            
+            return [
+                'payment_id' => $payment->id,
+                'invoice_number' => $invoice->invoice_number,
+                'invoice_total' => $invoice->total,
+                'invoice_currency' => $invoice->currency,
+                'payment_amount' => $payment->amount,
+                'payment_date' => $payment->payment_date->format('Y-m-d'),
+                'reference' => $payment->reference,
+                'estimated_original' => $estimatedOriginal,
+                'difference' => $estimatedOriginal - $payment->amount,
+                'notes' => $payment->notes
+            ];
+        });
+        
+        return response()->json([
+            'success' => true,
+            'payments' => $payments->values()
+        ]);
+    }
+    
+    /**
+     * Fix a specific payment with conversion issue
+     */
+    public function fixPayment(Request $request)
+    {
+        $request->validate([
+            'payment_id' => 'required|integer',
+            'correct_amount' => 'required|numeric|min:0'
+        ]);
+        
+        $payment = Payment::with('invoice')->findOrFail($request->payment_id);
+        $newAmount = $request->correct_amount;
+        $oldAmount = $payment->amount;
+        $difference = $newAmount - $oldAmount;
+        
+        DB::beginTransaction();
+        try {
+            // Update payment
+            $payment->amount = $newAmount;
+            $payment->notes = $payment->notes . " [CORREGIDO: Monto original {$oldAmount}, ajustado a {$newAmount} por conversión de moneda - " . now()->format('Y-m-d H:i:s') . "]";
+            $payment->save();
+            
+            // Update invoice
+            $invoice = $payment->invoice;
+            $invoice->amount_paid += $difference;
+            
+            // Check if should be marked as paid
+            if ($invoice->amount_paid >= $invoice->total && $invoice->status !== 'paid') {
+                $invoice->status = 'paid';
+                $invoice->paid_at = now();
+            }
+            
+            $invoice->save();
+            
+            DB::commit();
+            
+            return response()->json([
+                'success' => true,
+                'message' => '✅ Pago corregido exitosamente',
+                'old_amount' => $oldAmount,
+                'new_amount' => $newAmount,
+                'invoice_status' => $invoice->status,
+                'invoice_amount_paid' => $invoice->amount_paid
+            ]);
+            
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al corregir pago: ' . $e->getMessage()
             ], 500);
         }
     }

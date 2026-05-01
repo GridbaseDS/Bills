@@ -398,6 +398,12 @@
             font-size: 15px;
         }
         
+        #paypal-button-container {
+            max-width: 500px;
+            margin: 0 auto;
+            min-height: 150px;
+        }
+        
         .secure-badge {
             text-align: center;
             padding: 20px;
@@ -540,7 +546,7 @@
                 </div>
                 <div class="info-item">
                     <div class="info-label">Método de Pago</div>
-                    <div class="info-value">PayPal / Tarjeta</div>
+                    <div class="info-value">PayPal, Tarjeta o Venmo</div>
                 </div>
             </div>
             
@@ -613,7 +619,7 @@
         <div class="payment-card">
             <div class="payment-label">Total a pagar ahora</div>
             <div class="payment-amount">{{ $symbol }}{{ number_format($invoice->getRemainingBalance(), 2) }}</div>
-            <div class="payment-description">🔒 Pago seguro procesado por PayPal • Aceptamos tarjetas de crédito y débito</div>
+            <div class="payment-description">🔒 Pago seguro con PayPal Checkout • Tarjetas de crédito/débito • PayPal • Venmo</div>
             
             <div class="loading" id="loading">
                 <div class="spinner"></div>
@@ -631,17 +637,26 @@
         @endif
         
         <div class="secure-badge">
-            🔒 Conexión segura con encriptación SSL · Pagos procesados por PayPal
+            🔒 Conexión segura con encriptación SSL · Powered by PayPal Standard Checkout
         </div>
     </div>
     
     @if($invoice->getRemainingBalance() > 0)
-    <script src="https://www.paypal.com/sdk/js?client-id={{ $paypalClientId }}&currency={{ $invoice->currency }}&locale=es_ES"></script>
+    <script src="https://www.paypal.com/sdk/js?client-id={{ $paypalClientId }}&currency={{ $invoice->currency }}&intent=capture&enable-funding=venmo,card&disable-funding=paylater&locale=es_ES"></script>
     <script>
         const stepReview = document.getElementById('step-review');
         const stepPay = document.getElementById('step-pay');
         
         paypal.Buttons({
+            style: {
+                layout: 'vertical',
+                color: 'blue',
+                shape: 'rect',
+                label: 'paypal',
+                height: 50,
+                tagline: false
+            },
+            
             createOrder: function(data, actions) {
                 // Mark step 1 as completed and activate step 2
                 stepReview.classList.add('completed');
@@ -746,6 +761,11 @@
                 document.getElementById('loading').classList.remove('active');
                 document.getElementById('paypal-button-container').style.display = 'block';
                 showMessage('⚠️ Pago cancelado. Puede intentar nuevamente cuando esté listo.', 'error');
+            },
+            
+            onShippingChange: function(data, actions) {
+                // No shipping required for invoices
+                return actions.resolve();
             }
         }).render('#paypal-button-container');
         

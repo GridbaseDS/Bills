@@ -266,22 +266,56 @@ class PaymentController extends Controller
             
             if ($response['status'] === 'COMPLETED') {
                 $capture = $response['purchase_units'][0]['payments']['captures'][0];
-                $amount = (float) $capture['amount']['value'];
+                $capturedAmount = (float) $capture['amount']['value'];
+                $capturedCurrency = $capture['amount']['currency_code'];
+                
+                // Get original amount from custom_id (for currency conversion)
+                $customId = $response['purchase_units'][0]['custom_id'] ?? null;
+                $originalAmount = $capturedAmount;
+                $originalCurrency = $capturedCurrency;
+                $conversionRate = 1.0;
+                $paymentNote = 'Pago procesado automáticamente vía PayPal';
+                
+                if ($customId) {
+                    $customData = json_decode($customId, true);
+                    if ($customData && isset($customData['original_amount'])) {
+                        $originalAmount = (float) $customData['original_amount'];
+                        $originalCurrency = $customData['original_currency'] ?? $capturedCurrency;
+                        $conversionRate = $customData['conversion_rate'] ?? 1.0;
+                        
+                        if ($originalCurrency !== $capturedCurrency) {
+                            $paymentNote = sprintf(
+                                'Pago procesado vía PayPal. Monto capturado: %s %s (convertido desde %s %s, tasa: %s)',
+                                number_format($capturedAmount, 2),
+                                $capturedCurrency,
+                                number_format($originalAmount, 2),
+                                $originalCurrency,
+                                $conversionRate
+                            );
+                        }
+                        
+                        Log::info('PayPal payment captured with conversion', [
+                            'captured' => $capturedAmount . ' ' . $capturedCurrency,
+                            'original' => $originalAmount . ' ' . $originalCurrency,
+                            'rate' => $conversionRate
+                        ]);
+                    }
+                }
                 
                 DB::beginTransaction();
                 try {
-                    // Create payment record
+                    // Create payment record with ORIGINAL amount
                     $payment = Payment::create([
                         'invoice_id' => $invoice->id,
-                        'amount' => $amount,
+                        'amount' => $originalAmount, // Use original amount, not captured
                         'payment_method' => 'paypal',
                         'payment_date' => now(),
                         'reference' => $capture['id'],
-                        'notes' => 'Pago procesado automáticamente vía PayPal'
+                        'notes' => $paymentNote
                     ]);
                     
-                    // Update invoice
-                    $invoice->amount_paid += $amount;
+                    // Update invoice with ORIGINAL amount
+                    $invoice->amount_paid += $originalAmount;
                     
                     if ($invoice->amount_paid >= $invoice->total) {
                         $invoice->status = 'paid';

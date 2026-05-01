@@ -109,6 +109,7 @@ class PaymentController extends Controller
         // Check if currency conversion is needed
         $paypalCurrency = CurrencyConverter::getPayPalCurrency($invoice->currency);
         $currencyConversion = null;
+        $finalCurrency = $invoice->currency; // Default to original currency
         
         if ($paypalCurrency['needs_conversion']) {
             $amount = $invoice->getRemainingBalance();
@@ -117,6 +118,7 @@ class PaymentController extends Controller
                 $invoice->currency,
                 $paypalCurrency['target_currency']
             );
+            $finalCurrency = $currencyConversion['converted_currency']; // Use converted currency for SDK
         }
         
         return view('payment.show', [
@@ -124,6 +126,7 @@ class PaymentController extends Controller
             'paypalClientId' => $paypalConfig['client_id'] ?? null,
             'paypalConfigured' => !empty($paypalConfig['client_id']) && !empty($paypalConfig['client_secret']),
             'currencyConversion' => $currencyConversion,
+            'paypalCurrency' => $finalCurrency, // Currency for PayPal SDK
         ]);
     }
     

@@ -708,11 +708,17 @@
     </div>
     
     @if($invoice->getRemainingBalance() > 0 && $paypalConfigured)
-    <script src="https://www.paypal.com/sdk/js?client-id={{ $paypalClientId }}&currency={{ $invoice->currency }}&intent=capture&enable-funding=venmo,card&disable-funding=paylater&locale=es_ES"></script>
+    <script src="https://www.paypal.com/sdk/js?client-id={{ $paypalClientId }}&currency={{ $paypalCurrency }}&intent=capture&enable-funding=venmo,card&disable-funding=paylater&locale=es_ES"></script>
     <script>
         console.log('PayPal SDK loaded successfully');
-        console.log('Currency:', '{{ $invoice->currency }}');
-        console.log('Amount:', '{{ number_format($invoice->getRemainingBalance(), 2, '.', '') }}');
+        console.log('Invoice Currency:', '{{ $invoice->currency }}');
+        console.log('PayPal Currency:', '{{ $paypalCurrency }}');
+        console.log('Conversion Applied:', {{ $currencyConversion ? 'true' : 'false' }});
+        @if($currencyConversion)
+        console.log('Original Amount:', '{{ $currencyConversion['original_amount'] }} {{ $currencyConversion['original_currency'] }}');
+        console.log('Converted Amount:', '{{ $currencyConversion['converted_amount'] }} {{ $currencyConversion['converted_currency'] }}');
+        console.log('Exchange Rate:', '{{ $currencyConversion['exchange_rate'] }}');
+        @endif
         
         const stepReview = document.getElementById('step-review');
         const stepPay = document.getElementById('step-pay');

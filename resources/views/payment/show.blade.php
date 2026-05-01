@@ -528,11 +528,11 @@
             <div class="info-grid">
                 <div class="info-item">
                     <div class="info-label">Cliente</div>
-                    <div class="info-value">{{ $invoice->client->name }}</div>
+                    <div class="info-value">{{ $invoice->client ? $invoice->client->name : 'Sin cliente' }}</div>
                 </div>
                 <div class="info-item">
                     <div class="info-label">Email</div>
-                    <div class="info-value">{{ $invoice->client->email }}</div>
+                    <div class="info-value">{{ $invoice->client?->email ?? 'No disponible' }}</div>
                 </div>
                 <div class="info-item">
                     <div class="info-label">Moneda</div>

@@ -130,9 +130,15 @@ class PaymentController extends Controller
         }
         
         try {
+            Log::info('Creating PayPal order', [
+                'invoice' => $invoice->invoice_number,
+                'amount' => $amount,
+                'currency' => $invoice->currency
+            ]);
+            
             $accessToken = $this->getPayPalAccessToken();
             
-            $response = $this->makePayPalRequest('POST', '/v2/checkout/orders', $accessToken, [
+            $orderData = [
                 'intent' => 'CAPTURE',
                 'purchase_units' => [[
                     'reference_id' => $invoice->invoice_number,
@@ -151,13 +157,39 @@ class PaymentController extends Controller
                     'return_url' => route('payment.show', $token),
                     'cancel_url' => route('payment.show', $token)
                 ]
-            ]);
+            ];
+            
+            Log::info('PayPal order data', ['data' => $orderData]);
+            
+            $response = $this->makePayPalRequest('POST', '/v2/checkout/orders', $accessToken, $orderData);
+            
+            Log::info('PayPal order created successfully', ['order_id' => $response['id']]);
             
             return response()->json(['id' => $response['id']]);
             
         } catch (\Exception $e) {
-            Log::error('Error creating PayPal order: ' . $e->getMessage());
-            return response()->json(['error' => 'Error al crear la orden de pago'], 500);
+            Log::error('Error creating PayPal order', [
+                'message' => $e->getMessage(),
+                'invoice' => $invoice->invoice_number,
+                'amount' => $amount,
+                'currency' => $invoice->currency
+            ]);
+            
+            // Parse PayPal error if available
+            $errorMessage = 'Error al crear la orden de pago';
+            if (strpos($e->getMessage(), 'CURRENCY_NOT_SUPPORTED') !== false) {
+                $errorMessage = "La moneda {$invoice->currency} no está soportada por PayPal. Use USD, EUR, etc.";
+            } elseif (strpos($e->getMessage(), 'INVALID_REQUEST') !== false) {
+                $errorMessage = 'Los datos de la orden son inválidos. Contacte al administrador.';
+            } elseif (preg_match('/\{.*\}/', $e->getMessage(), $matches)) {
+                // Try to extract PayPal error details
+                $errorData = json_decode($matches[0], true);
+                if (isset($errorData['details'][0]['description'])) {
+                    $errorMessage .= ': ' . $errorData['details'][0]['description'];
+                }
+            }
+            
+            return response()->json(['error' => $errorMessage], 500);
         }
     }
     
@@ -256,6 +288,10 @@ class PaymentController extends Controller
         $clientSecret = $config['client_secret'];
         $mode = $config['mode'];
         
+        if (empty($clientId) || empty($clientSecret)) {
+            throw new \Exception('Las credenciales de PayPal no están configuradas');
+        }
+        
         $baseUrl = $mode === 'live' 
             ? 'https://api-m.paypal.com' 
             : 'https://api-m.sandbox.paypal.com';
@@ -273,13 +309,25 @@ class PaymentController extends Controller
         
         $response = curl_exec($ch);
         $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $curlError = curl_error($ch);
         curl_close($ch);
         
+        if ($curlError) {
+            Log::error('cURL error getting PayPal token', ['error' => $curlError]);
+            throw new \Exception('Error de conexión con PayPal: ' . $curlError);
+        }
+        
         if ($httpCode !== 200) {
-            throw new \Exception('Error al obtener token de PayPal');
+            Log::error('PayPal auth failed', ['code' => $httpCode, 'response' => $response]);
+            throw new \Exception('Error al autenticar con PayPal (código ' . $httpCode . '): ' . $response);
         }
         
         $data = json_decode($response, true);
+        
+        if (!isset($data['access_token'])) {
+            throw new \Exception('No se recibió token de acceso de PayPal');
+        }
+        
         return $data['access_token'];
     }
     
@@ -305,15 +353,37 @@ class PaymentController extends Controller
         ]);
         
         if ($data) {
-            curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($data));
+            $jsonData = json_encode($data);
+            curl_setopt($ch, CURLOPT_POSTFIELDS, $jsonData);
+            Log::debug('PayPal request', [
+                'method' => $method,
+                'endpoint' => $endpoint,
+                'data' => $jsonData
+            ]);
         }
         
         $response = curl_exec($ch);
         $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $curlError = curl_error($ch);
         curl_close($ch);
         
+        if ($curlError) {
+            Log::error('cURL error in PayPal request', ['error' => $curlError]);
+            throw new \Exception('Error de conexión: ' . $curlError);
+        }
+        
+        Log::debug('PayPal response', [
+            'code' => $httpCode,
+            'response' => $response
+        ]);
+        
         if ($httpCode < 200 || $httpCode >= 300) {
-            throw new \Exception('Error en petición a PayPal: ' . $response);
+            Log::error('PayPal API error', [
+                'code' => $httpCode,
+                'response' => $response,
+                'endpoint' => $endpoint
+            ]);
+            throw new \Exception('PayPal API Error [' . $httpCode . ']: ' . $response);
         }
         
         return json_decode($response, true);

@@ -92,6 +92,11 @@ class InvoiceController extends Controller
         ];
         $pdfContent = \Barryvdh\DomPDF\Facade\Pdf::loadView('pdf.invoice', $pdfData)->output();
 
+        // Generate payment link
+        if (!$invoice->isPaymentTokenValid()) {
+            $invoice->generatePaymentToken();
+        }
+
         $emailData = [
             'subject' => $subject,
             'logoUrl' => 'https://gridbase.com.do/wp-content/uploads/2025/02/imagen_2026-03-16_154236217-1024x228.png',
@@ -105,6 +110,8 @@ class InvoiceController extends Controller
             'discountAmount' => $invoice->discount_amount ?? 0, 'taxRate' => $invoice->tax_rate ?? 0,
             'taxAmount' => $invoice->tax_amount ?? 0, 'total' => $invoice->total,
             'currency' => $invoice->currency ?? 'USD', 'notes' => $invoice->notes ?? '',
+            'paymentUrl' => $invoice->getPaymentUrl(),
+            'paymentExpiresAt' => $invoice->payment_token_expires_at ? $invoice->payment_token_expires_at->format('d/m/Y') : null,
         ];
 
         $htmlBody = view('emails.document', $emailData)->render();

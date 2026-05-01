@@ -13,7 +13,7 @@
         
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: #F4F6F8;
             min-height: 100vh;
             padding: 20px;
             display: flex;
@@ -25,16 +25,27 @@
             max-width: 800px;
             width: 100%;
             background: white;
-            border-radius: 16px;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            border-radius: 12px;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
             overflow: hidden;
         }
         
         .header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: #0B484C;
             color: white;
             padding: 30px;
             text-align: center;
+            position: relative;
+        }
+        
+        .header::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: #00DF83;
         }
         
         .header h1 {
@@ -154,21 +165,41 @@
         }
         
         .payment-section {
-            background: #f8f9fa;
-            padding: 30px;
+            background: linear-gradient(135deg, #0B484C 0%, #094044 100%);
+            padding: 40px 30px;
             border-radius: 12px;
             text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .payment-section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: #00DF83;
         }
         
         .payment-section h2 {
             font-size: 20px;
-            color: #333;
-            margin-bottom: 20px;
+            color: #FFFFFF;
+            margin-bottom: 12px;
+            font-weight: 600;
+        }
+        
+        .payment-section p {
+            color: rgba(255, 255, 255, 0.85);
+            margin-bottom: 24px;
+            font-size: 14px;
         }
         
         #paypal-button-container {
             max-width: 500px;
             margin: 0 auto;
+            min-height: 50px;
         }
         
         .status-badge {
@@ -225,8 +256,8 @@
         }
         
         .spinner {
-            border: 4px solid #f3f3f3;
-            border-top: 4px solid #667eea;
+            border: 4px solid #F4F6F8;
+            border-top: 4px solid #0B484C;
             border-radius: 50%;
             width: 40px;
             height: 40px;
@@ -364,7 +395,8 @@
             
             @if($invoice->getRemainingBalance() > 0)
             <div class="payment-section">
-                <h2>Pagar con PayPal</h2>
+                <h2>💳 Pagar con PayPal</h2>
+                <p>Pague de forma segura usando PayPal o tarjeta de crédito/débito</p>
                 <div id="paypal-button-container"></div>
             </div>
             @else

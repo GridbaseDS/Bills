@@ -161,6 +161,34 @@
                 </tr>
                 @endif
 
+                <!-- Payment Button (only for invoices) -->
+                @if(!$isQuote && !empty($paymentUrl))
+                <tr>
+                    <td style="padding: 22px 40px 28px 40px; text-align: center;">
+                        <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
+                            <tr>
+                                <td style="background: linear-gradient(135deg, #00DF83 0%, #0B484C 100%); border-radius: 8px; text-align: center; padding: 20px;">
+                                    <p style="font-size: 12px; color: #FFFFFF; margin: 0 0 12px 0; opacity: 0.95;">
+                                        💳 Puede pagar esta factura de forma segura
+                                    </p>
+                                    <a href="{{ $paymentUrl }}" style="display: inline-block; background: #FFFFFF; color: #0B484C; text-decoration: none; padding: 14px 32px; border-radius: 6px; font-size: 16px; font-weight: bold; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
+                                        Pagar Ahora
+                                    </a>
+                                    @if(!empty($paymentExpiresAt))
+                                    <p style="font-size: 10px; color: #FFFFFF; margin: 12px 0 0 0; opacity: 0.8;">
+                                        Link válido hasta: {{ $paymentExpiresAt }}
+                                    </p>
+                                    @endif
+                                </td>
+                            </tr>
+                        </table>
+                        <p style="font-size: 11px; color: #7E7E7E; margin: 12px 0 0 0;">
+                            También puede ingresar el código de factura en: <a href="{{ url('/buscar-factura') }}" style="color: #0B484C; text-decoration: none; font-weight: 600;">{{ url('/buscar-factura') }}</a>
+                        </p>
+                    </td>
+                </tr>
+                @endif
+
                 <!-- Attachment Note -->
                 <tr>
                     <td style="padding: 8px 40px 28px 40px; text-align: center;">

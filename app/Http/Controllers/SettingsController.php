@@ -16,6 +16,7 @@ class SettingsController extends Controller
             'paypal_client_id' => Setting::get('paypal_client_id', config('services.paypal.client_id')),
             'paypal_client_secret' => Setting::get('paypal_client_secret', config('services.paypal.client_secret')),
             'paypal_mode' => Setting::get('paypal_mode', config('services.paypal.mode', 'sandbox')),
+            'currency_rate_dop_to_usd' => Setting::get('currency_rate_dop_to_usd', '0.017'),
         ];
         
         return view('settings.index', compact('settings'));
@@ -30,11 +31,13 @@ class SettingsController extends Controller
             'paypal_mode' => 'required|in:sandbox,live',
             'paypal_client_id' => 'nullable|string',
             'paypal_client_secret' => 'nullable|string',
+            'currency_rate_dop_to_usd' => 'nullable|numeric|min:0',
         ]);
         
         Setting::set('paypal_mode', $request->paypal_mode, 'paypal');
         Setting::set('paypal_client_id', $request->paypal_client_id ?? '', 'paypal');
         Setting::set('paypal_client_secret', $request->paypal_client_secret ?? '', 'paypal');
+        Setting::set('currency_rate_dop_to_usd', $request->currency_rate_dop_to_usd ?? '0.017', 'currency');
         
         return redirect()->route('settings.index')->with('success', '✅ Configuración de PayPal actualizada correctamente');
     }

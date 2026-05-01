@@ -439,6 +439,41 @@
             opacity: 0.9;
         }
         
+        .currency-conversion-notice {
+            background: linear-gradient(135deg, #EFF6FF 0%, #DBEAFE 100%);
+            border: 2px solid #3B82F6;
+            border-radius: 12px;
+            padding: 16px;
+            margin: 16px 0;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            animation: slideIn 0.5s ease;
+        }
+        
+        .conversion-icon {
+            font-size: 32px;
+            flex-shrink: 0;
+        }
+        
+        .conversion-info {
+            flex: 1;
+            color: #1E40AF;
+        }
+        
+        .conversion-info strong {
+            color: #1E3A8A;
+            font-size: 1.05rem;
+        }
+        
+        .conversion-detail {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #2563EB;
+            display: inline-block;
+            margin: 8px 0;
+        }
+        
         @media (max-width: 768px) {
             body {
                 padding: 10px;
@@ -466,6 +501,12 @@
             .item-amount {
                 margin-left: 0;
                 font-size: 18px;
+            }
+            
+            .currency-conversion-notice {
+                flex-direction: column;
+                text-align: center;
+                gap: 12px;
             }
             
             .payment-amount {
@@ -619,6 +660,24 @@
         <div class="payment-card">
             <div class="payment-label">Total a pagar ahora</div>
             <div class="payment-amount">{{ $symbol }}{{ number_format($invoice->getRemainingBalance(), 2) }}</div>
+            
+            @if($currencyConversion)
+            <div class="currency-conversion-notice">
+                <div class="conversion-icon">🔄</div>
+                <div class="conversion-info">
+                    <strong>Conversión automática aplicada</strong><br>
+                    <span class="conversion-detail">
+                        {{ $currencyConversion['original_amount'] }} {{ $currencyConversion['original_currency'] }} 
+                        ≈ 
+                        {{ number_format($currencyConversion['converted_amount'], 2) }} {{ $currencyConversion['converted_currency'] }}
+                    </span><br>
+                    <small style="color: #6B7280;">
+                        Tasa: 1 {{ $currencyConversion['original_currency'] }} = {{ $currencyConversion['exchange_rate'] }} {{ $currencyConversion['converted_currency'] }}
+                    </small>
+                </div>
+            </div>
+            @endif
+            
             <div class="payment-description">🔒 Pago seguro con PayPal Checkout • Tarjetas de crédito/débito • PayPal • Venmo</div>
             
             @if(!$paypalConfigured)

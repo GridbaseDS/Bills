@@ -383,6 +383,27 @@
                     </div>
                 </div>
                 
+                <div class="help-box" style="background: #FFF7ED; border-left-color: #F59E0B; margin-bottom: 24px;">
+                    <h4 style="color: #C2410C;">🔄 Conversión Automática de Moneda</h4>
+                    <p style="color: #9A3412; margin-bottom: 12px;">
+                        PayPal Sandbox no soporta DOP (Peso Dominicano). El sistema convierte automáticamente a USD usando la tasa configurada.
+                    </p>
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label for="currency_rate_dop_to_usd">Tasa DOP a USD</label>
+                        <input 
+                            type="number" 
+                            name="currency_rate_dop_to_usd" 
+                            id="currency_rate_dop_to_usd" 
+                            value="{{ $settings['currency_rate_dop_to_usd'] ?? '0.017' }}"
+                            step="0.0001"
+                            min="0"
+                            placeholder="0.017"
+                            style="max-width: 200px;"
+                        >
+                        <small>Ejemplo: 0.017 significa que 1 DOP = 0.017 USD (58.82 DOP = 1 USD)</small>
+                    </div>
+                </div>
+                
                 <div class="btn-group">
                     <button type="button" class="btn btn-secondary" onclick="testConnection()">
                         🔍 Probar Conexión

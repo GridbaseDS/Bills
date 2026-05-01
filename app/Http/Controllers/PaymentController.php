@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Invoice;
 use App\Models\Payment;
 use App\Models\Setting;
+use App\Services\CurrencyConverter;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -105,10 +106,24 @@ class PaymentController extends Controller
         
         $paypalConfig = $this->getPayPalConfig();
         
+        // Check if currency conversion is needed
+        $paypalCurrency = CurrencyConverter::getPayPalCurrency($invoice->currency);
+        $currencyConversion = null;
+        
+        if ($paypalCurrency['needs_conversion']) {
+            $amount = $invoice->getRemainingBalance();
+            $currencyConversion = CurrencyConverter::convert(
+                $amount,
+                $invoice->currency,
+                $paypalCurrency['target_currency']
+            );
+        }
+        
         return view('payment.show', [
             'invoice' => $invoice,
             'paypalClientId' => $paypalConfig['client_id'] ?? null,
             'paypalConfigured' => !empty($paypalConfig['client_id']) && !empty($paypalConfig['client_secret']),
+            'currencyConversion' => $currencyConversion,
         ]);
     }
     
@@ -136,17 +151,52 @@ class PaymentController extends Controller
                 'currency' => $invoice->currency
             ]);
             
+            // Check if currency conversion is needed
+            $paypalCurrency = CurrencyConverter::getPayPalCurrency($invoice->currency);
+            $finalAmount = $amount;
+            $finalCurrency = $invoice->currency;
+            $conversionInfo = null;
+            
+            if ($paypalCurrency['needs_conversion']) {
+                $conversion = CurrencyConverter::convert(
+                    $amount, 
+                    $invoice->currency, 
+                    $paypalCurrency['target_currency']
+                );
+                
+                $finalAmount = $conversion['converted_amount'];
+                $finalCurrency = $conversion['converted_currency'];
+                $conversionInfo = $conversion;
+                
+                Log::info('Currency conversion applied', [
+                    'original' => $amount . ' ' . $invoice->currency,
+                    'converted' => $finalAmount . ' ' . $finalCurrency,
+                    'rate' => $conversion['exchange_rate']
+                ]);
+            }
+            
             $accessToken = $this->getPayPalAccessToken();
+            
+            $description = "Factura #{$invoice->invoice_number}";
+            if ($conversionInfo) {
+                $description .= " ({$conversionInfo['original_amount']} {$conversionInfo['original_currency']} ≈ {$finalAmount} {$finalCurrency})";
+            }
             
             $orderData = [
                 'intent' => 'CAPTURE',
                 'purchase_units' => [[
                     'reference_id' => $invoice->invoice_number,
-                    'description' => "Factura #{$invoice->invoice_number}",
+                    'description' => $description,
                     'amount' => [
-                        'currency_code' => $invoice->currency,
-                        'value' => number_format($amount, 2, '.', '')
-                    ]
+                        'currency_code' => $finalCurrency,
+                        'value' => number_format($finalAmount, 2, '.', '')
+                    ],
+                    'custom_id' => json_encode([
+                        'invoice_id' => $invoice->id,
+                        'original_currency' => $invoice->currency,
+                        'original_amount' => $amount,
+                        'conversion_rate' => $conversionInfo['exchange_rate'] ?? 1.0
+                    ])
                 ]],
                 'application_context' => [
                     'brand_name' => config('app.name'),

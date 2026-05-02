@@ -98,6 +98,12 @@ class PaymentController extends Controller
     {
         $invoice = Invoice::where('payment_token', '=', $token)->firstOrFail();
         
+        // Check if invoice is already paid
+        if ($invoice->status === 'paid' && $invoice->getRemainingBalance() <= 0) {
+            return view('payment.paid', ['invoice' => $invoice]);
+        }
+        
+        // Check if payment token expired
         if (!$invoice->isPaymentTokenValid()) {
             return view('payment.expired', ['invoice' => $invoice]);
         }

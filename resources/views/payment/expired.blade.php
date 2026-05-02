@@ -47,21 +47,14 @@
             background: linear-gradient(135deg, var(--primary) 0%, #064347 100%);
             padding: 30px 40px;
             color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
         
         .logo {
-            font-size: 32px;
-            font-weight: 700;
-            margin-bottom: 10px;
-        }
-        
-        .logo .accent {
-            color: var(--accent);
-        }
-        
-        .header-subtitle {
-            font-size: 14px;
-            opacity: 0.9;
+            max-width: 240px;
+            height: auto;
         }
         
         .icon {
@@ -199,8 +192,7 @@
 <body>
     <div class="container">
         <div class="header">
-            <div class="logo">Grid<span class="accent">Base</span></div>
-            <div class="header-subtitle">Sistema de Facturación</div>
+            <img src="https://gridbase.com.do/wp-content/uploads/2025/02/imagen_2026-03-16_154236217-1024x228.png" alt="GridBase" class="logo">
         </div>
         
         <div class="icon">

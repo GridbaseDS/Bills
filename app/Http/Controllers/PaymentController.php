@@ -354,6 +354,31 @@ class PaymentController extends Controller
                     
                     DB::commit();
                     
+                    // Send payment confirmation email to client
+                    try {
+                        $emailService = new \App\Services\EmailService();
+                        $emailResult = $emailService->sendPaymentConfirmation($invoice, $payment);
+                        
+                        if ($emailResult['success']) {
+                            Log::info('Payment confirmation email sent', [
+                                'invoice' => $invoice->invoice_number,
+                                'payment_id' => $payment->id,
+                                'client_email' => $invoice->client->email
+                            ]);
+                        } else {
+                            Log::warning('Failed to send payment confirmation email', [
+                                'invoice' => $invoice->invoice_number,
+                                'error' => $emailResult['message']
+                            ]);
+                        }
+                    } catch (\Exception $e) {
+                        // Don't fail the payment if email fails
+                        Log::error('Exception sending payment confirmation email', [
+                            'invoice' => $invoice->invoice_number,
+                            'error' => $e->getMessage()
+                        ]);
+                    }
+                    
                     return response()->json([
                         'success' => true,
                         'payment_id' => $payment->id,

@@ -170,6 +170,82 @@ class EmailService
         return $this->send($quote->client->email, $quote->client->contact_name, $subject, $body, $pdfPath, "Cotizacion-{$quote->quote_number}.pdf");
     }
 
+    /**
+     * Send payment confirmation email
+     */
+    public function sendPaymentConfirmation($invoice, $payment): array
+    {
+        $subject = "✓ Pago Recibido - Factura {$invoice->invoice_number}";
+        
+        $statusText = $invoice->status === 'paid' ? 'PAGADA COMPLETAMENTE' : 'PAGO PARCIAL APLICADO';
+        $statusColor = $invoice->status === 'paid' ? '#10B981' : '#F59E0B';
+        
+        $body = "
+        <div style='font-family: Arial, sans-serif; color: #333;'>
+            <h2>¡Pago Recibido!</h2>
+            
+            <p>Hola {$invoice->client->contact_name},</p>
+            
+            <p>Hemos recibido exitosamente su pago para la factura <strong>{$invoice->invoice_number}</strong>.</p>
+            
+            <div style='background: #F0FDF4; padding: 20px; border-left: 4px solid #10B981; border-radius: 8px; margin: 20px 0;'>
+                <p style='margin: 0 0 10px 0; font-size: 16px; font-weight: bold; color: #065F46;'>Detalles del Pago</p>
+                <table style='width: 100%; font-size: 14px;'>
+                    <tr>
+                        <td style='padding: 5px 0; color: #6B7280;'>Monto Pagado:</td>
+                        <td style='padding: 5px 0; text-align: right; font-weight: bold;'>{$invoice->currency} " . number_format($payment->amount, 2) . "</td>
+                    </tr>
+                    <tr>
+                        <td style='padding: 5px 0; color: #6B7280;'>Método de Pago:</td>
+                        <td style='padding: 5px 0; text-align: right; font-weight: bold;'>" . strtoupper($payment->payment_method) . "</td>
+                    </tr>
+                    <tr>
+                        <td style='padding: 5px 0; color: #6B7280;'>Referencia:</td>
+                        <td style='padding: 5px 0; text-align: right; font-family: monospace;'>" . $payment->reference . "</td>
+                    </tr>
+                    <tr>
+                        <td style='padding: 5px 0; color: #6B7280;'>Fecha:</td>
+                        <td style='padding: 5px 0; text-align: right;'>" . $payment->payment_date->format('d/m/Y H:i') . "</td>
+                    </tr>
+                </table>
+            </div>
+            
+            <div style='background: #F9FAFB; padding: 20px; border-radius: 8px; margin: 20px 0;'>
+                <p style='margin: 0 0 10px 0; font-size: 16px; font-weight: bold; color: #111827;'>Estado de la Factura</p>
+                <table style='width: 100%; font-size: 14px;'>
+                    <tr>
+                        <td style='padding: 5px 0; color: #6B7280;'>Total Factura:</td>
+                        <td style='padding: 5px 0; text-align: right; font-weight: bold;'>{$invoice->currency} " . number_format($invoice->total, 2) . "</td>
+                    </tr>
+                    <tr>
+                        <td style='padding: 5px 0; color: #6B7280;'>Total Pagado:</td>
+                        <td style='padding: 5px 0; text-align: right; font-weight: bold; color: #10B981;'>{$invoice->currency} " . number_format($invoice->amount_paid, 2) . "</td>
+                    </tr>
+                    <tr style='border-top: 2px solid #E5E7EB;'>
+                        <td style='padding: 10px 0 5px 0; color: #111827; font-weight: bold;'>Balance Restante:</td>
+                        <td style='padding: 10px 0 5px 0; text-align: right; font-size: 18px; font-weight: bold; color: " . ($invoice->getRemainingBalance() > 0 ? '#F59E0B' : '#10B981') . ";'>{$invoice->currency} " . number_format($invoice->getRemainingBalance(), 2) . "</td>
+                    </tr>
+                </table>
+            </div>
+            
+            <div style='background: {$statusColor}; color: white; padding: 15px; border-radius: 8px; text-align: center; font-weight: bold; font-size: 16px; margin: 20px 0;'>
+                {$statusText}
+            </div>
+            
+            " . ($invoice->status !== 'paid' ? "<p>El balance restante de {$invoice->currency} " . number_format($invoice->getRemainingBalance(), 2) . " puede ser pagado cuando desee.</p>" : "<p style='color: #10B981; font-weight: bold;'>✓ Esta factura ha sido pagada en su totalidad. ¡Gracias!</p>") . "
+            
+            <p style='font-size: 13px; color: #6B7280; margin-top: 30px;'>
+                Este es un email de confirmación automática. Si tiene alguna pregunta sobre este pago, 
+                por favor responda a este correo.
+            </p>
+            
+            <p style='margin-top: 30px;'>Gracias por su pago,<br><strong>{$this->config['from_name']}</strong></p>
+        </div>
+        ";
+
+        return $this->send($invoice->client->email, $invoice->client->contact_name, $subject, $body);
+    }
+    
     public function sendReminder($invoice): array
     {
         // Generate payment link if not exists

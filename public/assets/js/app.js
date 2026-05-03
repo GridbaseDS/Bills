@@ -3,12 +3,12 @@
  * Main Frontend Application Logic
  */
 
-import DashboardModule from './modules/dashboard.js?v=11';
-import InvoicesModule from './modules/invoices.js?v=11';
-import QuotesModule from './modules/quotes.js?v=11';
-import ClientsModule from './modules/clients.js?v=11';
-import SettingsModule from './modules/settings.js?v=11';
-import RecurringModule from './modules/recurring.js?v=11';
+import DashboardModule from './modules/dashboard.js?v=20';
+import InvoicesModule from './modules/invoices.js?v=20';
+import QuotesModule from './modules/quotes.js?v=20';
+import ClientsModule from './modules/clients.js?v=20';
+import SettingsModule from './modules/settings.js?v=20';
+import RecurringModule from './modules/recurring.js?v=20';
 
 window.App = {
     state: {
@@ -55,14 +55,17 @@ window.App = {
             }
             return data;
         } catch (error) {
-            this.showToast(error.message, 'error');
+            // Don't show toast for silent requests (like auth checks)
+            if (!options.silent) {
+                this.showToast(error.message, 'error');
+            }
             throw error;
         }
     },
 
     async checkAuth() {
         try {
-            const res = await this.api('auth/session');
+            const res = await this.api('auth/session', { silent: true });
             if (res.authenticated) {
                 this.state.user = res.user;
                 this.renderAppShell();

@@ -11,6 +11,7 @@ use App\Http\Controllers\Api\SettingController;
 use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\LookupController;
 use App\Http\Controllers\Api\PaymentLinkController;
+use App\Http\Controllers\WhatsAppWebhookController;
 
 // Public Auth
 Route::post('/auth/login', [AuthController::class, 'login']);
@@ -18,6 +19,10 @@ Route::post('/auth/login', [AuthController::class, 'login']);
 // Lookups (Public or Protected, placing them here as public, but could be protected)
 Route::get('/lookup/rnc/{rnc}', [LookupController::class, 'rnc']);
 Route::get('/lookup/cedula/{cedula}', [LookupController::class, 'cedula']);
+
+// WhatsApp Webhooks (must be public for Meta to access)
+Route::get('/whatsapp/webhook', [WhatsAppWebhookController::class, 'verify']);
+Route::post('/whatsapp/webhook', [WhatsAppWebhookController::class, 'webhook']);
 
 
 

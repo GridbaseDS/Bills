@@ -41,4 +41,8 @@ return [
         'client_secret' => env('PAYPAL_CLIENT_SECRET'),
     ],
 
+    'whatsapp' => [
+        'verify_token' => env('WHATSAPP_VERIFY_TOKEN', 'GridBase_WhatsApp_2026_SecureToken'),
+    ],
+
 ];

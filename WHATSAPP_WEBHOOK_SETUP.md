@@ -6,7 +6,7 @@ En la pantalla de "Configure Webhooks" de Meta for Developers, ingresa estos val
 
 ### **URL de devolución de llamada (Callback URL)**
 ```
-https://bills.gridbase.com/api/whatsapp/webhook
+https://bills.gridbase.com.do/api/whatsapp/webhook
 ```
 
 ### **Identificador de verificación (Verify Token)**

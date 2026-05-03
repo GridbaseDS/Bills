@@ -120,7 +120,26 @@ class InvoiceController extends Controller
                     ->attachData($pdfContent, $filename, ['mime' => 'application/pdf']);
         });
 
-        $invoice->update(['sent_at' => now(), 'sent_via' => 'email', 'status' => 'sent']);
+        $sentVia = 'email';
+        
+        // Also send via WhatsApp if client has WhatsApp number
+        if (!empty($invoice->client->whatsapp)) {
+            try {
+                $whatsappService = new \App\Services\WhatsAppService();
+                if ($whatsappService->isEnabled()) {
+                    $paymentLink = $invoice->getPaymentUrl();
+                    $whatsappResult = $whatsappService->sendInvoice($invoice, $invoice->client->whatsapp, $paymentLink);
+                    if ($whatsappResult['success']) {
+                        $sentVia = 'email,whatsapp';
+                        \Illuminate\Support\Facades\Log::info("Invoice {$invoice->invoice_number} auto-sent via WhatsApp to {$invoice->client->whatsapp}");
+                    }
+                }
+            } catch (\Exception $e) {
+                \Illuminate\Support\Facades\Log::error("WhatsApp auto-send error for invoice {$invoice->invoice_number}: " . $e->getMessage());
+            }
+        }
+
+        $invoice->update(['sent_at' => now(), 'sent_via' => $sentVia, 'status' => 'sent']);
         \Illuminate\Support\Facades\Log::info("Invoice {$invoice->invoice_number} auto-sent to {$invoice->client->email}");
     }
 
@@ -350,14 +369,40 @@ class InvoiceController extends Controller
                         ->attachData($pdfContent, $filename, ['mime' => 'application/pdf']);
             });
 
+            $sentVia = 'email';
+            
+            // Also send via WhatsApp if client has WhatsApp number
+            if (!empty($invoice->client->whatsapp)) {
+                try {
+                    $whatsappService = new \App\Services\WhatsAppService();
+                    if ($whatsappService->isEnabled()) {
+                        // Generate payment link if invoice is unpaid
+                        $paymentLink = null;
+                        if ($invoice->status !== 'paid' && !empty($invoice->payment_token)) {
+                            $paymentLink = url("/pay/{$invoice->payment_token}");
+                        }
+                        
+                        $whatsappResult = $whatsappService->sendInvoice($invoice, $invoice->client->whatsapp, $paymentLink);
+                        if ($whatsappResult['success']) {
+                            $sentVia = 'email,whatsapp';
+                            \Illuminate\Support\Facades\Log::info("Invoice {$invoice->invoice_number} also sent via WhatsApp to {$invoice->client->whatsapp}");
+                        } else {
+                            \Illuminate\Support\Facades\Log::warning("Failed to send invoice {$invoice->invoice_number} via WhatsApp: " . ($whatsappResult['message'] ?? 'Unknown error'));
+                        }
+                    }
+                } catch (\Exception $e) {
+                    \Illuminate\Support\Facades\Log::error("WhatsApp send error for invoice {$invoice->invoice_number}: " . $e->getMessage());
+                }
+            }
+
             $invoice->status = 'sent';
             $invoice->sent_at = now();
-            $invoice->sent_via = 'email';
+            $invoice->sent_via = $sentVia;
             $invoice->save();
 
             \Illuminate\Support\Facades\Log::info("Invoice {$invoice->invoice_number} sent to {$invoice->client->email}");
 
-            return response()->json(['success' => true]);
+            return response()->json(['success' => true, 'sent_via' => $sentVia]);
         } catch (\Exception $e) {
             \Illuminate\Support\Facades\Log::error("Failed to send invoice {$invoice->invoice_number}: " . $e->getMessage());
             return response()->json(['success' => false, 'error' => $e->getMessage()], 500);

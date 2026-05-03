@@ -210,14 +210,34 @@ class QuoteController extends Controller
                         ->attachData($pdfContent, $filename, ['mime' => 'application/pdf']);
             });
 
+            $sentVia = 'email';
+            
+            // Also send via WhatsApp if client has WhatsApp number
+            if (!empty($quote->client->whatsapp)) {
+                try {
+                    $whatsappService = new \App\Services\WhatsAppService();
+                    if ($whatsappService->isEnabled()) {
+                        $whatsappResult = $whatsappService->sendQuote($quote, $quote->client->whatsapp);
+                        if ($whatsappResult['success']) {
+                            $sentVia = 'email,whatsapp';
+                            \Illuminate\Support\Facades\Log::info("Quote {$quote->quote_number} also sent via WhatsApp to {$quote->client->whatsapp}");
+                        } else {
+                            \Illuminate\Support\Facades\Log::warning("Failed to send quote {$quote->quote_number} via WhatsApp: " . ($whatsappResult['message'] ?? 'Unknown error'));
+                        }
+                    }
+                } catch (\Exception $e) {
+                    \Illuminate\Support\Facades\Log::error("WhatsApp send error for quote {$quote->quote_number}: " . $e->getMessage());
+                }
+            }
+
             $quote->status = 'sent';
             $quote->sent_at = now();
-            $quote->sent_via = 'email';
+            $quote->sent_via = $sentVia;
             $quote->save();
 
             \Illuminate\Support\Facades\Log::info("Quote {$quote->quote_number} sent to {$quote->client->email}");
 
-            return response()->json(['success' => true]);
+            return response()->json(['success' => true, 'sent_via' => $sentVia]);
         } catch (\Exception $e) {
             \Illuminate\Support\Facades\Log::error("Failed to send quote {$quote->quote_number}: " . $e->getMessage());
             return response()->json(['success' => false, 'error' => $e->getMessage()], 500);

@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\DiagnosticsController;
+use App\Http\Controllers\WhatsAppTestController;
 
 // Public invoice search and payment routes
 Route::get('/buscar-factura', [PaymentController::class, 'searchPage'])->name('payment.search');
@@ -26,6 +27,13 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/settings/paypal', [SettingsController::class, 'updatePayPal'])->name('settings.paypal.update');
     Route::post('/settings/paypal/test', [SettingsController::class, 'testPayPalConnection'])->name('settings.paypal.test');
 });
+
+// WhatsApp Test routes (public for testing, consider adding auth in production)
+Route::get('/whatsapp-test', [WhatsAppTestController::class, 'index'])->name('whatsapp.test');
+Route::post('/whatsapp-test/send', [WhatsAppTestController::class, 'sendTest'])->name('whatsapp.test.send');
+Route::post('/whatsapp-test/invoice', [WhatsAppTestController::class, 'testInvoice'])->name('whatsapp.test.invoice');
+Route::post('/whatsapp-test/quote', [WhatsAppTestController::class, 'testQuote'])->name('whatsapp.test.quote');
+Route::get('/whatsapp-test/status', [WhatsAppTestController::class, 'status'])->name('whatsapp.test.status');
 
 Route::get('/{any}', function () {
     return view('welcome');

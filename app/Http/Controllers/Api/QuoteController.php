@@ -57,6 +57,37 @@ class QuoteController extends Controller
         return response()->json(['success' => true, 'quote' => $quote], 201);
     }
 
+    public function update(Request $request, $id)
+    {
+        $quote = Quote::findOrFail($id);
+        $data = $request->all();
+
+        $subtotal = collect($data['items'] ?? [])->sum(function($i) { return $i['quantity'] * $i['unit_price']; });
+        $discountValue = $data['discount_value'] ?? 0;
+        $discountAmount = ($data['discount_type'] ?? 'percentage') === 'percentage' ? ($subtotal * ($discountValue/100)) : $discountValue;
+        $taxRate = $data['tax_rate'] ?? 0;
+        $taxAmount = ($subtotal - $discountAmount) * ($taxRate/100);
+        $total = $subtotal - $discountAmount + $taxAmount;
+
+        $data['subtotal'] = $subtotal;
+        $data['discount_amount'] = $discountAmount;
+        $data['tax_amount'] = $taxAmount;
+        $data['total'] = $total;
+
+        $quote->update($data);
+
+        if (isset($data['items'])) {
+            $quote->items()->delete();
+            foreach ($data['items'] as $idx => $item) {
+                $item['amount'] = $item['quantity'] * $item['unit_price'];
+                $item['sort_order'] = $idx;
+                $quote->items()->create($item);
+            }
+        }
+
+        return response()->json(['success' => true, 'quote' => $quote]);
+    }
+
     public function show($id)
     {
         $quote = Quote::with(['client', 'items'])->findOrFail($id);

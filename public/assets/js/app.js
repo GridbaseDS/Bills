@@ -3,12 +3,12 @@
  * Main Frontend Application Logic
  */
 
-import DashboardModule from './modules/dashboard.js?v=22';
-import InvoicesModule from './modules/invoices.js?v=22';
-import QuotesModule from './modules/quotes.js?v=22';
-import ClientsModule from './modules/clients.js?v=22';
-import SettingsModule from './modules/settings.js?v=22';
-import RecurringModule from './modules/recurring.js?v=22';
+import DashboardModule from './modules/dashboard.js?v=30';
+import InvoicesModule from './modules/invoices.js?v=30';
+import QuotesModule from './modules/quotes.js?v=30';
+import ClientsModule from './modules/clients.js?v=30';
+import SettingsModule from './modules/settings.js?v=30';
+import RecurringModule from './modules/recurring.js?v=30';
 
 window.App = {
     state: {
@@ -220,7 +220,7 @@ window.App = {
                         </div>
                         <button type="submit" class="btn btn-primary" style="width:100%;margin-top:8px;">Iniciar Sesión</button>
                     </form>
-                    <p style="margin-top: 20px; font-size: 11px; color: var(--text-muted);">
+                    <p style="margin-top: 20px; font-size: 11px; color: var(--contrast-low);">
                         Powered by <span style="color: var(--accent); font-weight: 600;">GridBase</span> Digital Solutions
                     </p>
                 </div>
@@ -373,8 +373,8 @@ window.App = {
                 
                 const dropdown = document.createElement('div');
                 dropdown.id = 'global-search-results';
-                dropdown.style.cssText = 'position:absolute;top:100%;left:0;right:0;background:var(--bg-card);border:1px solid var(--border-color);border-radius:6px;box-shadow:0 10px 30px rgba(0,0,0,0.2);margin-top:8px;z-index:9999;max-height:400px;overflow-y:auto;padding:8px 0;';
-                dropdown.innerHTML = '<div style="padding:12px 16px;color:var(--text-muted);font-size:13px;text-align:center;">Buscando...</div>';
+                dropdown.style.cssText = 'position:absolute;top:100%;left:0;right:0;background:var(--bg-white);border:1px solid var(--contrast-border);border-radius:var(--border-radius-card);margin-top:8px;z-index:9999;max-height:400px;overflow-y:auto;padding:8px 0;';
+                dropdown.innerHTML = '<div style="padding:12px 16px;color:var(--contrast-low);font-size:13px;text-align:center;">Buscando...</div>';
                 searchContainer.appendChild(dropdown);
                 
                 try {
@@ -399,36 +399,36 @@ window.App = {
                     let html = '';
                     
                     if (invoices.length > 0) {
-                        html += '<div style="padding:4px 16px;font-size:11px;text-transform:uppercase;color:var(--text-muted);font-weight:700;">Facturas</div>';
+                        html += '<div style="padding:4px 16px;font-size:11px;text-transform:uppercase;color:var(--contrast-low);font-weight:600;letter-spacing:1px;">Facturas</div>';
                         invoices.slice(0, 5).forEach(i => {
-                            html += `<a href="#invoices/${i.id}" style="display:block;padding:8px 16px;text-decoration:none;color:inherit;border-bottom:1px solid var(--border-color);font-size:13px;" onclick="document.getElementById('global-search-results').remove();document.querySelector('.topbar-search input').value=''">
+                            html += `<a href="#invoices/${i.id}" style="display:block;padding:10px 16px;text-decoration:none;color:inherit;border-bottom:1px solid var(--contrast-border);font-size:13px;" onclick="document.getElementById('global-search-results').remove();document.querySelector('.topbar-search input').value=''">
                                 <div style="display:flex;justify-content:space-between;">
                                     <strong>${i.invoice_number}</strong>
-                                    <span style="color:var(--primary);font-weight:600;">${this.formatCurrency(i.total, i.currency)}</span>
+                                    <span style="color:var(--accent);font-weight:700;">${this.formatCurrency(i.total, i.currency)}</span>
                                 </div>
-                                <div style="color:var(--text-muted);font-size:12px;margin-top:2px;">${i.company_name || i.contact_name}</div>
+                                <div style="color:var(--contrast-medium);font-size:12px;margin-top:2px;">${i.company_name || i.contact_name}</div>
                             </a>`;
                         });
                     }
                     
                     if (clients.length > 0) {
-                        html += '<div style="padding:4px 16px;font-size:11px;text-transform:uppercase;color:var(--text-muted);font-weight:700;margin-top:8px;">Clientes</div>';
+                        html += '<div style="padding:4px 16px;font-size:11px;text-transform:uppercase;color:var(--contrast-low);font-weight:600;letter-spacing:1px;margin-top:8px;">Clientes</div>';
                         clients.slice(0, 5).forEach(c => {
-                            html += `<a href="#clients/profile/${c.id}" style="display:block;padding:8px 16px;text-decoration:none;color:inherit;border-bottom:1px solid var(--border-color);font-size:13px;" onclick="document.getElementById('global-search-results').remove();document.querySelector('.topbar-search input').value=''">
+                            html += `<a href="#clients/profile/${c.id}" style="display:block;padding:10px 16px;text-decoration:none;color:inherit;border-bottom:1px solid var(--contrast-border);font-size:13px;" onclick="document.getElementById('global-search-results').remove();document.querySelector('.topbar-search input').value=''">
                                 <div><strong>${c.company_name || c.contact_name}</strong></div>
-                                <div style="color:var(--text-muted);font-size:12px;margin-top:2px;">${c.email}</div>
+                                <div style="color:var(--contrast-medium);font-size:12px;margin-top:2px;">${c.email}</div>
                             </a>`;
                         });
                     }
                     
                     if (html === '') {
-                        html = '<div style="padding:12px 16px;color:var(--text-muted);font-size:13px;text-align:center;">No se encontraron resultados</div>';
+                        html = '<div style="padding:12px 16px;color:var(--contrast-low);font-size:13px;text-align:center;">No se encontraron resultados</div>';
                     }
                     
                     dropdown.innerHTML = html;
                     
                 } catch(e) {
-                    dropdown.innerHTML = '<div style="padding:12px 16px;color:var(--red);font-size:13px;text-align:center;">Error al buscar</div>';
+                    dropdown.innerHTML = '<div style="padding:12px 16px;color:var(--red);font-size:14px;text-align:center;">Error al buscar</div>';
                 }
             });
             

@@ -64,6 +64,18 @@
   --shadow-md: none;
   --shadow-lg: none;
   --shadow-glow: none;
+
+  /* ── Backward-Compatible Aliases ── */
+  --text: var(--contrast-high);
+  --text-secondary: var(--contrast-medium);
+  --text-muted: var(--contrast-low);
+  --border: var(--contrast-border);
+  --border-light: var(--contrast-border);
+  --border-color: var(--contrast-border);
+  --radius: var(--border-radius-button);
+  --radius-sm: 8px;
+  --radius-lg: var(--border-radius-card);
+  --radius-xl: 20px;
 }
 
 /* ── Reset and Typography ── */

@@ -5,8 +5,8 @@ namespace App\Services\Dgii;
 use DOMDocument;
 use Exception;
 use Illuminate\Support\Facades\Log;
-use robrichards\xmlseclibs\XMLSecurityDSig;
-use robrichards\xmlseclibs\XMLSecurityKey;
+use RobRichards\XMLSecLibs\XMLSecurityDSig;
+use RobRichards\XMLSecLibs\XMLSecurityKey;
 
 class XmlSignatureService
 {
@@ -45,7 +45,7 @@ class XmlSignatureService
         $doc->preserveWhiteSpace = true;
         $doc->formatOutput = false;
         
-        if (!$doc->loadXML($xmlContent, LIBXML_NOBLANKS | LIBXML_NOCDATA | LIBXML_NONET)) {
+        if (!$doc->loadXML($xmlContent)) {
             throw new Exception("El contenido provisto no es un XML válido.");
         }
 

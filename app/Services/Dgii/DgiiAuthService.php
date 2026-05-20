@@ -64,15 +64,15 @@ class DgiiAuthService
         // 1. Determine Endpoints
         // Testing (Certificación) vs Production
         $baseUrl = $env === 'production' 
-            ? 'https://ecf.dgii.gov.do/TCOrg/api' 
-            : 'https://ecf.dgii.gov.do/TestDGII/TCOrg/api';
+            ? 'https://ecf.dgii.gov.do' 
+            : 'https://ecf.dgii.gov.do/certecf';
 
         Log::info("[DgiiAuthService] Obteniendo Semilla de la DGII en entorno: {$env}");
 
         // 2. Fetch Semilla XML
         $semillaResponse = Http::withoutVerifying()
             ->timeout(10)
-            ->get("{$baseUrl}/Autenticacion/Semilla");
+            ->get("{$baseUrl}/Autenticacion/api/Autenticacion/Semilla");
 
         if (!$semillaResponse->successful()) {
             throw new Exception("Error al conectar con la DGII para obtener Semilla XML. Status: " . $semillaResponse->status());
@@ -86,17 +86,16 @@ class DgiiAuthService
         $signedSemillaXml = $this->signatureService->signXml($semillaXml, $p12Path, $p12Password);
 
         Log::info("[DgiiAuthService] Semilla firmada con éxito. Solicitando Token Bearer JWT.");
+        Log::info("Signed Semilla XML: \n" . $signedSemillaXml);
 
-        // 4. Submit signed Semilla XML to get JWT Bearer Token
+        // 4. Submit signed Semilla XML to get JWT Bearer Token (DGII requires multipart/form-data)
         $tokenResponse = Http::withoutVerifying()
             ->timeout(15)
             ->withHeaders([
-                'Content-Type' => 'application/xml',
                 'Accept' => 'application/json'
             ])
-            ->send('POST', "{$baseUrl}/Autenticacion/ValidarSemilla", [
-                'body' => $signedSemillaXml
-            ]);
+            ->attach('xml', $signedSemillaXml, 'semilla.xml')
+            ->post("{$baseUrl}/Autenticacion/api/Autenticacion/ValidarSemilla");
 
         if (!$tokenResponse->successful()) {
             Log::error("[DgiiAuthService] Error al validar semilla en la DGII: " . $tokenResponse->body());

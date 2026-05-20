@@ -205,6 +205,24 @@ class XmlBuilderService
             $lineNum++;
         }
 
+        // InformacionReferencia for Notes (33, 34)
+        if (in_array($tipoECF, [33, 34])) {
+            $infoReferencia = $dom->createElement('InformacionReferencia');
+            $root->appendChild($infoReferencia);
+            
+            // For testing or actual DB relation. If not set, use a dummy one for DGII tests
+            $ncfModificado = $invoice->modified_ncf ?? 'E310000000000';
+            $infoReferencia->appendChild($dom->createElement('NCFModificado', $ncfModificado));
+            $infoReferencia->appendChild($dom->createElement('FechaNCFModificado', $invoice->issue_date->format('Y-m-d'))); // Should be original invoice date, but fallback
+            
+            // CodigoModificacion: 1 = Anula, 2 = Corrige Texto, 3 = Corrige Montos
+            $infoReferencia->appendChild($dom->createElement('CodigoModificacion', $invoice->modification_code ?? 1));
+            
+            if (!empty($invoice->modification_reason)) {
+                $infoReferencia->appendChild($dom->createElement('RazonModificacion', htmlspecialchars(substr($invoice->modification_reason, 0, 90), ENT_XML1)));
+            }
+        }
+
         // FechaHoraFirma (format: YYYY-MM-DDTHH:MM:SS)
         $fechaHoraFirma = $dom->createElement('FechaHoraFirma', date('Y-m-d\TH:i:s'));
         $root->appendChild($fechaHoraFirma);

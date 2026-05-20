@@ -22,12 +22,8 @@ Route::post('/diagnostics/test-order', [DiagnosticsController::class, 'testOrder
 Route::get('/diagnostics/problematic-payments', [DiagnosticsController::class, 'listProblematicPayments'])->name('diagnostics.problematic-payments');
 Route::post('/diagnostics/fix-payment', [DiagnosticsController::class, 'fixPayment'])->name('diagnostics.fix-payment');
 
-// Settings routes (protected by auth middleware)
-Route::middleware('auth:sanctum')->group(function () {
-    Route::get('/settings', [SettingsController::class, 'index'])->name('settings.index');
-    Route::post('/settings/paypal', [SettingsController::class, 'updatePayPal'])->name('settings.paypal.update');
-    Route::post('/settings/paypal/test', [SettingsController::class, 'testPayPalConnection'])->name('settings.paypal.test');
-});
+// The /settings routes are now fully managed dynamically by the SPA and api.php.
+// We remove the conflicting legacy /settings web routes so the SPA catch-all can render the frontend settings view correctly.
 
 // WhatsApp Test routes (public for testing, consider adding auth in production)
 Route::get('/whatsapp-test', [WhatsAppTestController::class, 'index'])->name('whatsapp.test');

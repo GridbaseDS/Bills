@@ -3,12 +3,12 @@
  * Main Frontend Application Logic
  */
 
-import DashboardModule from './modules/dashboard.js?v=30';
-import InvoicesModule from './modules/invoices.js?v=30';
-import QuotesModule from './modules/quotes.js?v=30';
-import ClientsModule from './modules/clients.js?v=30';
-import SettingsModule from './modules/settings.js?v=30';
-import RecurringModule from './modules/recurring.js?v=30';
+import DashboardModule from './modules/dashboard.js?v=31';
+import InvoicesModule from './modules/invoices.js?v=31';
+import QuotesModule from './modules/quotes.js?v=31';
+import ClientsModule from './modules/clients.js?v=31';
+import SettingsModule from './modules/settings.js?v=31';
+import RecurringModule from './modules/recurring.js?v=31';
 
 window.App = {
     state: {

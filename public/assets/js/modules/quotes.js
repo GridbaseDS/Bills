@@ -19,7 +19,7 @@ const QuotesModule = {
                         <h1 class="page-title">Cotizaciones</h1>
                         <p class="page-subtitle">Administra presupuestos de clientes</p>
                     </div>
-                    <button class="btn btn-primary" onclick="window.location.hash='quotes/new'">+ Nueva Cotización</button>
+                    <button class="btn btn-primary" onclick="window.App.navigate('quotes/new')">+ Nueva Cotización</button>
                 </div>
 
                 <div class="card mb-24" style="padding:16px 20px;">
@@ -182,7 +182,7 @@ const QuotesModule = {
                     <h1 class="page-title">${editId ? 'Editar Cotización' : 'Nueva Cotización'}</h1>
                     <p class="page-subtitle">${editId ? `Editando ${quote?.quote_number}` : 'Crea un presupuesto para un cliente'}</p>
                 </div>
-                <button class="btn btn-ghost" onclick="window.location.hash='quotes'">Cancelar</button>
+                <button class="btn btn-ghost" onclick="window.App.navigate('quotes')">Cancelar</button>
             </div>
             <form id="quote-form" class="card">
                 <div class="card-body">
@@ -267,7 +267,7 @@ const QuotesModule = {
                     await window.App.api('quotes', { method: 'POST', body: payload });
                     window.App.showToast('Cotización creada');
                 }
-                window.location.hash = 'quotes';
+                window.App.navigate('quotes');
             } catch (err) {}
         });
     },
@@ -305,7 +305,7 @@ const QuotesModule = {
             try {
                 const res = await window.App.api(`quotes/${id}/convert`, { method: 'POST' });
                 window.App.showToast(res.email_sent ? 'Cotización convertida y factura enviada por email' : 'Cotización convertida en factura');
-                window.location.hash = 'invoices';
+                window.App.navigate('invoices');
             } catch(e) {}
         });
     },
@@ -319,13 +319,13 @@ const QuotesModule = {
 
     async duplicateQuote(id) {
         this._showConfirm('¿Duplicar esta cotización?', async () => {
-            try { await window.App.api(`quotes/${id}/duplicate`, { method: 'POST' }); window.App.showToast('Cotización duplicada'); window.location.hash = 'quotes'; } catch(e) {}
+            try { await window.App.api(`quotes/${id}/duplicate`, { method: 'POST' }); window.App.showToast('Cotización duplicada'); window.App.navigate('quotes'); } catch(e) {}
         });
     },
 
     async deleteQuote(id) {
         this._showConfirm('⚠️ ¿Eliminar esta cotización? Esta acción no se puede deshacer.', async () => {
-            try { await window.App.api(`quotes/${id}`, { method: 'DELETE' }); window.App.showToast('Cotización eliminada'); window.location.hash = 'quotes'; } catch(e) {}
+            try { await window.App.api(`quotes/${id}`, { method: 'DELETE' }); window.App.showToast('Cotización eliminada'); window.App.navigate('quotes'); } catch(e) {}
         });
     },
 

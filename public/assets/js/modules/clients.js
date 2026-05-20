@@ -17,7 +17,7 @@ const ClientsModule = {
                         <h1 class="page-title">Clientes</h1>
                         <p class="page-subtitle">Administra tu base de datos de clientes</p>
                     </div>
-                    <button class="btn btn-primary" onclick="window.location.hash='clients/new'">+ Nuevo Cliente</button>
+                    <button class="btn btn-primary" onclick="window.App.navigate('clients/new')">+ Nuevo Cliente</button>
                 </div>
 
                 <div class="card mb-24" style="padding:16px 20px;">
@@ -111,7 +111,7 @@ const ClientsModule = {
                     </div>
                     <div style="display:flex;gap:8px;">
                         <a href="#clients/${id}" class="btn btn-ghost">✏️ Editar</a>
-                        <button class="btn btn-primary" onclick="window.location.hash='invoices/new'">+ Nueva Factura</button>
+                        <button class="btn btn-primary" onclick="window.App.navigate('invoices/new')">+ Nueva Factura</button>
                     </div>
                 </div>
 
@@ -165,7 +165,7 @@ const ClientsModule = {
                                 <thead><tr><th>Número</th><th>Monto</th><th>Estado</th></tr></thead>
                                 <tbody>
                                     ${data.invoices.map(i => `
-                                        <tr style="cursor:pointer" onclick="window.location.hash='invoices/${i.id}'">
+                                        <tr style="cursor:pointer" onclick="window.App.navigate('invoices/${i.id}')">
                                             <td class="font-semibold text-mono">${i.invoice_number}</td>
                                             <td class="font-semibold">${window.App.formatCurrency(i.total, i.currency)}</td>
                                             <td><span class="badge badge-${i.status}">${statusLabel(i.status)}</span></td>
@@ -183,7 +183,7 @@ const ClientsModule = {
                                 <thead><tr><th>Número</th><th>Monto</th><th>Estado</th></tr></thead>
                                 <tbody>
                                     ${data.quotes.map(q => `
-                                        <tr style="cursor:pointer" onclick="window.location.hash='quotes/${q.id}'">
+                                        <tr style="cursor:pointer" onclick="window.App.navigate('quotes/${q.id}')">
                                             <td class="font-semibold text-mono">${q.quote_number}</td>
                                             <td class="font-semibold">${window.App.formatCurrency(q.total, q.currency)}</td>
                                             <td><span class="badge badge-${q.status}">${statusLabel(q.status)}</span></td>
@@ -211,7 +211,7 @@ const ClientsModule = {
                     <h1 class="page-title">${id ? 'Editar Cliente' : 'Nuevo Cliente'}</h1>
                     <p class="page-subtitle">Completa la información del cliente</p>
                 </div>
-                <button class="btn btn-ghost" onclick="window.location.hash='clients'">Cancelar</button>
+                <button class="btn btn-ghost" onclick="window.App.navigate('clients')">Cancelar</button>
             </div>
             <form id="client-form" class="card">
                 <div class="card-body">
@@ -282,14 +282,14 @@ const ClientsModule = {
             try {
                 if (id) { await App.api(`clients/${id}`, { method: 'PUT', body: payload }); App.showToast('Cliente actualizado'); }
                 else { await App.api('clients', { method: 'POST', body: payload }); App.showToast('Cliente creado'); }
-                window.location.hash = 'clients';
+                window.App.navigate('clients');
             } catch (err) {}
         });
     },
 
     async deleteClient(id) {
         this._showConfirm('⚠️ ¿Eliminar este cliente? Esta acción no se puede deshacer.', async () => {
-            try { await window.App.api(`clients/${id}`, { method: 'DELETE' }); window.App.showToast('Cliente eliminado'); window.location.hash = 'clients'; }
+            try { await window.App.api(`clients/${id}`, { method: 'DELETE' }); window.App.showToast('Cliente eliminado'); window.App.navigate('clients'); }
             catch(e) {}
         });
     },

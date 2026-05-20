@@ -19,7 +19,7 @@ const InvoicesModule = {
                         <h1 class="page-title">Facturas</h1>
                         <p class="page-subtitle">Administra tu facturación y pagos</p>
                     </div>
-                    <button class="btn btn-primary" onclick="window.location.hash='invoices/new'">+ Nueva Factura</button>
+                    <button class="btn btn-primary" onclick="window.App.navigate('invoices/new')">+ Nueva Factura</button>
                 </div>
 
                 <!-- Filters -->
@@ -265,7 +265,7 @@ const InvoicesModule = {
                     <h1 class="page-title">${editId ? 'Editar Factura' : 'Nueva Factura'}</h1>
                     <p class="page-subtitle">${editId ? `Editando ${invoice?.invoice_number}` : 'Crea una factura para un cliente'}</p>
                 </div>
-                <button class="btn btn-ghost" onclick="window.location.hash='invoices'">Cancelar</button>
+                <button class="btn btn-ghost" onclick="window.App.navigate('invoices')">Cancelar</button>
             </div>
             
             <form id="invoice-form" class="card">
@@ -401,7 +401,7 @@ const InvoicesModule = {
                     const result = await App.api('invoices', { method: 'POST', body: payload });
                     App.showToast(result.email_sent ? 'Factura creada y enviada por email al cliente' : 'Factura creada correctamente');
                 }
-                window.location.hash = 'invoices';
+                window.App.navigate('invoices');
             } catch (err) {}
         });
     },
@@ -545,7 +545,7 @@ const InvoicesModule = {
             try {
                 await App.api(`invoices/${id}/duplicate`, { method: 'POST' });
                 App.showToast('Factura duplicada correctamente');
-                window.location.hash = 'invoices';
+                window.App.navigate('invoices');
             } catch(e) {}
         });
     },
@@ -555,7 +555,7 @@ const InvoicesModule = {
             try {
                 await App.api(`invoices/${id}`, { method: 'DELETE' });
                 App.showToast('Factura eliminada');
-                window.location.hash = 'invoices';
+                window.App.navigate('invoices');
             } catch(e) {}
         });
     },

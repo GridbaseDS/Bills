@@ -36,7 +36,7 @@ const RecurringModule = {
                         <h1 class="page-title">Suscripciones Recurrentes</h1>
                         <p class="page-subtitle">Facturación automática periódica</p>
                     </div>
-                    <button class="btn btn-primary" onclick="window.location.hash='recurring/new'">+ Nueva Suscripción</button>
+                    <button class="btn btn-primary" onclick="window.App.navigate('recurring/new')">+ Nueva Suscripción</button>
                 </div>
                 <div class="card">
                     <div class="table-wrapper">
@@ -68,7 +68,7 @@ const RecurringModule = {
                         <p class="page-subtitle">${r.company_name||r.contact_name||''}</p>
                     </div>
                     <div style="display:flex;gap:8px">
-                        <button class="btn btn-secondary" onclick="window.location.hash='recurring/edit/${id}'">✏️ Editar</button>
+                        <button class="btn btn-secondary" onclick="window.App.navigate('recurring/edit/${id}')">✏️ Editar</button>
                         <button class="btn btn-ghost" onclick="window.RecurringModule.toggleStatus(${id},'${r.status==='active'?'paused':'active'}')">
                             ${r.status==='active'?'⏸️ Pausar':'▶️ Reactivar'}
                         </button>
@@ -128,7 +128,7 @@ const RecurringModule = {
                     <h1 class="page-title">${isEdit?'Editar Suscripción #'+editId:'Nueva Suscripción'}</h1>
                     <p class="page-subtitle">${isEdit?'Modifica la configuración de cobro recurrente':'Configura una factura periódica automática'}</p>
                 </div>
-                <button class="btn btn-ghost" onclick="window.location.hash='recurring${isEdit?'/'+editId:''}'">Cancelar</button>
+                <button class="btn btn-ghost" onclick="window.App.navigate('recurring${isEdit?')/'+editId:''}'">Cancelar</button>
             </div>
             <form id="recurring-form" class="card"><div class="card-body">
                 <div class="grid-2">
@@ -236,11 +236,11 @@ const RecurringModule = {
                 if (isEdit) {
                     await App.api(`recurring/${editId}`, { method: 'PUT', body: payload });
                     App.showToast('Suscripción actualizada');
-                    window.location.hash = `recurring/${editId}`;
+                    window.App.navigate(`recurring/${editId}`);
                 } else {
                     await App.api('recurring', { method: 'POST', body: payload });
                     App.showToast('Suscripción creada');
-                    window.location.hash = 'recurring';
+                    window.App.navigate('recurring');
                 }
             } catch (err) {}
         });
@@ -331,7 +331,7 @@ const RecurringModule = {
         try {
             await App.api(`recurring/${id}`, { method: 'DELETE' });
             App.showToast('Suscripción eliminada');
-            window.location.hash = 'recurring';
+            window.App.navigate('recurring');
         } catch(e) {}
     }
 };

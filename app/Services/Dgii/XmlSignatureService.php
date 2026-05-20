@@ -49,8 +49,8 @@ class XmlSignatureService
             throw new Exception("El contenido provisto no es un XML válido.");
         }
 
-        // 3. Setup XMLDSig DSig object
-        $dsig = new XMLSecurityDSig();
+        // 3. Setup XMLDSig DSig object (Empty prefix is crucial for DGII .NET parser)
+        $dsig = new XMLSecurityDSig('');
         $dsig->setCanonicalMethod(XMLSecurityDSig::C14N);
         
         // Add Enveloped reference with SHA256
@@ -58,12 +58,10 @@ class XmlSignatureService
             $doc,
             XMLSecurityDSig::SHA256,
             [
-                'http://www.w3.org/2000/09/xmldsig#enveloped-signature',
-                'http://www.w3.org/TR/2001/REC-xml-c14n-20010315'
+                'http://www.w3.org/2000/09/xmldsig#enveloped-signature'
             ],
             [
-                'force_uri' => true,
-                'id_name' => 'Id'
+                'force_uri' => true
             ]
         );
 

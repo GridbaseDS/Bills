@@ -257,8 +257,9 @@
 <body>
 <?php
 $isQuote   = isset($is_quote) && $is_quote;
-$docName   = $isQuote ? 'Cotización' : 'Factura';
-$docNum    = $isQuote ? ($invoice['quote_number'] ?? '') : ($invoice['invoice_number'] ?? '');
+$isEcf     = !$isQuote && ($invoice['is_ecf'] ?? false);
+$docName   = $isQuote ? 'Cotización' : ($isEcf ? 'e-CF' : 'Factura');
+$docNum    = $isQuote ? ($invoice['quote_number'] ?? '') : ($isEcf ? ($invoice['encf'] ?? '') : ($invoice['invoice_number'] ?? ''));
 $dateLabel = $isQuote ? 'Válida Hasta' : 'Vencimiento';
 $dateField = $isQuote ? ($invoice['expiry_date'] ?? $invoice['due_date'] ?? '') : ($invoice['due_date'] ?? '');
 $logoUrl   = 'https://gridbase.com.do/wp-content/uploads/2025/02/imagen_2026-03-16_154236217-1024x228.png';
@@ -282,7 +283,7 @@ if (!empty($invoice['status'])) {
         </td>
         <td style="width:45%; text-align:right;">
             <div class="header-meta-box">
-                <div class="meta-row-item"><span class="meta-label">NÚMERO/</span> <strong><?= htmlspecialchars($docNum) ?></strong></div>
+                <div class="meta-row-item"><span class="meta-label"><?= $isEcf ? 'E-NCF/' : 'NÚMERO/' ?></span> <strong><?= htmlspecialchars($docNum) ?></strong></div>
                 <div class="meta-row-item"><span class="meta-label">FECHA/</span> <strong><?= !empty($invoice['issue_date']) ? date('d/ m/ Y', strtotime($invoice['issue_date'])) : '' ?></strong></div>
                 <?php if (!$isQuote && !empty($invoice['status'])): ?>
                 <div style="margin-top:5px;"><span class="badge <?= $badgeClass ?>"><?= $badgeText ?></span></div>
@@ -296,7 +297,7 @@ if (!empty($invoice['status'])) {
 <div class="body-content">
 
     <!-- Title -->
-    <div class="doc-title"><?= $docName ?></div>
+    <div class="doc-title" style="<?= $isEcf ? 'font-size: 15px;' : '' ?>"><?= $isEcf ? 'Representación Impresa del Comprobante Fiscal Electrónico' : $docName ?></div>
 
     <!-- Info Columns -->
     <table class="info-cols"><tr>
@@ -349,6 +350,35 @@ if (!empty($invoice['status'])) {
     <!-- Payment + Totals -->
     <table class="bottom-area"><tr>
         <td style="width:55%; padding-right:30px;">
+            <?php if ($isEcf): ?>
+                <?php
+                $rncEmisor = preg_replace('/[^0-9]/', '', $settings['company_tax_id'] ?? '');
+                $rncComprador = preg_replace('/[^0-9]/', '', $client['tax_id'] ?? '');
+                $encf = $invoice['encf'] ?? '';
+                $monto = number_format((float)$invoice['total'], 2, '.', '');
+                $fecha = date('d-m-Y', strtotime($invoice['issue_date']));
+                $codSeguridad = $invoice['security_code'] ?? '';
+                $qrUrl = "https://ecf.dgii.gov.do/Estacionamiento/Consulta/eCF?RncEmisor={$rncEmisor}&RncComprador={$rncComprador}&ENcf={$encf}&MontoTotal={$monto}&FechaEmision={$fecha}&CodigoSeguridad={$codSeguridad}";
+                $qrChartUrl = "https://chart.googleapis.com/chart?chs=120x120&cht=qr&chl=" . urlencode($qrUrl) . "&choe=UTF-8";
+                ?>
+                <table style="width:100%; border:none;">
+                    <tr style="border:none;">
+                        <td style="width:115px; padding-right:10px; border:none; vertical-align:middle;">
+                            <img src="<?= $qrChartUrl ?>" style="width:105px; height:105px; display:block;" alt="QR DGII">
+                        </td>
+                        <td style="border:none; vertical-align:middle;">
+                            <div style="font-size:8.5px; color:#444; line-height:1.45; font-family:'DejaVu Sans',sans-serif;">
+                                <strong style="color:#0B484C; font-size:9.5px; display:block; margin-bottom:3px;">Documento Firmado Digitalmente</strong>
+                                <strong>E-NCF:</strong> <?= htmlspecialchars($encf) ?><br>
+                                <strong>Cód. Seguridad:</strong> <?= htmlspecialchars($codSeguridad) ?><br>
+                                <strong>Vence e-NCF:</strong> <?= htmlspecialchars($settings['dgii_ncf_expiry_date'] ?? '31/12/2027') ?><br>
+                                <span style="font-size:7.5px; color:#777; display:block; margin-top:4px; line-height:1.2;">Escanee el QR para validar el comprobante en el portal oficial de la DGII.</span>
+                            </div>
+                        </td>
+                    </tr>
+                </table>
+                <div style="margin-top:15px;"></div>
+            <?php endif; ?>
             <?php if (!empty($invoice['notes'])): ?>
                 <div class="payment-title">Notas</div>
                 <div class="payment-text"><?= nl2br(htmlspecialchars($invoice['notes'])) ?></div>

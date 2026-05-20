@@ -5,6 +5,7 @@ use Illuminate\Http\Request;
 use App\Models\Invoice;
 use App\Models\Setting;
 use App\Services\EmailService;
+use App\Services\Dgii\EcfManagerService;
 use Illuminate\Support\Str;
 
 class InvoiceController extends Controller
@@ -19,7 +20,7 @@ class InvoiceController extends Controller
         return response()->json(['success' => true, 'data' => $invoices]);
     }
 
-    public function store(Request $request)
+    public function store(Request $request, EcfManagerService $ecfManager)
     {
         $data = $request->all();
         $prefix = Setting::where('setting_key', 'invoice_prefix')->value('setting_value') ?? 'FAC-';
@@ -54,6 +55,15 @@ class InvoiceController extends Controller
             $item['amount'] = $item['quantity'] * $item['unit_price'];
             $item['sort_order'] = $idx;
             $invoice->items()->create($item);
+        }
+
+        if ($invoice->is_ecf) {
+            try {
+                $ecfManager->processInvoice($invoice);
+                $invoice->refresh();
+            } catch (\Exception $e) {
+                \Illuminate\Support\Facades\Log::error("DGII auto-processing failed on store: " . $e->getMessage());
+            }
         }
 
         // Auto-send email to client
@@ -472,5 +482,27 @@ class InvoiceController extends Controller
         $invoice->payments()->delete();
         $invoice->delete();
         return response()->json(['success' => true, 'message' => 'Factura eliminada.']);
+    }
+
+    /**
+     * Manually process or retry electronic invoicing (e-CF) validation on the DGII.
+     */
+    public function processEcf($id, EcfManagerService $ecfManager)
+    {
+        $invoice = Invoice::findOrFail($id);
+        
+        if (!$invoice->is_ecf) {
+            return response()->json(['success' => false, 'error' => 'Esta factura no está marcada como e-CF.'], 400);
+        }
+        
+        $result = $ecfManager->processInvoice($invoice);
+        
+        return response()->json([
+            'success' => $result['success'],
+            'status' => $result['status'],
+            'track_id' => $result['track_id'],
+            'error' => $result['error'],
+            'invoice' => $invoice->fresh()
+        ]);
     }
 }

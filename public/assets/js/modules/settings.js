@@ -18,6 +18,7 @@ export default {
                     <button class="tab" data-tab="whatsapp">WhatsApp API</button>
                     <button class="tab" data-tab="automation">Recordatorios</button>
                     <button class="tab" data-tab="integrations">Integraciones</button>
+                    <button class="tab" data-tab="dgii">Facturación Electrónica (DGII)</button>
                 </div>
 
                 <form id="settings-form" class="card mb-24">
@@ -193,6 +194,45 @@ export default {
                             </div>
                         </div>
 
+                        <!-- TAB: DGII E-CF -->
+                        <div class="tab-content" id="tab-dgii" style="display:none;">
+                            <h3 class="mb-16">Facturación Electrónica de la DGII (Rep. Dom.)</h3>
+                            <p class="text-muted mb-24">Configura las credenciales de firma y secuenciación para conectarte oficialmente con la DGII.</p>
+                            
+                            <div class="grid-2">
+                                <div class="form-group">
+                                    <label class="form-label">Entorno DGII</label>
+                                    <select id="s_dgii_env" class="form-control">
+                                        <option value="testing" ${s.dgii_env === 'testing' || !s.dgii_env ? 'selected' : ''}>Certificación / Pruebas (TestDGII)</option>
+                                        <option value="production" ${s.dgii_env === 'production' ? 'selected' : ''}>Producción (Oficial)</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Fecha de Vence Secuencia (e-NCF)</label>
+                                    <input type="date" id="s_dgii_ncf_expiry_date" class="form-control" value="${s.dgii_ncf_expiry_date || '2027-12-31'}">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Nombre del Certificado (.p12 / .pfx)</label>
+                                    <input type="text" id="s_dgii_certificate_path" class="form-control" placeholder="certificado.p12" value="${s.dgii_certificate_path || ''}">
+                                    <div class="form-hint">Guarde su archivo digital en <code>storage/app/secure/</code> y digite su nombre exacto.</div>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Contraseña del Certificado</label>
+                                    <input type="password" id="s_dgii_certificate_password" class="form-control" value="${s.dgii_certificate_password || ''}">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Próximo e-NCF Crédito Fiscal (Tipo 31)</label>
+                                    <input type="number" id="s_dgii_next_e_ncf_31" class="form-control" value="${s.dgii_next_e_ncf_31 || '1'}">
+                                    <div class="form-hint">Secuencia actual. Ej: 1 generará el NCF <code>E310000000001</code></div>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Próximo e-NCF Consumo (Tipo 32)</label>
+                                    <input type="number" id="s_dgii_next_e_ncf_32" class="form-control" value="${s.dgii_next_e_ncf_32 || '1'}">
+                                    <div class="form-hint">Secuencia actual. Ej: 1 generará el NCF <code>E320000000001</code></div>
+                                </div>
+                            </div>
+                        </div>
+
                         <div class="mt-24" style="border-top: 1px solid var(--border); padding-top: 16px;">
                             <button type="submit" class="btn btn-primary">Guardar Todas las Configuraciones</button>
                         </div>
@@ -278,6 +318,14 @@ export default {
                     // Integrations
                     payment_link_general: document.getElementById('s_payment_link_general').value,
                     bank_instructions: document.getElementById('s_bank_instructions').value,
+
+                    // DGII E-CF
+                    dgii_env: document.getElementById('s_dgii_env').value,
+                    dgii_ncf_expiry_date: document.getElementById('s_dgii_ncf_expiry_date').value,
+                    dgii_certificate_path: document.getElementById('s_dgii_certificate_path').value,
+                    dgii_certificate_password: document.getElementById('s_dgii_certificate_password').value,
+                    dgii_next_e_ncf_31: document.getElementById('s_dgii_next_e_ncf_31').value,
+                    dgii_next_e_ncf_32: document.getElementById('s_dgii_next_e_ncf_32').value,
                 };
 
                 try {

@@ -92,7 +92,10 @@ const InvoicesModule = {
 
         tbody.innerHTML = filtered.map(i => `
             <tr>
-                <td class="font-semibold text-mono"><a href="#invoices/${i.id}" style="color:inherit;text-decoration:none">${i.invoice_number}</a></td>
+                <td class="font-semibold text-mono">
+                    <a href="#invoices/${i.id}" style="color:inherit;text-decoration:none">${i.is_ecf ? (i.encf || i.invoice_number) : i.invoice_number}</a>
+                    ${i.is_ecf ? `<span class="badge" style="background:#0B484C;color:#FFFFFF;margin-left:6px;font-size:8px;padding:2px 5px;">e-CF</span>` : ''}
+                </td>
                 <td>${i.company_name || i.contact_name}</td>
                 <td>${App.formatDate(i.issue_date)}</td>
                 <td style="${i.status === 'overdue' ? 'color:var(--red)' : ''}">${App.formatDate(i.due_date)}</td>
@@ -122,7 +125,7 @@ const InvoicesModule = {
                 </div>
                 <div class="page-header">
                     <div>
-                        <h1 class="page-title">Factura ${inv.invoice_number}</h1>
+                        <h1 class="page-title">${inv.is_ecf ? `Comprobante Electrónico ${inv.encf || inv.invoice_number}` : `Factura ${inv.invoice_number}`}</h1>
                         <p class="page-subtitle">Emitida el ${App.formatDate(inv.issue_date)}</p>
                     </div>
                     <div style="display:flex;gap:8px;flex-wrap:wrap;">
@@ -134,6 +137,53 @@ const InvoicesModule = {
                         ${inv.status !== 'paid' ? `<button class="btn btn-primary" onclick="InvoicesModule.showPaymentModal(${id}, ${(inv.total || 0) - (inv.amount_paid || 0)})">💰 Registrar Pago</button>` : ''}
                     </div>
                 </div>
+
+                ${inv.is_ecf ? `
+                <div class="card mb-24" style="border-left: 4px solid ${
+                    inv.dgii_status === 'accepted' ? '#10B981' : 
+                    inv.dgii_status === 'rejected' ? '#EF4444' : 
+                    inv.dgii_status === 'contingency' ? '#F59E0B' : '#0B484C'
+                }; padding: 20px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px;">
+                        <div>
+                            <h3 style="margin:0 0 6px 0; font-size:16px; display:flex; align-items:center; gap:8px;">
+                                ⚡ Factura Electrónica (e-CF) 
+                                <span class="badge" style="background:${
+                                    inv.dgii_status === 'accepted' ? '#D1FAE5;color:#065F46;' : 
+                                    inv.dgii_status === 'rejected' ? '#FEE2E2;color:#991B1B;' : 
+                                    inv.dgii_status === 'contingency' ? '#FEF3C7;color:#92400E;' : 
+                                    inv.dgii_status === 'pending' ? '#DBEAFE;color:#1E40AF;' : '#E5E7EB;color:#374151;'
+                                }; font-size:11px; padding:3px 9px;">
+                                    ${inv.dgii_status === 'accepted' ? 'Aprobado por DGII' : 
+                                      inv.dgii_status === 'rejected' ? 'Rechazado por DGII' : 
+                                      inv.dgii_status === 'contingency' ? 'En Contingencia' : 
+                                      inv.dgii_status === 'pending' ? 'Procesando en DGII' : 'Firmado'}
+                                </span>
+                            </h3>
+                            <p style="margin:0; font-family:monospace; font-size:13px; color:var(--text-muted);">
+                                <strong>e-NCF:</strong> ${inv.encf} | <strong>Cód. Seguridad:</strong> ${inv.security_code || '—'}
+                            </p>
+                            ${inv.dgii_track_id ? `<p style="margin:4px 0 0 0; font-size:12px; color:var(--text-muted);"><strong>DGII Track ID:</strong> <code>${inv.dgii_track_id}</code></p>` : ''}
+                            ${inv.dgii_error_messages ? `
+                                <div style="margin-top:12px; padding:10px; background:#FFF5F5; border:1px solid #FED7D7; border-radius:6px; color:#C53030; font-size:12px; white-space:pre-wrap;">
+                                    <strong>Errores reportados por DGII:</strong><br>${inv.dgii_error_messages}
+                                </div>
+                            ` : ''}
+                        </div>
+                        <div>
+                            ${inv.dgii_status !== 'accepted' ? `
+                                <button class="btn btn-secondary" onclick="InvoicesModule.processEcf(${inv.id})">
+                                    🔄 ${inv.dgii_status ? 'Reintentar Transmisión' : 'Enviar a la DGII'}
+                                </button>
+                            ` : `
+                                <span style="color:#10B981; font-size:13px; font-weight:600; display:flex; align-items:center; gap:4px;">
+                                    ✅ Comprobante Fiscal Certificado
+                                </span>
+                            `}
+                        </div>
+                    </div>
+                </div>
+                ` : ''}
 
                 <div class="card mb-24">
                     <div class="card-body">
@@ -221,6 +271,18 @@ const InvoicesModule = {
             <form id="invoice-form" class="card">
                 <div class="card-body">
                     <div class="grid-2">
+                        <div class="form-group" style="grid-column: span 2; display: flex; align-items: center; gap: 24px; background: var(--bg-hover); padding: 12px 16px; border-radius: 6px; border: 1px solid var(--border-color);">
+                            <label style="display: flex; align-items: center; gap: 8px; font-weight: 600; cursor: pointer; margin: 0;">
+                                <input type="checkbox" id="i_is_ecf" style="width: 18px; height: 18px;" ${invoice?.is_ecf ? 'checked' : ''} onchange="document.getElementById('ecf-type-wrapper').style.display = this.checked ? 'block' : 'none'">
+                                ⚡ ¿Emitir Factura Electrónica (e-CF) de la DGII?
+                            </label>
+                            <div id="ecf-type-wrapper" style="display: ${invoice?.is_ecf ? 'block' : 'none'}; flex: 1;">
+                                <select id="i_ecf_type" class="form-control" style="max-width: 320px;">
+                                    <option value="31" ${invoice?.ecf_type == 31 ? 'selected' : ''}>e-Crédito Fiscal (B2B - Tipo 31)</option>
+                                    <option value="32" ${invoice?.ecf_type == 32 || !invoice?.ecf_type ? 'selected' : ''}>e-Consumo (B2C - Tipo 32)</option>
+                                </select>
+                            </div>
+                        </div>
                         <div class="form-group">
                             <label class="form-label">Cliente *</label>
                             <select id="i_client_id" class="form-control" required>
@@ -326,7 +388,9 @@ const InvoicesModule = {
                 discount_value: document.getElementById('i_discount').value,
                 tax_rate: document.getElementById('i_tax').value,
                 notes: document.getElementById('i_notes').value,
-                items: itemsToSave
+                items: itemsToSave,
+                is_ecf: document.getElementById('i_is_ecf').checked ? 1 : 0,
+                ecf_type: document.getElementById('i_is_ecf').checked ? document.getElementById('i_ecf_type').value : null
             };
 
             try {
@@ -494,6 +558,25 @@ const InvoicesModule = {
                 window.location.hash = 'invoices';
             } catch(e) {}
         });
+    },
+
+    async processEcf(id) {
+        try {
+            window.App.showToast('Enviando y validando comprobante en la DGII...', 'info');
+            const res = await window.App.api(`invoices/${id}/process-ecf`, { method: 'POST' });
+            if (res.success && res.status === 'accepted') {
+                window.App.showToast('¡Comprobante Electrónico aprobado con éxito por la DGII!', 'success');
+            } else if (res.status === 'contingency') {
+                window.App.showToast('El comprobante fue guardado localmente en contingencia.', 'warning');
+            } else if (res.status === 'rejected') {
+                window.App.showToast('El comprobante fue rechazado por la DGII.', 'error');
+            } else {
+                window.App.showToast('Procesamiento completado.');
+            }
+            this.renderDetails(document.getElementById('main-content'), id);
+        } catch(e) {
+            window.App.showToast('Error procesando comprobante electrónico', 'error');
+        }
     },
 
     _showConfirm(message, onConfirm) {

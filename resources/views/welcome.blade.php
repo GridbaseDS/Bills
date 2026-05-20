@@ -19,6 +19,6 @@
 <body>
     <div id="app"></div>
     <div class="toast-container" id="toast-container"></div>
-    <script type="module" src="assets/js/app.js?v=21"></script>
+    <script type="module" src="assets/js/app.js?v=22"></script>
 </body>
 </html>

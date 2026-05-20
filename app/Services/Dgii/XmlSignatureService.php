@@ -45,14 +45,8 @@ class XmlSignatureService
         $doc->preserveWhiteSpace = true;
         $doc->formatOutput = false;
         
-        // Prevent external entity loads for security
-        $previousEntityLoader = libxml_disable_entity_loader(true);
-        try {
-            if (!$doc->loadXML($xmlContent, LIBXML_NOBLANKS | LIBXML_NOCDATA)) {
-                throw new Exception("El contenido provisto no es un XML válido.");
-            }
-        } finally {
-            libxml_disable_entity_loader($previousEntityLoader);
+        if (!$doc->loadXML($xmlContent, LIBXML_NOBLANKS | LIBXML_NOCDATA | LIBXML_NONET)) {
+            throw new Exception("El contenido provisto no es un XML válido.");
         }
 
         // 3. Setup XMLDSig DSig object

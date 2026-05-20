@@ -102,7 +102,7 @@ class XmlBuilderService
         $idDoc->appendChild($dom->createElement('TipoPago', $tipoPago));
 
         if ($tipoPago === 2) {
-            $idDoc->appendChild($dom->createElement('FechaLimitePago', $invoice->due_date));
+            $idDoc->appendChild($dom->createElement('FechaLimitePago', $invoice->due_date->format('Y-m-d')));
         }
 
         // Emisor (Seller)
@@ -122,7 +122,7 @@ class XmlBuilderService
             $emisor->appendChild($dom->createElement('CorreoEmisor', htmlspecialchars($correoEmisor, ENT_XML1)));
         }
 
-        $emisor->appendChild($dom->createElement('FechaEmision', $invoice->issue_date));
+        $emisor->appendChild($dom->createElement('FechaEmision', $invoice->issue_date->format('Y-m-d')));
 
         // Comprador (Client)
         $comprador = $dom->createElement('Comprador');

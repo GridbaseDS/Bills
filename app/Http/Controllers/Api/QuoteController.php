@@ -35,7 +35,8 @@ class QuoteController extends Controller
         
         $subtotal = collect($data['items'])->sum(function($i) { return $i['quantity'] * $i['unit_price']; });
         $discountValue = $data['discount_value'] ?? 0;
-        $discountAmount = $data['discount_type'] === 'percentage' ? ($subtotal * ($discountValue/100)) : $discountValue;
+        $discountType = $data['discount_type'] ?? 'percentage';
+        $discountAmount = $discountType === 'percentage' ? ($subtotal * ($discountValue/100)) : $discountValue;
         $taxRate = $data['tax_rate'] ?? 0;
         $taxAmount = ($subtotal - $discountAmount) * ($taxRate/100);
         $total = $subtotal - $discountAmount + $taxAmount;

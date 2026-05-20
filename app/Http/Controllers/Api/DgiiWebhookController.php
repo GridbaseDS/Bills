@@ -73,9 +73,7 @@ XML;
         try {
             if (!empty($rawXml)) {
                 $doc = new DOMDocument();
-                // Disable entity loading for security
-                $previousLoader = libxml_disable_entity_loader(true);
-                if ($doc->loadXML($rawXml, LIBXML_NOBLANKS | LIBXML_NOCDATA)) {
+                if ($doc->loadXML($rawXml, LIBXML_NOBLANKS | LIBXML_NOCDATA | LIBXML_NONET)) {
                     // Intenta extraer del e-CF recibido
                     $emisorNodes = $doc->getElementsByTagName('RncEmisor');
                     if ($emisorNodes->length > 0) {
@@ -95,7 +93,6 @@ XML;
                         $encf = trim($encfNodes->item(0)->textContent);
                     }
                 }
-                libxml_disable_entity_loader($previousLoader);
             }
         } catch (Exception $e) {
             Log::error("DGII Webhook: Error parsing received e-CF: " . $e->getMessage());

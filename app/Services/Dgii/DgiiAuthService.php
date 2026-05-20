@@ -94,7 +94,7 @@ class DgiiAuthService
             ->withHeaders([
                 'Accept' => 'application/json'
             ])
-            ->attach('xml', $signedSemillaXml, 'semilla.xml')
+            ->attach('xml', $signedSemillaXml, 'semilla.xml', ['Content-Type' => 'text/xml'])
             ->post("{$baseUrl}/Autenticacion/api/Autenticacion/ValidarSemilla");
 
         if (!$tokenResponse->successful()) {

@@ -11,6 +11,7 @@ use App\Http\Controllers\Api\SettingController;
 use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\LookupController;
 use App\Http\Controllers\Api\PaymentLinkController;
+use App\Http\Controllers\Api\DgiiTestUIController;
 use App\Http\Controllers\WhatsAppWebhookController;
 
 // Public Auth
@@ -74,4 +75,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/settings', [SettingController::class, 'updateMultiple']);
     Route::post('/settings/test-smtp', [SettingController::class, 'testSmtp']);
     Route::get('/settings/diagnose-smtp', [SettingController::class, 'diagnoseSmtp']);
+
+    // DGII Tests
+    Route::post('/dgii/run-tests', [DgiiTestUIController::class, 'runTests']);
 });

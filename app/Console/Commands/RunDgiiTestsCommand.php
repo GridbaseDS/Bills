@@ -60,11 +60,15 @@ class RunDgiiTestsCommand extends Command
             return 1;
         }
 
-        // Determine base URL based on environment
+        // Determine base URLs based on environment
+        // DGII uses different domains for e-CF vs RFCE
         $env = $settings['dgii_env'] ?? 'testing';
-        $baseUrl = $env === 'production'
-            ? 'https://ecf.dgii.gov.do'
+        $ecfBaseUrl = $env === 'production'
+            ? 'https://ecf.dgii.gov.do/ecf'
             : 'https://ecf.dgii.gov.do/certecf';
+        $fcBaseUrl = $env === 'production'
+            ? 'https://fc.dgii.gov.do/ecf'
+            : 'https://fc.dgii.gov.do/certecf';
 
         $successCount = 0;
         $errorCount = 0;
@@ -88,8 +92,8 @@ class RunDgiiTestsCommand extends Command
             try {
                 $isRfce = str_starts_with($filename, 'rfce');
                 $endpoint = $isRfce 
-                    ? "$baseUrl/RecepcionFC/api/ecf" 
-                    : "$baseUrl/Recepcion/api/ecf";
+                    ? "$fcBaseUrl/recepcionfc/api/recepcion/ecf" 
+                    : "$ecfBaseUrl/recepcion/api/facturaselectronicas";
 
                 $this->info("Sending $filename to $endpoint ...");
 

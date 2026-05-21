@@ -216,7 +216,6 @@ window.App = {
                 <aside class="sidebar" id="sidebar">
                     <div class="sidebar-logo">
                         <img src="https://gridbase.com.do/wp-content/uploads/2025/02/cropped-imagen_2026-03-16_154126791.png" alt="GridBase" style="height: 28px;">
-                        <span>GridBase <span style="font-weight: 400; color: var(--color-text-muted);">Bills</span></span>
                     </div>
                     <nav class="sidebar-nav">
                         <div class="sidebar-section-title">Menú</div>

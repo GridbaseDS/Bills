@@ -287,7 +287,7 @@ const ClientsModule = {
     },
 
     async deleteClient(id) {
-        this._showConfirm('⚠️ ¿Eliminar este cliente?', async () => {
+        this._showConfirm('¿Eliminar este cliente?', async () => {
             try { await window.App.api(`clients/${id}`, { method: 'DELETE' }); window.App.showToast('Cliente eliminado'); window.App.navigate('clients'); }
             catch(e) {}
         });

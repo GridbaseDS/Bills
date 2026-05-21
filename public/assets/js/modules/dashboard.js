@@ -114,7 +114,7 @@ const DashboardModule = {
                     <div>
                         <div class="table-outer">
                             <div class="table-toolbar">
-                                <span style="font-size:14px;font-weight:600;">⚠️ Vencidas</span>
+                                <span style="font-size:14px;font-weight:600;">Vencidas</span>
                                 <span class="badge badge-overdue">${overdue.length}</span>
                             </div>
                             <div style="padding: 0;">
@@ -129,7 +129,7 @@ const DashboardModule = {
                                             <div style="font-size:11px;color:var(--color-text-muted);margin-top:2px">${App.formatDate(o.due_date)}</div>
                                         </div>
                                     </a>
-                                `).join('') : '<div style="padding:32px;text-align:center;color:var(--color-text-muted);font-size:13px;">🎉 No hay facturas vencidas</div>'}
+                                `).join('') : '<div style="padding:32px;text-align:center;color:var(--color-text-muted);font-size:13px;">No hay facturas vencidas</div>'}
                             </div>
                         </div>
                     </div>

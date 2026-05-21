@@ -161,7 +161,7 @@ const InvoicesModule = {
                     <div style="padding:var(--spacing-xl);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px;">
                         <div>
                             <div style="font-size:15px;font-weight:600;display:flex;align-items:center;gap:8px;margin-bottom:6px;">
-                                ⚡ Factura Electrónica (e-CF)
+                                Factura Electrónica (e-CF)
                                 <span class="badge badge-${inv.dgii_status === 'accepted' ? 'active' : inv.dgii_status === 'rejected' ? 'overdue' : inv.dgii_status === 'contingency' ? 'onboarding' : 'sent'}">
                                     ${inv.dgii_status === 'accepted' ? 'Aprobado' : inv.dgii_status === 'rejected' ? 'Rechazado' : inv.dgii_status === 'contingency' ? 'Contingencia' : inv.dgii_status === 'pending' ? 'Procesando' : 'Firmado'}
                                 </span>
@@ -179,9 +179,9 @@ const InvoicesModule = {
                         <div>
                             ${inv.dgii_status !== 'accepted' ? `
                                 <button class="btn btn-secondary" onclick="InvoicesModule.processEcf(${inv.id})">
-                                    🔄 ${inv.dgii_status ? 'Reintentar' : 'Enviar a DGII'}
+                                    ${inv.dgii_status ? 'Reintentar' : 'Enviar a DGII'}
                                 </button>
-                            ` : `<span style="color:var(--color-success-icon);font-size:13px;font-weight:600;">✅ Certificado</span>`}
+                            ` : `<span style="color:var(--color-success-icon);font-size:13px;font-weight:600;">Certificado</span>`}
                         </div>
                     </div>
                 </div>
@@ -199,7 +199,7 @@ const InvoicesModule = {
                                 <div style="font-size:11px;font-weight:600;color:var(--color-text-muted);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:8px;">Detalles</div>
                                 <p style="margin:0;font-size:13px;"><strong>Vence:</strong> ${App.formatDate(inv.due_date)}</p>
                                 <p style="margin:4px 0 0 0;font-size:13px;"><strong>Estado:</strong> <span class="badge badge-${inv.status}">${this.statusLabel(inv.status)}</span></p>
-                                ${inv.sent_at ? `<p style="margin:4px 0 0 0;color:var(--color-success-icon);font-size:12px;">✉️ Enviado ${App.formatDate(inv.sent_at)}</p>` : `<p style="margin:4px 0 0 0;color:var(--color-text-muted);font-size:12px;">📭 No enviado</p>`}
+                                ${inv.sent_at ? `<p style="margin:4px 0 0 0;color:var(--color-success-icon);font-size:12px;">Enviado ${App.formatDate(inv.sent_at)}</p>` : `<p style="margin:4px 0 0 0;color:var(--color-text-muted);font-size:12px;">No enviado</p>`}
                             </div>
                         </div>
 
@@ -277,7 +277,7 @@ const InvoicesModule = {
                         <div class="form-group" style="grid-column:span 2;display:flex;align-items:center;gap:24px;background:var(--bg-hover);padding:12px 16px;border-radius:var(--radius-md);border:1px solid var(--color-border);">
                             <label style="display:flex;align-items:center;gap:8px;font-weight:600;cursor:pointer;margin:0;">
                                 <input type="checkbox" id="i_is_ecf" style="width:18px;height:18px;" ${invoice?.is_ecf ? 'checked' : ''} onchange="document.getElementById('ecf-type-wrapper').style.display = this.checked ? 'block' : 'none'">
-                                ⚡ ¿Emitir Factura Electrónica (e-CF)?
+                                ¿Emitir Factura Electrónica (e-CF)?
                             </label>
                             <div id="ecf-type-wrapper" style="display:${invoice?.is_ecf ? 'block' : 'none'};flex:1;">
                                 <select id="i_ecf_type" class="form-control" style="max-width:320px;">
@@ -556,7 +556,7 @@ const InvoicesModule = {
     },
 
     async deleteInvoice(id) {
-        this._showConfirm('⚠️ ¿Estás seguro de eliminar esta factura? Esta acción no se puede deshacer.', async () => {
+        this._showConfirm('¿Estás seguro de eliminar esta factura? Esta acción no se puede deshacer.', async () => {
             try {
                 await App.api(`invoices/${id}`, { method: 'DELETE' });
                 App.showToast('Factura eliminada');

@@ -113,7 +113,7 @@ const QuotesModule = {
                         <p class="page-subtitle">Emitida el ${window.App.formatDate(quote.issue_date)}</p>
                     </div>
                     <div style="display:flex;gap:8px;flex-wrap:wrap;">
-                        ${quote.status !== 'converted' ? `<button class="btn btn-primary" onclick="QuotesModule.convertToInvoice(${id})">⚡ Convertir a Factura</button>` : '<span class="badge badge-converted" style="padding:8px 16px;">Ya Facturada</span>'}
+                        ${quote.status !== 'converted' ? `<button class="btn btn-primary" onclick="QuotesModule.convertToInvoice(${id})">Convertir a Factura</button>` : '<span class="badge badge-converted" style="padding:8px 16px;">Ya Facturada</span>'}
                         <a href="/api/quotes/${id}/pdf" target="_blank" class="btn btn-secondary btn-sm">Ver PDF</a>
                         <button class="btn btn-secondary btn-sm" onclick="QuotesModule.sendEmail(${id})">Enviar</button>
                         <button class="btn btn-secondary btn-sm" onclick="QuotesModule.duplicateQuote(${id})">Duplicar</button>
@@ -311,7 +311,7 @@ const QuotesModule = {
     },
 
     async deleteQuote(id) {
-        this._showConfirm('⚠️ ¿Eliminar esta cotización?', async () => {
+        this._showConfirm('¿Eliminar esta cotización?', async () => {
             try { await window.App.api(`quotes/${id}`, { method: 'DELETE' }); window.App.showToast('Cotización eliminada'); window.App.navigate('quotes'); } catch(e) {}
         });
     },

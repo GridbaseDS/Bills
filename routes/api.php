@@ -79,4 +79,5 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // DGII Tests
     Route::post('/dgii/run-tests', [DgiiTestUIController::class, 'runTests']);
+    Route::post('/dgii/diagnose', [DgiiTestUIController::class, 'diagnose']);
 });

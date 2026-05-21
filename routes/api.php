@@ -78,5 +78,4 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // DGII Tests
     Route::post('/dgii/run-tests', [DgiiTestUIController::class, 'runTests']);
-    Route::get('/dgii/download-fc250k', [DgiiTestUIController::class, 'downloadFc250k']);
 });

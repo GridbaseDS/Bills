@@ -114,6 +114,19 @@ class RunDgiiTestsCommand extends Command
 
             // Send to DGII
             try {
+                // Skip Type 32 < 250k from e-CF endpoint (must be uploaded via portal's FC<250k section)
+                if (!$isRfce) {
+                    preg_match('/<TipoeCF>(\d+)<\/TipoeCF>/', $signedXml, $tipoMatch);
+                    preg_match('/<MontoTotal>([\d.]+)<\/MontoTotal>/', $signedXml, $montoMatch);
+                    $tipo = $tipoMatch[1] ?? '';
+                    $monto = floatval($montoMatch[1] ?? 0);
+                    
+                    if ($tipo === '32' && $monto < 250000) {
+                        $this->warn("SKIP $filename (Type 32, Monto $monto < 250k) -> Upload via portal FC<250k section");
+                        continue;
+                    }
+                }
+
                 $endpoint = $isRfce 
                     ? "$fcBaseUrl/recepcionfc/api/recepcion/ecf" 
                     : "$ecfBaseUrl/recepcion/api/facturaselectronicas";

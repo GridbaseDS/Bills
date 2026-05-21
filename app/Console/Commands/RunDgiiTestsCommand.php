@@ -7,6 +7,7 @@ use App\Services\Dgii\DgiiAuthService;
 use App\Services\Dgii\XmlSignatureService;
 use App\Models\Setting;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Cache;
 use Exception;
 
 class RunDgiiTestsCommand extends Command
@@ -44,10 +45,9 @@ class RunDgiiTestsCommand extends Command
         $token = null;
         try {
             $this->info('Authenticating with DGII...');
-            // Clear any cached token to ensure a fresh one
             $rncEmisor = preg_replace('/[^0-9]/', '', $settings['company_tax_id'] ?? '');
             $env = $settings['dgii_env'] ?? 'testing';
-            \Illuminate\Support\Facades\Cache::forget("dgii_bearer_token_{$rncEmisor}_{$env}");
+            Cache::forget("dgii_bearer_token_{$rncEmisor}_{$env}");
             
             $token = $authService->getValidToken($settings);
             $this->info('Token obtained successfully.');
@@ -65,9 +65,7 @@ class RunDgiiTestsCommand extends Command
             return 1;
         }
 
-        // Determine base URLs based on environment
-        // DGII uses different domains for e-CF vs RFCE
-        $env = $settings['dgii_env'] ?? 'testing';
+        // Determine base URLs
         $ecfBaseUrl = $env === 'production'
             ? 'https://ecf.dgii.gov.do/ecf'
             : 'https://ecf.dgii.gov.do/certecf';
@@ -78,7 +76,45 @@ class RunDgiiTestsCommand extends Command
         $successCount = 0;
         $errorCount = 0;
 
-        // Separate files: base invoices first, then Notes (Type 33/34) that reference them
+        // === PHASE 0: Pre-sign FC<250k e-CFs to get their CodigoSeguridadeCF ===
+        // The RFCE's CodigoSeguridadeCF MUST match the FULL e-CF's signature hash, NOT its own.
+        $securityCodeMap = []; // eNCF => security code
+        $uploadDir = storage_path('app/dgii_tests/fc_250k_upload');
+        if (!is_dir($uploadDir)) mkdir($uploadDir, 0755, true);
+
+        foreach ($xmlFiles as $file) {
+            $filename = $file->getFilename();
+            if (str_starts_with($filename, 'rfce')) continue;
+            
+            $xml = File::get($file->getPathname());
+            preg_match('/<TipoeCF>(\d+)<\/TipoeCF>/', $xml, $tipoMatch);
+            preg_match('/<MontoTotal>([\d.]+)<\/MontoTotal>/', $xml, $montoMatch);
+            preg_match('/<eNCF>([^<]+)<\/eNCF>/', $xml, $encfMatch);
+            preg_match('/<RNCEmisor>(\d+)<\/RNCEmisor>/', $xml, $rncMatch);
+            
+            $tipo = $tipoMatch[1] ?? '';
+            $monto = floatval($montoMatch[1] ?? 0);
+            $encf = $encfMatch[1] ?? '';
+            $rnc = $rncMatch[1] ?? '';
+            
+            if ($tipo === '32' && $monto < 250000 && $encf) {
+                $this->info("Pre-signing FC<250k: $filename (eNCF: $encf, Monto: $monto)");
+                try {
+                    $signedFc = $signatureService->signXml($xml, $certPath, $password);
+                    $secCode = $signatureService->getSecurityCode($signedFc);
+                    $securityCodeMap[$encf] = $secCode;
+                    
+                    // Save signed file for portal upload
+                    $uploadName = $rnc . $encf . '.xml';
+                    File::put("$uploadDir/$uploadName", $signedFc);
+                    $this->info("  -> Security code: $secCode, saved: $uploadName");
+                } catch (Exception $e) {
+                    $this->error("  -> Failed: " . $e->getMessage());
+                }
+            }
+        }
+
+        // === PHASE 1: Categorize files ===
         $baseFiles = [];
         $noteFiles = [];
         foreach ($xmlFiles as $file) {
@@ -92,15 +128,14 @@ class RunDgiiTestsCommand extends Command
             }
         }
 
-        // Process base invoices first, then notes
         $orderedFiles = array_merge($baseFiles, $noteFiles);
         $baseCount = count($baseFiles);
         $currentIndex = 0;
 
+        // === PHASE 2: Send files ===
         foreach ($orderedFiles as $file) {
             $currentIndex++;
             
-            // Add delay before processing notes to let base invoices be processed
             if ($currentIndex === $baseCount + 1 && !empty($noteFiles)) {
                 $this->info('');
                 $this->info('=== Waiting 10s for base invoices to be processed before sending Notes... ===');
@@ -111,30 +146,27 @@ class RunDgiiTestsCommand extends Command
             $this->info("Processing $filename ...");
 
             $unsignedXml = File::get($file->getPathname());
-            
-            // For RFCE, we need to handle CodigoSeguridadeCF
-            // This code comes from the first 6 chars of the MD5 hash of the SignatureValue
             $isRfce = str_starts_with($filename, 'rfce');
             
             // Sign the XML
             try {
                 if ($isRfce) {
-                    // RFCE requires CodigoSeguridadeCF which is derived from the signature
-                    // Step 1: Add placeholder CodigoSeguridadeCF if not present
+                    // Get matching security code from the FULL e-CF signature
+                    preg_match('/<eNCF>([^<]+)<\/eNCF>/', $unsignedXml, $encfMatch);
+                    $rfceEncf = $encfMatch[1] ?? '';
+                    $securityCode = $securityCodeMap[$rfceEncf] ?? '000000';
+                    $this->info("  CodigoSeguridadeCF from full e-CF: $securityCode (eNCF: $rfceEncf)");
+                    
+                    // Insert/replace CodigoSeguridadeCF
                     if (strpos($unsignedXml, '<CodigoSeguridadeCF>') === false) {
-                        $unsignedXml = str_replace('</Encabezado>', '<CodigoSeguridadeCF>000000</CodigoSeguridadeCF></Encabezado>', $unsignedXml);
+                        $unsignedXml = str_replace('</Encabezado>', '<CodigoSeguridadeCF>' . $securityCode . '</CodigoSeguridadeCF></Encabezado>', $unsignedXml);
+                    } else {
+                        $unsignedXml = preg_replace(
+                            '/<CodigoSeguridadeCF>[^<]*<\/CodigoSeguridadeCF>/',
+                            '<CodigoSeguridadeCF>' . $securityCode . '</CodigoSeguridadeCF>',
+                            $unsignedXml
+                        );
                     }
-                    
-                    // Step 2: Sign with placeholder to get the security code
-                    $tempSigned = $signatureService->signXml($unsignedXml, $certPath, $password);
-                    $securityCode = $signatureService->getSecurityCode($tempSigned);
-                    
-                    // Step 3: Replace placeholder with real code and re-sign
-                    $unsignedXml = preg_replace(
-                        '/<CodigoSeguridadeCF>[^<]*<\/CodigoSeguridadeCF>/',
-                        '<CodigoSeguridadeCF>' . $securityCode . '</CodigoSeguridadeCF>',
-                        $unsignedXml
-                    );
                     $signedXml = $signatureService->signXml($unsignedXml, $certPath, $password);
                 } else {
                     $signedXml = $signatureService->signXml($unsignedXml, $certPath, $password);
@@ -147,7 +179,7 @@ class RunDgiiTestsCommand extends Command
 
             // Send to DGII
             try {
-                // Skip Type 32 < 250k from e-CF endpoint (must be uploaded via portal's FC<250k section)
+                // Skip Type 32 < 250k (already pre-signed and saved for portal upload)
                 if (!$isRfce) {
                     preg_match('/<TipoeCF>(\d+)<\/TipoeCF>/', $signedXml, $tipoMatch);
                     preg_match('/<MontoTotal>([\d.]+)<\/MontoTotal>/', $signedXml, $montoMatch);
@@ -155,7 +187,7 @@ class RunDgiiTestsCommand extends Command
                     $monto = floatval($montoMatch[1] ?? 0);
                     
                     if ($tipo === '32' && $monto < 250000) {
-                        $this->warn("SKIP $filename (Type 32, Monto $monto < 250k) -> Upload via portal FC<250k section");
+                        $this->warn("SKIP $filename (Type 32, Monto $monto < 250k) -> Already saved for portal upload");
                         continue;
                     }
                 }
@@ -166,7 +198,7 @@ class RunDgiiTestsCommand extends Command
 
                 $this->info("Sending $filename to $endpoint ...");
 
-                // DGII requires specific filename format: {RNCEmisor}{eNCF}.xml for ALL uploads
+                // DGII requires filename format: {RNCEmisor}{eNCF}.xml
                 $sendFilename = $filename;
                 preg_match('/<RNCEmisor>(\d+)<\/RNCEmisor>/', $signedXml, $rncMatch);
                 preg_match('/<eNCF>([^<]+)<\/eNCF>/', $signedXml, $encfMatch);
@@ -185,7 +217,6 @@ class RunDgiiTestsCommand extends Command
 
                 $responseBody = $response->json();
 
-                // ECF returns trackId, RFCE returns codigo/estado
                 if ($response->successful() && isset($responseBody['trackId'])) {
                     $this->info("SUCCESS $filename -> TrackId: " . $responseBody['trackId']);
                     $successCount++;
@@ -202,12 +233,17 @@ class RunDgiiTestsCommand extends Command
                 $errorCount++;
             }
             
-            // Pause between requests
-            usleep(500000); // 0.5s
+            usleep(500000); // 0.5s pause
         }
 
         $this->newLine();
         $this->info("Done! Results: $successCount SUCCESS, $errorCount ERRORS out of " . count($xmlFiles) . " total.");
+        
+        if (!empty($securityCodeMap)) {
+            $this->newLine();
+            $this->info("=== FC<250k signed files saved to: $uploadDir ===");
+            $this->info("Upload these files to the DGII portal under 'Facturas de consumo < 250Mil'");
+        }
         
         return $errorCount > 0 ? 1 : 0;
     }

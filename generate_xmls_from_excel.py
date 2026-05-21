@@ -546,11 +546,10 @@ def build_rfce_xml(data):
     add_element(totales, 'MontoNoFacturable', get(data, 'MontoNoFacturable'))
     add_element(totales, 'MontoPeriodo', get(data, 'MontoPeriodo'))
     
-    # CodigoSeguridadeCF
-    add_element(root, 'CodigoSeguridadeCF', get(data, 'CodigoSeguridadeCF'))
+    # CodigoSeguridadeCF — MUST be inside Encabezado per RFCE XSD
+    add_element(enc, 'CodigoSeguridadeCF', get(data, 'CodigoSeguridadeCF'))
     
-    # FechaHoraFirma (DGII pattern: dd-MM-yyyy HH:mm:ss)
-    add_element(root, 'FechaHoraFirma', datetime.now().strftime('%d-%m-%Y %H:%M:%S'))
+    # RFCE has NO FechaHoraFirma — only xs:any for Signature at root level
     
     return root
 

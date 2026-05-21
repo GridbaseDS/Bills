@@ -79,9 +79,33 @@ class RunDgiiTestsCommand extends Command
 
             $unsignedXml = File::get($file->getPathname());
             
+            // For RFCE, we need to handle CodigoSeguridadeCF
+            // This code comes from the first 6 chars of the MD5 hash of the SignatureValue
+            $isRfce = str_starts_with($filename, 'rfce');
+            
             // Sign the XML
             try {
-                $signedXml = $signatureService->signXml($unsignedXml, $certPath, $password);
+                if ($isRfce) {
+                    // RFCE requires CodigoSeguridadeCF which is derived from the signature
+                    // Step 1: Add placeholder CodigoSeguridadeCF if not present
+                    if (strpos($unsignedXml, '<CodigoSeguridadeCF>') === false) {
+                        $unsignedXml = str_replace('</Encabezado>', '<CodigoSeguridadeCF>000000</CodigoSeguridadeCF></Encabezado>', $unsignedXml);
+                    }
+                    
+                    // Step 2: Sign with placeholder to get the security code
+                    $tempSigned = $signatureService->signXml($unsignedXml, $certPath, $password);
+                    $securityCode = $signatureService->getSecurityCode($tempSigned);
+                    
+                    // Step 3: Replace placeholder with real code and re-sign
+                    $unsignedXml = preg_replace(
+                        '/<CodigoSeguridadeCF>[^<]*<\/CodigoSeguridadeCF>/',
+                        '<CodigoSeguridadeCF>' . $securityCode . '</CodigoSeguridadeCF>',
+                        $unsignedXml
+                    );
+                    $signedXml = $signatureService->signXml($unsignedXml, $certPath, $password);
+                } else {
+                    $signedXml = $signatureService->signXml($unsignedXml, $certPath, $password);
+                }
             } catch (Exception $e) {
                 $this->error("Failed to sign $filename: " . $e->getMessage());
                 $errorCount++;
@@ -90,7 +114,6 @@ class RunDgiiTestsCommand extends Command
 
             // Send to DGII
             try {
-                $isRfce = str_starts_with($filename, 'rfce');
                 $endpoint = $isRfce 
                     ? "$fcBaseUrl/recepcionfc/api/recepcion/ecf" 
                     : "$ecfBaseUrl/recepcion/api/facturaselectronicas";

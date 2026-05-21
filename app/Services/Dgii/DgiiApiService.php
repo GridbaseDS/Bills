@@ -10,51 +10,85 @@ class DgiiApiService
 {
     /**
      * Submits a signed e-CF XML document to the DGII reception endpoint.
+     * Uses multipart/form-data with the filename format: {RNCEmisor}{eNCF}.xml
      *
      * @param string $signedXml Signed e-CF XML content.
      * @param string $token Valid DGII JWT Bearer Token.
      * @param string $env Environment: 'testing' or 'production'.
+     * @param bool $isRfce Whether this is an RFCE (Resumen Factura Consumo Electrónico).
      * @return array Standardized response metadata (success, track_id, status, errors).
-     * @throws Exception
      */
-    public function submitInvoice(string $signedXml, string $token, string $env): array
+    public function submitInvoice(string $signedXml, string $token, string $env, bool $isRfce = false): array
     {
-        $baseUrl = $env === 'production'
-            ? 'https://ecf.dgii.gov.do/TCOrg/api'
-            : 'https://ecf.dgii.gov.do/TestDGII/TCOrg/api';
+        // Endpoints verified during DGII certification (May 2025)
+        $ecfBaseUrl = $env === 'production'
+            ? 'https://ecf.dgii.gov.do/ecf'
+            : 'https://ecf.dgii.gov.do/certecf';
+        $fcBaseUrl = $env === 'production'
+            ? 'https://fc.dgii.gov.do/ecf'
+            : 'https://fc.dgii.gov.do/certecf';
 
-        Log::info("[DgiiApiService] Transmitiendo e-CF a la DGII ({$env}).");
+        $endpoint = $isRfce 
+            ? "$fcBaseUrl/recepcionfc/api/recepcion/ecf" 
+            : "$ecfBaseUrl/recepcion/api/facturaselectronicas";
 
-        $response = Http::withoutVerifying()
-            ->timeout(20)
-            ->withToken($token)
-            ->withHeaders([
-                'Content-Type' => 'application/xml',
-                'Accept' => 'application/json'
-            ])
-            ->send('POST', "{$baseUrl}/Recepcion/EnviarFactura", [
-                'body' => $signedXml
-            ]);
+        // CRITICAL: Filename MUST be {RNCEmisor}{eNCF}.xml
+        preg_match('/<RNCEmisor>(\d+)<\/RNCEmisor>/', $signedXml, $rncMatch);
+        preg_match('/<eNCF>([^<]+)<\/eNCF>/', $signedXml, $encfMatch);
+        $rncEmisor = $rncMatch[1] ?? '000000000';
+        $encf = $encfMatch[1] ?? 'E000000000000';
+        $sendFilename = "{$rncEmisor}{$encf}.xml";
 
-        if (!$response->successful()) {
-            $errorBody = $response->body();
-            Log::error("[DgiiApiService] Error de transmisión a DGII. Status: {$response->status()}, Body: {$errorBody}");
-            
-            // Return failure in a controlled manner (could trigger local contingency flow)
-            return [
-                'success' => false,
-                'status' => 'contingency',
-                'track_id' => null,
-                'errors' => 'Error de conexión o rechazo de red por la DGII. Almacenado localmente en contingencia.'
-            ];
-        }
+        Log::info("[DgiiApiService] Transmitiendo " . ($isRfce ? 'RFCE' : 'e-CF') . " a {$endpoint} como {$sendFilename}");
 
-        $data = $response->json();
-        $trackId = $data['recepcionId'] ?? $data['trackId'] ?? null;
+        try {
+            // DGII requires multipart/form-data with 'xml' field (NOT raw body)
+            $response = Http::withoutVerifying()
+                ->timeout(30)
+                ->withHeaders([
+                    'Authorization' => 'Bearer ' . $token,
+                    'Accept' => 'application/json',
+                ])
+                ->attach('xml', $signedXml, $sendFilename, ['Content-Type' => 'text/xml'])
+                ->post($endpoint);
 
-        if (!$trackId) {
-            // Handle case where DGII responds with synchronous validation
-            if (isset($data['estado']) && strtolower($data['estado']) === 'aceptado') {
+            $responseBody = $response->json();
+
+            if (!$response->successful()) {
+                Log::error("[DgiiApiService] Error DGII. Status: {$response->status()}, Body: {$response->body()}");
+                
+                return [
+                    'success' => false,
+                    'status' => 'contingency',
+                    'track_id' => null,
+                    'errors' => "HTTP {$response->status()}: " . $response->body()
+                ];
+            }
+
+            // e-CF response: {"trackId": "uuid"}
+            if (isset($responseBody['trackId'])) {
+                Log::info("[DgiiApiService] e-CF aceptado. TrackId: {$responseBody['trackId']}");
+                return [
+                    'success' => true,
+                    'status' => 'pending',
+                    'track_id' => $responseBody['trackId'],
+                    'errors' => null
+                ];
+            }
+
+            // RFCE response: {"codigo": 1, "estado": "Aceptado", "encf": "E32..."}
+            if (isset($responseBody['codigo']) && $responseBody['codigo'] == 1) {
+                Log::info("[DgiiApiService] RFCE aceptado. Estado: " . ($responseBody['estado'] ?? 'OK'));
+                return [
+                    'success' => true,
+                    'status' => 'accepted',
+                    'track_id' => $responseBody['encf'] ?? 'RFCE_ACCEPTED',
+                    'errors' => null
+                ];
+            }
+
+            // Synchronous acceptance
+            if (isset($responseBody['estado']) && strtolower($responseBody['estado']) === 'aceptado') {
                 return [
                     'success' => true,
                     'status' => 'accepted',
@@ -63,32 +97,34 @@ class DgiiApiService
                 ];
             }
 
-            if (isset($data['estado']) && strtolower($data['estado']) === 'rechazado') {
+            // Rejection
+            if (isset($responseBody['estado']) && strtolower($responseBody['estado']) === 'rechazado') {
                 return [
                     'success' => false,
                     'status' => 'rejected',
                     'track_id' => null,
-                    'errors' => $data['mensajes'] ?? 'Rechazo inmediato por regla de negocio.'
+                    'errors' => $responseBody['mensajes'] ?? 'Rechazado por la DGII.'
                 ];
             }
 
-            // If no track_id could be parsed
+            // Unknown response format
+            Log::warning("[DgiiApiService] Respuesta no reconocida: " . $response->body());
             return [
                 'success' => false,
                 'status' => 'contingency',
                 'track_id' => null,
-                'errors' => 'No se recibió un Track ID de validación. La factura quedó en contingencia.'
+                'errors' => 'Respuesta no reconocida de la DGII: ' . $response->body()
+            ];
+
+        } catch (Exception $e) {
+            Log::error("[DgiiApiService] Excepción: " . $e->getMessage());
+            return [
+                'success' => false,
+                'status' => 'contingency',
+                'track_id' => null,
+                'errors' => 'Error de conexión: ' . $e->getMessage()
             ];
         }
-
-        Log::info("[DgiiApiService] Factura recibida de forma asíncrona por DGII. Track ID: {$trackId}");
-
-        return [
-            'success' => true,
-            'status' => 'pending',
-            'track_id' => $trackId,
-            'errors' => null
-        ];
     }
 
     /**
@@ -101,7 +137,7 @@ class DgiiApiService
      */
     public function queryInvoiceStatus(string $trackId, string $token, string $env): array
     {
-        if ($trackId === 'SYNC_APPROVED') {
+        if (in_array($trackId, ['SYNC_APPROVED', 'RFCE_ACCEPTED'])) {
             return [
                 'status' => 'accepted',
                 'errors' => null
@@ -109,50 +145,45 @@ class DgiiApiService
         }
 
         $baseUrl = $env === 'production'
-            ? 'https://ecf.dgii.gov.do/TCOrg/api'
-            : 'https://ecf.dgii.gov.do/TestDGII/TCOrg/api';
+            ? 'https://ecf.dgii.gov.do/ecf'
+            : 'https://ecf.dgii.gov.do/certecf';
 
         try {
             $response = Http::withoutVerifying()
                 ->timeout(10)
-                ->withToken($token)
-                ->get("{$baseUrl}/Recepcion/ConsultarEstado", [
-                    'recepcionId' => $trackId
-                ]);
+                ->withHeaders([
+                    'Authorization' => 'Bearer ' . $token,
+                    'Accept' => 'application/json',
+                ])
+                ->get("{$baseUrl}/recepcion/api/consultaresultado/{$trackId}");
 
             if (!$response->successful()) {
                 return [
-                    'status' => 'pending', // retry later
-                    'errors' => 'No se pudo contactar a la DGII para verificar estado. Reintentando más tarde.'
+                    'status' => 'pending',
+                    'errors' => "No se pudo contactar DGII. HTTP {$response->status()}"
                 ];
             }
 
             $data = $response->json();
-            $estado = strtolower($data['estado'] ?? 'proceso');
+            $estado = strtolower($data['estado'] ?? $data['Estado'] ?? 'proceso');
 
             if ($estado === 'aceptado') {
-                return [
-                    'status' => 'accepted',
-                    'errors' => null
-                ];
+                return ['status' => 'accepted', 'errors' => null];
             }
 
             if ($estado === 'rechazado') {
-                $mensajes = $data['mensajes'] ?? [];
+                $mensajes = $data['mensajes'] ?? $data['Mensajes'] ?? [];
                 $errorStr = is_array($mensajes) ? implode(' | ', $mensajes) : (string)$mensajes;
                 return [
                     'status' => 'rejected',
-                    'errors' => $errorStr ?: 'Rechazado por inconsistencia en validación de reglas de negocio.'
+                    'errors' => $errorStr ?: 'Rechazado por la DGII.'
                 ];
             }
 
-            return [
-                'status' => 'pending',
-                'errors' => null
-            ];
+            return ['status' => 'pending', 'errors' => null];
 
         } catch (Exception $e) {
-            Log::error("[DgiiApiService] Excepción al consultar estado de track {$trackId}: " . $e->getMessage());
+            Log::error("[DgiiApiService] Error consultando estado de {$trackId}: " . $e->getMessage());
             return [
                 'status' => 'pending',
                 'errors' => $e->getMessage()

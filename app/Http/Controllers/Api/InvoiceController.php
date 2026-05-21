@@ -496,13 +496,39 @@ class InvoiceController extends Controller
             return response()->json(['success' => false, 'error' => 'Esta factura no está marcada como e-CF.'], 400);
         }
         
-        $result = $ecfManager->processInvoice($invoice);
+        // If already processed, retry instead
+        if (in_array($invoice->dgii_status, ['contingency', 'rejected', 'signed'])) {
+            $result = $ecfManager->retryInvoice($invoice);
+        } else {
+            $result = $ecfManager->processInvoice($invoice);
+        }
         
         return response()->json([
             'success' => $result['success'],
             'status' => $result['status'],
             'track_id' => $result['track_id'],
             'error' => $result['error'],
+            'invoice' => $invoice->fresh()
+        ]);
+    }
+
+    /**
+     * Check the DGII status of a pending e-CF.
+     */
+    public function checkEcfStatus($id, EcfManagerService $ecfManager)
+    {
+        $invoice = Invoice::findOrFail($id);
+        
+        if (!$invoice->is_ecf) {
+            return response()->json(['success' => false, 'error' => 'No es e-CF.'], 400);
+        }
+
+        $result = $ecfManager->checkStatus($invoice);
+        
+        return response()->json([
+            'success' => true,
+            'status' => $result['status'],
+            'errors' => $result['errors'],
             'invoice' => $invoice->fresh()
         ]);
     }

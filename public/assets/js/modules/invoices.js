@@ -156,32 +156,59 @@ const InvoicesModule = {
                 <div class="table-outer mb-24" style="border-left: 3px solid ${
                     inv.dgii_status === 'accepted' ? 'var(--color-success-icon)' :
                     inv.dgii_status === 'rejected' ? 'var(--color-danger-icon)' :
-                    inv.dgii_status === 'contingency' ? 'var(--amber)' : 'var(--color-primary)'
+                    inv.dgii_status === 'contingency' ? 'var(--amber)' :
+                    inv.dgii_status === 'portal_pending' ? '#8b5cf6' : 'var(--color-primary)'
                 };">
                     <div style="padding:var(--spacing-xl);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px;">
                         <div>
                             <div style="font-size:15px;font-weight:600;display:flex;align-items:center;gap:8px;margin-bottom:6px;">
                                 Factura Electrónica (e-CF)
-                                <span class="badge badge-${inv.dgii_status === 'accepted' ? 'active' : inv.dgii_status === 'rejected' ? 'overdue' : inv.dgii_status === 'contingency' ? 'onboarding' : 'sent'}">
-                                    ${inv.dgii_status === 'accepted' ? 'Aprobado' : inv.dgii_status === 'rejected' ? 'Rechazado' : inv.dgii_status === 'contingency' ? 'Contingencia' : inv.dgii_status === 'pending' ? 'Procesando' : 'Firmado'}
+                                <span class="badge badge-${
+                                    inv.dgii_status === 'accepted' ? 'active' :
+                                    inv.dgii_status === 'rejected' ? 'overdue' :
+                                    inv.dgii_status === 'contingency' ? 'onboarding' :
+                                    inv.dgii_status === 'portal_pending' ? 'sent' : 'sent'
+                                }">
+                                    ${inv.dgii_status === 'accepted' ? '✅ Aprobado' :
+                                      inv.dgii_status === 'rejected' ? '❌ Rechazado' :
+                                      inv.dgii_status === 'contingency' ? '⚠️ Contingencia' :
+                                      inv.dgii_status === 'pending' ? '⏳ Procesando' :
+                                      inv.dgii_status === 'portal_pending' ? '📤 Subir al Portal' :
+                                      inv.dgii_status === 'signed' ? '✍️ Firmado' : '—'}
                                 </span>
                             </div>
                             <p style="margin:0;font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--color-text-muted);">
                                 <strong>e-NCF:</strong> ${inv.encf} | <strong>Cód. Seguridad:</strong> ${inv.security_code || '—'}
                             </p>
                             ${inv.dgii_track_id ? `<p style="margin:4px 0 0 0;font-size:12px;color:var(--color-text-muted);"><strong>DGII Track ID:</strong> <code>${inv.dgii_track_id}</code></p>` : ''}
-                            ${inv.dgii_error_messages ? `
+                            ${inv.dgii_status === 'portal_pending' ? `
+                                <div style="margin-top:12px;padding:10px;background:#f5f3ff;border:1px solid #ddd6fe;border-radius:var(--radius-md);font-size:12px;color:#6d28d9;">
+                                    📥 <strong>FC<250k:</strong> Esta factura debe subirse manualmente al portal DGII → "Facturas de consumo < 250Mil"
+                                </div>
+                            ` : ''}
+                            ${inv.dgii_error_messages && inv.dgii_status !== 'portal_pending' ? `
                                 <div style="margin-top:12px;padding:10px;background:var(--color-danger-bg);border:1px solid rgba(220,38,38,.1);border-radius:var(--radius-md);color:var(--color-danger-text);font-size:12px;white-space:pre-wrap;">
                                     <strong>Errores DGII:</strong><br>${inv.dgii_error_messages}
                                 </div>
                             ` : ''}
                         </div>
-                        <div>
-                            ${inv.dgii_status !== 'accepted' ? `
-                                <button class="btn btn-secondary" onclick="InvoicesModule.processEcf(${inv.id})">
-                                    ${inv.dgii_status ? 'Reintentar' : 'Enviar a DGII'}
+                        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                            ${inv.dgii_status === 'pending' ? `
+                                <button class="btn btn-secondary btn-sm" onclick="InvoicesModule.checkEcfStatus(${inv.id})">
+                                    🔄 Verificar Estado
                                 </button>
-                            ` : `<span style="color:var(--color-success-icon);font-size:13px;font-weight:600;">Certificado</span>`}
+                            ` : ''}
+                            ${['contingency','rejected','signed'].includes(inv.dgii_status) ? `
+                                <button class="btn btn-primary btn-sm" onclick="InvoicesModule.processEcf(${inv.id})">
+                                    🔁 Reintentar Envío
+                                </button>
+                            ` : ''}
+                            ${!inv.dgii_status ? `
+                                <button class="btn btn-primary btn-sm" onclick="InvoicesModule.processEcf(${inv.id})">
+                                    📡 Enviar a DGII
+                                </button>
+                            ` : ''}
+                            ${inv.dgii_status === 'accepted' ? `<span style="color:var(--color-success-icon);font-size:13px;font-weight:600;">✅ Certificado DGII</span>` : ''}
                         </div>
                     </div>
                 </div>
@@ -571,6 +598,10 @@ const InvoicesModule = {
             const res = await window.App.api(`invoices/${id}/process-ecf`, { method: 'POST' });
             if (res.success && res.status === 'accepted') {
                 window.App.showToast('¡Comprobante aprobado por la DGII!', 'success');
+            } else if (res.status === 'portal_pending') {
+                window.App.showToast('FC<250k firmada. Súbela al portal DGII.', 'info');
+            } else if (res.status === 'pending') {
+                window.App.showToast('Enviado. Pendiente de aprobación DGII.', 'info');
             } else if (res.status === 'contingency') {
                 window.App.showToast('Guardado en contingencia.', 'warning');
             } else if (res.status === 'rejected') {
@@ -581,6 +612,23 @@ const InvoicesModule = {
             this.renderDetails(document.getElementById('app-content'), id);
         } catch(e) {
             window.App.showToast('Error procesando e-CF', 'error');
+        }
+    },
+
+    async checkEcfStatus(id) {
+        try {
+            window.App.showToast('Verificando estado en DGII...', 'info');
+            const res = await window.App.api(`invoices/${id}/ecf-status`);
+            if (res.status === 'accepted') {
+                window.App.showToast('✅ ¡Aprobado por la DGII!', 'success');
+            } else if (res.status === 'rejected') {
+                window.App.showToast('❌ Rechazado por la DGII.', 'error');
+            } else {
+                window.App.showToast('⏳ Aún en procesamiento.', 'info');
+            }
+            this.renderDetails(document.getElementById('app-content'), id);
+        } catch(e) {
+            window.App.showToast('Error verificando estado', 'error');
         }
     },
 

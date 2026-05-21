@@ -28,10 +28,14 @@ class EcfManagerService
     }
 
     /**
-     * Orquestrates the complete flow for generating, signing, and transmitting an electronic invoice.
+     * Orquestrates the complete flow for an electronic invoice:
+     * 1. Assign eNCF
+     * 2. Build XML
+     * 3. Sign XML
+     * 4. Send to DGII (or save for portal if FC<250k)
      *
-     * @param Invoice $invoice Laravel Invoice model.
-     * @return array Status of the operation.
+     * @param Invoice $invoice
+     * @return array
      */
     public function processInvoice(Invoice $invoice): array
     {
@@ -39,14 +43,14 @@ class EcfManagerService
             $invoice->load(['client', 'items']);
             $settings = Setting::getAll();
 
-            // 1. Assign e-NCF if not already assigned
+            // 1. Assign eNCF if not already assigned
             if (empty($invoice->encf)) {
                 $invoice->encf = $this->generateAndReserveEncf((int)$invoice->ecf_type, $settings);
                 $invoice->save();
             }
 
             // 2. Generate raw unsigned XML
-            Log::info("[EcfManagerService] Generando XML para Factura ID: {$invoice->id}, e-NCF: {$invoice->encf}");
+            Log::info("[EcfManagerService] Generando XML para Factura ID: {$invoice->id}, eNCF: {$invoice->encf}");
             $rawXml = $this->builderService->buildInvoiceXml($invoice, $settings);
 
             // 3. Sign the XML
@@ -56,12 +60,11 @@ class EcfManagerService
             Log::info("[EcfManagerService] Firmando XML para Factura ID: {$invoice->id}");
             $signedXml = $this->signatureService->signXml($rawXml, $p12Path, $p12Password);
 
-            // Save signed XML locally for legal archiving and contingency audits
+            // Save signed XML locally for legal archiving
             $fileName = "signed_ecf/{$invoice->encf}.xml";
             Storage::put($fileName, $signedXml);
-            $signedXmlPath = Storage::path($fileName);
 
-            // Extract security code (for QR code)
+            // Extract security code (first 6 chars of SignatureValue base64)
             $securityCode = $this->signatureService->getSecurityCode($signedXml);
 
             // Update local status as Signed
@@ -71,14 +74,40 @@ class EcfManagerService
                 'security_code' => $securityCode
             ]);
 
-            // 4. Authenticate and Get Token
+            // 4. Determine if FC<250k (portal upload, not API)
+            $isFcLessThan250k = $invoice->ecf_type == 32 && $invoice->total < 250000;
+
+            if ($isFcLessThan250k) {
+                // FC<250k: Save signed file for manual portal upload, DO NOT send via API
+                $rncEmisor = preg_replace('/[^0-9]/', '', $settings['company_tax_id'] ?? '');
+                $uploadDir = "fc_250k_upload";
+                $uploadName = "{$rncEmisor}{$invoice->encf}.xml";
+                Storage::put("{$uploadDir}/{$uploadName}", $signedXml);
+
+                $invoice->update([
+                    'dgii_status' => 'portal_pending',
+                    'dgii_track_id' => null,
+                    'dgii_error_messages' => 'FC<250k: Requiere subida manual al portal DGII.'
+                ]);
+
+                Log::info("[EcfManagerService] FC<250k guardada para portal: {$uploadName}");
+
+                return [
+                    'success' => true,
+                    'status' => 'portal_pending',
+                    'track_id' => null,
+                    'error' => null
+                ];
+            }
+
+            // 5. Authenticate and Get Token
             $token = $this->authService->getValidToken($settings);
 
-            // 5. Submit to DGII
+            // 6. Submit to DGII via API
             $env = $settings['dgii_env'] ?? 'testing';
-            $result = $this->apiService->submitInvoice($signedXml, $token, $env);
+            $result = $this->apiService->submitInvoice($signedXml, $token, $env, false);
 
-            // 6. Update database based on outcome
+            // 7. Update database based on outcome
             $updateData = [
                 'dgii_status' => $result['status'],
                 'dgii_track_id' => $result['track_id']
@@ -94,7 +123,7 @@ class EcfManagerService
 
             $invoice->update($updateData);
 
-            Log::info("[EcfManagerService] Flujo completado para Factura ID: {$invoice->id}. Estado DGII final: {$result['status']}");
+            Log::info("[EcfManagerService] Flujo completado para Factura ID: {$invoice->id}. Estado: {$result['status']}");
 
             return [
                 'success' => $result['success'],
@@ -104,9 +133,8 @@ class EcfManagerService
             ];
 
         } catch (Exception $e) {
-            Log::error("[EcfManagerService] Error crítico procesando factura ID {$invoice->id}: " . $e->getMessage());
+            Log::error("[EcfManagerService] Error procesando factura ID {$invoice->id}: " . $e->getMessage());
             
-            // Put invoice in contingency state if transmission fails unexpectedly
             $invoice->update([
                 'dgii_status' => 'contingency',
                 'dgii_error_messages' => 'Excepción local: ' . $e->getMessage()
@@ -122,13 +150,79 @@ class EcfManagerService
     }
 
     /**
-     * Generates the next sequential eNCF, saves it to database settings, and returns it.
-     * e-NCF Format: 'E' + type (31, 32) + 10 digit sequence (e.g. E310000000001)
-     *
-     * @param int $type e-CF type (31, 32, etc.)
-     * @param array $settings Current settings map.
-     * @return string Valid E-NCF sequence.
-     * @throws Exception
+     * Retry sending a failed/contingency invoice to the DGII.
+     */
+    public function retryInvoice(Invoice $invoice): array
+    {
+        if (!in_array($invoice->dgii_status, ['contingency', 'rejected', 'signed'])) {
+            return [
+                'success' => false,
+                'status' => $invoice->dgii_status,
+                'track_id' => $invoice->dgii_track_id,
+                'error' => "No se puede reintentar en estado: {$invoice->dgii_status}"
+            ];
+        }
+
+        // If already signed, just re-send
+        if ($invoice->signed_xml_path && Storage::exists($invoice->signed_xml_path)) {
+            $settings = Setting::getAll();
+            $signedXml = Storage::get($invoice->signed_xml_path);
+            $token = $this->authService->getValidToken($settings);
+            $env = $settings['dgii_env'] ?? 'testing';
+            
+            $result = $this->apiService->submitInvoice($signedXml, $token, $env, false);
+
+            $invoice->update([
+                'dgii_status' => $result['status'],
+                'dgii_track_id' => $result['track_id'],
+                'dgii_error_messages' => $result['errors'] 
+                    ? (is_array($result['errors']) ? json_encode($result['errors'], JSON_UNESCAPED_UNICODE) : $result['errors'])
+                    : null
+            ]);
+
+            return [
+                'success' => $result['success'],
+                'status' => $result['status'],
+                'track_id' => $result['track_id'],
+                'error' => $result['errors']
+            ];
+        }
+
+        // Re-process from scratch
+        return $this->processInvoice($invoice);
+    }
+
+    /**
+     * Check the status of a pending invoice with the DGII.
+     */
+    public function checkStatus(Invoice $invoice): array
+    {
+        if ($invoice->dgii_status !== 'pending' || empty($invoice->dgii_track_id)) {
+            return [
+                'status' => $invoice->dgii_status,
+                'errors' => null
+            ];
+        }
+
+        $settings = Setting::getAll();
+        $token = $this->authService->getValidToken($settings);
+        $env = $settings['dgii_env'] ?? 'testing';
+
+        $result = $this->apiService->queryInvoiceStatus($invoice->dgii_track_id, $token, $env);
+
+        if ($result['status'] !== 'pending') {
+            $invoice->update([
+                'dgii_status' => $result['status'],
+                'dgii_error_messages' => $result['errors']
+            ]);
+        }
+
+        return $result;
+    }
+
+    /**
+     * Generates the next sequential eNCF and reserves it.
+     * Format: 'E' + type (31, 32, 33, 34) + 10 digit sequence
      */
     protected function generateAndReserveEncf(int $type, array $settings): string
     {
@@ -137,13 +231,13 @@ class EcfManagerService
 
         $encf = 'E' . $type . str_pad((string)$nextNum, 10, '0', STR_PAD_LEFT);
 
-        // Ensure uniqueness check in DB
+        // Ensure uniqueness
         while (Invoice::where('encf', $encf)->exists()) {
             $nextNum++;
             $encf = 'E' . $type . str_pad((string)$nextNum, 10, '0', STR_PAD_LEFT);
         }
 
-        // Reserve it by updating DB settings
+        // Reserve by updating DB
         $settingModel = Setting::where('setting_key', $settingKey)->first();
         if ($settingModel) {
             $settingModel->update(['setting_value' => $nextNum + 1]);

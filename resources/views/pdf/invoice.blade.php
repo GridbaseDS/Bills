@@ -359,12 +359,30 @@ if (!empty($invoice['status'])) {
                 $fecha = date('d-m-Y', strtotime($invoice['issue_date']));
                 $codSeguridad = $invoice['security_code'] ?? '';
                 $qrUrl = "https://ecf.dgii.gov.do/Estacionamiento/Consulta/eCF?RncEmisor={$rncEmisor}&RncComprador={$rncComprador}&ENcf={$encf}&MontoTotal={$monto}&FechaEmision={$fecha}&CodigoSeguridad={$codSeguridad}";
-                $qrChartUrl = "https://chart.googleapis.com/chart?chs=120x120&cht=qr&chl=" . urlencode($qrUrl) . "&choe=UTF-8";
+                
+                // Generate QR code: use php-qrcode v6 if available, else quickchart.io (free, reliable)
+                $qrImgSrc = '';
+                if (class_exists('\chillerlan\QRCode\QRCode')) {
+                    try {
+                        $qrOptions = new \chillerlan\QRCode\QROptions();
+                        $qrOptions->outputInterface = \chillerlan\QRCode\Output\QRGdImagePNG::class;
+                        $qrOptions->scale = 5;
+                        $qrOptions->quietzoneSize = 2;
+                        $qrOptions->outputBase64 = true;
+                        $qrImgSrc = (new \chillerlan\QRCode\QRCode($qrOptions))->render($qrUrl);
+                    } catch (\Throwable $e) {
+                        $qrImgSrc = '';
+                    }
+                }
+                if (empty($qrImgSrc)) {
+                    // Fallback: quickchart.io — free API, no auth, DOMPDF enable_remote = true
+                    $qrImgSrc = "https://quickchart.io/qr?text=" . urlencode($qrUrl) . "&size=150&margin=1&format=png";
+                }
                 ?>
                 <table style="width:100%; border:none;">
                     <tr style="border:none;">
                         <td style="width:115px; padding-right:10px; border:none; vertical-align:middle;">
-                            <img src="<?= $qrChartUrl ?>" style="width:105px; height:105px; display:block;" alt="QR DGII">
+                            <img src="<?= $qrImgSrc ?>" style="width:105px; height:105px; display:block;" alt="QR DGII">
                         </td>
                         <td style="border:none; vertical-align:middle;">
                             <div style="font-size:8.5px; color:#444; line-height:1.45; font-family:'DejaVu Sans',sans-serif;">

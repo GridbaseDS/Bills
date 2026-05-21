@@ -1,15 +1,15 @@
 /**
  * GridBase Digital Solutions — Bills System
- * Main Frontend Application Logic
+ * Main Frontend Application Logic — Gridbase Design Kit v3
  */
 
-import DashboardModule from './modules/dashboard.js?v=31';
-import InvoicesModule from './modules/invoices.js?v=31';
-import QuotesModule from './modules/quotes.js?v=31';
-import ClientsModule from './modules/clients.js?v=31';
-import SettingsModule from './modules/settings.js?v=31';
-import RecurringModule from './modules/recurring.js?v=31';
-import DgiiTestsModule from './modules/dgii-tests.js?v=31';
+import DashboardModule from './modules/dashboard.js?v=40';
+import InvoicesModule from './modules/invoices.js?v=40';
+import QuotesModule from './modules/quotes.js?v=40';
+import ClientsModule from './modules/clients.js?v=40';
+import SettingsModule from './modules/settings.js?v=40';
+import RecurringModule from './modules/recurring.js?v=40';
+import DgiiTestsModule from './modules/dgii-tests.js?v=40';
 
 window.App = {
     state: {
@@ -21,7 +21,6 @@ window.App = {
     init() {
         this.checkAuth();
         this.setupRouter();
-        this.bindEvents();
     },
 
     async api(endpoint, options = {}) {
@@ -37,8 +36,6 @@ window.App = {
 
         try {
             const response = await fetch(url, { ...options, headers, credentials: 'same-origin' });
-
-            // Handle empty responses safely
             const text = await response.text();
             let data;
             try {
@@ -56,7 +53,6 @@ window.App = {
             }
             return data;
         } catch (error) {
-            // Don't show toast for silent requests (like auth checks)
             if (!options.silent) {
                 this.showToast(error.message, 'error');
             }
@@ -109,7 +105,6 @@ window.App = {
     },
 
     setupRouter() {
-        // Handle popstate for browser back/forward buttons
         window.addEventListener('popstate', () => {
             const route = window.location.pathname.substring(1) || 'dashboard';
             if (this.state.user && route !== 'login' && !route.startsWith('fe/')) {
@@ -117,75 +112,44 @@ window.App = {
             }
         });
 
-        // Global listener to intercept internal clicks and route them smoothly
         document.addEventListener('click', (e) => {
             const link = e.target.closest('a');
             if (!link) return;
-
             const href = link.getAttribute('href');
             const target = link.getAttribute('target');
-
-            // Ignore external links, mailto/tel, target blank, and dynamic API downloads
-            if (!href || href.startsWith('http') || href.startsWith('mailto:') || href.startsWith('tel:') || target === '_blank' || href.includes('/api/')) {
-                return;
-            }
-
+            if (!href || href.startsWith('http') || href.startsWith('mailto:') || href.startsWith('tel:') || target === '_blank' || href.includes('/api/')) return;
             e.preventDefault();
-
-            // Sanitize route name
             let route = href;
-            if (route.startsWith('#')) {
-                route = route.substring(1);
-            } else if (route.startsWith('/')) {
-                route = route.substring(1);
-            }
-
+            if (route.startsWith('#')) route = route.substring(1);
+            else if (route.startsWith('/')) route = route.substring(1);
             this.navigate(route || 'dashboard');
         });
     },
 
     navigate(route, pushToHistory = true) {
-        if (!this.state.user) {
-            return this.renderLogin();
-        }
-
-        // Clean up route
+        if (!this.state.user) return this.renderLogin();
         route = route.replace('#', '').replace(/^\//, '');
-
         this.state.currentRoute = route;
-
-        if (pushToHistory) {
-            history.pushState(null, '', '/' + route);
-        }
+        if (pushToHistory) history.pushState(null, '', '/' + route);
 
         const activeRoute = route.split('/')[0];
-
-        // Update sidebar active state
         document.querySelectorAll('.sidebar-link, .tab-link').forEach(link => {
             link.classList.remove('active');
             const linkHref = link.getAttribute('href') || '';
             const cleanHref = linkHref.replace('#', '').replace(/^\//, '');
-            if (cleanHref === activeRoute) {
-                link.classList.add('active');
-            }
+            if (cleanHref === activeRoute) link.classList.add('active');
         });
 
-        // Close mobile sidebar
         document.getElementById('sidebar')?.classList.remove('open');
         document.getElementById('sidebar-overlay')?.classList.remove('open');
 
-        // Load view
         const appContent = document.getElementById('app-content');
         if (!appContent) return;
-
         appContent.innerHTML = `<div class="text-center mt-24"><div class="spinner mx-auto"></div></div>`;
 
-        // Dynamic loading based on route
         const parts = route.split('/');
         const view = parts[0];
-
         setTimeout(() => {
-            // Build sub-id: everything after the first segment
             const subId = parts.length > 1 ? parts.slice(1).join('/') : undefined;
             switch (view) {
                 case 'dashboard': DashboardModule.render(appContent); break;
@@ -200,13 +164,16 @@ window.App = {
         }, 50);
     },
 
+    /* ═══════════════════════════════════════════════
+       LOGIN — Gridbase Design Kit
+       ═══════════════════════════════════════════════ */
     renderLogin() {
         const app = document.getElementById('app');
         app.innerHTML = `
             <div class="login-page">
                 <div class="login-card">
                     <div class="login-logo">
-                        <img src="https://gridbase.com.do/wp-content/uploads/2025/02/cropped-imagen_2026-03-16_154126791.png" alt="GridBase Digital Solutions" style="max-height: 56px; max-width: 100%; object-fit: contain;">
+                        <img src="https://gridbase.com.do/wp-content/uploads/2025/02/cropped-imagen_2026-03-16_154126791.png" alt="GridBase Digital Solutions">
                     </div>
                     <h1 class="login-title">GridBase Bills</h1>
                     <p class="login-subtitle">Inicia sesión en tu cuenta</p>
@@ -222,94 +189,100 @@ window.App = {
                         </div>
                         <button type="submit" class="btn btn-primary" style="width:100%;margin-top:8px;">Iniciar Sesión</button>
                     </form>
-                    <p style="margin-top: 20px; font-size: 11px; color: var(--contrast-low);">
-                        Powered by <span style="color: var(--accent); font-weight: 600;">GridBase</span> Digital Solutions
+                    <p style="margin-top: 20px; font-size: 11px; color: var(--color-text-muted);">
+                        Powered by <span style="color: var(--color-primary); font-weight: 600;">GridBase</span> Digital Solutions
                     </p>
                 </div>
             </div>
         `;
-
         document.getElementById('login-form').addEventListener('submit', (e) => {
             e.preventDefault();
             this.login(document.getElementById('login-email').value, document.getElementById('login-password').value);
         });
     },
 
+    /* ═══════════════════════════════════════════════
+       APP SHELL — Gridbase Design Kit
+       White sidebar, vertical active line, profile-card,
+       search-wrapper with keycap, workspace-panel
+       ═══════════════════════════════════════════════ */
     renderAppShell() {
         const app = document.getElementById('app');
         const userInitial = this.state.user.name ? this.state.user.name.charAt(0).toUpperCase() : '?';
 
         app.innerHTML = `
-            <div class="app-layout">
+            <div class="app-container">
                 <div class="sidebar-overlay" id="sidebar-overlay"></div>
                 <aside class="sidebar" id="sidebar">
-                    <div class="sidebar-brand">
-                        <div class="sidebar-brand-logo">
-                            <img src="https://gridbase.com.do/wp-content/uploads/2025/02/imagen_2026-03-16_154236217-1024x228.png" alt="GridBase Digital Solutions" style="max-height: 36px; max-width: 100%; object-fit: contain;">
-                        </div>
+                    <div class="sidebar-logo">
+                        <img src="https://gridbase.com.do/wp-content/uploads/2025/02/cropped-imagen_2026-03-16_154126791.png" alt="GridBase" style="height: 28px;">
+                        <span>GridBase <span style="font-weight: 400; color: var(--color-text-muted);">Bills</span></span>
                     </div>
                     <nav class="sidebar-nav">
-                        <div class="sidebar-section">
-                            <div class="sidebar-section-title">Menú</div>
-                            <a href="/dashboard" class="sidebar-link active"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg> Panel</a>
-                            <a href="/invoices" class="sidebar-link"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg> Facturas <span id="overdue-badge" style="display:none;margin-left:auto;background:var(--red);color:#fff;font-size:11px;padding:2px 8px;border-radius:10px;font-weight:600;"></span></a>
-                            <a href="/recurring" class="sidebar-link"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg> Recurrentes</a>
-                            <a href="/quotes" class="sidebar-link"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="12" y1="18" x2="12" y2="12"></line><line x1="9" y1="15" x2="15" y2="15"></line></svg> Cotizaciones</a>
-                            <a href="/clients" class="sidebar-link"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg> Clientes</a>
-                        </div>
-                        <div class="sidebar-section">
-                            <div class="sidebar-section-title">Sistema</div>
-                            <a href="/settings" class="sidebar-link"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg> Configuración</a>
-                            <a href="/dgii-tests" class="sidebar-link"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg> Pruebas DGII</a>
-                        </div>
+                        <div class="sidebar-section-title">Menú</div>
+                        <ul class="sidebar-menu">
+                            <li><a href="/dashboard" class="sidebar-link active"><span class="sidebar-link-content"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>Panel</span></a></li>
+                            <li><a href="/invoices" class="sidebar-link"><span class="sidebar-link-content"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>Facturas</span><span id="overdue-badge" style="display:none;background:var(--color-danger-bg);color:var(--color-danger-text);font-size:11px;padding:2px 8px;border-radius:var(--radius-full);font-weight:600;"></span></a></li>
+                            <li><a href="/recurring" class="sidebar-link"><span class="sidebar-link-content"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>Recurrentes</span></a></li>
+                            <li><a href="/quotes" class="sidebar-link"><span class="sidebar-link-content"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="12" y1="18" x2="12" y2="12"></line><line x1="9" y1="15" x2="15" y2="15"></line></svg>Cotizaciones</span></a></li>
+                            <li><a href="/clients" class="sidebar-link"><span class="sidebar-link-content"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>Clientes</span></a></li>
+                        </ul>
+                        <div class="sidebar-section-title" style="margin-top: var(--spacing-xl);">Sistema</div>
+                        <ul class="sidebar-menu">
+                            <li><a href="/settings" class="sidebar-link"><span class="sidebar-link-content"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>Configuración</span></a></li>
+                            <li><a href="/dgii-tests" class="sidebar-link"><span class="sidebar-link-content"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"></path><rect x="9" y="3" width="6" height="4" rx="2"></rect><path d="M9 14l2 2 4-4"></path></svg>Pruebas DGII</span></a></li>
+                        </ul>
                     </nav>
                     <div class="sidebar-footer">
-                        <div class="sidebar-avatar">${userInitial}</div>
-                        <div style="flex:1; overflow:hidden;">
-                            <div class="sidebar-user-name truncate">${this.state.user.name}</div>
-                            <div class="sidebar-user-email truncate">${this.state.user.email}</div>
+                        <div class="profile-card" onclick="App.logout()" title="Cerrar Sesión">
+                            <div class="profile-avatar">${userInitial}</div>
+                            <div class="profile-info">
+                                <div class="profile-name">${this.state.user.name}</div>
+                                <div class="profile-role">${this.state.user.email}</div>
+                            </div>
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
                         </div>
-                        <button class="btn btn-icon btn-ghost" onclick="App.logout()" title="Cerrar Sesión">
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
-                        </button>
                     </div>
                 </aside>
                 <main class="main-content">
-                    <header class="topbar">
-                        <div style="display: flex; align-items: center; gap: 12px;">
-                            <button class="btn btn-icon btn-ghost sidebar-toggle" id="sidebar-toggle" onclick="App.toggleSidebar()">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+                    <div class="topbar">
+                        <div style="display:flex;align-items:center;gap:12px">
+                            <button class="btn-icon sidebar-toggle" id="sidebar-toggle" onclick="App.toggleSidebar()">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
                             </button>
-                            <div class="topbar-search">
-                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-                                <input type="text" placeholder="Buscar facturas, clientes...">
+                            <div class="search-wrapper" id="search-wrapper">
+                                <svg class="search-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                                <input class="search-input" type="text" placeholder="Buscar facturas, clientes..." id="global-search-input">
+                                <div class="search-shortcuts"><span class="keycap">⌘</span><span class="keycap">K</span></div>
                             </div>
                         </div>
                         <div class="topbar-actions">
-                            <button class="btn btn-primary" onclick="App.navigate('invoices/new')">+ Nueva</button>
+                            <button class="btn-icon" title="Notificaciones">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
+                            </button>
+                            <div class="vertical-divider"></div>
+                            <button class="btn btn-primary" onclick="App.navigate('invoices/new')">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                                Nueva Factura
+                            </button>
                         </div>
-                    </header>
-                    <div class="page-content" id="app-content">
-                        <!-- Content injected here -->
                     </div>
+                    <div class="workspace-panel" id="app-content"></div>
                 </main>
                 <nav class="mobile-tab-bar" id="mobile-tab-bar">
-                    <a href="/dashboard" class="tab-link active"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg><span>Panel</span></a>
-                    <a href="/invoices" class="tab-link"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg><span>Facturas</span></a>
-                    <a href="/quotes" class="tab-link"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="12" y1="18" x2="12" y2="12"></line><line x1="9" y1="15" x2="15" y2="15"></line></svg><span>Cotiz.</span></a>
-                    <a href="/clients" class="tab-link"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg><span>Clientes</span></a>
-                    <a href="/settings" class="tab-link"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg><span>Ajustes</span></a>
+                    <a href="/dashboard" class="tab-link active"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg><span>Panel</span></a>
+                    <a href="/invoices" class="tab-link"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg><span>Facturas</span></a>
+                    <a href="/quotes" class="tab-link"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="12" y1="18" x2="12" y2="12"></line><line x1="9" y1="15" x2="15" y2="15"></line></svg><span>Cotiz.</span></a>
+                    <a href="/clients" class="tab-link"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle></svg><span>Clientes</span></a>
+                    <a href="/settings" class="tab-link"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg><span>Ajustes</span></a>
                 </nav>
             </div>
+            <div class="toast-container" id="toast-container"></div>
         `;
 
-        // Sidebar overlay click
-        document.getElementById('sidebar-overlay')?.addEventListener('click', () => {
-            this.toggleSidebar();
-        });
-
-        // Load overdue badge
+        document.getElementById('sidebar-overlay')?.addEventListener('click', () => this.toggleSidebar());
         this.loadOverdueBadge();
+        this.bindSearch();
     },
 
     async loadOverdueBadge() {
@@ -330,16 +303,11 @@ window.App = {
     },
 
     formatCurrency(amount, currency = 'USD') {
-        const formatter = new Intl.NumberFormat('en-US', {
-            style: 'currency',
-            currency: currency || 'USD',
-        });
-        return formatter.format(amount);
+        return new Intl.NumberFormat('en-US', { style: 'currency', currency: currency || 'USD' }).format(amount);
     },
 
     formatDate(dateStr) {
         if (!dateStr) return '';
-        // Fix timezone issue by appending T12:00:00 if it's just a date
         const cleanDate = dateStr.includes('T') ? dateStr : `${dateStr}T12:00:00`;
         return new Intl.DateTimeFormat('es-DO', { month: 'short', day: 'numeric', year: 'numeric' }).format(new Date(cleanDate));
     },
@@ -349,99 +317,81 @@ window.App = {
         if (!container) return;
         const toast = document.createElement('div');
         toast.className = `toast toast-${type}`;
-
         let icon = '';
-        if (type === 'success') icon = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>`;
-        else if (type === 'error') icon = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>`;
-
+        if (type === 'success') icon = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>`;
+        else if (type === 'error') icon = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>`;
         toast.innerHTML = `${icon} <span>${message}</span>`;
         container.appendChild(toast);
         setTimeout(() => { toast.style.opacity = '0'; setTimeout(() => toast.remove(), 300); }, 3000);
     },
 
-    bindEvents() {
-        const searchInput = document.querySelector('.topbar-search input');
-        if (searchInput) {
-            searchInput.addEventListener('input', async (e) => {
-                const q = e.target.value.trim().toLowerCase();
-                
-                // Remove existing dropdown
+    bindSearch() {
+        const searchInput = document.getElementById('global-search-input');
+        if (!searchInput) return;
+
+        searchInput.addEventListener('input', async (e) => {
+            const q = e.target.value.trim().toLowerCase();
+            document.getElementById('global-search-results')?.remove();
+            if (q.length < 2) return;
+
+            const searchContainer = document.getElementById('search-wrapper');
+            const dropdown = document.createElement('div');
+            dropdown.id = 'global-search-results';
+            dropdown.style.cssText = 'position:absolute;top:100%;left:0;right:0;background:#FFFFFF;border:1px solid var(--color-border);border-radius:var(--radius-lg);margin-top:8px;z-index:9999;max-height:400px;overflow-y:auto;padding:8px 0;box-shadow:var(--shadow-lg);';
+            dropdown.innerHTML = '<div style="padding:12px 16px;color:var(--color-text-muted);font-size:13px;text-align:center;">Buscando...</div>';
+            searchContainer.appendChild(dropdown);
+
+            try {
+                const [invRes, cliRes] = await Promise.all([
+                    this.api('invoices').catch(()=>({data:[]})),
+                    this.api('clients').catch(()=>({data:[]}))
+                ]);
+
+                const invoices = (invRes.data || []).filter(i =>
+                    (i.invoice_number||'').toLowerCase().includes(q) ||
+                    (i.company_name||'').toLowerCase().includes(q) ||
+                    (i.contact_name||'').toLowerCase().includes(q)
+                );
+                const clients = (cliRes.data || []).filter(c =>
+                    (c.company_name||'').toLowerCase().includes(q) ||
+                    (c.contact_name||'').toLowerCase().includes(q) ||
+                    (c.email||'').toLowerCase().includes(q)
+                );
+
+                let html = '';
+                if (invoices.length > 0) {
+                    html += '<div style="padding:4px 16px;font-size:11px;text-transform:uppercase;color:var(--color-text-muted);font-weight:600;letter-spacing:1px;">Facturas</div>';
+                    invoices.slice(0, 5).forEach(i => {
+                        html += `<a href="#invoices/${i.id}" style="display:block;padding:10px 16px;text-decoration:none;color:inherit;border-bottom:1px solid var(--color-border);font-size:13px;transition:background .15s ease;" onmouseover="this.style.background='var(--bg-hover)'" onmouseout="this.style.background=''" onclick="document.getElementById('global-search-results').remove();document.getElementById('global-search-input').value=''">
+                            <div style="display:flex;justify-content:space-between;">
+                                <strong>${i.invoice_number}</strong>
+                                <span style="color:var(--color-primary);font-weight:700;">${this.formatCurrency(i.total, i.currency)}</span>
+                            </div>
+                            <div style="color:var(--color-text-secondary);font-size:12px;margin-top:2px;">${i.company_name || i.contact_name}</div>
+                        </a>`;
+                    });
+                }
+                if (clients.length > 0) {
+                    html += '<div style="padding:4px 16px;font-size:11px;text-transform:uppercase;color:var(--color-text-muted);font-weight:600;letter-spacing:1px;margin-top:8px;">Clientes</div>';
+                    clients.slice(0, 5).forEach(c => {
+                        html += `<a href="#clients/profile/${c.id}" style="display:block;padding:10px 16px;text-decoration:none;color:inherit;border-bottom:1px solid var(--color-border);font-size:13px;transition:background .15s ease;" onmouseover="this.style.background='var(--bg-hover)'" onmouseout="this.style.background=''" onclick="document.getElementById('global-search-results').remove();document.getElementById('global-search-input').value=''">
+                            <div><strong>${c.company_name || c.contact_name}</strong></div>
+                            <div style="color:var(--color-text-secondary);font-size:12px;margin-top:2px;">${c.email}</div>
+                        </a>`;
+                    });
+                }
+                if (!html) html = '<div style="padding:12px 16px;color:var(--color-text-muted);font-size:13px;text-align:center;">No se encontraron resultados</div>';
+                dropdown.innerHTML = html;
+            } catch(e) {
+                dropdown.innerHTML = '<div style="padding:12px 16px;color:var(--red);font-size:14px;text-align:center;">Error al buscar</div>';
+            }
+        });
+
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('#search-wrapper')) {
                 document.getElementById('global-search-results')?.remove();
-                
-                if (q.length < 2) return;
-                
-                // We'll create a simple dropdown
-                const searchContainer = document.querySelector('.topbar-search');
-                searchContainer.style.position = 'relative';
-                
-                const dropdown = document.createElement('div');
-                dropdown.id = 'global-search-results';
-                dropdown.style.cssText = 'position:absolute;top:100%;left:0;right:0;background:var(--bg-white);border:1px solid var(--contrast-border);border-radius:var(--border-radius-card);margin-top:8px;z-index:9999;max-height:400px;overflow-y:auto;padding:8px 0;';
-                dropdown.innerHTML = '<div style="padding:12px 16px;color:var(--contrast-low);font-size:13px;text-align:center;">Buscando...</div>';
-                searchContainer.appendChild(dropdown);
-                
-                try {
-                    // Fetch data to search
-                    const [invRes, cliRes] = await Promise.all([
-                        this.api('invoices').catch(()=>({data:[]})),
-                        this.api('clients').catch(()=>({data:[]}))
-                    ]);
-                    
-                    const invoices = (invRes.data || []).filter(i => 
-                        (i.invoice_number||'').toLowerCase().includes(q) || 
-                        (i.company_name||'').toLowerCase().includes(q) ||
-                        (i.contact_name||'').toLowerCase().includes(q)
-                    );
-                    
-                    const clients = (cliRes.data || []).filter(c => 
-                        (c.company_name||'').toLowerCase().includes(q) || 
-                        (c.contact_name||'').toLowerCase().includes(q) ||
-                        (c.email||'').toLowerCase().includes(q)
-                    );
-                    
-                    let html = '';
-                    
-                    if (invoices.length > 0) {
-                        html += '<div style="padding:4px 16px;font-size:11px;text-transform:uppercase;color:var(--contrast-low);font-weight:600;letter-spacing:1px;">Facturas</div>';
-                        invoices.slice(0, 5).forEach(i => {
-                            html += `<a href="#invoices/${i.id}" style="display:block;padding:10px 16px;text-decoration:none;color:inherit;border-bottom:1px solid var(--contrast-border);font-size:13px;" onclick="document.getElementById('global-search-results').remove();document.querySelector('.topbar-search input').value=''">
-                                <div style="display:flex;justify-content:space-between;">
-                                    <strong>${i.invoice_number}</strong>
-                                    <span style="color:var(--accent);font-weight:700;">${this.formatCurrency(i.total, i.currency)}</span>
-                                </div>
-                                <div style="color:var(--contrast-medium);font-size:12px;margin-top:2px;">${i.company_name || i.contact_name}</div>
-                            </a>`;
-                        });
-                    }
-                    
-                    if (clients.length > 0) {
-                        html += '<div style="padding:4px 16px;font-size:11px;text-transform:uppercase;color:var(--contrast-low);font-weight:600;letter-spacing:1px;margin-top:8px;">Clientes</div>';
-                        clients.slice(0, 5).forEach(c => {
-                            html += `<a href="#clients/profile/${c.id}" style="display:block;padding:10px 16px;text-decoration:none;color:inherit;border-bottom:1px solid var(--contrast-border);font-size:13px;" onclick="document.getElementById('global-search-results').remove();document.querySelector('.topbar-search input').value=''">
-                                <div><strong>${c.company_name || c.contact_name}</strong></div>
-                                <div style="color:var(--contrast-medium);font-size:12px;margin-top:2px;">${c.email}</div>
-                            </a>`;
-                        });
-                    }
-                    
-                    if (html === '') {
-                        html = '<div style="padding:12px 16px;color:var(--contrast-low);font-size:13px;text-align:center;">No se encontraron resultados</div>';
-                    }
-                    
-                    dropdown.innerHTML = html;
-                    
-                } catch(e) {
-                    dropdown.innerHTML = '<div style="padding:12px 16px;color:var(--red);font-size:14px;text-align:center;">Error al buscar</div>';
-                }
-            });
-            
-            // Close dropdown when clicking outside
-            document.addEventListener('click', (e) => {
-                if (!e.target.closest('.topbar-search')) {
-                    document.getElementById('global-search-results')?.remove();
-                }
-            });
-        }
+            }
+        });
     }
 };
 

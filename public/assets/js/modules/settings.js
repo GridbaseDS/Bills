@@ -11,117 +11,68 @@ export default {
                         <p class="page-subtitle">Ajustes del sistema y conectividad</p>
                     </div>
                 </div>
-                
-                <div class="tabs mb-24">
-                    <button class="tab active" data-tab="general">General y Facturación</button>
-                    <button class="tab" data-tab="email">Email / SMTP</button>
-                    <button class="tab" data-tab="whatsapp">WhatsApp API</button>
-                    <button class="tab" data-tab="automation">Recordatorios</button>
-                    <button class="tab" data-tab="integrations">Integraciones</button>
-                    <button class="tab" data-tab="dgii">Facturación Electrónica (DGII)</button>
+
+                <div class="segmented-control mb-24" id="settings-tabs">
+                    <button class="segment-item active" data-tab="general">General</button>
+                    <button class="segment-item" data-tab="email">Email / SMTP</button>
+                    <button class="segment-item" data-tab="whatsapp">WhatsApp</button>
+                    <button class="segment-item" data-tab="automation">Recordatorios</button>
+                    <button class="segment-item" data-tab="integrations">Integraciones</button>
+                    <button class="segment-item" data-tab="dgii">e-CF / DGII</button>
                 </div>
 
-                <form id="settings-form" class="card mb-24">
-                    <div class="card-body">
-                        
+                <form id="settings-form" class="table-outer">
+                    <div style="padding:var(--spacing-xl);">
+
                         <!-- TAB: GENERAL -->
                         <div class="tab-content" id="tab-general">
-                            <h3 class="mb-16">Información de la Empresa</h3>
+                            <h3 style="font-size:15px;font-weight:600;margin:0 0 16px;">Información de la Empresa</h3>
                             <div class="grid-2">
-                                <div class="form-group">
-                                    <label class="form-label">Nombre Comercial</label>
-                                    <input type="text" id="s_company_name" class="form-control" value="${s.company_name || ''}">
-                                </div>
-                                <div class="form-group">
-                                    <label class="form-label">Correo Oficial</label>
-                                    <input type="email" id="s_company_email" class="form-control" value="${s.company_email || ''}">
-                                </div>
-                                <div class="form-group">
-                                    <label class="form-label">Teléfono</label>
-                                    <input type="text" id="s_company_phone" class="form-control" value="${s.company_phone || ''}">
-                                </div>
-                                <div class="form-group">
-                                    <label class="form-label">RNC / Cédula</label>
-                                    <input type="text" id="s_company_tax_id" class="form-control" value="${s.company_tax_id || ''}">
-                                </div>
-                                <div class="form-group" style="grid-column: span 2">
-                                    <label class="form-label">Dirección</label>
-                                    <input type="text" id="s_company_address" class="form-control" value="${s.company_address || ''}">
-                                </div>
-                                <div class="form-group">
-                                    <label class="form-label">Ciudad</label>
-                                    <input type="text" id="s_company_city" class="form-control" value="${s.company_city || ''}">
-                                </div>
-                                <div class="form-group">
-                                    <label class="form-label">Sitio Web</label>
-                                    <input type="text" id="s_company_website" class="form-control" value="${s.company_website || ''}">
-                                </div>
+                                <div class="form-group"><label class="form-label">Nombre Comercial</label><input type="text" id="s_company_name" class="form-control" value="${s.company_name || ''}"></div>
+                                <div class="form-group"><label class="form-label">Correo Oficial</label><input type="email" id="s_company_email" class="form-control" value="${s.company_email || ''}"></div>
+                                <div class="form-group"><label class="form-label">Teléfono</label><input type="text" id="s_company_phone" class="form-control" value="${s.company_phone || ''}"></div>
+                                <div class="form-group"><label class="form-label">RNC / Cédula</label><input type="text" id="s_company_tax_id" class="form-control" value="${s.company_tax_id || ''}"></div>
+                                <div class="form-group" style="grid-column: span 2"><label class="form-label">Dirección</label><input type="text" id="s_company_address" class="form-control" value="${s.company_address || ''}"></div>
+                                <div class="form-group"><label class="form-label">Ciudad</label><input type="text" id="s_company_city" class="form-control" value="${s.company_city || ''}"></div>
+                                <div class="form-group"><label class="form-label">Sitio Web</label><input type="text" id="s_company_website" class="form-control" value="${s.company_website || ''}"></div>
                             </div>
-                            
-                            <h3 class="mb-16 mt-24" style="border-top: 1px solid var(--border); padding-top: 24px;">Ajustes de Facturación</h3>
+                            <h3 style="font-size:15px;font-weight:600;margin:24px 0 16px;border-top:1px solid var(--color-border);padding-top:24px;">Ajustes de Facturación</h3>
                             <div class="grid-2">
-                                <div class="form-group">
-                                    <label class="form-label">Moneda por Defecto</label>
+                                <div class="form-group"><label class="form-label">Moneda por Defecto</label>
                                     <select id="s_default_currency" class="form-control">
                                         <option value="USD" ${s.default_currency === 'USD' ? 'selected' : ''}>USD</option>
                                         <option value="DOP" ${s.default_currency === 'DOP' ? 'selected' : ''}>DOP</option>
                                         <option value="EUR" ${s.default_currency === 'EUR' ? 'selected' : ''}>EUR</option>
                                     </select>
                                 </div>
-                                <div class="form-group">
-                                    <label class="form-label">Impuesto por Defecto (%)</label>
-                                    <input type="number" id="s_default_tax_rate" class="form-control" value="${s.default_tax_rate || '18.00'}" step="0.01">
-                                </div>
+                                <div class="form-group"><label class="form-label">Impuesto por Defecto (%)</label><input type="number" id="s_default_tax_rate" class="form-control" value="${s.default_tax_rate || '18.00'}" step="0.01"></div>
                             </div>
                         </div>
 
                         <!-- TAB: EMAIL/SMTP -->
                         <div class="tab-content" id="tab-email" style="display:none;">
-                            <h3 class="mb-16">Configuración de Correo SMTP</h3>
-                            <p class="text-muted mb-24">Ajustes para enviar facturas y cotizaciones por correo.</p>
+                            <h3 style="font-size:15px;font-weight:600;margin:0 0 8px;">Configuración de Correo SMTP</h3>
+                            <p style="color:var(--color-text-muted);font-size:13px;margin:0 0 24px;">Ajustes para enviar facturas y cotizaciones por correo.</p>
                             <div class="grid-2">
-                                <div class="form-group">
-                                    <label class="form-label">Host SMTP</label>
-                                    <input type="text" id="s_smtp_host" class="form-control" placeholder="mail.midominio.com" value="${s.smtp_host || ''}">
-                                </div>
-                                <div class="form-group">
-                                    <label class="form-label">Puerto SMTP</label>
-                                    <input type="number" id="s_smtp_port" class="form-control" placeholder="587" value="${s.smtp_port || '587'}">
-                                </div>
-                                <div class="form-group">
-                                    <label class="form-label">Usuario SMTP</label>
-                                    <input type="text" id="s_smtp_username" class="form-control" placeholder="usuario@midominio.com" value="${s.smtp_username || ''}">
-                                </div>
-                                <div class="form-group">
-                                    <label class="form-label">Contraseña SMTP</label>
-                                    <input type="password" id="s_smtp_password" class="form-control" value="${s.smtp_password || ''}">
-                                </div>
-                                <div class="form-group">
-                                    <label class="form-label">Cifrado</label>
+                                <div class="form-group"><label class="form-label">Host SMTP</label><input type="text" id="s_smtp_host" class="form-control" placeholder="mail.midominio.com" value="${s.smtp_host || ''}"></div>
+                                <div class="form-group"><label class="form-label">Puerto SMTP</label><input type="number" id="s_smtp_port" class="form-control" placeholder="587" value="${s.smtp_port || '587'}"></div>
+                                <div class="form-group"><label class="form-label">Usuario SMTP</label><input type="text" id="s_smtp_username" class="form-control" placeholder="usuario@midominio.com" value="${s.smtp_username || ''}"></div>
+                                <div class="form-group"><label class="form-label">Contraseña SMTP</label><input type="password" id="s_smtp_password" class="form-control" value="${s.smtp_password || ''}"></div>
+                                <div class="form-group"><label class="form-label">Cifrado</label>
                                     <select id="s_smtp_encryption" class="form-control">
-                                        <option value="none" ${!s.smtp_encryption || s.smtp_encryption === 'none' || s.smtp_encryption === 'null' ? 'selected' : ''}>Ninguno (Sin cifrado)</option>
+                                        <option value="none" ${!s.smtp_encryption || s.smtp_encryption === 'none' || s.smtp_encryption === 'null' ? 'selected' : ''}>Ninguno</option>
                                         <option value="tls" ${s.smtp_encryption === 'tls' ? 'selected' : ''}>TLS</option>
                                         <option value="ssl" ${s.smtp_encryption === 'ssl' ? 'selected' : ''}>SSL</option>
                                     </select>
-                                    <div class="form-hint">Para localhost/cPanel usa "Ninguno". Para servidores externos usa TLS o SSL.</div>
+                                    <div style="font-size:11px;color:var(--color-text-muted);margin-top:4px;">Para localhost usa "Ninguno"</div>
                                 </div>
-                                <div class="form-group">
-                                    <label class="form-label">Nombre de Remitente</label>
-                                    <input type="text" id="s_smtp_from_name" class="form-control" value="${s.smtp_from_name || ''}">
-                                </div>
-                                <div class="form-group">
-                                    <label class="form-label">Email de Remitente (From)</label>
-                                    <input type="email" id="s_smtp_from_email" class="form-control" value="${s.smtp_from_email || ''}">
-                                </div>
+                                <div class="form-group"><label class="form-label">Nombre de Remitente</label><input type="text" id="s_smtp_from_name" class="form-control" value="${s.smtp_from_name || ''}"></div>
+                                <div class="form-group"><label class="form-label">Email de Remitente (From)</label><input type="email" id="s_smtp_from_email" class="form-control" value="${s.smtp_from_email || ''}"></div>
                             </div>
-                            
-                            <div class="mt-24 p-4" style="background: var(--bg-elevated); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px;">
-                                <h4 class="mb-16" style="font-size: 13px;">Probar Conexión</h4>
-                                <div style="display: flex; gap: 12px; align-items: flex-end;">
-                                    <div class="form-group" style="margin: 0; flex: 1; max-width: 300px;">
-                                        <label class="form-label">Enviar correo de prueba a:</label>
-                                        <input type="email" id="smtp_test_email" class="form-control" placeholder="tu@correo.com" value="${window.App.state.user?.email || ''}">
-                                    </div>
+                            <div style="margin-top:24px;background:var(--bg-hover);border:1px solid var(--color-border);border-radius:var(--radius-lg);padding:20px;">
+                                <h4 style="font-size:13px;font-weight:600;margin:0 0 12px;">Probar Conexión</h4>
+                                <div style="display:flex;gap:12px;align-items:flex-end;">
+                                    <div class="form-group" style="margin:0;flex:1;max-width:300px;"><label class="form-label">Enviar correo de prueba a:</label><input type="email" id="smtp_test_email" class="form-control" placeholder="tu@correo.com" value="${window.App.state.user?.email || ''}"></div>
                                     <button type="button" id="btn-test-smtp" class="btn btn-secondary">Probar Conexión</button>
                                 </div>
                             </div>
@@ -129,119 +80,73 @@ export default {
 
                         <!-- TAB: WHATSAPP -->
                         <div class="tab-content" id="tab-whatsapp" style="display:none;">
-                            <h3 class="mb-16">API de WhatsApp Cloud</h3>
-                            <p class="text-muted mb-24">Conecta con Meta para enviar notificaciones automáticas vía WhatsApp.</p>
-                            <div class="form-group mb-24">
-                                <label class="form-label">Habilitar Integración de WhatsApp</label>
+                            <h3 style="font-size:15px;font-weight:600;margin:0 0 8px;">API de WhatsApp Cloud</h3>
+                            <p style="color:var(--color-text-muted);font-size:13px;margin:0 0 24px;">Conecta con Meta para enviar notificaciones vía WhatsApp.</p>
+                            <div class="form-group mb-24"><label class="form-label">Habilitar Integración</label>
                                 <select id="s_whatsapp_enabled" class="form-control" style="width:200px;">
                                     <option value="1" ${s.whatsapp_enabled == '1' ? 'selected' : ''}>Habilitado</option>
                                     <option value="0" ${s.whatsapp_enabled == '0' || !s.whatsapp_enabled ? 'selected' : ''}>Deshabilitado</option>
                                 </select>
                             </div>
                             <div class="grid-2">
-                                <div class="form-group">
-                                    <label class="form-label">ID del Número de Teléfono</label>
-                                    <input type="text" id="s_whatsapp_phone_id" class="form-control" value="${s.whatsapp_phone_id || ''}">
-                                </div>
-                                <div class="form-group">
-                                    <label class="form-label">ID de Cuenta de WhatsApp Business</label>
-                                    <input type="text" id="s_whatsapp_business_id" class="form-control" value="${s.whatsapp_business_id || ''}">
-                                </div>
-                                <div class="form-group" style="grid-column: span 2">
-                                    <label class="form-label">Token de Acceso (Permanente)</label>
-                                    <input type="password" id="s_whatsapp_access_token" class="form-control" value="${s.whatsapp_access_token || ''}">
-                                </div>
+                                <div class="form-group"><label class="form-label">ID del Número de Teléfono</label><input type="text" id="s_whatsapp_phone_id" class="form-control" value="${s.whatsapp_phone_id || ''}"></div>
+                                <div class="form-group"><label class="form-label">ID de Cuenta Business</label><input type="text" id="s_whatsapp_business_id" class="form-control" value="${s.whatsapp_business_id || ''}"></div>
+                                <div class="form-group" style="grid-column: span 2"><label class="form-label">Token de Acceso</label><input type="password" id="s_whatsapp_access_token" class="form-control" value="${s.whatsapp_access_token || ''}"></div>
                             </div>
                         </div>
 
                         <!-- TAB: RECORDATORIOS -->
                         <div class="tab-content" id="tab-automation" style="display:none;">
-                            <h3 class="mb-16">Recordatorios Automatizados (Cron)</h3>
-                            <p class="text-muted mb-24">Configura cuándo el sistema debe enviar recordatorios de pago.</p>
-                            <div class="form-group mb-24">
-                                <label class="form-label">Habilitar Recordatorios</label>
+                            <h3 style="font-size:15px;font-weight:600;margin:0 0 8px;">Recordatorios Automatizados</h3>
+                            <p style="color:var(--color-text-muted);font-size:13px;margin:0 0 24px;">Configura cuándo enviar recordatorios de pago.</p>
+                            <div class="form-group mb-24"><label class="form-label">Habilitar Recordatorios</label>
                                 <select id="s_reminders_enabled" class="form-control" style="width:200px;">
                                     <option value="1" ${s.reminders_enabled == '1' || !s.reminders_enabled ? 'selected' : ''}>Habilitado</option>
                                     <option value="0" ${s.reminders_enabled == '0' ? 'selected' : ''}>Deshabilitado</option>
                                 </select>
                             </div>
                             <div class="grid-2">
-                                <div class="form-group">
-                                    <label class="form-label">Días Antes de Vencer (Aviso previo)</label>
-                                    <input type="number" id="s_reminders_days_before" class="form-control" value="${s.reminders_days_before !== undefined ? s.reminders_days_before : '3'}">
-                                    <div class="form-hint">Ej: 3 (Enviará un aviso 3 días antes de que venza)</div>
-                                </div>
-                                <div class="form-group">
-                                    <label class="form-label">Frecuencia al Vencer (Días)</label>
-                                    <input type="number" id="s_reminders_overdue_interval" class="form-control" value="${s.reminders_overdue_interval !== undefined ? s.reminders_overdue_interval : '7'}">
-                                    <div class="form-hint">Ej: 7 (Enviará un aviso cada 7 días si está vencida)</div>
-                                </div>
+                                <div class="form-group"><label class="form-label">Días Antes de Vencer</label><input type="number" id="s_reminders_days_before" class="form-control" value="${s.reminders_days_before !== undefined ? s.reminders_days_before : '3'}"><div style="font-size:11px;color:var(--color-text-muted);margin-top:4px;">Ej: 3 días antes</div></div>
+                                <div class="form-group"><label class="form-label">Frecuencia al Vencer (Días)</label><input type="number" id="s_reminders_overdue_interval" class="form-control" value="${s.reminders_overdue_interval !== undefined ? s.reminders_overdue_interval : '7'}"><div style="font-size:11px;color:var(--color-text-muted);margin-top:4px;">Ej: cada 7 días</div></div>
                             </div>
                         </div>
 
                         <!-- TAB: INTEGRACIONES -->
                         <div class="tab-content" id="tab-integrations" style="display:none;">
-                            <h3 class="mb-16">Integraciones de Pagos Online</h3>
-                            <p class="text-muted mb-24">Agrega links de pago rápidos que se adjuntarán a los correos de las facturas.</p>
-                            <div class="form-group">
-                                <label class="form-label">Enlace de Pago General (PayPal.Me, Stripe Link, etc.)</label>
-                                <input type="url" id="s_payment_link_general" class="form-control" placeholder="https://paypal.me/tuusuario" value="${s.payment_link_general || ''}">
-                                <div class="form-hint">Este link se mostrará en los correos y PDFs como tu método de pago online principal.</div>
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label">Instrucciones de Transferencia Bancaria</label>
-                                <textarea id="s_bank_instructions" class="form-control" rows="4" placeholder="Banco XYZ\nCuenta: 123456789\nNombre: Empresa SRL">${s.bank_instructions || ''}</textarea>
-                            </div>
+                            <h3 style="font-size:15px;font-weight:600;margin:0 0 8px;">Integraciones de Pagos</h3>
+                            <p style="color:var(--color-text-muted);font-size:13px;margin:0 0 24px;">Links de pago adjuntados a correos de facturas.</p>
+                            <div class="form-group"><label class="form-label">Enlace de Pago General</label><input type="url" id="s_payment_link_general" class="form-control" placeholder="https://paypal.me/tuusuario" value="${s.payment_link_general || ''}"><div style="font-size:11px;color:var(--color-text-muted);margin-top:4px;">Se mostrará en correos y PDFs</div></div>
+                            <div class="form-group"><label class="form-label">Instrucciones de Transferencia</label><textarea id="s_bank_instructions" class="form-control" rows="4" placeholder="Banco XYZ\nCuenta: 123456789">${s.bank_instructions || ''}</textarea></div>
                         </div>
 
-                        <!-- TAB: DGII E-CF -->
+                        <!-- TAB: DGII -->
                         <div class="tab-content" id="tab-dgii" style="display:none;">
-                            <h3 class="mb-16">Facturación Electrónica de la DGII (Rep. Dom.)</h3>
-                            <p class="text-muted mb-24">Configura las credenciales de firma y secuenciación para conectarte oficialmente con la DGII.</p>
-                            
+                            <h3 style="font-size:15px;font-weight:600;margin:0 0 8px;">Facturación Electrónica (DGII)</h3>
+                            <p style="color:var(--color-text-muted);font-size:13px;margin:0 0 24px;">Credenciales de firma y secuenciación e-CF.</p>
                             <div class="grid-2">
-                                <div class="form-group">
-                                    <label class="form-label">Entorno DGII</label>
+                                <div class="form-group"><label class="form-label">Entorno DGII</label>
                                     <select id="s_dgii_env" class="form-control">
-                                        <option value="testing" ${s.dgii_env === 'testing' || !s.dgii_env ? 'selected' : ''}>Certificación / Pruebas (TestDGII)</option>
-                                        <option value="production" ${s.dgii_env === 'production' ? 'selected' : ''}>Producción (Oficial)</option>
+                                        <option value="testing" ${s.dgii_env === 'testing' || !s.dgii_env ? 'selected' : ''}>Certificación / Pruebas</option>
+                                        <option value="production" ${s.dgii_env === 'production' ? 'selected' : ''}>Producción</option>
                                     </select>
                                 </div>
-                                <div class="form-group">
-                                    <label class="form-label">Fecha de Vence Secuencia (e-NCF)</label>
-                                    <input type="date" id="s_dgii_ncf_expiry_date" class="form-control" value="${s.dgii_ncf_expiry_date || '2027-12-31'}">
-                                </div>
-                                <div class="form-group">
-                                    <label class="form-label">Nombre del Certificado (.p12 / .pfx)</label>
-                                    <input type="text" id="s_dgii_certificate_path" class="form-control" placeholder="certificado.p12" value="${s.dgii_certificate_path || ''}">
-                                    <div class="form-hint">Guarde su archivo digital en <code>storage/app/secure/</code> y digite su nombre exacto.</div>
-                                </div>
-                                <div class="form-group">
-                                    <label class="form-label">Contraseña del Certificado</label>
-                                    <input type="password" id="s_dgii_certificate_password" class="form-control" value="${s.dgii_certificate_password || ''}">
-                                </div>
-                                <div class="form-group">
-                                    <label class="form-label">Próximo e-NCF Crédito Fiscal (Tipo 31)</label>
-                                    <input type="number" id="s_dgii_next_e_ncf_31" class="form-control" value="${s.dgii_next_e_ncf_31 || '1'}">
-                                    <div class="form-hint">Secuencia actual. Ej: 1 generará el NCF <code>E310000000001</code></div>
-                                </div>
-                                <div class="form-group">
-                                    <label class="form-label">Próximo e-NCF Consumo (Tipo 32)</label>
-                                    <input type="number" id="s_dgii_next_e_ncf_32" class="form-control" value="${s.dgii_next_e_ncf_32 || '1'}">
-                                    <div class="form-hint">Secuencia actual. Ej: 1 generará el NCF <code>E320000000001</code></div>
-                                </div>
+                                <div class="form-group"><label class="form-label">Vence Secuencia (e-NCF)</label><input type="date" id="s_dgii_ncf_expiry_date" class="form-control" value="${s.dgii_ncf_expiry_date || '2027-12-31'}"></div>
+                                <div class="form-group"><label class="form-label">Certificado (.p12 / .pfx)</label><input type="text" id="s_dgii_certificate_path" class="form-control" placeholder="certificado.p12" value="${s.dgii_certificate_path || ''}"><div style="font-size:11px;color:var(--color-text-muted);margin-top:4px;">En <code>storage/app/secure/</code></div></div>
+                                <div class="form-group"><label class="form-label">Contraseña del Certificado</label><input type="password" id="s_dgii_certificate_password" class="form-control" value="${s.dgii_certificate_password || ''}"></div>
+                                <div class="form-group"><label class="form-label">Próximo e-NCF Tipo 31</label><input type="number" id="s_dgii_next_e_ncf_31" class="form-control" value="${s.dgii_next_e_ncf_31 || '1'}"><div style="font-size:11px;color:var(--color-text-muted);margin-top:4px;">Ej: 1 → <code>E310000000001</code></div></div>
+                                <div class="form-group"><label class="form-label">Próximo e-NCF Tipo 32</label><input type="number" id="s_dgii_next_e_ncf_32" class="form-control" value="${s.dgii_next_e_ncf_32 || '1'}"><div style="font-size:11px;color:var(--color-text-muted);margin-top:4px;">Ej: 1 → <code>E320000000001</code></div></div>
                             </div>
                         </div>
 
-                        <div class="mt-24" style="border-top: 1px solid var(--border); padding-top: 16px;">
-                            <button type="submit" class="btn btn-primary">Guardar Todas las Configuraciones</button>
+                        <div style="border-top:1px solid var(--color-border);padding-top:16px;margin-top:24px;">
+                            <button type="submit" class="btn btn-primary">Guardar Configuraciones</button>
                         </div>
                     </div>
                 </form>
             `;
 
-            // Setup Details Tabs Navigation
-            const tabs = container.querySelectorAll('.tab');
+            // Tab navigation
+            const tabs = container.querySelectorAll('#settings-tabs .segment-item');
             const contents = container.querySelectorAll('.tab-content');
             tabs.forEach(tab => {
                 tab.addEventListener('click', (e) => {
@@ -253,12 +158,12 @@ export default {
                 });
             });
 
+            // RNC Lookup
             document.getElementById('s_company_tax_id')?.addEventListener('input', async (e) => {
                 const val = e.target.value.replace(/[^0-9]/g, '');
                 if (val.length === 9 || val.length === 11) {
                     if (e.target.dataset.lastFetch === val) return;
                     e.target.dataset.lastFetch = val;
-
                     const isRnc = val.length === 9;
                     const endpoint = isRnc ? 'rnc' : 'cedula';
                     try {
@@ -266,22 +171,15 @@ export default {
                         const res = await window.App.api(`lookup/${endpoint}/${val}`);
                         if (res.found && res.data) {
                             const d = res.data;
-                            if (isRnc) {
-                                if (d.nombre) document.getElementById('s_company_name').value = d.nombre;
-                            } else {
-                                const fullName = `${d.nombres} ${d.apellido1} ${d.apellido2}`.trim();
-                                if (!document.getElementById('s_company_name').value) {
-                                    document.getElementById('s_company_name').value = fullName;
-                                }
-                            }
+                            if (isRnc) { if (d.nombre) document.getElementById('s_company_name').value = d.nombre; }
+                            else { const fullName = `${d.nombres} ${d.apellido1} ${d.apellido2}`.trim(); if (!document.getElementById('s_company_name').value) document.getElementById('s_company_name').value = fullName; }
                             window.App.showToast('Información autocompletada', 'success');
                         }
-                    } catch (err) {
-                        window.App.showToast('RNC o Cédula no encontrada', 'error');
-                    }
+                    } catch (err) { window.App.showToast('RNC o Cédula no encontrada', 'error'); }
                 }
             });
 
+            // Save all settings
             document.getElementById('settings-form').addEventListener('submit', async (e) => {
                 e.preventDefault();
                 const settingsToUpdate = {
@@ -294,8 +192,6 @@ export default {
                     company_website: document.getElementById('s_company_website').value,
                     default_currency: document.getElementById('s_default_currency').value,
                     default_tax_rate: document.getElementById('s_default_tax_rate').value,
-                    
-                    // SMTP
                     smtp_host: document.getElementById('s_smtp_host').value,
                     smtp_port: document.getElementById('s_smtp_port').value,
                     smtp_username: document.getElementById('s_smtp_username').value,
@@ -303,23 +199,15 @@ export default {
                     smtp_encryption: document.getElementById('s_smtp_encryption').value,
                     smtp_from_name: document.getElementById('s_smtp_from_name').value,
                     smtp_from_email: document.getElementById('s_smtp_from_email').value,
-
-                    // WhatsApp
                     whatsapp_enabled: document.getElementById('s_whatsapp_enabled').value,
                     whatsapp_phone_id: document.getElementById('s_whatsapp_phone_id').value,
                     whatsapp_business_id: document.getElementById('s_whatsapp_business_id').value,
                     whatsapp_access_token: document.getElementById('s_whatsapp_access_token').value,
-
-                    // Reminders
                     reminders_enabled: document.getElementById('s_reminders_enabled').value,
                     reminders_days_before: document.getElementById('s_reminders_days_before').value,
                     reminders_overdue_interval: document.getElementById('s_reminders_overdue_interval').value,
-
-                    // Integrations
                     payment_link_general: document.getElementById('s_payment_link_general').value,
                     bank_instructions: document.getElementById('s_bank_instructions').value,
-
-                    // DGII E-CF
                     dgii_env: document.getElementById('s_dgii_env').value,
                     dgii_ncf_expiry_date: document.getElementById('s_dgii_ncf_expiry_date').value,
                     dgii_certificate_path: document.getElementById('s_dgii_certificate_path').value,
@@ -327,18 +215,17 @@ export default {
                     dgii_next_e_ncf_31: document.getElementById('s_dgii_next_e_ncf_31').value,
                     dgii_next_e_ncf_32: document.getElementById('s_dgii_next_e_ncf_32').value,
                 };
-
                 try {
                     await window.App.api('settings', { method: 'POST', body: settingsToUpdate });
-                    window.App.showToast('Configuraciones guardadas y aplicadas');
+                    window.App.showToast('Configuraciones guardadas');
                 } catch(err) {}
             });
 
+            // Test SMTP
             document.getElementById('btn-test-smtp').addEventListener('click', async () => {
                 const btn = document.getElementById('btn-test-smtp');
                 const testEmail = document.getElementById('smtp_test_email').value;
                 if (!testEmail) return window.App.showToast('Ingresa un correo de prueba', 'error');
-
                 const encryptionVal = document.getElementById('s_smtp_encryption').value;
                 const payload = {
                     test_email: testEmail,
@@ -350,20 +237,12 @@ export default {
                     from_name: document.getElementById('s_smtp_from_name').value,
                     from_email: document.getElementById('s_smtp_from_email').value
                 };
-
                 const originalText = btn.innerHTML;
                 btn.innerHTML = '<span class="spinner" style="width:14px;height:14px;border-width:2px;"></span> Probando...';
                 btn.disabled = true;
-
-                try {
-                    const res = await window.App.api('settings/test-smtp', { method: 'POST', body: payload });
-                    window.App.showToast(res.message, 'success');
-                } catch(err) {
-                    // The App.api already shows a toast on error, but we can catch it to reset the button
-                } finally {
-                    btn.innerHTML = originalText;
-                    btn.disabled = false;
-                }
+                try { const res = await window.App.api('settings/test-smtp', { method: 'POST', body: payload }); window.App.showToast(res.message, 'success'); }
+                catch(err) {}
+                finally { btn.innerHTML = originalText; btn.disabled = false; }
             });
 
         } catch (e) {

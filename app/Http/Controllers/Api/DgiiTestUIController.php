@@ -34,4 +34,27 @@ class DgiiTestUIController extends Controller
             ], 500);
         }
     }
+
+    /**
+     * Downloads the FC<250k signed XMLs as a ZIP file for portal upload.
+     */
+    public function downloadFc250k()
+    {
+        $dir = storage_path('app/dgii_tests/fc_250k_upload');
+        
+        if (!is_dir($dir) || count(glob("$dir/*.xml")) === 0) {
+            return response()->json(['error' => 'No hay archivos FC<250k. Ejecuta las pruebas primero.'], 404);
+        }
+
+        $zipPath = storage_path('app/dgii_tests/fc_250k_upload.zip');
+        $zip = new \ZipArchive();
+        $zip->open($zipPath, \ZipArchive::CREATE | \ZipArchive::OVERWRITE);
+        
+        foreach (glob("$dir/*.xml") as $file) {
+            $zip->addFile($file, basename($file));
+        }
+        $zip->close();
+
+        return response()->download($zipPath, 'fc_250k_facturas_consumo.zip')->deleteFileAfterSend(true);
+    }
 }

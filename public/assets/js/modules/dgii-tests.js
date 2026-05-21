@@ -75,6 +75,31 @@ export default {
                 if (res.success) {
                     consoleStatus.innerHTML = `<span style="color:#22c55e;">COMPLETADO</span>`;
                     App.showToast('Pruebas finalizadas con éxito', 'success');
+                    
+                    // Auto-download FC<250k files for portal upload
+                    if (res.output && res.output.includes('fc_250k_upload')) {
+                        consoleOutput.innerHTML += `\n<span style="color:#fbbf24;font-weight:bold;">📥 Descargando archivos FC<250k para subir al portal DGII...</span>\n`;
+                        try {
+                            const token = localStorage.getItem('auth_token');
+                            const dlRes = await fetch('/api/dgii/download-fc250k', {
+                                headers: { 'Authorization': `Bearer ${token}` }
+                            });
+                            if (dlRes.ok) {
+                                const blob = await dlRes.blob();
+                                const url = window.URL.createObjectURL(blob);
+                                const a = document.createElement('a');
+                                a.href = url;
+                                a.download = 'fc_250k_facturas_consumo.zip';
+                                document.body.appendChild(a);
+                                a.click();
+                                a.remove();
+                                window.URL.revokeObjectURL(url);
+                                consoleOutput.innerHTML += `<span style="color:#22c55e;">✅ Archivos descargados! Súbelos al portal DGII en la sección "Facturas de consumo < 250Mil"</span>\n`;
+                            }
+                        } catch (e) {
+                            consoleOutput.innerHTML += `<span style="color:#ef4444;">Error descargando FC<250k: ${e.message}</span>\n`;
+                        }
+                    }
                 } else {
                     consoleStatus.innerHTML = `<span style="color:#ef4444;">ERROR</span>`;
                     App.showToast('Pruebas con errores. Revisa la consola.', 'error');

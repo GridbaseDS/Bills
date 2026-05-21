@@ -84,6 +84,7 @@ def build_ecf_xml(data):
     add_element(iddoc, 'TipoeCF', tipo)
     add_element(iddoc, 'eNCF', get(data, 'ENCF'))
     add_element(iddoc, 'FechaVencimientoSecuencia', get(data, 'FechaVencimientoSecuencia'))
+    add_element(iddoc, 'IndicadorNotaCredito', get(data, 'IndicadorNotaCredito'))
     add_element(iddoc, 'IndicadorEnvioDiferido', get(data, 'IndicadorEnvioDiferido'))
     add_element(iddoc, 'IndicadorMontoGravado', get(data, 'IndicadorMontoGravado'))
     add_element(iddoc, 'IndicadorServicioTodoIncluido', get(data, 'IndicadorServicioTodoIncluido'))
@@ -454,8 +455,8 @@ def build_ecf_xml(data):
         add_element(info_ref, 'CodigoModificacion', get(data, 'CodigoModificacion'))
         add_element(info_ref, 'RazonModificacion', get(data, 'RazonModificacion'))
     
-    # === FechaHoraFirma ===
-    add_element(root, 'FechaHoraFirma', datetime.now().strftime('%Y-%m-%dT%H:%M:%S'))
+    # === FechaHoraFirma === (DGII pattern: dd-MM-yyyy HH:mm:ss)
+    add_element(root, 'FechaHoraFirma', datetime.now().strftime('%d-%m-%Y %H:%M:%S'))
     
     return root
 
@@ -548,8 +549,8 @@ def build_rfce_xml(data):
     # CodigoSeguridadeCF
     add_element(root, 'CodigoSeguridadeCF', get(data, 'CodigoSeguridadeCF'))
     
-    # FechaHoraFirma
-    add_element(root, 'FechaHoraFirma', datetime.now().strftime('%Y-%m-%dT%H:%M:%S'))
+    # FechaHoraFirma (DGII pattern: dd-MM-yyyy HH:mm:ss)
+    add_element(root, 'FechaHoraFirma', datetime.now().strftime('%d-%m-%Y %H:%M:%S'))
     
     return root
 

@@ -72,7 +72,7 @@ def build_ecf_xml(data):
     tipo = get(data, 'TipoeCF', '31')
     
     root = Element('ECF')
-    root.set('xmlns', 'http://dgii.gov.do/e-CF')
+    # NO xmlns — XSD has no targetNamespace, elements must be unqualified
     
     enc = SubElement(root, 'Encabezado')
     
@@ -464,7 +464,7 @@ def build_ecf_xml(data):
 def build_rfce_xml(data):
     """Build an RFCE (Resumen Factura Consumo Electronica) XML."""
     root = Element('RFCE')
-    root.set('xmlns', 'http://dgii.gov.do/RFCE')
+    # NO xmlns — XSD has no targetNamespace
     
     enc = SubElement(root, 'Encabezado')
     

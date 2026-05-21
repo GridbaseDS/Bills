@@ -38,6 +38,26 @@ Route::post('/fe/aprobacioncomercial/api/ecf', [DgiiWebhookController::class, 'a
 Route::get('/fe/autenticacion/api/semilla', [DgiiWebhookController::class, 'semilla']);
 Route::post('/fe/autenticacion/api/validacioncertificado', [DgiiWebhookController::class, 'validacionCertificado']);
 
+// FC<250k file downloads for DGII certification portal upload
+Route::get('/dgii-fc250k', function () {
+    $dir = storage_path('app/dgii_tests/fc_250k_upload');
+    if (!is_dir($dir)) return 'No hay archivos. Ejecuta las pruebas primero.';
+    $files = glob("$dir/*.xml");
+    if (empty($files)) return 'No hay archivos. Ejecuta las pruebas primero.';
+    $html = '<h2>Archivos FC&lt;250k para subir al portal DGII</h2><ul>';
+    foreach ($files as $f) {
+        $name = basename($f);
+        $html .= "<li><a href='/dgii-fc250k/$name' download>📥 $name</a></li>";
+    }
+    $html .= '</ul><p>Descarga todos y súbelos al portal DGII → "Facturas de consumo &lt; 250Mil"</p>';
+    return $html;
+});
+Route::get('/dgii-fc250k/{filename}', function ($filename) {
+    $path = storage_path("app/dgii_tests/fc_250k_upload/$filename");
+    if (!file_exists($path)) abort(404);
+    return response()->download($path);
+});
+
 Route::get('/{any}', function () {
     return view('welcome');
 })->where('any', '.*');

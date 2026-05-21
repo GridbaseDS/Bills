@@ -196,15 +196,15 @@ export default {
         const barW = chartW / months.length;
 
         // Grid lines — flat, fine, low contrast
-        const gridColor = '#E2E8F0';
+        const gridColor = '#E5E7EB';
         ctx.strokeStyle = gridColor;
         ctx.lineWidth = 1;
         for (let i = 0; i <= 4; i++) {
             const y = pad.top + (chartH / 4) * i;
             ctx.beginPath(); ctx.moveTo(pad.left, y); ctx.lineTo(W - pad.right, y); ctx.stroke();
             // Y-axis labels — contrast-low
-            ctx.fillStyle = '#94A3B8';
-            ctx.font = '11px Outfit, sans-serif';
+            ctx.fillStyle = '#9CA3AF';
+            ctx.font = '11px Inter, sans-serif';
             ctx.textAlign = 'right';
             ctx.fillText(window.App.formatCurrency(maxVal - (maxVal / 4) * i, ''), pad.left - 10, y + 4);
         }
@@ -215,35 +215,35 @@ export default {
 
             // Invoiced bar — low opacity fill, no border, rounded top only
             const ih = (m.invoiced / maxVal) * chartH;
-            ctx.fillStyle = 'rgba(11, 72, 76, 0.08)';
+            ctx.fillStyle = 'rgba(17, 24, 39, 0.08)';
             ctx.beginPath();
             ctx.roundRect(x, pad.top + chartH - ih, bw, ih, [4, 4, 0, 0]);
             ctx.fill();
 
             // Revenue bar — solid accent fill, rounded top only
             const rh = (m.revenue / maxVal) * chartH;
-            ctx.fillStyle = '#0B484C';
+            ctx.fillStyle = '#111827';
             ctx.beginPath();
             ctx.roundRect(x + bw + 2, pad.top + chartH - rh, bw, rh, [4, 4, 0, 0]);
             ctx.fill();
 
             // X-axis label — contrast-low, micro-copy
-            ctx.fillStyle = '#94A3B8';
-            ctx.font = '11px Outfit, sans-serif';
+            ctx.fillStyle = '#9CA3AF';
+            ctx.font = '11px Inter, sans-serif';
             ctx.textAlign = 'center';
             ctx.fillText(m.label, pad.left + i * barW + barW / 2, H - 12);
         });
 
         // Legend — flat pills
         const legendY = H - 20;
-        ctx.fillStyle = 'rgba(11, 72, 76, 0.08)';
+        ctx.fillStyle = 'rgba(17, 24, 39, 0.08)';
         ctx.beginPath(); ctx.roundRect(pad.left, legendY, 12, 10, 2); ctx.fill();
-        ctx.fillStyle = '#64748B'; ctx.font = '11px Outfit, sans-serif'; ctx.textAlign = 'left';
+        ctx.fillStyle = '#9CA3AF'; ctx.font = '11px Inter, sans-serif'; ctx.textAlign = 'left';
         ctx.fillText('Facturado', pad.left + 16, legendY + 9);
 
-        ctx.fillStyle = '#0B484C';
+        ctx.fillStyle = '#111827';
         ctx.beginPath(); ctx.roundRect(pad.left + 90, legendY, 12, 10, 2); ctx.fill();
-        ctx.fillStyle = '#64748B';
+        ctx.fillStyle = '#9CA3AF';
         ctx.fillText('Cobrado', pad.left + 106, legendY + 9);
     }
 };

@@ -94,7 +94,7 @@ const InvoicesModule = {
             <tr>
                 <td class="font-semibold text-mono">
                     <a href="#invoices/${i.id}" style="color:inherit;text-decoration:none">${i.is_ecf ? (i.encf || i.invoice_number) : i.invoice_number}</a>
-                    ${i.is_ecf ? `<span class="badge" style="background:#0B484C;color:#FFFFFF;margin-left:6px;font-size:8px;padding:2px 5px;">e-CF</span>` : ''}
+                    ${i.is_ecf ? `<span class="badge" style="background:#111827;color:#FFFFFF;margin-left:6px;font-size:8px;padding:2px 5px;">e-CF</span>` : ''}
                 </td>
                 <td>${i.company_name || i.contact_name}</td>
                 <td>${App.formatDate(i.issue_date)}</td>
@@ -142,7 +142,7 @@ const InvoicesModule = {
                 <div class="card mb-24" style="border-left: 4px solid ${
                     inv.dgii_status === 'accepted' ? '#10B981' : 
                     inv.dgii_status === 'rejected' ? '#EF4444' : 
-                    inv.dgii_status === 'contingency' ? '#F59E0B' : '#0B484C'
+                    inv.dgii_status === 'contingency' ? '#F59E0B' : '#111827'
                 }; padding: 20px;">
                     <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px;">
                         <div>

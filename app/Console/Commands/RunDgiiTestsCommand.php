@@ -101,10 +101,9 @@ class RunDgiiTestsCommand extends Command
                     ->timeout(30)
                     ->withHeaders([
                         'Authorization' => 'Bearer ' . $token,
-                        'Content-Type' => 'text/xml',
                         'Accept' => 'application/json',
                     ])
-                    ->withBody($signedXml, 'text/xml')
+                    ->attach('xml', $signedXml, $filename, ['Content-Type' => 'text/xml'])
                     ->post($endpoint);
 
                 $responseBody = $response->json();

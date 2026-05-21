@@ -31,6 +31,9 @@ export default {
                         </svg>
                         Iniciar Pruebas DGII
                     </button>
+                    <button id="btn-download-fc250k" class="btn" style="padding:12px 24px;font-size:15px;margin-left:12px;background:var(--bg-hover);color:var(--color-text-primary);border:1px solid var(--color-border);display:none;">
+                        📥 Descargar FC&lt;250k
+                    </button>
                 </div>
             </div>
 
@@ -51,10 +54,16 @@ export default {
 
     bindEvents() {
         const btnRun = document.getElementById('btn-run-tests');
+        const btnDl = document.getElementById('btn-download-fc250k');
         const consoleContainer = document.getElementById('console-container');
         const consoleOutput = document.getElementById('console-output');
         const consoleStatus = document.getElementById('console-status');
         if (!btnRun) return;
+
+        // Manual download button
+        if (btnDl) {
+            btnDl.addEventListener('click', () => this.downloadFc250k(consoleOutput));
+        }
 
         btnRun.addEventListener('click', async () => {
             btnRun.disabled = true;
@@ -75,31 +84,6 @@ export default {
                 if (res.success) {
                     consoleStatus.innerHTML = `<span style="color:#22c55e;">COMPLETADO</span>`;
                     App.showToast('Pruebas finalizadas con éxito', 'success');
-                    
-                    // Auto-download FC<250k files for portal upload
-                    if (res.output && res.output.includes('fc_250k_upload')) {
-                        consoleOutput.innerHTML += `\n<span style="color:#fbbf24;font-weight:bold;">📥 Descargando archivos FC<250k para subir al portal DGII...</span>\n`;
-                        try {
-                            const token = localStorage.getItem('auth_token');
-                            const dlRes = await fetch('/api/dgii/download-fc250k', {
-                                headers: { 'Authorization': `Bearer ${token}` }
-                            });
-                            if (dlRes.ok) {
-                                const blob = await dlRes.blob();
-                                const url = window.URL.createObjectURL(blob);
-                                const a = document.createElement('a');
-                                a.href = url;
-                                a.download = 'fc_250k_facturas_consumo.zip';
-                                document.body.appendChild(a);
-                                a.click();
-                                a.remove();
-                                window.URL.revokeObjectURL(url);
-                                consoleOutput.innerHTML += `<span style="color:#22c55e;">✅ Archivos descargados! Súbelos al portal DGII en la sección "Facturas de consumo < 250Mil"</span>\n`;
-                            }
-                        } catch (e) {
-                            consoleOutput.innerHTML += `<span style="color:#ef4444;">Error descargando FC<250k: ${e.message}</span>\n`;
-                        }
-                    }
                 } else {
                     consoleStatus.innerHTML = `<span style="color:#ef4444;">ERROR</span>`;
                     App.showToast('Pruebas con errores. Revisa la consola.', 'error');
@@ -111,7 +95,40 @@ export default {
                 btnRun.disabled = false;
                 btnRun.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:8px;"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.59-9.21l-3.23 3.23"></path></svg> Ejecutar Nuevamente`;
                 consoleOutput.scrollTop = consoleOutput.scrollHeight;
+                
+                // Always try to download FC<250k files
+                await this.downloadFc250k(consoleOutput);
+                
+                // Show manual download button
+                const btnDl = document.getElementById('btn-download-fc250k');
+                if (btnDl) btnDl.style.display = 'inline-flex';
             }
         });
+    },
+
+    async downloadFc250k(consoleOutput) {
+        try {
+            const token = localStorage.getItem('auth_token');
+            const dlRes = await fetch('/api/dgii/download-fc250k', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (dlRes.ok) {
+                const blob = await dlRes.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'fc_250k_facturas_consumo.zip';
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+                window.URL.revokeObjectURL(url);
+                if (consoleOutput) {
+                    consoleOutput.innerHTML += `\n<span style="color:#22c55e;font-weight:bold;">✅ ZIP descargado! Descomprime y sube los 4 XMLs al portal DGII → "Facturas de consumo < 250Mil"</span>\n`;
+                    consoleOutput.scrollTop = consoleOutput.scrollHeight;
+                }
+            }
+        } catch (e) {
+            console.error('Download FC250k error:', e);
+        }
     }
 };

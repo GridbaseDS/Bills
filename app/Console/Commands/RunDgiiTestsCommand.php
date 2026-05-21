@@ -40,10 +40,15 @@ class RunDgiiTestsCommand extends Command
         // Load settings
         $settings = Setting::getAll();
         
-        // Authenticate with DGII
+        // Authenticate with DGII — always get a fresh token for test runs
         $token = null;
         try {
             $this->info('Authenticating with DGII...');
+            // Clear any cached token to ensure a fresh one
+            $rncEmisor = preg_replace('/[^0-9]/', '', $settings['company_tax_id'] ?? '');
+            $env = $settings['dgii_env'] ?? 'testing';
+            \Illuminate\Support\Facades\Cache::forget("dgii_bearer_token_{$rncEmisor}_{$env}");
+            
             $token = $authService->getValidToken($settings);
             $this->info('Token obtained successfully.');
         } catch (Exception $e) {

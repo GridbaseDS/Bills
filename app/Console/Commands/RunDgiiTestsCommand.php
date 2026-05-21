@@ -78,7 +78,35 @@ class RunDgiiTestsCommand extends Command
         $successCount = 0;
         $errorCount = 0;
 
+        // Separate files: base invoices first, then Notes (Type 33/34) that reference them
+        $baseFiles = [];
+        $noteFiles = [];
         foreach ($xmlFiles as $file) {
+            $xml = File::get($file->getPathname());
+            preg_match('/<TipoeCF>(\d+)<\/TipoeCF>/', $xml, $tipoMatch);
+            $tipo = $tipoMatch[1] ?? '';
+            if (in_array($tipo, ['33', '34'])) {
+                $noteFiles[] = $file;
+            } else {
+                $baseFiles[] = $file;
+            }
+        }
+
+        // Process base invoices first, then notes
+        $orderedFiles = array_merge($baseFiles, $noteFiles);
+        $baseCount = count($baseFiles);
+        $currentIndex = 0;
+
+        foreach ($orderedFiles as $file) {
+            $currentIndex++;
+            
+            // Add delay before processing notes to let base invoices be processed
+            if ($currentIndex === $baseCount + 1 && !empty($noteFiles)) {
+                $this->info('');
+                $this->info('=== Waiting 10s for base invoices to be processed before sending Notes... ===');
+                sleep(10);
+            }
+            
             $filename = $file->getFilename();
             $this->info("Processing $filename ...");
 

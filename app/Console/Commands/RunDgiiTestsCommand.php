@@ -141,8 +141,12 @@ class RunDgiiTestsCommand extends Command
 
                 $responseBody = $response->json();
 
+                // ECF returns trackId, RFCE returns codigo/estado
                 if ($response->successful() && isset($responseBody['trackId'])) {
                     $this->info("SUCCESS $filename -> TrackId: " . $responseBody['trackId']);
+                    $successCount++;
+                } elseif (isset($responseBody['codigo']) && $responseBody['codigo'] == 1) {
+                    $this->info("SUCCESS $filename -> Estado: " . ($responseBody['estado'] ?? 'Aceptado') . ", eNCF: " . ($responseBody['encf'] ?? ''));
                     $successCount++;
                 } else {
                     $this->warn("Response for $filename (HTTP {$response->status()}): " . $response->body());

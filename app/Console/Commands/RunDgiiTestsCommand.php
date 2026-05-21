@@ -138,8 +138,8 @@ class RunDgiiTestsCommand extends Command
             
             if ($currentIndex === $baseCount + 1 && !empty($noteFiles)) {
                 $this->info('');
-                $this->info('=== Waiting 10s for base invoices to be processed before sending Notes... ===');
-                sleep(10);
+                $this->info('=== Waiting 30s for base invoices to be processed before sending Notes... ===');
+                sleep(30);
             }
             
             $filename = $file->getFilename();

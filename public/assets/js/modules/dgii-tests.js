@@ -21,18 +21,15 @@ export default {
                     </div>
                     <h2 style="font-size:22px;font-weight:700;color:var(--color-text-primary);margin-bottom:8px;">Ejecutar Set de Pruebas e-CF</h2>
                     <p style="color:var(--color-text-secondary);font-size:13px;line-height:1.6;margin-bottom:24px;">
-                        Este proceso enviará las 30 facturas ficticias al ambiente de certificación (CerteCF).
+                        Este proceso enviará las facturas ficticias al ambiente de certificación (CerteCF).
                         Es requisito obligatorio para obtener el pase a Producción.<br>
-                        <strong>Nota:</strong> Puede tardar entre 20 y 40 segundos. No cierres esta ventana.
+                        <strong>Nota:</strong> Puede tardar hasta 60 segundos. No cierres esta ventana.
                     </p>
                     <button id="btn-run-tests" class="btn btn-primary" style="padding:12px 32px;font-size:15px;">
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:8px;">
                             <polygon points="5 3 19 12 5 21 5 3"></polygon>
                         </svg>
                         Iniciar Pruebas DGII
-                    </button>
-                    <button id="btn-download-fc250k" class="btn" style="padding:12px 24px;font-size:15px;margin-left:12px;background:var(--bg-hover);color:var(--color-text-primary);border:1px solid var(--color-border);display:none;">
-                        📥 Descargar FC&lt;250k
                     </button>
                 </div>
             </div>
@@ -54,16 +51,10 @@ export default {
 
     bindEvents() {
         const btnRun = document.getElementById('btn-run-tests');
-        const btnDl = document.getElementById('btn-download-fc250k');
         const consoleContainer = document.getElementById('console-container');
         const consoleOutput = document.getElementById('console-output');
         const consoleStatus = document.getElementById('console-status');
         if (!btnRun) return;
-
-        // Manual download button
-        if (btnDl) {
-            btnDl.addEventListener('click', () => this.downloadFc250k(consoleOutput));
-        }
 
         btnRun.addEventListener('click', async () => {
             btnRun.disabled = true;
@@ -81,12 +72,38 @@ export default {
                     .replace(/SUCCESS/g, '<span style="color:#22c55e;font-weight:bold;">$&</span>')
                     .replace(/Done!/g, '<span style="color:#22c55e;font-weight:bold;">$&</span>');
                 consoleOutput.innerHTML += `\n${coloredOutput}`;
+                
                 if (res.success) {
                     consoleStatus.innerHTML = `<span style="color:#22c55e;">COMPLETADO</span>`;
                     App.showToast('Pruebas finalizadas con éxito', 'success');
                 } else {
                     consoleStatus.innerHTML = `<span style="color:#ef4444;">ERROR</span>`;
                     App.showToast('Pruebas con errores. Revisa la consola.', 'error');
+                }
+
+                // Download FC<250k files if available
+                if (res.fc250k_files && res.fc250k_files.length > 0) {
+                    consoleOutput.innerHTML += `\n<span style="color:#fbbf24;font-weight:bold;">📥 Descargando ${res.fc250k_files.length} archivos FC<250k...</span>\n`;
+                    
+                    for (const file of res.fc250k_files) {
+                        const bytes = atob(file.content);
+                        const arr = new Uint8Array(bytes.length);
+                        for (let i = 0; i < bytes.length; i++) arr[i] = bytes.charCodeAt(i);
+                        const blob = new Blob([arr], { type: 'text/xml' });
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = file.name;
+                        document.body.appendChild(a);
+                        a.click();
+                        a.remove();
+                        URL.revokeObjectURL(url);
+                        consoleOutput.innerHTML += `<span style="color:#22c55e;">  ✅ ${file.name}</span>\n`;
+                        // Small delay between downloads
+                        await new Promise(r => setTimeout(r, 500));
+                    }
+                    
+                    consoleOutput.innerHTML += `<span style="color:#22c55e;font-weight:bold;">\n🎯 Sube estos ${res.fc250k_files.length} XMLs al portal DGII → "Facturas de consumo < 250Mil"</span>\n`;
                 }
             } catch (error) {
                 consoleOutput.innerHTML += `\n<span style="color:#ef4444;font-weight:bold;">ERROR FATAL:</span> ${error.message}`;
@@ -95,40 +112,7 @@ export default {
                 btnRun.disabled = false;
                 btnRun.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:8px;"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.59-9.21l-3.23 3.23"></path></svg> Ejecutar Nuevamente`;
                 consoleOutput.scrollTop = consoleOutput.scrollHeight;
-                
-                // Always try to download FC<250k files
-                await this.downloadFc250k(consoleOutput);
-                
-                // Show manual download button
-                const btnDl = document.getElementById('btn-download-fc250k');
-                if (btnDl) btnDl.style.display = 'inline-flex';
             }
         });
-    },
-
-    async downloadFc250k(consoleOutput) {
-        try {
-            const token = localStorage.getItem('auth_token');
-            const dlRes = await fetch('/api/dgii/download-fc250k', {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-            if (dlRes.ok) {
-                const blob = await dlRes.blob();
-                const url = window.URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = 'fc_250k_facturas_consumo.zip';
-                document.body.appendChild(a);
-                a.click();
-                a.remove();
-                window.URL.revokeObjectURL(url);
-                if (consoleOutput) {
-                    consoleOutput.innerHTML += `\n<span style="color:#22c55e;font-weight:bold;">✅ ZIP descargado! Descomprime y sube los 4 XMLs al portal DGII → "Facturas de consumo < 250Mil"</span>\n`;
-                    consoleOutput.scrollTop = consoleOutput.scrollHeight;
-                }
-            }
-        } catch (e) {
-            console.error('Download FC250k error:', e);
-        }
     }
 };

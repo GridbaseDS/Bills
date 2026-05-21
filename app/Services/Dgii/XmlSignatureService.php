@@ -165,9 +165,8 @@ class XmlSignatureService
                 $signatureValueNode = $doc->getElementsByTagName('SignatureValue')->item(0);
                 if ($signatureValueNode) {
                     $signatureValue = trim($signatureValueNode->textContent);
-                    // MD5 hash of the raw SignatureValue and extract first 6 characters
-                    $hash = md5($signatureValue);
-                    return substr($hash, 0, 6);
+                    // DGII requires the first 6 characters of the SignatureValue (base64) directly
+                    return substr($signatureValue, 0, 6);
                 }
             }
         } catch (Exception $e) {

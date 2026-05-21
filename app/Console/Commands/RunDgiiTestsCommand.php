@@ -3,7 +3,6 @@
 namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
-use App\Services\Dgii\EcfManagerService;
 use App\Services\Dgii\DgiiAuthService;
 use App\Services\Dgii\XmlSignatureService;
 use App\Models\Setting;
@@ -15,21 +14,21 @@ class RunDgiiTestsCommand extends Command
     protected $signature = 'dgii:run-tests';
     protected $description = 'Runs the DGII Set de Pruebas by signing and sending pre-generated XMLs';
 
-    public function handle(EcfManagerService $ecfManager, DgiiAuthService $authService, XmlSignatureService $signatureService)
+    public function handle(DgiiAuthService $authService, XmlSignatureService $signatureService)
     {
         $this->info('Starting DGII Test Runner...');
 
         $testDir = storage_path('app/dgii_tests');
         if (!File::exists($testDir)) {
             $this->error("Directory $testDir does not exist. Please generate the XMLs first.");
-            return;
+            return 1;
         }
 
         $files = File::files($testDir);
         
-        // Filter and sort XMLs
+        // Filter and sort XMLs (exclude signed_ files)
         $xmlFiles = array_filter($files, function($f) {
-            return $f->getExtension() === 'xml';
+            return $f->getExtension() === 'xml' && !str_starts_with($f->getFilename(), 'signed_');
         });
 
         usort($xmlFiles, function($a, $b) {
@@ -38,23 +37,37 @@ class RunDgiiTestsCommand extends Command
 
         $this->info('Found ' . count($xmlFiles) . ' XML test cases.');
 
+        // Load settings
+        $settings = Setting::getAll();
+        
+        // Authenticate with DGII
         $token = null;
         try {
             $this->info('Authenticating with DGII...');
-            $token = $authService->getValidToken(Setting::getAll());
+            $token = $authService->getValidToken($settings);
             $this->info('Token obtained successfully.');
         } catch (Exception $e) {
             $this->error('Failed to authenticate: ' . $e->getMessage());
-            return;
+            return 1;
         }
 
-        $certPath = storage_path('app/secure/certificado.p12');
-        $password = \App\Models\Setting::getSetting('dgii_cert_password');
+        // Get certificate path and password from settings
+        $certPath = storage_path('app/secure/' . ($settings['dgii_certificate_path'] ?? ''));
+        $password = $settings['dgii_certificate_password'] ?? '';
         
         if (!File::exists($certPath) || empty($password)) {
-            $this->error('Certificate or password not configured.');
-            return;
+            $this->error('Certificate or password not configured. Check Settings > DGII.');
+            return 1;
         }
+
+        // Determine base URL based on environment
+        $env = $settings['dgii_env'] ?? 'testing';
+        $baseUrl = $env === 'production'
+            ? 'https://ecf.dgii.gov.do'
+            : 'https://ecf.dgii.gov.do/certecf';
+
+        $successCount = 0;
+        $errorCount = 0;
 
         foreach ($xmlFiles as $file) {
             $filename = $file->getFilename();
@@ -67,51 +80,51 @@ class RunDgiiTestsCommand extends Command
                 $signedXml = $signatureService->signXml($unsignedXml, $certPath, $password);
             } catch (Exception $e) {
                 $this->error("Failed to sign $filename: " . $e->getMessage());
+                $errorCount++;
                 continue;
             }
 
             // Send to DGII
             try {
-                $isRfce = strpos($filename, 'rfce') !== false;
-                
-                $this->info("Sending $filename to DGII...");
-                
-                // We need to use Guzzle directly because EcfManagerService expects an Invoice model
-                // But for tests we just have raw XML.
-                
-                $client = new \GuzzleHttp\Client();
-                $baseUrl = 'https://ecf.dgii.gov.do/CerteCF'; // Test environment
-                
-                if ($isRfce) {
-                    $endpoint = $baseUrl . '/RecepcionFC';
-                } else {
-                    $endpoint = $baseUrl . '/Recepcion';
-                }
+                $isRfce = str_starts_with($filename, 'rfce');
+                $endpoint = $isRfce 
+                    ? "$baseUrl/RecepcionFC/api/ecf" 
+                    : "$baseUrl/Recepcion/api/ecf";
 
-                $response = $client->post($endpoint, [
-                    'headers' => [
+                $this->info("Sending $filename to $endpoint ...");
+
+                $response = \Illuminate\Support\Facades\Http::withoutVerifying()
+                    ->timeout(30)
+                    ->withHeaders([
                         'Authorization' => 'Bearer ' . $token,
                         'Content-Type' => 'text/xml',
-                        'Accept' => 'application/json'
-                    ],
-                    'body' => $signedXml
-                ]);
+                        'Accept' => 'application/json',
+                    ])
+                    ->withBody($signedXml, 'text/xml')
+                    ->post($endpoint);
 
-                $responseBody = json_decode($response->getBody()->getContents(), true);
-                
-                if (isset($responseBody['trackId'])) {
-                    $this->info("Success! $filename TrackId: " . $responseBody['trackId']);
+                $responseBody = $response->json();
+
+                if ($response->successful() && isset($responseBody['trackId'])) {
+                    $this->info("SUCCESS $filename -> TrackId: " . $responseBody['trackId']);
+                    $successCount++;
                 } else {
-                    $this->warn("Response for $filename: " . json_encode($responseBody));
+                    $this->warn("Response for $filename (HTTP {$response->status()}): " . $response->body());
+                    $errorCount++;
                 }
 
             } catch (Exception $e) {
                 $this->error("Failed to send $filename: " . $e->getMessage());
+                $errorCount++;
             }
             
-            sleep(2); // Pause between requests to not overwhelm DGII test server
+            // Pause between requests
+            usleep(500000); // 0.5s
         }
 
-        $this->info('DGII Test Runner finished.');
+        $this->newLine();
+        $this->info("Done! Results: $successCount SUCCESS, $errorCount ERRORS out of " . count($xmlFiles) . " total.");
+        
+        return $errorCount > 0 ? 1 : 0;
     }
 }

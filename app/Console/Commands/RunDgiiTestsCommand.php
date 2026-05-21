@@ -120,13 +120,23 @@ class RunDgiiTestsCommand extends Command
 
                 $this->info("Sending $filename to $endpoint ...");
 
+                // DGII requires specific filename format: {RNCEmisor}{eNCF}.xml
+                $sendFilename = $filename;
+                if ($isRfce) {
+                    preg_match('/<RNCEmisor>(\d+)<\/RNCEmisor>/', $signedXml, $rncMatch);
+                    preg_match('/<eNCF>([^<]+)<\/eNCF>/', $signedXml, $encfMatch);
+                    if (!empty($rncMatch[1]) && !empty($encfMatch[1])) {
+                        $sendFilename = $rncMatch[1] . $encfMatch[1] . '.xml';
+                    }
+                }
+
                 $response = \Illuminate\Support\Facades\Http::withoutVerifying()
                     ->timeout(30)
                     ->withHeaders([
                         'Authorization' => 'Bearer ' . $token,
                         'Accept' => 'application/json',
                     ])
-                    ->attach('xml', $signedXml, $filename, ['Content-Type' => 'text/xml'])
+                    ->attach('xml', $signedXml, $sendFilename, ['Content-Type' => 'text/xml'])
                     ->post($endpoint);
 
                 $responseBody = $response->json();

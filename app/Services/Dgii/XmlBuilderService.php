@@ -247,6 +247,12 @@ class XmlBuilderService
             }
 
             $totales->appendChild($dom->createElement('MontoTotal', number_format($montoTotal, 2, '.', '')));
+
+            // Type 41: Items have Retencion block, Totales needs retention totals
+            if ($tipoECF === 41) {
+                $totales->appendChild($dom->createElement('TotalITBISRetenido', '0.00'));
+                $totales->appendChild($dom->createElement('TotalISRRetencion', '0.00'));
+            }
         }
 
         // --- DETALLES ITEMS ---

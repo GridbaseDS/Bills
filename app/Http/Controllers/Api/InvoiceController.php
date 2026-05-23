@@ -11,9 +11,9 @@ class InvoiceController extends Controller
 {
     public function index()
     {
-        $invoices = Invoice::with('client')->orderBy('created_at', 'desc')->get();
+        $invoices = Invoice::with('client')->orderBy('created_at', 'desc')->limit(200)->get();
         $invoices->transform(function ($i) {
-            $i->company_name = $i->client->company_name ?? $i->client->contact_name;
+            $i->company_name = $i->client ? ($i->client->company_name ?? $i->client->contact_name) : 'Sin cliente';
             return $i;
         });
         return response()->json(['success' => true, 'data' => $invoices]);

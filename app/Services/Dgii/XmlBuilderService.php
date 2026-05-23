@@ -76,10 +76,8 @@ class XmlBuilderService
         $dom->preserveWhiteSpace = true;
         $dom->formatOutput = false;
 
-        // Root element
+        // Root element — NO namespace per XSD (no targetNamespace)
         $root = $dom->createElement('ECF');
-        $root->setAttribute('xmlns', 'http://dgii.gov.do/e-CF');
-        $root->setAttribute('xmlns:xsi', 'http://www.w3.org/2001/XMLSchema-instance');
         $dom->appendChild($root);
 
         // --- ENCABEZADO ---
@@ -170,16 +168,11 @@ class XmlBuilderService
         if ($montoGravadoTotal > 0) {
             $totales->appendChild($dom->createElement('MontoGravadoTotal', number_format($montoGravadoTotal, 2, '.', '')));
             
-            // ITBIS 1 (18%) standard mapping for typical invoices in DR digital services
             $itbisRate = (int)round($invoice->tax_rate);
             if ($itbisRate === 18) {
                 $totales->appendChild($dom->createElement('MontoGravadoI1', number_format($montoGravadoTotal, 2, '.', '')));
-                $totales->appendChild($dom->createElement('ITBIS1', '18'));
-                $totales->appendChild($dom->createElement('TotalITBIS1', number_format($totalITBIS, 2, '.', '')));
             } else if ($itbisRate === 16) {
                 $totales->appendChild($dom->createElement('MontoGravadoI2', number_format($montoGravadoTotal, 2, '.', '')));
-                $totales->appendChild($dom->createElement('ITBIS2', '16'));
-                $totales->appendChild($dom->createElement('TotalITBIS2', number_format($totalITBIS, 2, '.', '')));
             }
         }
 
@@ -187,8 +180,25 @@ class XmlBuilderService
             $totales->appendChild($dom->createElement('MontoExento', number_format($montoExento, 2, '.', '')));
         }
 
+        // ITBIS rates (must come after MontoExento, before TotalITBIS)
+        if ($montoGravadoTotal > 0) {
+            $itbisRate = (int)round($invoice->tax_rate);
+            if ($itbisRate === 18) {
+                $totales->appendChild($dom->createElement('ITBIS1', '18'));
+            } else if ($itbisRate === 16) {
+                $totales->appendChild($dom->createElement('ITBIS2', '16'));
+            }
+        }
+
+        // TotalITBIS (general), then TotalITBIS1/2/3 (per rate)
         if ($totalITBIS > 0) {
             $totales->appendChild($dom->createElement('TotalITBIS', number_format($totalITBIS, 2, '.', '')));
+            $itbisRate = (int)round($invoice->tax_rate);
+            if ($itbisRate === 18) {
+                $totales->appendChild($dom->createElement('TotalITBIS1', number_format($totalITBIS, 2, '.', '')));
+            } else if ($itbisRate === 16) {
+                $totales->appendChild($dom->createElement('TotalITBIS2', number_format($totalITBIS, 2, '.', '')));
+            }
         }
 
         $totales->appendChild($dom->createElement('MontoTotal', number_format($montoTotal, 2, '.', '')));

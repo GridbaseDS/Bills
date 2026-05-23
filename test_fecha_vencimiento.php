@@ -110,21 +110,31 @@ try {
 }
 echo "Auth token obtained: " . substr($token, 0, 20) . "...\n";
 
-// Send
+// Send as multipart/form-data with 'xml' field (matching DgiiApiService)
+$dgiiUrl = 'https://ecf.dgii.gov.do/certecf/recepcion/api/facturaselectronicas';
+$sendFilename = "{$rncEmisor}{$eNCF}.xml";
+echo "Sending to: $dgiiUrl as $sendFilename\n";
+
+$tmpFile = tempnam(sys_get_temp_dir(), 'ecf');
+file_put_contents($tmpFile, $signedXml);
+
 $ch = curl_init($dgiiUrl);
+$cfile = new CURLFile($tmpFile, 'application/xml', $sendFilename);
 curl_setopt_array($ch, [
     CURLOPT_POST => true,
-    CURLOPT_POSTFIELDS => $signedXml,
+    CURLOPT_POSTFIELDS => ['xml' => $cfile],
     CURLOPT_RETURNTRANSFER => true,
     CURLOPT_HTTPHEADER => [
-        'Content-Type: application/xml',
         'Authorization: Bearer ' . $token,
+        'Accept: application/json',
     ],
     CURLOPT_TIMEOUT => 30,
+    CURLOPT_SSL_VERIFYPEER => false,
 ]);
 $response = curl_exec($ch);
 $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
 curl_close($ch);
+unlink($tmpFile);
 
 echo "\nHTTP $httpCode\n";
 echo "Response: $response\n";

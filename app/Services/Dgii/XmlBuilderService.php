@@ -110,7 +110,12 @@ class XmlBuilderService
             $idDoc->appendChild($dom->createElement('IndicadorNotaCredito', $invoice->nota_credito_indicator ?? 0));
         }
 
-        // IndicadorMontoGravado: REMOVED - DGII keeps rejecting with 'no es válido'\n        // XSD says types 31,32,33,34 support it with values 0/1 but DGII rejects in practice\n        // If required, DGII will return a 'missing' error and we'll add it back for specific types
+        // IndicadorMontoGravado: REQUIRED for types that support it
+        // 0 = prices DON'T include ITBIS, 1 = prices INCLUDE ITBIS
+        // DGII rejects 0 and also rejects when missing. Using value 1.
+        if (in_array($tipoECF, [31, 32, 33, 34, 41, 45])) {
+            $idDoc->appendChild($dom->createElement('IndicadorMontoGravado', 1));
+        }
 
         // TipoIngresos: types 31,32,44,45,46 (required), 33,34 (optional). NOT in 41,43,47
         $tipoIngresosRequired = [31, 32, 44, 45, 46];

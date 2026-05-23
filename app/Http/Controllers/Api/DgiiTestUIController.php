@@ -53,6 +53,29 @@ class DgiiTestUIController extends Controller
     }
 
     /**
+     * Executes the DGII Aprobaciones Comerciales test via Artisan.
+     */
+    public function runAprobaciones(Request $request)
+    {
+        $output = new BufferedOutput();
+        
+        try {
+            $exitCode = Artisan::call('dgii:run-aprobaciones', [], $output);
+            $textOutput = $output->fetch();
+            
+            return response()->json([
+                'success' => $exitCode === 0,
+                'output' => $textOutput,
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'output' => $output->fetch() . "\nError Fatal: " . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
      * Diagnostic: Test the full e-CF flow with a real invoice without sending to DGII.
      * Steps: Load settings → Build XML → Sign XML → Authenticate → (optional) Send
      */

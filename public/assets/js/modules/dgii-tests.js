@@ -57,6 +57,23 @@ export default {
                 </div>
             </div>
 
+            <!-- Aprobaciones Comerciales Section -->
+            <div class="table-outer" style="margin-bottom:var(--spacing-xl);">
+                <div style="padding:48px;max-width:800px;margin:0 auto;text-align:center;">
+                    <div style="width:56px;height:56px;border-radius:var(--radius-xl);background:linear-gradient(135deg,#8b5cf620,#7c3aed20);display:inline-flex;align-items:center;justify-content:center;margin-bottom:16px;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#8b5cf6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                            <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                        </svg>
+                    </div>
+                    <h2 style="font-size:18px;font-weight:700;color:var(--color-text-primary);margin-bottom:8px;">Paso 3: Aprobaciones Comerciales (ACECF)</h2>
+                    <p style="color:var(--color-text-secondary);font-size:13px;margin-bottom:20px;">Envía las 11 Aprobaciones Comerciales del set de datos DGII. Requiere el archivo JSON en el servidor.</p>
+                    <button id="btn-run-aprobaciones" class="btn btn-primary" style="padding:10px 24px;font-size:14px;">
+                        📋 Enviar Aprobaciones Comerciales
+                    </button>
+                </div>
+            </div>
+
             <!-- Console -->
             <div class="table-outer" style="background:#0f172a;color:#38bdf8;border-color:#1e293b;display:none;" id="console-container">
                 <div style="padding:12px var(--spacing-xl);background:#1e293b;border-bottom:1px solid #334155;display:flex;align-items:center;justify-content:space-between;">
@@ -83,6 +100,39 @@ export default {
         // Diagnostic
         if (btnDiag) btnDiag.addEventListener('click', () => this.runDiagnose(false));
         if (btnDiagSend) btnDiagSend.addEventListener('click', () => this.runDiagnose(true));
+
+        // Aprobaciones Comerciales
+        const btnAprob = document.getElementById('btn-run-aprobaciones');
+        if (btnAprob) {
+            btnAprob.addEventListener('click', async () => {
+                btnAprob.disabled = true;
+                btnAprob.innerHTML = `<span class="spinner" style="width:16px;height:16px;border-width:2px;margin-right:8px;"></span> Procesando...`;
+                consoleContainer.style.display = 'block';
+                consoleOutput.innerHTML = `<span style="color:#64748b;">[${new Date().toLocaleTimeString()}]</span> Enviando Aprobaciones Comerciales a la DGII...\n`;
+                consoleStatus.innerHTML = `<span class="spinner" style="width:12px;height:12px;border-width:2px;"></span> <span style="color:#fbbf24;">Ejecutando</span>`;
+
+                try {
+                    const res = await App.api('dgii/run-aprobaciones', { method: 'POST' });
+                    let coloredOutput = res.output
+                        .replace(/✅/g, '<span style="color:#22c55e;">$&</span>')
+                        .replace(/❌/g, '<span style="color:#ef4444;">$&</span>')
+                        .replace(/✍️/g, '<span style="color:#38bdf8;">$&</span>')
+                        .replace(/📡/g, '<span style="color:#fbbf24;">$&</span>')
+                        .replace(/🎉/g, '<span style="color:#22c55e;font-size:16px;">$&</span>');
+                    consoleOutput.innerHTML += `\n${coloredOutput}`;
+                    consoleStatus.innerHTML = res.success
+                        ? `<span style="color:#22c55e;">✅ COMPLETADO</span>`
+                        : `<span style="color:#ef4444;">❌ HAY ERRORES</span>`;
+                } catch (error) {
+                    consoleOutput.innerHTML += `\n<span style="color:#ef4444;font-weight:bold;">ERROR:</span> ${error.message}`;
+                    consoleStatus.innerHTML = `<span style="color:#ef4444;">ERROR</span>`;
+                } finally {
+                    btnAprob.disabled = false;
+                    btnAprob.innerHTML = `📋 Enviar Aprobaciones Comerciales`;
+                    consoleOutput.scrollTop = consoleOutput.scrollHeight;
+                }
+            });
+        }
 
         // Certification tests
         if (btnRun) {

@@ -48,7 +48,7 @@ $tests = [
     ['type' => 33, 'amount' => 10000, 'tax' => 18, 'payment' => 1, 'desc' => 'Nota Debito - Ref tipo 31', 'ref_test' => 0, 'mod_code' => 3],
 
     // Type 34 - Nota de Crédito (2) - references type 31 #2 and #3
-    ['type' => 34, 'amount' => 5000, 'tax' => 18, 'payment' => 1, 'desc' => 'Nota Credito 1 - Ref tipo 31', 'ref_test' => 1, 'mod_code' => 1],
+    ['type' => 34, 'amount' => 5000, 'tax' => 18, 'payment' => 1, 'desc' => 'Nota Credito 1 - Ref tipo 31', 'ref_test' => 1, 'mod_code' => 3],
     ['type' => 34, 'amount' => 8000, 'tax' => 18, 'payment' => 1, 'desc' => 'Nota Credito 2 - Ref tipo 31', 'ref_test' => 2, 'mod_code' => 3],
 
     // Type 41 - Compras (2)

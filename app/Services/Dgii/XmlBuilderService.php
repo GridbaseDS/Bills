@@ -113,6 +113,10 @@ class XmlBuilderService
             $idDoc->appendChild($dom->createElement('IndicadorNotaCredito', $invoice->nota_credito_indicator ?? 1));
         }
 
+        // IndicadorMontoGravado: 0 = prices don't include ITBIS, 1 = prices include ITBIS
+        // Per XSD: optional, but DGII requires it. Our prices are always without ITBIS.
+        $idDoc->appendChild($dom->createElement('IndicadorMontoGravado', 0));
+
         // TipoIngresos: required for 31, 32, 44, 45, 46; optional for 33, 34; NOT for 41, 43, 47
         $tipoIngresosRequired = [31, 32, 44, 45, 46];
         $tipoIngresosOptional = [33, 34];

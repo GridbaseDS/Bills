@@ -135,7 +135,7 @@ foreach ($tests as $idx => $test) {
             if (isset($acceptedNcfs[$refIdx])) {
                 $invoiceData['modified_ncf'] = $acceptedNcfs[$refIdx];
             } else {
-                $invoiceData['modified_ncf'] = 'E310000000800'; // fallback to current series
+                $invoiceData['modified_ncf'] = 'E310000001000'; // fallback to current series
             }
             $invoiceData['modification_code'] = $test['mod_code'] ?? 1;
         }

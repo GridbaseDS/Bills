@@ -78,24 +78,56 @@ class EcfManagerService
             $isFcLessThan250k = $invoice->ecf_type == 32 && $invoice->total < 250000;
 
             if ($isFcLessThan250k) {
-                // FC<250k: Save signed file for manual portal upload, DO NOT send via API
+                // FC<250k: Generate RFCE summary, sign it, send to fc.dgii.gov.do
+                // Then save the original e-CF for portal upload
                 $rncEmisor = preg_replace('/[^0-9]/', '', $settings['company_tax_id'] ?? '');
+                
+                // Step A: Build RFCE summary XML
+                Log::info("[EcfManagerService] FC<250k detected. Generating RFCE for eNCF: {$invoice->encf}");
+                $rfceXml = $this->builderService->buildRfceXml($invoice, $settings);
+
+                // Step B: Sign the RFCE
+                $signedRfce = $this->signatureService->signXml($rfceXml, $p12Path, $p12Password);
+                Storage::put("signed_rfce/{$invoice->encf}.xml", $signedRfce);
+
+                // Step C: Authenticate and send RFCE to fc.dgii.gov.do
+                $token = $this->authService->getValidToken($settings);
+                $env = $settings['dgii_env'] ?? 'testing';
+                $rfceResult = $this->apiService->submitInvoice($signedRfce, $token, $env, true);
+
+                Log::info("[EcfManagerService] RFCE result: " . json_encode($rfceResult));
+
+                if (!$rfceResult['success']) {
+                    // RFCE rejected - mark invoice accordingly
+                    $invoice->update([
+                        'dgii_status' => 'rejected',
+                        'dgii_error_messages' => 'RFCE rechazado: ' . ($rfceResult['errors'] ?? 'Error desconocido'),
+                    ]);
+                    return [
+                        'success' => false,
+                        'status' => 'rejected',
+                        'track_id' => null,
+                        'error' => 'RFCE rechazado: ' . $rfceResult['errors'],
+                    ];
+                }
+
+                // Step D: RFCE accepted. Save original signed e-CF for portal upload
                 $uploadDir = "fc_250k_upload";
                 $uploadName = "{$rncEmisor}{$invoice->encf}.xml";
                 Storage::put("{$uploadDir}/{$uploadName}", $signedXml);
 
                 $invoice->update([
                     'dgii_status' => 'portal_pending',
-                    'dgii_track_id' => null,
-                    'dgii_error_messages' => 'FC<250k: Requiere subida manual al portal DGII.'
+                    'dgii_track_id' => $rfceResult['track_id'],
+                    'dgii_error_messages' => 'RFCE aceptado. FC<250k lista para subir al portal DGII.',
                 ]);
 
-                Log::info("[EcfManagerService] FC<250k guardada para portal: {$uploadName}");
+                Log::info("[EcfManagerService] RFCE aceptado. FC guardada para portal: {$uploadName}");
 
                 return [
                     'success' => true,
                     'status' => 'portal_pending',
-                    'track_id' => null,
+                    'track_id' => $rfceResult['track_id'],
                     'error' => null
                 ];
             }

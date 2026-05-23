@@ -41,17 +41,16 @@ class XmlBuilderService
         $rncComprador = preg_replace('/[^0-9]/', '', $client->tax_id ?? '');
         $razonSocialComprador = trim($client->company_name ?: $client->contact_name);
 
-        if ($invoice->ecf_type == 31 && empty($rncComprador)) {
-            throw new Exception("El RNC del Comprador es estrictamente obligatorio para Facturas de Crédito Fiscal Electrónicas (Tipo 31).");
+        // Types that require buyer RNC: 31, 33, 34, 41, 44, 45, 46
+        $buyerRncRequired = [31, 33, 34, 41, 44, 45, 46];
+        if (in_array((int)$invoice->ecf_type, $buyerRncRequired) && empty($rncComprador)) {
+            throw new Exception("El RNC del Comprador es obligatorio para e-CF tipo {$invoice->ecf_type}.");
         }
 
-        // For B2C (Type 32 - Consumo), comprador RNC can be empty.
-        // If empty and amount > 250,000, DGII requires RNC/Cédula, but we assume validation occurs at creation.
-
         // 3. Document identification
-        $tipoECF = $invoice->ecf_type; // 31 or 32
+        $tipoECF = (int)$invoice->ecf_type;
         $eNCF = $invoice->encf;
-        $fechaVencimientoSecuencia = $settings['dgii_ncf_expiry_date'] ?? '2027-12-31'; // standard fallback
+        $fechaVencimientoSecuencia = $settings['dgii_ncf_expiry_date'] ?? '2027-12-31';
         
         // TerminoPago: Contado (1), Crédito (2)
         $isCredito = $invoice->due_date && $invoice->due_date > $invoice->issue_date;
@@ -97,11 +96,33 @@ class XmlBuilderService
 
         $idDoc->appendChild($dom->createElement('TipoeCF', $tipoECF));
         $idDoc->appendChild($dom->createElement('eNCF', $eNCF));
-        $idDoc->appendChild($dom->createElement('FechaVencimientoSecuencia', $fechaVencimientoSecuencia));
-        $idDoc->appendChild($dom->createElement('TipoIngresos', '01')); // 01 = Ingresos por operaciones (No financieros)
-        $idDoc->appendChild($dom->createElement('TipoPago', $tipoPago));
 
-        if ($tipoPago === 2) {
+        // FechaVencimientoSecuencia: required for most types except 33, 34
+        if (!in_array($tipoECF, [33, 34])) {
+            $idDoc->appendChild($dom->createElement('FechaVencimientoSecuencia', $fechaVencimientoSecuencia));
+        }
+
+        // IndicadorNotaCredito: required for type 34
+        if ($tipoECF === 34) {
+            $idDoc->appendChild($dom->createElement('IndicadorNotaCredito', $invoice->nota_credito_indicator ?? 1));
+        }
+
+        // TipoIngresos: required for 31, 32, 44, 45, 46; optional for 33, 34; NOT for 41, 43, 47
+        $tipoIngresosRequired = [31, 32, 44, 45, 46];
+        $tipoIngresosOptional = [33, 34];
+        if (in_array($tipoECF, $tipoIngresosRequired)) {
+            $idDoc->appendChild($dom->createElement('TipoIngresos', $invoice->tipo_ingresos ?? '01'));
+        } elseif (in_array($tipoECF, $tipoIngresosOptional) && !empty($invoice->tipo_ingresos)) {
+            $idDoc->appendChild($dom->createElement('TipoIngresos', $invoice->tipo_ingresos));
+        }
+
+        // TipoPago: required for 31, 32, 33, 44, 45, 46; optional for 34, 41, 43, 47
+        $tipoPagoRequired = [31, 32, 33, 44, 45, 46];
+        if (in_array($tipoECF, $tipoPagoRequired) || $tipoPago) {
+            $idDoc->appendChild($dom->createElement('TipoPago', $tipoPago ?: 1));
+        }
+
+        if ($tipoPago === 2 && $invoice->due_date) {
             $idDoc->appendChild($dom->createElement('FechaLimitePago', $invoice->due_date->format('Y-m-d')));
         }
 
@@ -210,10 +231,9 @@ class XmlBuilderService
             $infoReferencia = $dom->createElement('InformacionReferencia');
             $root->appendChild($infoReferencia);
             
-            // For testing or actual DB relation. If not set, use a dummy one for DGII tests
             $ncfModificado = $invoice->modified_ncf ?? 'E310000000000';
             $infoReferencia->appendChild($dom->createElement('NCFModificado', $ncfModificado));
-            $infoReferencia->appendChild($dom->createElement('FechaNCFModificado', $invoice->issue_date->format('Y-m-d'))); // Should be original invoice date, but fallback
+            $infoReferencia->appendChild($dom->createElement('FechaNCFModificado', $invoice->issue_date->format('Y-m-d')));
             
             // CodigoModificacion: 1 = Anula, 2 = Corrige Texto, 3 = Corrige Montos
             $infoReferencia->appendChild($dom->createElement('CodigoModificacion', $invoice->modification_code ?? 1));
@@ -226,6 +246,110 @@ class XmlBuilderService
         // FechaHoraFirma (format: YYYY-MM-DDTHH:MM:SS)
         $fechaHoraFirma = $dom->createElement('FechaHoraFirma', date('Y-m-d\TH:i:s'));
         $root->appendChild($fechaHoraFirma);
+
+        return $dom->saveXML();
+    }
+
+    /**
+     * Builds the RFCE (Resumen Factura de Consumo Electronica) XML
+     * for FC<250k invoices, per RFCE 32 v.1.0.xsd.
+     * This summary must be sent to fc.dgii.gov.do before uploading the FC to the portal.
+     *
+     * @param Invoice $invoice The FC<250k invoice (already signed, with security_code)
+     * @param array $settings System settings
+     * @return string RFCE XML content
+     */
+    public function buildRfceXml(Invoice $invoice, array $settings): string
+    {
+        $invoice->load(['client', 'items']);
+
+        $rncEmisor = preg_replace('/[^0-9]/', '', $settings['company_tax_id'] ?? '');
+        $razonSocialEmisor = trim($settings['company_name'] ?? 'GridBase');
+        $client = $invoice->client;
+        $rncComprador = preg_replace('/[^0-9]/', '', $client->tax_id ?? '');
+        $razonSocialComprador = trim($client->company_name ?: $client->contact_name);
+
+        $isCredito = $invoice->due_date && $invoice->due_date > $invoice->issue_date;
+        $tipoPago = $isCredito ? 2 : 1;
+
+        $subtotal = (float)$invoice->subtotal;
+        $discountTotal = (float)($invoice->discount_amount ?? 0);
+        $totalITBIS = (float)($invoice->tax_amount ?? 0);
+        $montoTotal = (float)$invoice->total;
+        $montoGravadoTotal = $invoice->tax_rate > 0 ? ($subtotal - $discountTotal) : 0;
+        $montoExento = $invoice->tax_rate > 0 ? 0 : ($subtotal - $discountTotal);
+
+        // RFCE uses dd-mm-yyyy date format per XSD
+        $fechaEmision = $invoice->issue_date->format('d-m-Y');
+
+        $dom = new DOMDocument('1.0', 'utf-8');
+        $dom->preserveWhiteSpace = true;
+        $dom->formatOutput = false;
+
+        // Root: <RFCE> — no namespace per XSD
+        $root = $dom->createElement('RFCE');
+        $dom->appendChild($root);
+
+        $encabezado = $dom->createElement('Encabezado');
+        $root->appendChild($encabezado);
+
+        $encabezado->appendChild($dom->createElement('Version', '1.0'));
+
+        // IdDoc
+        $idDoc = $dom->createElement('IdDoc');
+        $encabezado->appendChild($idDoc);
+        $idDoc->appendChild($dom->createElement('TipoeCF', '32'));
+        $idDoc->appendChild($dom->createElement('eNCF', $invoice->encf));
+        $idDoc->appendChild($dom->createElement('TipoIngresos', $invoice->tipo_ingresos ?? '01'));
+        $idDoc->appendChild($dom->createElement('TipoPago', $tipoPago));
+
+        // Emisor
+        $emisor = $dom->createElement('Emisor');
+        $encabezado->appendChild($emisor);
+        $emisor->appendChild($dom->createElement('RNCEmisor', $rncEmisor));
+        $emisor->appendChild($dom->createElement('RazonSocialEmisor', htmlspecialchars($razonSocialEmisor, ENT_XML1)));
+        $emisor->appendChild($dom->createElement('FechaEmision', $fechaEmision));
+
+        // Comprador
+        $comprador = $dom->createElement('Comprador');
+        $encabezado->appendChild($comprador);
+        if (!empty($rncComprador)) {
+            $comprador->appendChild($dom->createElement('RNCComprador', $rncComprador));
+        }
+        if (!empty($razonSocialComprador)) {
+            $comprador->appendChild($dom->createElement('RazonSocialComprador', htmlspecialchars($razonSocialComprador, ENT_XML1)));
+        }
+
+        // Totales
+        $totales = $dom->createElement('Totales');
+        $encabezado->appendChild($totales);
+
+        if ($montoGravadoTotal > 0) {
+            $totales->appendChild($dom->createElement('MontoGravadoTotal', number_format($montoGravadoTotal, 2, '.', '')));
+            $itbisRate = (int)round($invoice->tax_rate);
+            if ($itbisRate === 18) {
+                $totales->appendChild($dom->createElement('MontoGravadoI1', number_format($montoGravadoTotal, 2, '.', '')));
+            } elseif ($itbisRate === 16) {
+                $totales->appendChild($dom->createElement('MontoGravadoI2', number_format($montoGravadoTotal, 2, '.', '')));
+            }
+        }
+        if ($montoExento > 0) {
+            $totales->appendChild($dom->createElement('MontoExento', number_format($montoExento, 2, '.', '')));
+        }
+        if ($totalITBIS > 0) {
+            $totales->appendChild($dom->createElement('TotalITBIS', number_format($totalITBIS, 2, '.', '')));
+            $itbisRate = (int)round($invoice->tax_rate);
+            if ($itbisRate === 18) {
+                $totales->appendChild($dom->createElement('TotalITBIS1', number_format($totalITBIS, 2, '.', '')));
+            } elseif ($itbisRate === 16) {
+                $totales->appendChild($dom->createElement('TotalITBIS2', number_format($totalITBIS, 2, '.', '')));
+            }
+        }
+        $totales->appendChild($dom->createElement('MontoTotal', number_format($montoTotal, 2, '.', '')));
+
+        // CodigoSeguridadeCF — first 6 chars of the signed e-CF signature
+        $securityCode = $invoice->security_code ?? '000000';
+        $encabezado->appendChild($dom->createElement('CodigoSeguridadeCF', $securityCode));
 
         return $dom->saveXML();
     }

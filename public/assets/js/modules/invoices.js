@@ -308,8 +308,16 @@ const InvoicesModule = {
                             </label>
                             <div id="ecf-type-wrapper" style="display:${invoice?.is_ecf ? 'block' : 'none'};flex:1;">
                                 <select id="i_ecf_type" class="form-control" style="max-width:320px;">
-                                    <option value="31" ${invoice?.ecf_type == 31 ? 'selected' : ''}>e-Crédito Fiscal (B2B - Tipo 31)</option>
-                                    <option value="32" ${invoice?.ecf_type == 32 || !invoice?.ecf_type ? 'selected' : ''}>e-Consumo (B2C - Tipo 32)</option>
+                                    <option value="31" ${invoice?.ecf_type == 31 ? 'selected' : ''}>Credito Fiscal (B2B - Tipo 31)</option>
+                                    <option value="32" ${invoice?.ecf_type == 32 || !invoice?.ecf_type ? 'selected' : ''}>Consumo (B2C - Tipo 32)</option>
+                                    <option value="33" ${invoice?.ecf_type == 33 ? 'selected' : ''}>Nota de Debito (Tipo 33)</option>
+                                    <option value="34" ${invoice?.ecf_type == 34 ? 'selected' : ''}>Nota de Credito (Tipo 34)</option>
+                                    <option value="41" ${invoice?.ecf_type == 41 ? 'selected' : ''}>Compras (Tipo 41)</option>
+                                    <option value="43" ${invoice?.ecf_type == 43 ? 'selected' : ''}>Gastos Menores (Tipo 43)</option>
+                                    <option value="44" ${invoice?.ecf_type == 44 ? 'selected' : ''}>Regimenes Especiales (Tipo 44)</option>
+                                    <option value="45" ${invoice?.ecf_type == 45 ? 'selected' : ''}>Gubernamental (Tipo 45)</option>
+                                    <option value="46" ${invoice?.ecf_type == 46 ? 'selected' : ''}>Exportaciones (Tipo 46)</option>
+                                    <option value="47" ${invoice?.ecf_type == 47 ? 'selected' : ''}>Pagos al Exterior (Tipo 47)</option>
                                 </select>
                             </div>
                         </div>

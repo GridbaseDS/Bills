@@ -111,10 +111,10 @@ class XmlBuilderService
         }
 
         // IndicadorMontoGravado: 0=prices exclude ITBIS, 1=prices include ITBIS
-        // Only types with this field in XSD: 31, 32, 34, 41, 45
-        // Type 33 does NOT have IndicadorMontoGravado in its XSD
+        // Only types confirmed working: 31, 32, 34, 41
+        // Type 33 doesn't have it in XSD; Type 45 rejected by DGII business rules
         // Value 0 matches our data: item amounts don't include ITBIS
-        if (in_array($tipoECF, [31, 32, 34, 41, 45])) {
+        if (in_array($tipoECF, [31, 32, 34, 41])) {
             $idDoc->appendChild($dom->createElement('IndicadorMontoGravado', 0));
         }
 

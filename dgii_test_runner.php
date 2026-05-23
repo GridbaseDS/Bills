@@ -55,13 +55,13 @@ $tests = [
     ['type' => 41, 'amount' => 25000, 'tax' => 18, 'payment' => 1, 'desc' => 'Compras - Contado 25k'],
     ['type' => 41, 'amount' => 40000, 'tax' => 18, 'payment' => 1, 'desc' => 'Compras - Contado 40k'],
 
-    // Type 43 - Gastos Menores (2)
-    ['type' => 43, 'amount' => 5000, 'tax' => 18, 'payment' => 1, 'desc' => 'Gastos Menores - 5k'],
-    ['type' => 43, 'amount' => 3000, 'tax' => 18, 'payment' => 1, 'desc' => 'Gastos Menores - 3k'],
+    // Type 43 - Gastos Menores (2) - EXENTO (no ITBIS)
+    ['type' => 43, 'amount' => 5000, 'tax' => 0, 'payment' => 1, 'desc' => 'Gastos Menores - 5k'],
+    ['type' => 43, 'amount' => 3000, 'tax' => 0, 'payment' => 1, 'desc' => 'Gastos Menores - 3k'],
 
-    // Type 44 - Regímenes Especiales (2)
-    ['type' => 44, 'amount' => 60000, 'tax' => 18, 'payment' => 1, 'desc' => 'Reg. Especiales - Contado 60k'],
-    ['type' => 44, 'amount' => 45000, 'tax' => 18, 'payment' => 2, 'desc' => 'Reg. Especiales - Credito 45k'],
+    // Type 44 - Regímenes Especiales (2) - EXENTO
+    ['type' => 44, 'amount' => 60000, 'tax' => 0, 'payment' => 1, 'desc' => 'Reg. Especiales - Contado 60k'],
+    ['type' => 44, 'amount' => 45000, 'tax' => 0, 'payment' => 2, 'desc' => 'Reg. Especiales - Credito 45k'],
 
     // Type 45 - Gubernamental (2)
     ['type' => 45, 'amount' => 100000, 'tax' => 18, 'payment' => 1, 'desc' => 'Gubernamental - Contado 100k'],
@@ -135,7 +135,7 @@ foreach ($tests as $idx => $test) {
             if (isset($acceptedNcfs[$refIdx])) {
                 $invoiceData['modified_ncf'] = $acceptedNcfs[$refIdx];
             } else {
-                $invoiceData['modified_ncf'] = 'E310000000700'; // fallback
+                $invoiceData['modified_ncf'] = 'E310000000800'; // fallback to current series
             }
             $invoiceData['modification_code'] = $test['mod_code'] ?? 1;
         }

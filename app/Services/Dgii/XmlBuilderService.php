@@ -105,8 +105,9 @@ class XmlBuilderService
         }
 
         // IndicadorNotaCredito: ONLY for type 34 (after eNCF, no FVS)
+        // 0 = fecha emision <= 30 dias, 1 = fecha emision > 30 dias
         if ($tipoECF === 34) {
-            $idDoc->appendChild($dom->createElement('IndicadorNotaCredito', $invoice->nota_credito_indicator ?? 1));
+            $idDoc->appendChild($dom->createElement('IndicadorNotaCredito', $invoice->nota_credito_indicator ?? 0));
         }
 
         // IndicadorMontoGravado: ONLY types 31, 32, 33, 34, 45 (per XSD analysis)
@@ -194,8 +195,8 @@ class XmlBuilderService
             $totales->appendChild($dom->createElement('MontoExento', number_format($subtotal - $discountTotal, 2, '.', '')));
             $totales->appendChild($dom->createElement('MontoTotal', number_format($subtotal - $discountTotal, 2, '.', '')));
         } elseif ($tipoECF === 46) {
-            // Exportaciones: MontoGravadoTotal > MontoTotal
-            $totales->appendChild($dom->createElement('MontoGravadoTotal', number_format($subtotal - $discountTotal, 2, '.', '')));
+            // Exportaciones: XSD has MontoGravadoTotal > MontoGravadoI3 > ITBIS3 > MontoTotal
+            // For 0% tax exports, just MontoTotal is required (others are optional minOccurs=0)
             $totales->appendChild($dom->createElement('MontoTotal', number_format($montoTotal, 2, '.', '')));
         } else {
             // Types 31, 32, 33, 34, 41, 45: full ITBIS breakdown
@@ -246,15 +247,32 @@ class XmlBuilderService
 
             $itemNode->appendChild($dom->createElement('NumeroLinea', $lineNum));
             
-            // IndicadorFacturacion: 1=ITBIS 18%, 2=ITBIS 16%, 3=Exento, 4=Exento
-            // For types 43, 44, 47: always exento (3)
-            if (in_array($tipoECF, [43, 44, 47])) {
-                $indicadorFact = 3;
+            // IndicadorFacturacion: 0=No Facturable, 1=ITBIS 18%, 2=ITBIS 16%, 3=ITBIS 0%, 4=Exento
+            // Types 43, 44: DGII only allows exento (4)
+            // Type 47: exento (4)
+            // Type 46: exento (4) for 0% exports
+            if (in_array($tipoECF, [43, 44, 46, 47])) {
+                $indicadorFact = 4;
             } else {
-                $indicadorFact = $invoice->tax_rate > 0 ? 1 : 3;
+                $indicadorFact = $invoice->tax_rate > 0 ? 1 : 4;
             }
             $itemNode->appendChild($dom->createElement('IndicadorFacturacion', $indicadorFact));
             
+            // Retencion block: REQUIRED for types 41 and 47 (minOccurs=1)
+            if (in_array($tipoECF, [41, 47])) {
+                $retencion = $dom->createElement('Retencion');
+                $itemNode->appendChild($retencion);
+                // IndicadorAgenteRetencionoPercepcion: 1=Agente Retención, 2=Agente Percepción, 3=Ambos, 4=Ninguno
+                $retencion->appendChild($dom->createElement('IndicadorAgenteRetencionoPercepcion', 4));
+                if ($tipoECF === 41) {
+                    $retencion->appendChild($dom->createElement('MontoITBISRetenido', '0.00'));
+                    $retencion->appendChild($dom->createElement('MontoISRRetenido', '0.00'));
+                }
+                if ($tipoECF === 47) {
+                    $retencion->appendChild($dom->createElement('MontoISRRetenido', '0.00'));
+                }
+            }
+
             $itemNode->appendChild($dom->createElement('NombreItem', htmlspecialchars(substr($item->description, 0, 80), ENT_XML1)));
             
             // IndicadorBienoServicio: 1=Bien, 2=Servicio

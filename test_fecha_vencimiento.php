@@ -98,13 +98,14 @@ echo "Signed XML length: " . strlen($signedXml) . " bytes\n";
 
 // Submit to DGII
 $dgiiUrl = 'https://ecf.dgii.gov.do/CerteCF/api/ServicioRecepcionECF';
-$token = null;
 
-// Get auth token
+// Get auth token using settings array like production code
+$allSettings = Setting::pluck('setting_value', 'setting_key')->toArray();
 $authService = app(\App\Services\Dgii\DgiiAuthService::class);
-$token = $authService->getToken();
-if (!$token) {
-    echo "ERROR: Failed to get auth token\n";
+try {
+    $token = $authService->getValidToken($allSettings);
+} catch (\Exception $e) {
+    echo "ERROR: Failed to get auth token: " . $e->getMessage() . "\n";
     exit(1);
 }
 echo "Auth token obtained: " . substr($token, 0, 20) . "...\n";

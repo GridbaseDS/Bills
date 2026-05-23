@@ -117,13 +117,11 @@ class XmlBuilderService
             $idDoc->appendChild($dom->createElement('IndicadorMontoGravado', 0));
         }
 
-        // TipoIngresos: types 31,32,44,45,46 (required), 33,34 (optional). NOT in 41,43,47
-        $tipoIngresosRequired = [31, 32, 44, 45, 46];
-        $tipoIngresosOptional = [33, 34];
-        if (in_array($tipoECF, $tipoIngresosRequired)) {
+        // TipoIngresos: types 31,32,44,45,46 (required), 33,34 (optional but DGII needs it)
+        // NOT in 41,43,47
+        $tipoIngresosTypes = [31, 32, 33, 34, 44, 45, 46];
+        if (in_array($tipoECF, $tipoIngresosTypes)) {
             $idDoc->appendChild($dom->createElement('TipoIngresos', $invoice->tipo_ingresos ?? '01'));
-        } elseif (in_array($tipoECF, $tipoIngresosOptional) && !empty($invoice->tipo_ingresos)) {
-            $idDoc->appendChild($dom->createElement('TipoIngresos', $invoice->tipo_ingresos));
         }
 
         // TipoPago: all types have it

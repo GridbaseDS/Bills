@@ -88,36 +88,33 @@ class XmlBuilderService
         $version = $dom->createElement('Version', '1.0');
         $encabezado->appendChild($version);
 
-        // IdDoc (Document Identification)
+        // IdDoc (Document Identification) - structure varies per type
         $idDoc = $dom->createElement('IdDoc');
         $encabezado->appendChild($idDoc);
 
         $idDoc->appendChild($dom->createElement('TipoeCF', $tipoECF));
         $idDoc->appendChild($dom->createElement('eNCF', $eNCF));
 
-        // FechaVencimientoSecuencia: per documentation obligatoriedad table:
-        // Required (1): types 31, 33, 41, 43, 44, 45, 46, 47
-        // NOT included (0): types 32, 34
-        // Format: DD-MM-YYYY per XSD FechaValidationType
+        // FechaVencimientoSecuencia: NOT in types 32, 34
         if (!in_array($tipoECF, [32, 34])) {
             $fvs = $fechaVencimientoSecuencia;
-            // Convert YYYY-MM-DD to DD-MM-YYYY if needed
             if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $fvs)) {
                 $fvs = date('d-m-Y', strtotime($fvs));
             }
             $idDoc->appendChild($dom->createElement('FechaVencimientoSecuencia', $fvs));
         }
 
-        // IndicadorNotaCredito: required for type 34
+        // IndicadorNotaCredito: ONLY for type 34 (after eNCF, no FVS)
         if ($tipoECF === 34) {
             $idDoc->appendChild($dom->createElement('IndicadorNotaCredito', $invoice->nota_credito_indicator ?? 1));
         }
 
-        // IndicadorMontoGravado: 0 = prices don't include ITBIS, 1 = prices include ITBIS
-        // Per XSD: optional, but DGII requires it. Our prices are always without ITBIS.
-        $idDoc->appendChild($dom->createElement('IndicadorMontoGravado', 0));
+        // IndicadorMontoGravado: ONLY types 31, 32, 33, 34, 45 (per XSD analysis)
+        if (in_array($tipoECF, [31, 32, 33, 34, 45])) {
+            $idDoc->appendChild($dom->createElement('IndicadorMontoGravado', 0));
+        }
 
-        // TipoIngresos: required for 31, 32, 44, 45, 46; optional for 33, 34; NOT for 41, 43, 47
+        // TipoIngresos: types 31,32,44,45,46 (required), 33,34 (optional). NOT in 41,43,47
         $tipoIngresosRequired = [31, 32, 44, 45, 46];
         $tipoIngresosOptional = [33, 34];
         if (in_array($tipoECF, $tipoIngresosRequired)) {
@@ -126,17 +123,15 @@ class XmlBuilderService
             $idDoc->appendChild($dom->createElement('TipoIngresos', $invoice->tipo_ingresos));
         }
 
-        // TipoPago: required for 31, 32, 33, 44, 45, 46; optional for 34, 41, 43, 47
-        $tipoPagoRequired = [31, 32, 33, 44, 45, 46];
-        if (in_array($tipoECF, $tipoPagoRequired) || $tipoPago) {
-            $idDoc->appendChild($dom->createElement('TipoPago', $tipoPago ?: 1));
-        }
+        // TipoPago: all types have it
+        $idDoc->appendChild($dom->createElement('TipoPago', $tipoPago ?: 1));
 
+        // FechaLimitePago: when credit
         if ($tipoPago === 2 && $invoice->due_date) {
             $idDoc->appendChild($dom->createElement('FechaLimitePago', $invoice->due_date->format('d-m-Y')));
         }
 
-        // Emisor (Seller)
+        // Emisor (Seller) - same for all types
         $emisor = $dom->createElement('Emisor');
         $encabezado->appendChild($emisor);
 
@@ -155,65 +150,90 @@ class XmlBuilderService
 
         $emisor->appendChild($dom->createElement('FechaEmision', $invoice->issue_date->format('d-m-Y')));
 
-        // Comprador (Client)
-        $comprador = $dom->createElement('Comprador');
-        $encabezado->appendChild($comprador);
+        // Comprador (Client) - NOT present for type 43 (Gastos Menores)
+        if ($tipoECF !== 43) {
+            $comprador = $dom->createElement('Comprador');
+            $encabezado->appendChild($comprador);
 
-        if (!empty($rncComprador)) {
-            $comprador->appendChild($dom->createElement('RNCComprador', $rncComprador));
+            if ($tipoECF === 47) {
+                // Type 47: uses IdentificadorExtranjero, NOT RNCComprador
+                $comprador->appendChild($dom->createElement('IdentificadorExtranjero', $rncComprador ?: '00000000000'));
+            } else {
+                if (!empty($rncComprador)) {
+                    $comprador->appendChild($dom->createElement('RNCComprador', $rncComprador));
+                }
+            }
+            $comprador->appendChild($dom->createElement('RazonSocialComprador', htmlspecialchars($razonSocialComprador, ENT_XML1)));
+
+            if ($client->email && !in_array($tipoECF, [47])) {
+                $comprador->appendChild($dom->createElement('CorreoComprador', htmlspecialchars(substr($client->email, 0, 80), ENT_XML1)));
+            }
+
+            $direccionCliente = trim(($client->address_line1 ?? '') . ' ' . ($client->address_line2 ?? '') . ' ' . ($client->city ?? ''));
+            if (!empty($direccionCliente) && !in_array($tipoECF, [47])) {
+                $comprador->appendChild($dom->createElement('DireccionComprador', htmlspecialchars(substr($direccionCliente, 0, 100), ENT_XML1)));
+            }
         }
-        $comprador->appendChild($dom->createElement('RazonSocialComprador', htmlspecialchars($razonSocialComprador, ENT_XML1)));
 
-        if ($client->email) {
-            $comprador->appendChild($dom->createElement('CorreoComprador', htmlspecialchars(substr($client->email, 0, 80), ENT_XML1)));
-        }
-
-        $direccionCliente = trim(($client->address_line1 ?? '') . ' ' . ($client->address_line2 ?? '') . ' ' . ($client->city ?? ''));
-        if (!empty($direccionCliente)) {
-            $comprador->appendChild($dom->createElement('DireccionComprador', htmlspecialchars(substr($direccionCliente, 0, 100), ENT_XML1)));
-        }
-
-        // Totales
+        // Totales - structure varies significantly per type
         $totales = $dom->createElement('Totales');
         $encabezado->appendChild($totales);
 
-        if ($montoGravadoTotal > 0) {
-            $totales->appendChild($dom->createElement('MontoGravadoTotal', number_format($montoGravadoTotal, 2, '.', '')));
-            
-            $itbisRate = (int)round($invoice->tax_rate);
-            if ($itbisRate === 18) {
-                $totales->appendChild($dom->createElement('MontoGravadoI1', number_format($montoGravadoTotal, 2, '.', '')));
-            } else if ($itbisRate === 16) {
-                $totales->appendChild($dom->createElement('MontoGravadoI2', number_format($montoGravadoTotal, 2, '.', '')));
+        // Types with full ITBIS breakdown: 31, 32, 33, 34, 45
+        // Types with only MontoExento: 43, 47
+        // Types with MontoExento + ImpuestosAdicionales: 44
+        // Type 46: MontoGravadoTotal (different set)
+        // Type 41: full ITBIS + retenciones
+
+        if (in_array($tipoECF, [43, 47])) {
+            // Simple: MontoExento > MontoTotal
+            $totales->appendChild($dom->createElement('MontoExento', number_format($subtotal - $discountTotal, 2, '.', '')));
+            $totales->appendChild($dom->createElement('MontoTotal', number_format($montoTotal, 2, '.', '')));
+        } elseif ($tipoECF === 44) {
+            // Regímenes Especiales: MontoExento > MontoTotal (no ITBIS)
+            $totales->appendChild($dom->createElement('MontoExento', number_format($subtotal - $discountTotal, 2, '.', '')));
+            $totales->appendChild($dom->createElement('MontoTotal', number_format($subtotal - $discountTotal, 2, '.', '')));
+        } elseif ($tipoECF === 46) {
+            // Exportaciones: MontoGravadoTotal > MontoTotal
+            $totales->appendChild($dom->createElement('MontoGravadoTotal', number_format($subtotal - $discountTotal, 2, '.', '')));
+            $totales->appendChild($dom->createElement('MontoTotal', number_format($montoTotal, 2, '.', '')));
+        } else {
+            // Types 31, 32, 33, 34, 41, 45: full ITBIS breakdown
+            if ($montoGravadoTotal > 0) {
+                $totales->appendChild($dom->createElement('MontoGravadoTotal', number_format($montoGravadoTotal, 2, '.', '')));
+                $itbisRate = (int)round($invoice->tax_rate);
+                if ($itbisRate === 18) {
+                    $totales->appendChild($dom->createElement('MontoGravadoI1', number_format($montoGravadoTotal, 2, '.', '')));
+                } elseif ($itbisRate === 16) {
+                    $totales->appendChild($dom->createElement('MontoGravadoI2', number_format($montoGravadoTotal, 2, '.', '')));
+                }
             }
-        }
 
-        if ($montoExento > 0) {
-            $totales->appendChild($dom->createElement('MontoExento', number_format($montoExento, 2, '.', '')));
-        }
-
-        // ITBIS rates (must come after MontoExento, before TotalITBIS)
-        if ($montoGravadoTotal > 0) {
-            $itbisRate = (int)round($invoice->tax_rate);
-            if ($itbisRate === 18) {
-                $totales->appendChild($dom->createElement('ITBIS1', '18'));
-            } else if ($itbisRate === 16) {
-                $totales->appendChild($dom->createElement('ITBIS2', '16'));
+            if ($montoExento > 0) {
+                $totales->appendChild($dom->createElement('MontoExento', number_format($montoExento, 2, '.', '')));
             }
-        }
 
-        // TotalITBIS (general), then TotalITBIS1/2/3 (per rate)
-        if ($totalITBIS > 0) {
-            $totales->appendChild($dom->createElement('TotalITBIS', number_format($totalITBIS, 2, '.', '')));
-            $itbisRate = (int)round($invoice->tax_rate);
-            if ($itbisRate === 18) {
-                $totales->appendChild($dom->createElement('TotalITBIS1', number_format($totalITBIS, 2, '.', '')));
-            } else if ($itbisRate === 16) {
-                $totales->appendChild($dom->createElement('TotalITBIS2', number_format($totalITBIS, 2, '.', '')));
+            if ($montoGravadoTotal > 0) {
+                $itbisRate = (int)round($invoice->tax_rate);
+                if ($itbisRate === 18) {
+                    $totales->appendChild($dom->createElement('ITBIS1', '18'));
+                } elseif ($itbisRate === 16) {
+                    $totales->appendChild($dom->createElement('ITBIS2', '16'));
+                }
             }
-        }
 
-        $totales->appendChild($dom->createElement('MontoTotal', number_format($montoTotal, 2, '.', '')));
+            if ($totalITBIS > 0) {
+                $totales->appendChild($dom->createElement('TotalITBIS', number_format($totalITBIS, 2, '.', '')));
+                $itbisRate = (int)round($invoice->tax_rate);
+                if ($itbisRate === 18) {
+                    $totales->appendChild($dom->createElement('TotalITBIS1', number_format($totalITBIS, 2, '.', '')));
+                } elseif ($itbisRate === 16) {
+                    $totales->appendChild($dom->createElement('TotalITBIS2', number_format($totalITBIS, 2, '.', '')));
+                }
+            }
+
+            $totales->appendChild($dom->createElement('MontoTotal', number_format($montoTotal, 2, '.', '')));
+        }
 
         // --- DETALLES ITEMS ---
         $detallesItems = $dom->createElement('DetallesItems');
@@ -226,23 +246,23 @@ class XmlBuilderService
 
             $itemNode->appendChild($dom->createElement('NumeroLinea', $lineNum));
             
-            // IndicadorFacturacion: 1 = ITBIS 18%, 2 = ITBIS 16%, 3 = ITBIS 0%, 4 = Exento
-            $indicadorFact = $invoice->tax_rate > 0 ? 1 : 4;
+            // IndicadorFacturacion: 1=ITBIS 18%, 2=ITBIS 16%, 3=Exento, 4=Exento
+            // For types 43, 44, 47: always exento (3)
+            if (in_array($tipoECF, [43, 44, 47])) {
+                $indicadorFact = 3;
+            } else {
+                $indicadorFact = $invoice->tax_rate > 0 ? 1 : 3;
+            }
             $itemNode->appendChild($dom->createElement('IndicadorFacturacion', $indicadorFact));
             
             $itemNode->appendChild($dom->createElement('NombreItem', htmlspecialchars(substr($item->description, 0, 80), ENT_XML1)));
             
-            // IndicadorBienoServicio: 1 = Bien, 2 = Servicio (GridBase mostly does services)
+            // IndicadorBienoServicio: 1=Bien, 2=Servicio
             $itemNode->appendChild($dom->createElement('IndicadorBienoServicio', 2));
             
             $itemNode->appendChild($dom->createElement('CantidadItem', number_format((float)$item->quantity, 2, '.', '')));
-            
-            // Defaulting UnidadMedida: 43 = Unidad, 44 = Elemento (Using 43 as standard)
             $itemNode->appendChild($dom->createElement('UnidadMedida', 43));
-            
             $itemNode->appendChild($dom->createElement('PrecioUnitarioItem', number_format((float)$item->unit_price, 4, '.', '')));
-            
-            // If invoice has global discount, we distribute discount or ignore if already factored
             $itemNode->appendChild($dom->createElement('MontoItem', number_format((float)$item->amount, 2, '.', '')));
 
             $lineNum++;

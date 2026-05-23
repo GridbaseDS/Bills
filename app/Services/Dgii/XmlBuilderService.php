@@ -96,8 +96,14 @@ class XmlBuilderService
         $idDoc->appendChild($dom->createElement('eNCF', $eNCF));
 
         // FechaVencimientoSecuencia: required for most types except 33, 34
+        // Format: DD-MM-YYYY per XSD FechaValidationType
         if (!in_array($tipoECF, [33, 34])) {
-            $idDoc->appendChild($dom->createElement('FechaVencimientoSecuencia', $fechaVencimientoSecuencia));
+            $fvs = $fechaVencimientoSecuencia;
+            // Convert YYYY-MM-DD to DD-MM-YYYY if needed
+            if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $fvs)) {
+                $fvs = date('d-m-Y', strtotime($fvs));
+            }
+            $idDoc->appendChild($dom->createElement('FechaVencimientoSecuencia', $fvs));
         }
 
         // IndicadorNotaCredito: required for type 34
@@ -121,7 +127,7 @@ class XmlBuilderService
         }
 
         if ($tipoPago === 2 && $invoice->due_date) {
-            $idDoc->appendChild($dom->createElement('FechaLimitePago', $invoice->due_date->format('Y-m-d')));
+            $idDoc->appendChild($dom->createElement('FechaLimitePago', $invoice->due_date->format('d-m-Y')));
         }
 
         // Emisor (Seller)
@@ -141,7 +147,7 @@ class XmlBuilderService
             $emisor->appendChild($dom->createElement('CorreoEmisor', htmlspecialchars($correoEmisor, ENT_XML1)));
         }
 
-        $emisor->appendChild($dom->createElement('FechaEmision', $invoice->issue_date->format('Y-m-d')));
+        $emisor->appendChild($dom->createElement('FechaEmision', $invoice->issue_date->format('d-m-Y')));
 
         // Comprador (Client)
         $comprador = $dom->createElement('Comprador');
@@ -243,7 +249,7 @@ class XmlBuilderService
             
             $ncfModificado = $invoice->modified_ncf ?? 'E310000000000';
             $infoReferencia->appendChild($dom->createElement('NCFModificado', $ncfModificado));
-            $infoReferencia->appendChild($dom->createElement('FechaNCFModificado', $invoice->issue_date->format('Y-m-d')));
+            $infoReferencia->appendChild($dom->createElement('FechaNCFModificado', $invoice->issue_date->format('d-m-Y')));
             
             // CodigoModificacion: 1 = Anula, 2 = Corrige Texto, 3 = Corrige Montos
             $infoReferencia->appendChild($dom->createElement('CodigoModificacion', $invoice->modification_code ?? 1));
@@ -253,8 +259,8 @@ class XmlBuilderService
             }
         }
 
-        // FechaHoraFirma (format: YYYY-MM-DDTHH:MM:SS)
-        $fechaHoraFirma = $dom->createElement('FechaHoraFirma', date('Y-m-d\TH:i:s'));
+        // FechaHoraFirma: DD-MM-YYYY HH:MM:SS per XSD DateTimeValidationType
+        $fechaHoraFirma = $dom->createElement('FechaHoraFirma', date('d-m-Y H:i:s'));
         $root->appendChild($fechaHoraFirma);
 
         return $dom->saveXML();

@@ -1,18 +1,9 @@
-import sys, io, os
+import sys, io, re
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
-base = r'D:\WEBS\GRIDBASE DIGITAL SOLUTIONS\Documentación Facturación Electónica'
-for f in os.listdir(base):
-    if f.startswith('e-CF') and f.endswith('.xsd'):
-        path = os.path.join(base, f)
-        with open(path, encoding='utf-8') as fh:
-            lines = fh.readlines()
-        print(f'\n=== {f} - IdDoc fields ===')
-        in_iddoc = False
-        for line in lines:
-            if 'name="IdDoc"' in line or (in_iddoc and '</xs:sequence>' not in line):
-                in_iddoc = True
-                stripped = line.strip()
-                if 'element' in stripped and 'name=' in stripped:
-                    print(f'  {stripped}')
-            if in_iddoc and '</xs:sequence>' in line:
-                in_iddoc = False
+path = r'D:\WEBS\GRIDBASE DIGITAL SOLUTIONS\Documentación Facturación Electónica\e-CF 31 v.1.0.xsd'
+with open(path, encoding='utf-8') as f:
+    content = f.read()
+m = re.search(r'name="FechaValidationType".*?</xs:simpleType>', content, re.DOTALL)
+if m: print("FechaValidationType:", m.group())
+m2 = re.search(r'name="DateTimeValidationType".*?</xs:simpleType>', content, re.DOTALL)
+if m2: print("DateTimeValidationType:", m2.group())

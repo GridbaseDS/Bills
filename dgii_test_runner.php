@@ -135,7 +135,13 @@ foreach ($tests as $idx => $test) {
             if (isset($acceptedNcfs[$refIdx])) {
                 $invoiceData['modified_ncf'] = $acceptedNcfs[$refIdx];
             } else {
-                $invoiceData['modified_ncf'] = 'E310000001000'; // fallback to current series
+                // Compute the NCF that was generated for the referenced test
+                // ref_test 0 = first type 31 (offset 0 from seq start)
+                $seqBase = (int) Setting::where('setting_key', 'dgii_next_e_ncf_31')->value('setting_value');
+                // The referenced test index tells us how many 31s were sent before
+                // Tests 0,1,2,3 are type 31. Their NCFs are seqBase-4, seqBase-3, seqBase-2, seqBase-1
+                $ncfNum = ($seqBase - 4) + $refIdx;
+                $invoiceData['modified_ncf'] = 'E31' . str_pad($ncfNum, 10, '0', STR_PAD_LEFT);
             }
             $invoiceData['modification_code'] = $test['mod_code'] ?? 1;
         }

@@ -110,8 +110,9 @@ class XmlBuilderService
             $idDoc->appendChild($dom->createElement('IndicadorNotaCredito', $invoice->nota_credito_indicator ?? 0));
         }
 
-        // IndicadorMontoGravado: ONLY types 31, 32, 33, 34, 45 (per XSD analysis)
-        if (in_array($tipoECF, [31, 32, 33, 34, 45])) {
+        // IndicadorMontoGravado: ONLY types 31, 32, 33, 34 (per XSD + DGII validation)
+        // Type 45 has it in XSD but DGII rejects it in practice
+        if (in_array($tipoECF, [31, 32, 33, 34])) {
             $idDoc->appendChild($dom->createElement('IndicadorMontoGravado', 0));
         }
 
@@ -186,18 +187,28 @@ class XmlBuilderService
         // Type 46: MontoGravadoTotal (different set)
         // Type 41: full ITBIS + retenciones
 
-        if (in_array($tipoECF, [43, 47])) {
+        if (in_array($tipoECF, [43])) {
             // Simple: MontoExento > MontoTotal
             $totales->appendChild($dom->createElement('MontoExento', number_format($subtotal - $discountTotal, 2, '.', '')));
             $totales->appendChild($dom->createElement('MontoTotal', number_format($montoTotal, 2, '.', '')));
+        } elseif ($tipoECF === 47) {
+            // Pagos al Exterior: MontoExento > MontoTotal > TotalISRRetencion
+            $totales->appendChild($dom->createElement('MontoExento', number_format($subtotal - $discountTotal, 2, '.', '')));
+            $totales->appendChild($dom->createElement('MontoTotal', number_format($montoTotal, 2, '.', '')));
+            $totales->appendChild($dom->createElement('TotalISRRetencion', '0.00'));
         } elseif ($tipoECF === 44) {
             // Regímenes Especiales: MontoExento > MontoTotal (no ITBIS)
             $totales->appendChild($dom->createElement('MontoExento', number_format($subtotal - $discountTotal, 2, '.', '')));
             $totales->appendChild($dom->createElement('MontoTotal', number_format($subtotal - $discountTotal, 2, '.', '')));
         } elseif ($tipoECF === 46) {
-            // Exportaciones: XSD has MontoGravadoTotal > MontoGravadoI3 > ITBIS3 > MontoTotal
-            // For 0% tax exports, just MontoTotal is required (others are optional minOccurs=0)
-            $totales->appendChild($dom->createElement('MontoTotal', number_format($montoTotal, 2, '.', '')));
+            // Exportaciones: tasa cero (IndicadorFacturacion=3) requires MontoGravadoI3
+            $netAmount = $subtotal - $discountTotal;
+            $totales->appendChild($dom->createElement('MontoGravadoTotal', number_format($netAmount, 2, '.', '')));
+            $totales->appendChild($dom->createElement('MontoGravadoI3', number_format($netAmount, 2, '.', '')));
+            $totales->appendChild($dom->createElement('ITBIS3', '0'));
+            $totales->appendChild($dom->createElement('TotalITBIS', '0.00'));
+            $totales->appendChild($dom->createElement('TotalITBIS3', '0.00'));
+            $totales->appendChild($dom->createElement('MontoTotal', number_format($netAmount, 2, '.', '')));
         } else {
             // Types 31, 32, 33, 34, 41, 45: full ITBIS breakdown
             if ($montoGravadoTotal > 0) {

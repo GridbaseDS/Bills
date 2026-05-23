@@ -45,6 +45,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/invoices/{id}/duplicate', [InvoiceController::class, 'duplicate']);
     Route::post('/invoices/{id}/process-ecf', [InvoiceController::class, 'processEcf']);
     Route::get('/invoices/{id}/ecf-status', [InvoiceController::class, 'checkEcfStatus']);
+    Route::get('/invoices/{id}/download-xml', [InvoiceController::class, 'downloadXml']);
 
     // Quotes
     Route::apiResource('quotes', QuoteController::class);

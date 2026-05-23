@@ -532,4 +532,20 @@ class InvoiceController extends Controller
             'invoice' => $invoice->fresh()
         ]);
     }
+
+    public function downloadXml($id)
+    {
+        $invoice = Invoice::findOrFail($id);
+        
+        if (!$invoice->signed_xml_path || !\Illuminate\Support\Facades\Storage::exists($invoice->signed_xml_path)) {
+            return response()->json(['success' => false, 'error' => 'No se encontro el archivo XML.'], 404);
+        }
+
+        $xml = \Illuminate\Support\Facades\Storage::get($invoice->signed_xml_path);
+        $filename = ($invoice->encf ?: $invoice->invoice_number) . '.xml';
+
+        return response($xml, 200)
+            ->header('Content-Type', 'application/xml')
+            ->header('Content-Disposition', "attachment; filename=\"{$filename}\"");
+    }
 }

@@ -307,7 +307,11 @@ const InvoicesModule = {
                                 ¿Emitir Factura Electrónica (e-CF)?
                             </label>
                             <div id="ecf-type-wrapper" style="display:${invoice?.is_ecf ? 'block' : 'none'};flex:1;">
-                                <select id="i_ecf_type" class="form-control" style="max-width:320px;">
+                                <select id="i_ecf_type" class="form-control" style="max-width:320px;" onchange="
+                                    var t = this.value;
+                                    var w = document.getElementById('ecf-ncf-mod-wrapper');
+                                    if(w) w.style.display = (t==='33'||t==='34') ? 'grid' : 'none';
+                                ">
                                     <option value="31" ${invoice?.ecf_type == 31 ? 'selected' : ''}>Credito Fiscal (B2B - Tipo 31)</option>
                                     <option value="32" ${invoice?.ecf_type == 32 || !invoice?.ecf_type ? 'selected' : ''}>Consumo (B2C - Tipo 32)</option>
                                     <option value="33" ${invoice?.ecf_type == 33 ? 'selected' : ''}>Nota de Debito (Tipo 33)</option>
@@ -318,6 +322,22 @@ const InvoicesModule = {
                                     <option value="45" ${invoice?.ecf_type == 45 ? 'selected' : ''}>Gubernamental (Tipo 45)</option>
                                     <option value="46" ${invoice?.ecf_type == 46 ? 'selected' : ''}>Exportaciones (Tipo 46)</option>
                                     <option value="47" ${invoice?.ecf_type == 47 ? 'selected' : ''}>Pagos al Exterior (Tipo 47)</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div id="ecf-ncf-mod-wrapper" class="grid-2" style="grid-column:span 2;display:${invoice?.ecf_type == 33 || invoice?.ecf_type == 34 ? 'grid' : 'none'};gap:16px;background:var(--bg-hover);padding:12px 16px;border-radius:var(--radius-md);border:1px solid var(--color-border);">
+                            <div class="form-group" style="margin:0;">
+                                <label class="form-label">e-NCF Modificado *</label>
+                                <input type="text" id="i_ncf_modificado" class="form-control" placeholder="Ej: E310000000001" value="${invoice?.ncf_modificado || ''}" maxlength="13">
+                                <small style="color:var(--color-text-muted);font-size:11px;">e-NCF del documento original a modificar</small>
+                            </div>
+                            <div class="form-group" style="margin:0;">
+                                <label class="form-label">Codigo de Modificacion *</label>
+                                <select id="i_codigo_modificacion" class="form-control">
+                                    <option value="1" ${invoice?.codigo_modificacion == 1 ? 'selected' : ''}>1 - Descuento</option>
+                                    <option value="2" ${invoice?.codigo_modificacion == 2 ? 'selected' : ''}>2 - Devolucion/Anulacion</option>
+                                    <option value="3" ${invoice?.codigo_modificacion == 3 ? 'selected' : ''}>3 - Ajuste de Precio</option>
+                                    <option value="4" ${invoice?.codigo_modificacion == 4 ? 'selected' : ''}>4 - Otros</option>
                                 </select>
                             </div>
                         </div>
@@ -427,7 +447,9 @@ const InvoicesModule = {
                 notes: document.getElementById('i_notes').value,
                 items: itemsToSave,
                 is_ecf: document.getElementById('i_is_ecf').checked ? 1 : 0,
-                ecf_type: document.getElementById('i_is_ecf').checked ? document.getElementById('i_ecf_type').value : null
+                ecf_type: document.getElementById('i_is_ecf').checked ? document.getElementById('i_ecf_type').value : null,
+                modified_ncf: document.getElementById('i_ncf_modificado')?.value || null,
+                modification_code: document.getElementById('i_codigo_modificacion')?.value || null
             };
 
             try {

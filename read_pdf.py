@@ -1,13 +1,10 @@
-import fitz, sys, io
+import sys, io, re
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
-# Check the most recent technical description doc for updated expiry date
-path = r'D:\WEBS\GRIDBASE DIGITAL SOLUTIONS\Documentación Facturación Electónica\Descripcion-tecnica-de-facturacion-electronica.pdf'
-doc = fitz.open(path)
-for page in doc:
-    text = page.get_text()
-    if '31-12-' in text and ('secuencia' in text.lower() or 'vencimiento' in text.lower()):
-        print(f'=== Page {page.number+1} ===')
-        # Find the specific line with 31-12-
-        for line in text.split('\n'):
-            if '31-12-' in line:
-                print(f'  >>> {line.strip()}')
+path = r'D:\WEBS\GRIDBASE DIGITAL SOLUTIONS\Documentación Facturación Electónica\e-CF 33 v.1.0.xsd'
+with open(path, encoding='utf-8') as f:
+    content = f.read()
+# Find all top-level children of ECF: look for elements at indentation level 8 spaces (direct children of ECF/complexType/sequence)
+lines = content.split('\n')
+for i, line in enumerate(lines):
+    if 'name="InformacionReferencia"' in line or 'name="Encabezado"' in line or 'name="DetallesItems"' in line or 'name="Paginacion"' in line or 'name="Subtotales"' in line or 'name="FechaHoraFirma"' in line or 'name="Descuentos' in line or 'name="Totales"' in line:
+        print(f'L{i+1}: {line.strip()}')

@@ -84,7 +84,10 @@ echo "XML (before signing):\n$xml\n\n";
 
 // Sign the XML
 $signatureService = app(\App\Services\Dgii\XmlSignatureService::class);
-$signedXml = $signatureService->signXml($xml);
+$p12Path = Setting::where('setting_key', 'dgii_certificate_path')->value('setting_value');
+$p12Pass = Setting::where('setting_key', 'dgii_certificate_password')->value('setting_value');
+echo "Certificate: $p12Path\n";
+$signedXml = $signatureService->signXml($xml, $p12Path, $p12Pass);
 
 if (!$signedXml) {
     echo "ERROR: Failed to sign XML\n";

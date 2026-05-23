@@ -1,0 +1,123 @@
+[
+  {
+    "Version": "1.0",
+    "RNCEmisor": "131880681",
+    "eNCF": "E310000000004",
+    "FechaEmision": "01-04-2020",
+    "MontoTotal": 18283,
+    "RNCComprador": "40214827087",
+    "Estado": 1,
+    "DetalleMotivoRechazo": null,
+    "FechaHoraAprobacionComercial": "23-05-2026 01:29:09"
+  },
+  {
+    "Version": "1.0",
+    "RNCEmisor": "131880681",
+    "eNCF": "E310000000011",
+    "FechaEmision": "01-04-2020",
+    "MontoTotal": 95597.7,
+    "RNCComprador": "40214827087",
+    "Estado": 1,
+    "DetalleMotivoRechazo": null,
+    "FechaHoraAprobacionComercial": "23-05-2026 01:29:09"
+  },
+  {
+    "Version": "1.0",
+    "RNCEmisor": "131880681",
+    "eNCF": "E310000000012",
+    "FechaEmision": "01-04-2020",
+    "MontoTotal": 45253,
+    "RNCComprador": "40214827087",
+    "Estado": 1,
+    "DetalleMotivoRechazo": null,
+    "FechaHoraAprobacionComercial": "23-05-2026 01:29:09"
+  },
+  {
+    "Version": "1.0",
+    "RNCEmisor": "131880681",
+    "eNCF": "E310000000034",
+    "FechaEmision": "01-04-2020",
+    "MontoTotal": 25000000,
+    "RNCComprador": "40214827087",
+    "Estado": 1,
+    "DetalleMotivoRechazo": null,
+    "FechaHoraAprobacionComercial": "23-05-2026 01:29:09"
+  },
+  {
+    "Version": "1.0",
+    "RNCEmisor": "131880681",
+    "eNCF": "E330000000001",
+    "FechaEmision": "02-04-2020",
+    "MontoTotal": 400000,
+    "RNCComprador": "40214827087",
+    "Estado": 1,
+    "DetalleMotivoRechazo": null,
+    "FechaHoraAprobacionComercial": "23-05-2026 01:29:09"
+  },
+  {
+    "Version": "1.0",
+    "RNCEmisor": "131880681",
+    "eNCF": "E340000000002",
+    "FechaEmision": "02-04-2020",
+    "MontoTotal": 566695,
+    "RNCComprador": "40214827087",
+    "Estado": 1,
+    "DetalleMotivoRechazo": null,
+    "FechaHoraAprobacionComercial": "23-05-2026 01:29:09"
+  },
+  {
+    "Version": "1.0",
+    "RNCEmisor": "131880681",
+    "eNCF": "E340000000018",
+    "FechaEmision": "02-12-2018",
+    "MontoTotal": 0,
+    "RNCComprador": "40214827087",
+    "Estado": 1,
+    "DetalleMotivoRechazo": null,
+    "FechaHoraAprobacionComercial": "23-05-2026 01:29:09"
+  },
+  {
+    "Version": "1.0",
+    "RNCEmisor": "131880681",
+    "eNCF": "E440000000007",
+    "FechaEmision": "01-04-2020",
+    "MontoTotal": 432000,
+    "RNCComprador": "40214827087",
+    "Estado": 1,
+    "DetalleMotivoRechazo": null,
+    "FechaHoraAprobacionComercial": "23-05-2026 01:29:09"
+  },
+  {
+    "Version": "1.0",
+    "RNCEmisor": "131880681",
+    "eNCF": "E440000000008",
+    "FechaEmision": "01-04-2020",
+    "MontoTotal": 432000,
+    "RNCComprador": "40214827087",
+    "Estado": 1,
+    "DetalleMotivoRechazo": null,
+    "FechaHoraAprobacionComercial": "23-05-2026 01:29:09"
+  },
+  {
+    "Version": "1.0",
+    "RNCEmisor": "131880681",
+    "eNCF": "E450000000009",
+    "FechaEmision": "01-04-2020",
+    "MontoTotal": 560925,
+    "RNCComprador": "40214827087",
+    "Estado": 1,
+    "DetalleMotivoRechazo": null,
+    "FechaHoraAprobacionComercial": "23-05-2026 01:29:09"
+  },
+  {
+    "Version": "1.0",
+    "RNCEmisor": "131880681",
+    "eNCF": "E450000000010",
+    "FechaEmision": "01-04-2020",
+    "MontoTotal": 936920,
+    "RNCComprador": "40214827087",
+    "Estado": 1,
+    "DetalleMotivoRechazo": null,
+    "FechaHoraAprobacionComercial": "23-05-2026 01:29:09"
+  }
+]

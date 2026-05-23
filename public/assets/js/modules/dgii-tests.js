@@ -19,7 +19,7 @@ export default {
                             </svg>
                         </div>
                         <div>
-                            <h2 style="font-size:20px;font-weight:700;color:var(--color-text-primary);margin:0;">🔍 Diagnóstico e-CF en Vivo</h2>
+                            <h2 style="font-size:20px;font-weight:700;color:var(--color-text-primary);margin:0;">Diagnóstico e-CF en Vivo</h2>
                             <p style="margin:4px 0 0 0;color:var(--color-text-secondary);font-size:13px;">Verifica que todo el flujo funcione correctamente antes de enviar facturas reales</p>
                         </div>
                     </div>
@@ -28,10 +28,10 @@ export default {
                         <input type="text" id="diag-invoice-id" placeholder="ID de factura (opcional, usa la última si vacío)" 
                             style="flex:1;min-width:200px;padding:10px 16px;border:1px solid var(--color-border);border-radius:var(--radius-md);font-size:13px;background:var(--color-bg-primary);color:var(--color-text-primary);">
                         <button id="btn-diagnose" class="btn btn-primary" style="padding:10px 24px;font-size:14px;">
-                            🩺 Ejecutar Diagnóstico
+                            Ejecutar Diagnóstico
                         </button>
                         <button id="btn-diagnose-send" class="btn btn-secondary" style="padding:10px 24px;font-size:14px;" title="Igual que diagnóstico pero ENVÍA de verdad a la DGII">
-                            📡 Diagnosticar + Enviar
+                            Diagnosticar + Enviar
                         </button>
                     </div>
 
@@ -52,7 +52,7 @@ export default {
                     <h2 style="font-size:18px;font-weight:700;color:var(--color-text-primary);margin-bottom:8px;">Set de Pruebas DGII</h2>
                     <p style="color:var(--color-text-secondary);font-size:13px;margin-bottom:20px;">Para certificación inicial. Envía las 29 facturas ficticias al ambiente CerteCF.</p>
                     <button id="btn-run-tests" class="btn btn-secondary" style="padding:10px 24px;font-size:14px;">
-                        ▶️ Ejecutar Set de Pruebas
+                        Ejecutar Set de Pruebas
                     </button>
                 </div>
             </div>
@@ -69,7 +69,7 @@ export default {
                     <h2 style="font-size:18px;font-weight:700;color:var(--color-text-primary);margin-bottom:8px;">Paso 3: Aprobaciones Comerciales (ACECF)</h2>
                     <p style="color:var(--color-text-secondary);font-size:13px;margin-bottom:20px;">Envía las 11 Aprobaciones Comerciales del set de datos DGII. Requiere el archivo JSON en el servidor.</p>
                     <button id="btn-run-aprobaciones" class="btn btn-primary" style="padding:10px 24px;font-size:14px;">
-                        📋 Enviar Aprobaciones Comerciales
+                        Enviar Aprobaciones Comerciales
                     </button>
                 </div>
             </div>
@@ -113,22 +113,17 @@ export default {
 
                 try {
                     const res = await App.api('dgii/run-aprobaciones', { method: 'POST' });
-                    let coloredOutput = res.output
-                        .replace(/✅/g, '<span style="color:#22c55e;">$&</span>')
-                        .replace(/❌/g, '<span style="color:#ef4444;">$&</span>')
-                        .replace(/✍️/g, '<span style="color:#38bdf8;">$&</span>')
-                        .replace(/📡/g, '<span style="color:#fbbf24;">$&</span>')
-                        .replace(/🎉/g, '<span style="color:#22c55e;font-size:16px;">$&</span>');
+                    let coloredOutput = res.output;
                     consoleOutput.innerHTML += `\n${coloredOutput}`;
                     consoleStatus.innerHTML = res.success
-                        ? `<span style="color:#22c55e;">✅ COMPLETADO</span>`
-                        : `<span style="color:#ef4444;">❌ HAY ERRORES</span>`;
+                        ? `<span style="color:#22c55e;">COMPLETADO</span>`
+                        : `<span style="color:#ef4444;">HAY ERRORES</span>`;
                 } catch (error) {
                     consoleOutput.innerHTML += `\n<span style="color:#ef4444;font-weight:bold;">ERROR:</span> ${error.message}`;
                     consoleStatus.innerHTML = `<span style="color:#ef4444;">ERROR</span>`;
                 } finally {
                     btnAprob.disabled = false;
-                    btnAprob.innerHTML = `📋 Enviar Aprobaciones Comerciales`;
+                    btnAprob.innerHTML = `Enviar Aprobaciones Comerciales`;
                     consoleOutput.scrollTop = consoleOutput.scrollHeight;
                 }
             });
@@ -156,7 +151,7 @@ export default {
                         : `<span style="color:#ef4444;">ERROR</span>`;
 
                     if (res.fc250k_files && res.fc250k_files.length > 0) {
-                        consoleOutput.innerHTML += `\n<span style="color:#fbbf24;font-weight:bold;">📥 Descargando ${res.fc250k_files.length} archivos FC<250k...</span>\n`;
+                        consoleOutput.innerHTML += `\n<span style="color:#fbbf24;font-weight:bold;">Descargando ${res.fc250k_files.length} archivos FC<250k...</span>\n`;
                         for (const file of res.fc250k_files) {
                             const bytes = atob(file.content);
                             const arr = new Uint8Array(bytes.length);
@@ -167,7 +162,7 @@ export default {
                             a.href = url; a.download = file.name;
                             document.body.appendChild(a); a.click(); a.remove();
                             URL.revokeObjectURL(url);
-                            consoleOutput.innerHTML += `<span style="color:#22c55e;">  ✅ ${file.name}</span>\n`;
+                            consoleOutput.innerHTML += `<span style="color:#22c55e;">  OK: ${file.name}</span>\n`;
                             await new Promise(r => setTimeout(r, 500));
                         }
                     }
@@ -176,7 +171,7 @@ export default {
                     consoleStatus.innerHTML = `<span style="color:#ef4444;">ERROR</span>`;
                 } finally {
                     btnRun.disabled = false;
-                    btnRun.innerHTML = `▶️ Ejecutar Set de Pruebas`;
+                    btnRun.innerHTML = `Ejecutar Set de Pruebas`;
                     consoleOutput.scrollTop = consoleOutput.scrollHeight;
                 }
             });
@@ -203,7 +198,7 @@ export default {
             let html = '<div style="border-radius:var(--radius-lg);overflow:hidden;border:1px solid var(--color-border);">';
             
             for (const entry of res.log) {
-                const icon = entry.status === 'ok' ? '✅' : entry.status === 'error' ? '❌' : entry.status === 'skip' ? '⏭️' : '⏳';
+                const icon = entry.status === 'ok' ? '[OK]' : entry.status === 'error' ? '[ERROR]' : entry.status === 'skip' ? '[SKIP]' : '[...]';
                 const bg = entry.status === 'error' ? 'rgba(239,68,68,0.05)' : entry.status === 'ok' ? 'rgba(34,197,94,0.03)' : 'transparent';
                 const borderColor = entry.status === 'error' ? '#ef4444' : entry.status === 'ok' ? '#22c55e' : '#94a3b8';
                 
@@ -224,16 +219,16 @@ export default {
                 <div style="margin-top:16px;padding:16px;border-radius:var(--radius-md);text-align:center;font-weight:700;font-size:15px;${
                     allOk ? 'background:#f0fdf4;color:#16a34a;border:1px solid #bbf7d0;' : 'background:#fef2f2;color:#dc2626;border:1px solid #fecaca;'
                 }">
-                    ${allOk ? '🎯 TODOS LOS PASOS COMPLETADOS — El sistema está listo para producción' : '⚠️ HAY ERRORES — Revisa los pasos marcados en rojo'}
+                    ${allOk ? 'TODOS LOS PASOS COMPLETADOS — El sistema está listo para producción' : 'HAY ERRORES — Revisa los pasos marcados en rojo'}
                 </div>
             `;
             
             resultsDiv.innerHTML = html;
         } catch (e) {
-            resultsDiv.innerHTML = `<div style="padding:16px;color:#ef4444;font-weight:600;">❌ Error: ${e.message}</div>`;
+            resultsDiv.innerHTML = `<div style="padding:16px;color:#ef4444;font-weight:600;">Error: ${e.message}</div>`;
         } finally {
             btn.disabled = false;
-            btn.innerHTML = sendForReal ? '📡 Diagnosticar + Enviar' : '🩺 Ejecutar Diagnóstico';
+            btn.innerHTML = sendForReal ? 'Diagnosticar + Enviar' : 'Ejecutar Diagnóstico';
         }
     }
 };

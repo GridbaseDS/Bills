@@ -78,7 +78,7 @@ const ReceivedInvoices = {
                 <div style="display:flex;gap:8px;margin-bottom:var(--spacing-lg);">
                     ${['all', 'pending', 'approved', 'rejected'].map(f => `
                         <button class="btn ${this.currentFilter === f ? 'btn-primary' : 'btn-secondary'}" data-tab="${f}" style="font-size:12px;padding:6px 16px;">
-                            ${f === 'all' ? 'Todas' : f === 'pending' ? '⏳ Pendientes' : f === 'approved' ? '✅ Aprobadas' : '❌ Rechazadas'}
+                            ${f === 'all' ? 'Todas' : f === 'pending' ? 'Pendientes' : f === 'approved' ? 'Aprobadas' : 'Rechazadas'}
                         </button>
                     `).join('')}
                 </div>
@@ -135,9 +135,9 @@ const ReceivedInvoices = {
 
     renderRow(inv) {
         const statusBadge = {
-            pending: '<span style="display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:var(--radius-full);font-size:11px;font-weight:600;background:#fef3c7;color:#92400e;">⏳ Pendiente</span>',
-            approved: '<span style="display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:var(--radius-full);font-size:11px;font-weight:600;background:#dcfce7;color:#166534;">✅ Aprobada</span>',
-            rejected: '<span style="display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:var(--radius-full);font-size:11px;font-weight:600;background:#fee2e2;color:#991b1b;">❌ Rechazada</span>',
+            pending: '<span style="display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:var(--radius-full);font-size:11px;font-weight:600;background:#fef3c7;color:#92400e;">Pendiente</span>',
+            approved: '<span style="display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:var(--radius-full);font-size:11px;font-weight:600;background:#dcfce7;color:#166534;">Aprobada</span>',
+            rejected: '<span style="display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:var(--radius-full);font-size:11px;font-weight:600;background:#fee2e2;color:#991b1b;">Rechazada</span>',
         };
 
         const fecha = inv.fecha_emision ? new Date(inv.fecha_emision).toLocaleDateString('es-DO') : '—';
@@ -146,13 +146,13 @@ const ReceivedInvoices = {
         const actions = inv.approval_status === 'pending' ? `
             <div style="display:flex;gap:6px;justify-content:center;">
                 <button class="btn btn-primary" style="font-size:11px;padding:4px 12px;" data-approve="${inv.id}" title="Aprobar Comercialmente">
-                    ✅ Aprobar
+                    Aprobar
                 </button>
                 <button class="btn btn-secondary" style="font-size:11px;padding:4px 12px;color:#ef4444;" data-reject="${inv.id}" data-encf="${inv.encf}" title="Rechazar Comercialmente">
-                    ❌ Rechazar
+                    Rechazar
                 </button>
             </div>
-        ` : `<span style="font-size:11px;color:var(--color-text-tertiary);">${inv.acecf_sent_to_dgii ? '📡 Enviado' : '—'}</span>`;
+        ` : `<span style="font-size:11px;color:var(--color-text-tertiary);">${inv.acecf_sent_to_dgii ? 'Enviado' : '—'}</span>`;
 
         return `
             <tr>
@@ -198,12 +198,12 @@ const ReceivedInvoices = {
                 try {
                     const res = await App.api(`received-invoices/${btn.dataset.approve}/approve`, { method: 'POST' });
                     if (res.success) {
-                        App.showToast('✅ Aprobación Comercial enviada exitosamente', 'success');
+                        App.showToast('Aprobación Comercial enviada exitosamente', 'success');
                     } else {
-                        App.showToast('❌ ' + (res.message || 'Error'), 'error');
+                        App.showToast('' + (res.message || 'Error'), 'error');
                     }
                 } catch (e) {
-                    App.showToast('❌ Error: ' + e.message, 'error');
+                    App.showToast('Error: ' + e.message, 'error');
                 }
 
                 await Promise.all([this.loadSummary(), this.loadData()]);
@@ -256,10 +256,10 @@ const ReceivedInvoices = {
                     if (res.success) {
                         App.showToast('Rechazo Comercial enviado exitosamente', 'success');
                     } else {
-                        App.showToast('❌ ' + (res.message || 'Error'), 'error');
+                        App.showToast('' + (res.message || 'Error'), 'error');
                     }
                 } catch (e) {
-                    App.showToast('❌ Error: ' + e.message, 'error');
+                    App.showToast('Error: ' + e.message, 'error');
                 }
 
                 modal.style.display = 'none';

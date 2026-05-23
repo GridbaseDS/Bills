@@ -95,9 +95,11 @@ class XmlBuilderService
         $idDoc->appendChild($dom->createElement('TipoeCF', $tipoECF));
         $idDoc->appendChild($dom->createElement('eNCF', $eNCF));
 
-        // FechaVencimientoSecuencia: required for most types except 33, 34
+        // FechaVencimientoSecuencia: per documentation obligatoriedad table:
+        // Required (1): types 31, 33, 41, 43, 44, 45, 46, 47
+        // NOT included (0): types 32, 34
         // Format: DD-MM-YYYY per XSD FechaValidationType
-        if (!in_array($tipoECF, [33, 34])) {
+        if (!in_array($tipoECF, [32, 34])) {
             $fvs = $fechaVencimientoSecuencia;
             // Convert YYYY-MM-DD to DD-MM-YYYY if needed
             if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $fvs)) {

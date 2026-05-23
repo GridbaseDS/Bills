@@ -334,10 +334,10 @@ const InvoicesModule = {
                             <div class="form-group" style="margin:0;">
                                 <label class="form-label">Codigo de Modificacion *</label>
                                 <select id="i_codigo_modificacion" class="form-control">
-                                    <option value="1" ${invoice?.codigo_modificacion == 1 ? 'selected' : ''}>1 - Descuento</option>
-                                    <option value="2" ${invoice?.codigo_modificacion == 2 ? 'selected' : ''}>2 - Devolucion/Anulacion</option>
-                                    <option value="3" ${invoice?.codigo_modificacion == 3 ? 'selected' : ''}>3 - Ajuste de Precio</option>
-                                    <option value="4" ${invoice?.codigo_modificacion == 4 ? 'selected' : ''}>4 - Otros</option>
+                                    <option value="1" ${invoice?.codigo_modificacion == 1 ? 'selected' : ''}>1 - Anula Totalmente</option>
+                                    <option value="2" ${invoice?.codigo_modificacion == 2 ? 'selected' : ''}>2 - Corrige Texto</option>
+                                    <option value="3" ${invoice?.codigo_modificacion == 3 ? 'selected' : ''}>3 - Corrige Montos</option>
+                                    <option value="4" ${invoice?.codigo_modificacion == 4 ? 'selected' : ''}>4 - Reemplaza NCF</option>
                                 </select>
                             </div>
                         </div>

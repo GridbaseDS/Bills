@@ -70,10 +70,11 @@ class RunDgiiAprobacionesCommand extends Command
         $this->info("  ✅ Certificate loaded.");
 
         // ── 4. Endpoint ──
+        // Endpoint per DGII docs: /{ambiente}/aprobacioncomercial/api/aprobacioncomercial
         $baseUrl = $env === 'production'
             ? 'https://ecf.dgii.gov.do/ecf'
             : 'https://ecf.dgii.gov.do/CerteCF';
-        $endpoint = "{$baseUrl}/AprobacionComercial/api/AprobacionComercial";
+        $endpoint = "{$baseUrl}/aprobacioncomercial/api/aprobacioncomercial";
         $this->info("  📡 Endpoint: {$endpoint}");
         $this->newLine();
 
@@ -111,9 +112,10 @@ class RunDgiiAprobacionesCommand extends Command
                 $detalleTag = "\n    <DetalleMotivoRechazo>" . htmlspecialchars($detalle) . "</DetalleMotivoRechazo>";
             }
 
+            // ACECF XML per official XSD (ACECF v.1.0.xsd) — NO namespace defined
             $acecfXml = <<<XML
 <?xml version="1.0" encoding="utf-8"?>
-<ACECF xmlns="urn:dgii.gov.do:ACECF" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+<ACECF>
   <DetalleAprobacionComercial>
     <Version>{$version}</Version>
     <RNCEmisor>{$rncEmisor}</RNCEmisor>

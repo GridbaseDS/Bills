@@ -111,8 +111,9 @@ class XmlBuilderService
         }
 
         // IndicadorMontoGravado: 0=prices exclude ITBIS, 1=prices include ITBIS
-        // ONLY type 31 confirmed working. Types 32,34,41,45 rejected by DGII.
-        if ($tipoECF === 31) {
+        // Required by DGII business rules when items are gravados (IndicadorFacturacion=1)
+        // Types per XSD: 31, 32, 41, 45 (NOT 33, 43, 44, 46, 47)
+        if (in_array($tipoECF, [31, 32, 41, 45])) {
             $idDoc->appendChild($dom->createElement('IndicadorMontoGravado', 0));
         }
 

@@ -12,6 +12,7 @@ use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\LookupController;
 use App\Http\Controllers\Api\PaymentLinkController;
 use App\Http\Controllers\Api\DgiiTestUIController;
+use App\Http\Controllers\Api\ReceivedInvoiceController;
 use App\Http\Controllers\WhatsAppWebhookController;
 
 // Public Auth
@@ -81,4 +82,11 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/dgii/run-tests', [DgiiTestUIController::class, 'runTests']);
     Route::post('/dgii/diagnose', [DgiiTestUIController::class, 'diagnose']);
     Route::post('/dgii/run-aprobaciones', [DgiiTestUIController::class, 'runAprobaciones']);
+
+    // Received Invoices (Aprobaciones Comerciales)
+    Route::get('/received-invoices', [ReceivedInvoiceController::class, 'index']);
+    Route::get('/received-invoices/summary', [ReceivedInvoiceController::class, 'summary']);
+    Route::get('/received-invoices/{id}', [ReceivedInvoiceController::class, 'show']);
+    Route::post('/received-invoices/{id}/approve', [ReceivedInvoiceController::class, 'approve']);
+    Route::post('/received-invoices/{id}/reject', [ReceivedInvoiceController::class, 'reject']);
 });

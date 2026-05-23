@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\ReceivedInvoice;
 use App\Models\Setting;
 use App\Services\Dgii\XmlSignatureService;
 use DOMDocument;
@@ -91,6 +92,48 @@ XML;
                     $encfNodes = $doc->getElementsByTagName('eNCF');
                     if ($encfNodes->length > 0) {
                         $encf = trim($encfNodes->item(0)->textContent);
+                    }
+
+                    // Extract additional fields for storage
+                    $razonSocial = '';
+                    $razonNodes = $doc->getElementsByTagName('RazonSocialEmisor');
+                    if ($razonNodes->length > 0) {
+                        $razonSocial = trim($razonNodes->item(0)->textContent);
+                    }
+
+                    $fechaEmision = date('Y-m-d');
+                    $fechaNodes = $doc->getElementsByTagName('FechaEmision');
+                    if ($fechaNodes->length > 0) {
+                        $rawFecha = trim($fechaNodes->item(0)->textContent);
+                        // Try dd-mm-yyyy format first
+                        if (preg_match('/^(\d{2})-(\d{2})-(\d{4})$/', $rawFecha, $m)) {
+                            $fechaEmision = "{$m[3]}-{$m[2]}-{$m[1]}";
+                        } else {
+                            $fechaEmision = date('Y-m-d', strtotime($rawFecha));
+                        }
+                    }
+
+                    $montoTotal = 0;
+                    $montoNodes = $doc->getElementsByTagName('MontoTotal');
+                    if ($montoNodes->length > 0) {
+                        $montoTotal = (float)trim($montoNodes->item(0)->textContent);
+                    }
+
+                    // Save to received_invoices table
+                    try {
+                        ReceivedInvoice::updateOrCreate(
+                            ['rnc_emisor' => $rncEmisor, 'encf' => $encf],
+                            [
+                                'razon_social_emisor' => $razonSocial,
+                                'ecf_type' => ReceivedInvoice::extractEcfType($encf),
+                                'fecha_emision' => $fechaEmision,
+                                'monto_total' => $montoTotal,
+                                'raw_xml' => $rawXml,
+                            ]
+                        );
+                        Log::info("DGII Webhook: Factura recibida guardada — RNC: {$rncEmisor}, eNCF: {$encf}");
+                    } catch (Exception $e) {
+                        Log::error("DGII Webhook: Error guardando factura recibida: " . $e->getMessage());
                     }
                 }
             }

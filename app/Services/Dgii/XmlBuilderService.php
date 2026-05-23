@@ -249,10 +249,12 @@ class XmlBuilderService
             
             // IndicadorFacturacion: 0=No Facturable, 1=ITBIS 18%, 2=ITBIS 16%, 3=ITBIS 0%, 4=Exento
             // Types 43, 44: DGII only allows exento (4)
+            // Type 46: DGII only allows tasa cero (3) or no facturable (0)
             // Type 47: exento (4)
-            // Type 46: exento (4) for 0% exports
-            if (in_array($tipoECF, [43, 44, 46, 47])) {
+            if (in_array($tipoECF, [43, 44, 47])) {
                 $indicadorFact = 4;
+            } elseif ($tipoECF === 46) {
+                $indicadorFact = 3; // tasa cero for exports
             } else {
                 $indicadorFact = $invoice->tax_rate > 0 ? 1 : 4;
             }
@@ -262,8 +264,8 @@ class XmlBuilderService
             if (in_array($tipoECF, [41, 47])) {
                 $retencion = $dom->createElement('Retencion');
                 $itemNode->appendChild($retencion);
-                // IndicadorAgenteRetencionoPercepcion: 1=Agente Retención, 2=Agente Percepción, 3=Ambos, 4=Ninguno
-                $retencion->appendChild($dom->createElement('IndicadorAgenteRetencionoPercepcion', 4));
+                // IndicadorAgenteRetencionoPercepcion: 1=Retención, 2=Percepción (only valid values)
+                $retencion->appendChild($dom->createElement('IndicadorAgenteRetencionoPercepcion', 1));
                 if ($tipoECF === 41) {
                     $retencion->appendChild($dom->createElement('MontoITBISRetenido', '0.00'));
                     $retencion->appendChild($dom->createElement('MontoISRRetenido', '0.00'));

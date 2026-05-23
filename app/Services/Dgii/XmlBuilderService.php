@@ -110,11 +110,12 @@ class XmlBuilderService
             $idDoc->appendChild($dom->createElement('IndicadorNotaCredito', $invoice->nota_credito_indicator ?? 0));
         }
 
-        // IndicadorMontoGravado: REQUIRED for types that support it
-        // 0 = prices DON'T include ITBIS, 1 = prices INCLUDE ITBIS
-        // DGII rejects 0 and also rejects when missing. Using value 1.
-        if (in_array($tipoECF, [31, 32, 33, 34, 41, 45])) {
-            $idDoc->appendChild($dom->createElement('IndicadorMontoGravado', 1));
+        // IndicadorMontoGravado: 0=prices exclude ITBIS, 1=prices include ITBIS
+        // Only types with this field in XSD: 31, 32, 34, 41, 45
+        // Type 33 does NOT have IndicadorMontoGravado in its XSD
+        // Value 0 matches our data: item amounts don't include ITBIS
+        if (in_array($tipoECF, [31, 32, 34, 41, 45])) {
+            $idDoc->appendChild($dom->createElement('IndicadorMontoGravado', 0));
         }
 
         // TipoIngresos: types 31,32,44,45,46 (required), 33,34 (optional). NOT in 41,43,47

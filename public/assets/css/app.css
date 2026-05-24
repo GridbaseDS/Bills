@@ -474,9 +474,15 @@ hr { border: 0; border-top: 1px solid var(--color-border); margin: var(--spacing
   border: 1px solid var(--color-border);
   border-radius: var(--radius-xl);
   box-shadow: var(--shadow-sm);
-  overflow: visible;
+  overflow: hidden;
   display: flex;
   flex-direction: column;
+}
+.form-card {
+  background-color: #FFFFFF;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-sm);
 }
 .table-toolbar {
   padding: var(--spacing-lg) var(--spacing-xl);

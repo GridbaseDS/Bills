@@ -177,7 +177,7 @@ const QuotesModule = {
                 </div>
                 <button class="btn btn-secondary" onclick="window.App.navigate('cotizaciones')">Cancelar</button>
             </div>
-            <form id="quote-form" class="table-outer">
+            <form id="quote-form" class="form-card">
                 <div style="padding:var(--spacing-xl);">
                     <div class="grid-2">
                         <div class="form-group"><label class="form-label">Cliente *</label>

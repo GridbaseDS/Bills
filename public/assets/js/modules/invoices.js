@@ -304,7 +304,7 @@ const InvoicesModule = {
                 <button class="btn btn-secondary" onclick="window.App.navigate('facturas')">Cancelar</button>
             </div>
 
-            <form id="invoice-form" class="table-outer">
+            <form id="invoice-form" class="form-card">
                 <div style="padding:var(--spacing-xl);">
                     <div class="grid-2">
                         <div class="form-group" style="grid-column:span 2;display:flex;align-items:center;gap:24px;background:var(--bg-hover);padding:12px 16px;border-radius:var(--radius-md);border:1px solid var(--color-border);">

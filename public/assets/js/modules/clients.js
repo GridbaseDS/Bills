@@ -218,7 +218,7 @@ const ClientsModule = {
                 </div>
                 <button class="btn btn-secondary" onclick="window.App.navigate('clientes')">Cancelar</button>
             </div>
-            <form id="client-form" class="table-outer">
+            <form id="client-form" class="form-card">
                 <div style="padding:var(--spacing-xl);">
                     <div class="grid-2">
                         <div class="form-group"><label class="form-label">Nombre de Empresa</label><input type="text" id="c_company_name" class="form-control" value="${client.company_name || ''}"></div>

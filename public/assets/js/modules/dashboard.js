@@ -80,7 +80,7 @@ const DashboardModule = {
                         <div class="table-outer">
                             <div class="table-toolbar">
                                 <span style="font-size:14px;font-weight:600;">Facturas Recientes</span>
-                                <a href="/invoices" class="btn btn-ghost btn-sm">Ver todas →</a>
+                                <a href="/facturas" class="btn btn-ghost btn-sm">Ver todas →</a>
                             </div>
                             <div class="table-wrapper">
                                 <table class="data-table">
@@ -90,7 +90,7 @@ const DashboardModule = {
                                     <tbody>
                                         ${recent.length > 0 ? recent.map(i => `
                                             <tr>
-                                                <td><a href="#invoices/${i.id}" class="link-id">${i.invoice_number}</a></td>
+                                                <td><a href="#facturas/${i.id}" class="link-id">${i.invoice_number}</a></td>
                                                 <td>
                                                     <div class="user-cell">
                                                         <div class="user-avatar-sm">${(i.company_name || i.contact_name || '?').charAt(0).toUpperCase()}</div>
@@ -119,7 +119,7 @@ const DashboardModule = {
                             </div>
                             <div style="padding: 0;">
                                 ${overdue.length > 0 ? overdue.map(o => `
-                                    <a href="#invoices/${o.id}" style="display:flex;align-items:center;justify-content:space-between;padding:14px var(--spacing-xl);border-bottom:1px solid var(--color-border);text-decoration:none;color:inherit;transition:background var(--transition-fast);" onmouseover="this.style.background='var(--bg-hover)'" onmouseout="this.style.background=''">
+                                    <a href="#facturas/${o.id}" style="display:flex;align-items:center;justify-content:space-between;padding:14px var(--spacing-xl);border-bottom:1px solid var(--color-border);text-decoration:none;color:inherit;transition:background var(--transition-fast);" onmouseover="this.style.background='var(--bg-hover)'" onmouseout="this.style.background=''">
                                         <div>
                                             <div style="font-weight:600;font-size:13px;color:var(--color-text-primary)">${o.invoice_number}</div>
                                             <div style="font-size:12px;color:var(--color-text-muted);margin-top:2px">${o.company_name || o.contact_name}</div>

@@ -2,8 +2,8 @@ const InvoicesModule = {
     statusLabel: (s) => ({draft:'Borrador',sent:'Pendiente de Pago',paid:'Pagada',overdue:'Vencida',partial:'Pago Parcial',cancelled:'Cancelada'}[s]||s),
 
     async render(container, id) {
-        if (id === 'new') { this.renderForm(container); return; }
-        if (id && id.startsWith('edit/')) { this.renderForm(container, id.replace('edit/', '')); return; }
+        if (id === 'new' || id === 'nueva') { this.renderForm(container); return; }
+        if (id && (id.startsWith('edit/') || id.startsWith('editar/'))) { this.renderForm(container, id.replace(/^(edit|editar)\//, '')); return; }
         if (id) { this.renderDetails(container, id); return; }
         this.renderList(container);
     },
@@ -22,7 +22,7 @@ const InvoicesModule = {
                         <h1 class="page-title">Facturas</h1>
                         <p class="page-subtitle">Administra tu facturación y pagos</p>
                     </div>
-                    <button class="btn btn-primary" onclick="window.App.navigate('invoices/new')">
+                    <button class="btn btn-primary" onclick="window.App.navigate('facturas/nueva')">
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
                         Nueva Factura
                     </button>
@@ -94,7 +94,7 @@ const InvoicesModule = {
         tbody.innerHTML = filtered.length > 0 ? filtered.map(i => `
             <tr>
                 <td>
-                    <a href="#invoices/${i.id}" class="link-id">${i.is_ecf ? (i.encf || i.invoice_number) : i.invoice_number}</a>
+                    <a href="#facturas/${i.id}" class="link-id">${i.is_ecf ? (i.encf || i.invoice_number) : i.invoice_number}</a>
                     ${i.is_ecf ? `<span class="badge" style="background:var(--color-primary);color:#FFF;margin-left:6px;font-size:8px;padding:2px 5px;">e-CF</span>` : ''}
                 </td>
                 <td>
@@ -111,7 +111,7 @@ const InvoicesModule = {
                 <td><span class="badge badge-${i.status}">${this.statusLabel(i.status)}</span></td>
                 <td>
                     <div class="row-actions">
-                        <a href="#invoices/${i.id}" class="btn-icon" style="width:28px;height:28px;" title="Ver"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg></a>
+                        <a href="#facturas/${i.id}" class="btn-icon" style="width:28px;height:28px;" title="Ver"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg></a>
                         <a href="/api/invoices/${i.id}/pdf?download=1" target="_blank" class="btn-icon" style="width:28px;height:28px;" title="PDF"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg></a>
                         <button class="btn-icon" style="width:28px;height:28px;" onclick="InvoicesModule.deleteInvoice(${i.id})" title="Eliminar"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--color-danger-icon)" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg></button>
                     </div>
@@ -128,7 +128,7 @@ const InvoicesModule = {
             const inv = await App.api(`invoices/${id}`);
             container.innerHTML = `
                 <div style="margin-bottom:12px;">
-                    <a href="#invoices" style="color:var(--color-text-muted);text-decoration:none;font-size:13px;">← Facturas</a>
+                    <a href="#facturas" style="color:var(--color-text-muted);text-decoration:none;font-size:13px;">← Facturas</a>
                     <span style="color:var(--color-text-muted);font-size:13px;"> / </span>
                     <span style="font-size:13px;">${inv.invoice_number}</span>
                 </div>
@@ -147,7 +147,7 @@ const InvoicesModule = {
                             Enviar
                         </button>
                         <button class="btn btn-secondary btn-sm" onclick="InvoicesModule.duplicateInvoice(${id})">Duplicar</button>
-                        <a href="#invoices/edit/${id}" class="btn btn-secondary btn-sm">Editar</a>
+                        <a href="#facturas/edit/${id}" class="btn btn-secondary btn-sm">Editar</a>
                         ${inv.status !== 'paid' ? `<button class="btn btn-primary btn-sm" onclick="InvoicesModule.showPaymentModal(${id}, ${(inv.total || 0) - (inv.amount_paid || 0)})">Registrar Pago</button>` : ''}
                     </div>
                 </div>
@@ -294,14 +294,14 @@ const InvoicesModule = {
 
         container.innerHTML = `
             <div style="margin-bottom:12px;">
-                <a href="#invoices" style="color:var(--color-text-muted);text-decoration:none;font-size:13px;">← Facturas</a>
+                <a href="#facturas" style="color:var(--color-text-muted);text-decoration:none;font-size:13px;">← Facturas</a>
             </div>
             <div class="page-header">
                 <div>
                     <h1 class="page-title">${editId ? 'Editar Factura' : 'Nueva Factura'}</h1>
                     <p class="page-subtitle">${editId ? `Editando ${invoice?.invoice_number}` : 'Crea una factura para un cliente'}</p>
                 </div>
-                <button class="btn btn-secondary" onclick="window.App.navigate('invoices')">Cancelar</button>
+                <button class="btn btn-secondary" onclick="window.App.navigate('facturas')">Cancelar</button>
             </div>
 
             <form id="invoice-form" class="table-outer">
@@ -463,7 +463,7 @@ const InvoicesModule = {
                     const result = await App.api('invoices', { method: 'POST', body: payload });
                     App.showToast(result.email_sent ? 'Factura creada y enviada por email' : 'Factura creada correctamente');
                 }
-                window.App.navigate('invoices');
+                window.App.navigate('facturas');
             } catch (err) {}
         });
     },
@@ -633,7 +633,7 @@ const InvoicesModule = {
         try {
             await App.api(`invoices/${id}/payment`, { method: 'POST', body: { amount, payment_method: method } });
             App.showToast('Pago registrado correctamente');
-            App.navigate(`invoices/${id}`);
+            App.navigate(`facturas/${id}`);
         } catch(e) {}
     },
 
@@ -643,7 +643,7 @@ const InvoicesModule = {
             try {
                 await App.api(`invoices/${id}/send-email`, { method: 'POST' });
                 App.showToast('Correo enviado exitosamente');
-                App.navigate(`invoices/${id}`);
+                App.navigate(`facturas/${id}`);
             } catch(e) {}
         });
     },
@@ -653,7 +653,7 @@ const InvoicesModule = {
             try {
                 await App.api(`invoices/${id}/duplicate`, { method: 'POST' });
                 App.showToast('Factura duplicada correctamente');
-                window.App.navigate('invoices');
+                window.App.navigate('facturas');
             } catch(e) {}
         });
     },
@@ -663,7 +663,7 @@ const InvoicesModule = {
             try {
                 await App.api(`invoices/${id}`, { method: 'DELETE' });
                 App.showToast('Factura eliminada');
-                window.App.navigate('invoices');
+                window.App.navigate('facturas');
             } catch(e) {}
         });
     },

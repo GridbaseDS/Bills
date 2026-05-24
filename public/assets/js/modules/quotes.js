@@ -2,8 +2,8 @@ const QuotesModule = {
     statusLabel: (s) => ({draft:'Borrador',sent:'Enviada',converted:'Convertida',expired:'Expirada',rejected:'Rechazada'}[s]||s),
 
     async render(container, id) {
-        if (id === 'new') { this.renderForm(container); return; }
-        if (id && id.startsWith('edit/')) { this.renderForm(container, id.replace('edit/', '')); return; }
+        if (id === 'new' || id === 'nueva') { this.renderForm(container); return; }
+        if (id && (id.startsWith('edit/') || id.startsWith('editar/'))) { this.renderForm(container, id.replace(/^(edit|editar)\//, '')); return; }
         if (id) { this.renderDetails(container, id); return; }
         this.renderList(container);
     },
@@ -19,7 +19,7 @@ const QuotesModule = {
                         <h1 class="page-title">Cotizaciones</h1>
                         <p class="page-subtitle">Administra presupuestos de clientes</p>
                     </div>
-                    <button class="btn btn-primary" onclick="window.App.navigate('quotes/new')">
+                    <button class="btn btn-primary" onclick="window.App.navigate('cotizaciones/nueva')">
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
                         Nueva Cotización
                     </button>
@@ -76,7 +76,7 @@ const QuotesModule = {
 
         document.getElementById('qt-tbody').innerHTML = filtered.length > 0 ? filtered.map(q => `
             <tr>
-                <td><a href="#quotes/${q.id}" class="link-id">${q.quote_number}</a></td>
+                <td><a href="#cotizaciones/${q.id}" class="link-id">${q.quote_number}</a></td>
                 <td>
                     <div class="user-cell">
                         <div class="user-avatar-sm">${(q.company_name || q.contact_name || '?').charAt(0).toUpperCase()}</div>
@@ -89,7 +89,7 @@ const QuotesModule = {
                 <td><span class="badge badge-${q.status}">${this.statusLabel(q.status)}</span></td>
                 <td>
                     <div class="row-actions">
-                        <a href="#quotes/${q.id}" class="btn-icon" style="width:28px;height:28px;" title="Ver"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg></a>
+                        <a href="#cotizaciones/${q.id}" class="btn-icon" style="width:28px;height:28px;" title="Ver"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg></a>
                         <a href="/api/quotes/${q.id}/pdf?download=1" target="_blank" class="btn-icon" style="width:28px;height:28px;" title="PDF"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg></a>
                         <button class="btn-icon" style="width:28px;height:28px;" onclick="QuotesModule.deleteQuote(${q.id})" title="Eliminar"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--color-danger-icon)" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg></button>
                     </div>
@@ -103,7 +103,7 @@ const QuotesModule = {
             const quote = await window.App.api(`quotes/${id}`);
             container.innerHTML = `
                 <div style="margin-bottom:12px;">
-                    <a href="#quotes" style="color:var(--color-text-muted);text-decoration:none;font-size:13px;">← Cotizaciones</a>
+                    <a href="#cotizaciones" style="color:var(--color-text-muted);text-decoration:none;font-size:13px;">← Cotizaciones</a>
                     <span style="color:var(--color-text-muted);font-size:13px;"> / </span>
                     <span style="font-size:13px;">${quote.quote_number}</span>
                 </div>
@@ -117,7 +117,7 @@ const QuotesModule = {
                         <a href="/api/quotes/${id}/pdf" target="_blank" class="btn btn-secondary btn-sm">Ver PDF</a>
                         <button class="btn btn-secondary btn-sm" onclick="QuotesModule.sendEmail(${id})">Enviar</button>
                         <button class="btn btn-secondary btn-sm" onclick="QuotesModule.duplicateQuote(${id})">Duplicar</button>
-                        <a href="#quotes/edit/${id}" class="btn btn-secondary btn-sm">Editar</a>
+                        <a href="#cotizaciones/edit/${id}" class="btn btn-secondary btn-sm">Editar</a>
                     </div>
                 </div>
 
@@ -169,13 +169,13 @@ const QuotesModule = {
         const nextMonth = new Date(Date.now() + 30*24*60*60*1000).toISOString().split('T')[0];
 
         container.innerHTML = `
-            <div style="margin-bottom:12px;"><a href="#quotes" style="color:var(--color-text-muted);text-decoration:none;font-size:13px;">← Cotizaciones</a></div>
+            <div style="margin-bottom:12px;"><a href="#cotizaciones" style="color:var(--color-text-muted);text-decoration:none;font-size:13px;">← Cotizaciones</a></div>
             <div class="page-header">
                 <div>
                     <h1 class="page-title">${editId ? 'Editar Cotización' : 'Nueva Cotización'}</h1>
                     <p class="page-subtitle">${editId ? `Editando ${quote?.quote_number}` : 'Crea un presupuesto para un cliente'}</p>
                 </div>
-                <button class="btn btn-secondary" onclick="window.App.navigate('quotes')">Cancelar</button>
+                <button class="btn btn-secondary" onclick="window.App.navigate('cotizaciones')">Cancelar</button>
             </div>
             <form id="quote-form" class="table-outer">
                 <div style="padding:var(--spacing-xl);">
@@ -254,7 +254,7 @@ const QuotesModule = {
             try {
                 if (editId) { await window.App.api(`quotes/${editId}`, { method: 'PUT', body: payload }); window.App.showToast('Cotización actualizada'); }
                 else { await window.App.api('quotes', { method: 'POST', body: payload }); window.App.showToast('Cotización creada'); }
-                window.App.navigate('quotes');
+                window.App.navigate('cotizaciones');
             } catch (err) {}
         });
     },
@@ -292,7 +292,7 @@ const QuotesModule = {
             try {
                 const res = await window.App.api(`quotes/${id}/convert`, { method: 'POST' });
                 window.App.showToast(res.email_sent ? 'Convertida y factura enviada' : 'Convertida en factura');
-                window.App.navigate('invoices');
+                window.App.navigate('facturas');
             } catch(e) {}
         });
     },
@@ -306,13 +306,13 @@ const QuotesModule = {
 
     async duplicateQuote(id) {
         this._showConfirm('¿Duplicar esta cotización?', async () => {
-            try { await window.App.api(`quotes/${id}/duplicate`, { method: 'POST' }); window.App.showToast('Cotización duplicada'); window.App.navigate('quotes'); } catch(e) {}
+            try { await window.App.api(`quotes/${id}/duplicate`, { method: 'POST' }); window.App.showToast('Cotizacion duplicada'); window.App.navigate('cotizaciones'); } catch(e) {}
         });
     },
 
     async deleteQuote(id) {
         this._showConfirm('¿Eliminar esta cotización?', async () => {
-            try { await window.App.api(`quotes/${id}`, { method: 'DELETE' }); window.App.showToast('Cotización eliminada'); window.App.navigate('quotes'); } catch(e) {}
+            try { await window.App.api(`quotes/${id}`, { method: 'DELETE' }); window.App.showToast('Cotizacion eliminada'); window.App.navigate('cotizaciones'); } catch(e) {}
         });
     },
 

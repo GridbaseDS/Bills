@@ -1,7 +1,7 @@
 const ClientsModule = {
     async render(container, id) {
-        if (id === 'new') { this.renderForm(container); return; }
-        if (id && id.startsWith('profile/')) { this.renderProfile(container, id.replace('profile/', '')); return; }
+        if (id === 'new' || id === 'nuevo') { this.renderForm(container); return; }
+        if (id && (id.startsWith('profile/') || id.startsWith('perfil/'))) { this.renderProfile(container, id.replace(/^(profile|perfil)\//, '')); return; }
         if (id) { this.renderForm(container, id); return; }
         this.renderList(container);
     },
@@ -17,7 +17,7 @@ const ClientsModule = {
                         <h1 class="page-title">Clientes</h1>
                         <p class="page-subtitle">Administra tu base de datos de clientes</p>
                     </div>
-                    <button class="btn btn-primary" onclick="window.App.navigate('clients/new')">
+                    <button class="btn btn-primary" onclick="window.App.navigate('clientes/nuevo')">
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
                         Nuevo Cliente
                     </button>
@@ -69,7 +69,7 @@ const ClientsModule = {
                     <div class="user-cell">
                         <div class="user-avatar-sm">${(c.company_name || c.contact_name || '?').charAt(0).toUpperCase()}</div>
                         <div class="user-details">
-                            <a href="#clients/profile/${c.id}" class="user-name" style="text-decoration:none;">${c.company_name || c.contact_name}</a>
+                            <a href="#clientes/profile/${c.id}" class="user-name" style="text-decoration:none;">${c.company_name || c.contact_name}</a>
                             <span class="user-email">${c.contact_name}</span>
                         </div>
                     </div>
@@ -81,8 +81,8 @@ const ClientsModule = {
                 <td><span class="badge badge-${c.is_active ? 'active' : 'inactive'}">${c.is_active ? 'Activo' : 'Inactivo'}</span></td>
                 <td>
                     <div class="row-actions">
-                        <a href="#clients/profile/${c.id}" class="btn-icon" style="width:28px;height:28px;" title="Perfil"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg></a>
-                        <a href="#clients/${c.id}" class="btn-icon" style="width:28px;height:28px;" title="Editar"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg></a>
+                        <a href="#clientes/profile/${c.id}" class="btn-icon" style="width:28px;height:28px;" title="Perfil"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg></a>
+                        <a href="#clientes/${c.id}" class="btn-icon" style="width:28px;height:28px;" title="Editar"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg></a>
                         <button class="btn-icon" style="width:28px;height:28px;" onclick="ClientsModule.deleteClient(${c.id})" title="Eliminar"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--color-danger-icon)" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg></button>
                     </div>
                 </td>
@@ -99,7 +99,7 @@ const ClientsModule = {
 
             container.innerHTML = `
                 <div style="margin-bottom:12px;">
-                    <a href="#clients" style="color:var(--color-text-muted);text-decoration:none;font-size:13px;">← Clientes</a>
+                    <a href="#clientes" style="color:var(--color-text-muted);text-decoration:none;font-size:13px;">← Clientes</a>
                     <span style="color:var(--color-text-muted);font-size:13px;"> / </span>
                     <span style="font-size:13px;">${c.company_name || c.contact_name}</span>
                 </div>
@@ -109,8 +109,8 @@ const ClientsModule = {
                         <p class="page-subtitle">${c.email} ${c.phone ? '· '+c.phone : ''}</p>
                     </div>
                     <div style="display:flex;gap:8px;">
-                        <a href="#clients/${id}" class="btn btn-secondary">Editar</a>
-                        <button class="btn btn-primary" onclick="window.App.navigate('invoices/new')">+ Nueva Factura</button>
+                        <a href="#clientes/${id}" class="btn btn-secondary">Editar</a>
+                        <button class="btn btn-primary" onclick="window.App.navigate('facturas/nueva')">+ Nueva Factura</button>
                     </div>
                 </div>
 
@@ -169,7 +169,7 @@ const ClientsModule = {
                                 <thead><tr><th>Número</th><th>Monto</th><th>Estado</th></tr></thead>
                                 <tbody>
                                     ${data.invoices.map(i => `
-                                        <tr style="cursor:pointer" onclick="window.App.navigate('invoices/${i.id}')">
+                                        <tr style="cursor:pointer" onclick="window.App.navigate('facturas/${i.id}')">
                                             <td><span class="link-id">${i.invoice_number}</span></td>
                                             <td style="font-weight:600">${window.App.formatCurrency(i.total, i.currency)}</td>
                                             <td><span class="badge badge-${i.status}">${statusLabel(i.status)}</span></td>
@@ -188,7 +188,7 @@ const ClientsModule = {
                                 <thead><tr><th>Número</th><th>Monto</th><th>Estado</th></tr></thead>
                                 <tbody>
                                     ${data.quotes.map(q => `
-                                        <tr style="cursor:pointer" onclick="window.App.navigate('quotes/${q.id}')">
+                                        <tr style="cursor:pointer" onclick="window.App.navigate('cotizaciones/${q.id}')">
                                             <td><span class="link-id">${q.quote_number}</span></td>
                                             <td style="font-weight:600">${window.App.formatCurrency(q.total, q.currency)}</td>
                                             <td><span class="badge badge-${q.status}">${statusLabel(q.status)}</span></td>
@@ -210,13 +210,13 @@ const ClientsModule = {
         if (id) { try { client = await window.App.api(`clients/${id}`); } catch(e) { container.innerHTML = `<div class="text-red">Error</div>`; return; } }
 
         container.innerHTML = `
-            <div style="margin-bottom:12px;"><a href="#clients" style="color:var(--color-text-muted);text-decoration:none;font-size:13px;">← Clientes</a></div>
+            <div style="margin-bottom:12px;"><a href="#clientes" style="color:var(--color-text-muted);text-decoration:none;font-size:13px;">← Clientes</a></div>
             <div class="page-header">
                 <div>
                     <h1 class="page-title">${id ? 'Editar Cliente' : 'Nuevo Cliente'}</h1>
                     <p class="page-subtitle">Completa la información del cliente</p>
                 </div>
-                <button class="btn btn-secondary" onclick="window.App.navigate('clients')">Cancelar</button>
+                <button class="btn btn-secondary" onclick="window.App.navigate('clientes')">Cancelar</button>
             </div>
             <form id="client-form" class="table-outer">
                 <div style="padding:var(--spacing-xl);">
@@ -281,14 +281,14 @@ const ClientsModule = {
             try {
                 if (id) { await App.api(`clients/${id}`, { method: 'PUT', body: payload }); App.showToast('Cliente actualizado'); }
                 else { await App.api('clients', { method: 'POST', body: payload }); App.showToast('Cliente creado'); }
-                window.App.navigate('clients');
+                window.App.navigate('clientes');
             } catch (err) {}
         });
     },
 
     async deleteClient(id) {
         this._showConfirm('¿Eliminar este cliente?', async () => {
-            try { await window.App.api(`clients/${id}`, { method: 'DELETE' }); window.App.showToast('Cliente eliminado'); window.App.navigate('clients'); }
+            try { await window.App.api(`clients/${id}`, { method: 'DELETE' }); window.App.showToast('Cliente eliminado'); window.App.navigate('clientes'); }
             catch(e) {}
         });
     },

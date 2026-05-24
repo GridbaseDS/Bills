@@ -309,15 +309,11 @@ const InvoicesModule = {
                     <div class="grid-2">
                         <div class="form-group" style="grid-column:span 2;display:flex;align-items:center;gap:24px;background:var(--bg-hover);padding:12px 16px;border-radius:var(--radius-md);border:1px solid var(--color-border);">
                             <label style="display:flex;align-items:center;gap:8px;font-weight:600;cursor:pointer;margin:0;">
-                                <input type="checkbox" id="i_is_ecf" style="width:18px;height:18px;" ${invoice?.is_ecf ? 'checked' : ''} onchange="document.getElementById('ecf-type-wrapper').style.display = this.checked ? 'block' : 'none'">
-                                ¿Emitir Factura Electrónica (e-CF)?
+                                <input type="checkbox" id="i_is_ecf" style="width:18px;height:18px;" ${invoice?.is_ecf || !editId ? 'checked' : ''} onchange="document.getElementById('ecf-type-wrapper').style.display = this.checked ? 'block' : 'none'; InvoicesModule.onEcfTypeChange();">
+                                Emitir Factura Electronica (e-CF)
                             </label>
-                            <div id="ecf-type-wrapper" style="display:${invoice?.is_ecf ? 'block' : 'none'};flex:1;">
-                                <select id="i_ecf_type" class="form-control" style="max-width:320px;" onchange="
-                                    var t = this.value;
-                                    var w = document.getElementById('ecf-ncf-mod-wrapper');
-                                    if(w) w.style.display = (t==='33'||t==='34') ? 'grid' : 'none';
-                                ">
+                            <div id="ecf-type-wrapper" style="display:${invoice?.is_ecf || !editId ? 'block' : 'none'};flex:1;">
+                                <select id="i_ecf_type" class="form-control" style="max-width:320px;" onchange="InvoicesModule.onEcfTypeChange()">
                                     <option value="31" ${invoice?.ecf_type == 31 ? 'selected' : ''}>Credito Fiscal (B2B - Tipo 31)</option>
                                     <option value="32" ${invoice?.ecf_type == 32 || !invoice?.ecf_type ? 'selected' : ''}>Consumo (B2C - Tipo 32)</option>
                                     <option value="33" ${invoice?.ecf_type == 33 ? 'selected' : ''}>Nota de Debito (Tipo 33)</option>
@@ -357,8 +353,8 @@ const InvoicesModule = {
                         <div class="form-group">
                             <label class="form-label">Moneda</label>
                             <select id="i_currency" class="form-control">
-                                <option value="USD" ${invoice?.currency === 'USD' ? 'selected' : ''}>USD - Dólares</option>
-                                <option value="DOP" ${invoice?.currency === 'DOP' ? 'selected' : ''}>DOP - Pesos Dominicanos</option>
+                                <option value="DOP" ${invoice?.currency === 'DOP' || !invoice?.currency ? 'selected' : ''}>DOP - Pesos Dominicanos</option>
+                                <option value="USD" ${invoice?.currency === 'USD' ? 'selected' : ''}>USD - Dolares</option>
                                 <option value="EUR" ${invoice?.currency === 'EUR' ? 'selected' : ''}>EUR - Euros</option>
                             </select>
                         </div>
@@ -390,8 +386,9 @@ const InvoicesModule = {
                                     <input type="number" id="i_discount" class="form-control" value="${invoice?.discount_value || 0}" min="0" max="100" step="0.01" onchange="InvoicesModule.calculateTotals()" oninput="InvoicesModule.calculateTotals()">
                                 </div>
                                 <div class="form-group">
-                                    <label class="form-label">Impuesto (%)</label>
+                                    <label class="form-label">ITBIS (%)</label>
                                     <input type="number" id="i_tax" class="form-control" value="${invoice?.tax_rate ?? 18}" min="0" max="100" step="0.01" onchange="InvoicesModule.calculateTotals()" oninput="InvoicesModule.calculateTotals()">
+                                    <small id="itbis_hint" style="color:var(--color-text-muted);font-size:11px;display:none;"></small>
                                 </div>
                             </div>
                             <div style="background:var(--bg-hover);padding:16px;border-radius:var(--radius-lg);margin-top:16px;">
@@ -512,6 +509,49 @@ const InvoicesModule = {
                 document.getElementById(`item_price_${item.id}`).value = values[item.id].price;
             }
         });
+    },
+    onEcfTypeChange() {
+        const isEcf = document.getElementById('i_is_ecf')?.checked;
+        const type = document.getElementById('i_ecf_type')?.value;
+        const taxInput = document.getElementById('i_tax');
+        const hint = document.getElementById('itbis_hint');
+        const modWrapper = document.getElementById('ecf-ncf-mod-wrapper');
+
+        // Show/hide NC/ND fields
+        if (modWrapper) {
+            modWrapper.style.display = (type === '33' || type === '34') ? 'grid' : 'none';
+        }
+
+        if (!isEcf || !taxInput) return;
+
+        // Types exempt from ITBIS (0%)
+        const exemptTypes = ['43', '44', '46', '47'];
+        // Types that require 18% ITBIS
+        const taxedTypes = ['31', '32', '33', '34', '41', '45'];
+
+        if (exemptTypes.includes(type)) {
+            taxInput.value = '0';
+            taxInput.readOnly = true;
+            taxInput.style.backgroundColor = 'var(--bg-hover)';
+            taxInput.style.color = 'var(--color-text-muted)';
+            if (hint) {
+                hint.style.display = 'block';
+                hint.textContent = 'Este tipo de comprobante es exento de ITBIS';
+            }
+        } else if (taxedTypes.includes(type)) {
+            taxInput.readOnly = false;
+            taxInput.style.backgroundColor = '';
+            taxInput.style.color = '';
+            if (taxInput.value === '0') taxInput.value = '18';
+            if (hint) hint.style.display = 'none';
+        } else {
+            taxInput.readOnly = false;
+            taxInput.style.backgroundColor = '';
+            taxInput.style.color = '';
+            if (hint) hint.style.display = 'none';
+        }
+
+        this.calculateTotals();
     },
 
     calculateTotals() {

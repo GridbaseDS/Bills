@@ -281,6 +281,8 @@ const InvoicesModule = {
     async renderForm(container, editId = null) {
         let clients = [];
         try { const res = await App.api('clients'); clients = res.data || []; } catch(e) {}
+        
+        try { this.availableItems = await App.api('items'); } catch(e) { this.availableItems = []; }
 
         let invoice = null;
         if (editId) {
@@ -429,6 +431,14 @@ const InvoicesModule = {
             this.addItem();
         }
 
+        // Add datalist to document body if not exists
+        if (!document.getElementById('catalog_items_list')) {
+            const datalist = document.createElement('datalist');
+            datalist.id = 'catalog_items_list';
+            datalist.innerHTML = this.availableItems.map(i => `<option value="${i.name}">${window.App.formatCurrency(i.price, 'DOP')}</option>`).join('');
+            document.body.appendChild(datalist);
+        }
+
         document.getElementById('invoice-form').addEventListener('submit', async (e) => {
             e.preventDefault();
             const itemsToSave = this.items.map((item) => ({
@@ -493,7 +503,7 @@ const InvoicesModule = {
 
         container.innerHTML = this.items.map(item => `
             <div style="display:flex;gap:12px;margin-bottom:12px;align-items:flex-start;">
-                <div style="flex:1"><input type="text" id="item_desc_${item.id}" class="form-control" placeholder="Descripción del concepto..." required></div>
+                <div style="flex:1"><input type="text" id="item_desc_${item.id}" list="catalog_items_list" class="form-control" placeholder="Descripción del concepto..." required oninput="InvoicesModule.onItemDescChange(${item.id})"></div>
                 <div style="width:100px"><input type="number" id="item_qty_${item.id}" class="form-control" placeholder="Cant." min="0.01" step="0.01" value="${item.qty || 1}" required oninput="InvoicesModule.calculateTotals()"></div>
                 <div style="width:150px"><input type="number" id="item_price_${item.id}" class="form-control" placeholder="Precio" min="0" step="0.01" value="${item.price || ''}" required oninput="InvoicesModule.calculateTotals()"></div>
                 <button type="button" class="btn-icon" style="color:var(--color-danger-icon);width:38px;height:38px;" onclick="InvoicesModule.removeItem(${item.id})">
@@ -510,6 +520,20 @@ const InvoicesModule = {
             }
         });
     },
+
+    onItemDescChange(itemId) {
+        const descInput = document.getElementById(`item_desc_${itemId}`);
+        const priceInput = document.getElementById(`item_price_${itemId}`);
+        if (!descInput || !priceInput || !this.availableItems) return;
+
+        const val = descInput.value;
+        const matchedItem = this.availableItems.find(i => i.name === val);
+        if (matchedItem) {
+            priceInput.value = matchedItem.price;
+            this.calculateTotals();
+        }
+    },
+
     onEcfTypeChange() {
         const isEcf = document.getElementById('i_is_ecf')?.checked;
         const type = document.getElementById('i_ecf_type')?.value;

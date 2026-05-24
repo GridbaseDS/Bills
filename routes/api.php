@@ -4,6 +4,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\ClientController;
+use App\Http\Controllers\Api\ItemController;
 use App\Http\Controllers\Api\InvoiceController;
 use App\Http\Controllers\Api\QuoteController;
 use App\Http\Controllers\Api\RecurringController;
@@ -61,6 +62,9 @@ Route::middleware('auth:sanctum')->group(function () {
     // Clients
     Route::apiResource('clients', ClientController::class);
     Route::get('/clients/{id}/profile', [ClientController::class, 'profile']);
+
+    // Items
+    Route::apiResource('items', ItemController::class);
 
     // Payment Links
     Route::prefix('invoices/{id}/payment-link')->group(function () {

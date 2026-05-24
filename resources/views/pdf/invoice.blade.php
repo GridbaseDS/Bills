@@ -297,7 +297,22 @@ if (!empty($invoice['status'])) {
 <div class="body-content">
 
     <!-- Title -->
-    <div class="doc-title" style="<?= $isEcf ? 'font-size: 15px;' : '' ?>"><?= $isEcf ? 'Representación Impresa del Comprobante Fiscal Electrónico' : $docName ?></div>
+    <?php
+    $ecfTypeNames = [
+        31 => 'Factura de Credito Fiscal Electronica',
+        32 => (float)($invoice['total'] ?? 0) < 250000 ? 'Factura de Consumo Electronica' : 'Factura de Consumo Electronica',
+        33 => 'Nota de Debito Electronica',
+        34 => 'Nota de Credito Electronica',
+        41 => 'Comprobante de Compras Electronico',
+        43 => 'Comprobante de Gastos Menores Electronico',
+        44 => 'Comprobante de Regimenes Especiales Electronico',
+        45 => 'Comprobante Gubernamental Electronico',
+        46 => 'Comprobante de Exportaciones Electronico',
+        47 => 'Comprobante de Pagos al Exterior Electronico',
+    ];
+    $ecfTypeName = $isEcf ? ($ecfTypeNames[(int)($invoice['ecf_type'] ?? 0)] ?? 'Comprobante Fiscal Electronico') : $docName;
+    ?>
+    <div class="doc-title" style="<?= $isEcf ? 'font-size: 15px;' : '' ?>"><?= $ecfTypeName ?></div>
 
     <!-- Info Columns -->
     <table class="info-cols"><tr>

@@ -8,17 +8,17 @@
     <title>GridBase Bills</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link rel="stylesheet" href="assets/css/app.css?v=42">
+    <link rel="stylesheet" href="/assets/css/app.css?v=42">
     <link rel="icon" type="image/png" href="https://gridbase.com.do/wp-content/uploads/2026/03/cropped-imagen_2026-03-18_101800374-180x180.png">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="apple-mobile-web-app-title" content="Gridbase Bills">
     <link rel="apple-touch-icon" href="https://gridbase.com.do/wp-content/uploads/2026/03/cropped-imagen_2026-03-18_101800374-180x180.png">
-    <link rel="manifest" href="manifest.json">
+    <link rel="manifest" href="/manifest.json">
 </head>
 <body>
     <div id="app"></div>
     <div class="toast-container" id="toast-container"></div>
-    <script type="module" src="assets/js/app.js?v=42"></script>
+    <script type="module" src="/assets/js/app.js?v=42"></script>
 </body>
 </html>

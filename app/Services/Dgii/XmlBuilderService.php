@@ -127,8 +127,8 @@ class XmlBuilderService
         // TipoPago: all types have it
         $idDoc->appendChild($dom->createElement('TipoPago', $tipoPago ?: 1));
 
-        // FechaLimitePago: when credit
-        if ($tipoPago === 2 && $invoice->due_date) {
+        // FechaLimitePago: when credit (NOT supported in type 43)
+        if ($tipoPago === 2 && $invoice->due_date && $tipoECF !== 43) {
             $idDoc->appendChild($dom->createElement('FechaLimitePago', $invoice->due_date->format('d-m-Y')));
         }
 

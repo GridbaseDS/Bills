@@ -3,8 +3,8 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
 class Invoice extends Model {
-    protected $fillable = ['invoice_number', 'client_id', 'status', 'issue_date', 'due_date', 'subtotal', 'tax_rate', 'tax_amount', 'discount_type', 'discount_value', 'discount_amount', 'total', 'amount_paid', 'currency', 'notes', 'terms', 'pdf_path', 'sent_at', 'sent_via', 'viewed_at', 'paid_at', 'recurring_id', 'created_by', 'payment_token', 'payment_token_expires_at', 'is_ecf', 'ecf_type', 'tipo_ingresos', 'modified_ncf', 'modification_code', 'modification_reason', 'nota_credito_indicator', 'encf', 'dgii_status', 'dgii_track_id', 'security_code', 'signed_xml_path', 'dgii_error_messages'];
-    protected $casts = ['issue_date' => 'date', 'due_date' => 'date', 'sent_at' => 'datetime', 'viewed_at' => 'datetime', 'paid_at' => 'datetime', 'payment_token_expires_at' => 'datetime'];
+    protected $fillable = ['invoice_number', 'client_id', 'status', 'issue_date', 'due_date', 'subtotal', 'tax_rate', 'tax_amount', 'discount_type', 'discount_value', 'discount_amount', 'total', 'amount_paid', 'currency', 'notes', 'terms', 'pdf_path', 'sent_at', 'sent_via', 'viewed_at', 'paid_at', 'recurring_id', 'created_by', 'payment_token', 'payment_token_expires_at', 'is_ecf', 'ecf_type', 'tipo_ingresos', 'modified_ncf', 'modification_code', 'modification_reason', 'nota_credito_indicator', 'encf', 'dgii_status', 'dgii_track_id', 'security_code', 'signed_xml_path', 'dgii_error_messages', 'signed_at'];
+    protected $casts = ['issue_date' => 'date', 'due_date' => 'date', 'sent_at' => 'datetime', 'viewed_at' => 'datetime', 'paid_at' => 'datetime', 'payment_token_expires_at' => 'datetime', 'signed_at' => 'datetime'];
     public function items() { return $this->hasMany(InvoiceItem::class); }
     public function client() { return $this->belongsTo(Client::class); }
     public function payments() { return $this->hasMany(Payment::class); }

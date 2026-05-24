@@ -71,7 +71,8 @@ class EcfManagerService
             $invoice->update([
                 'dgii_status' => 'signed',
                 'signed_xml_path' => $fileName,
-                'security_code' => $securityCode
+                'security_code' => $securityCode,
+                'signed_at' => now()
             ]);
 
             // 4. Determine if FC<250k (portal upload, not API)

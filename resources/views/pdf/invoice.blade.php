@@ -358,8 +358,31 @@ if (!empty($invoice['status'])) {
                 $monto = number_format((float)$invoice['total'], 2, '.', '');
                 $fecha = date('d-m-Y', strtotime($invoice['issue_date']));
                 $codSeguridad = $invoice['security_code'] ?? '';
-                $qrUrl = "https://ecf.dgii.gov.do/Estacionamiento/Consulta/eCF?RncEmisor={$rncEmisor}&RncComprador={$rncComprador}&ENcf={$encf}&MontoTotal={$monto}&FechaEmision={$fecha}&CodigoSeguridad={$codSeguridad}";
-                
+                $fechaFirma = !empty($invoice['signed_at']) ? date('d-m-Y H:i:s', strtotime($invoice['signed_at'])) : date('d-m-Y H:i:s');
+
+                // Determine QR URL based on type
+                $ecfType = (int)($invoice['ecf_type'] ?? 32);
+                $isRfce = $ecfType === 32 && (float)$invoice['total'] < 250000;
+
+                if ($isRfce) {
+                    // RFCE: fc.dgii.gov.do with fewer params
+                    $qrUrl = "https://fc.dgii.gov.do/testecf/consultatimbrefc?"
+                        . "rncemisor={$rncEmisor}"
+                        . "&encf=" . strtolower($encf)
+                        . "&montototal={$monto}"
+                        . "&codigoseguridad={$codSeguridad}";
+                } else {
+                    // Regular e-CF: ecf.dgii.gov.do
+                    $qrUrl = "https://ecf.dgii.gov.do/testecf/consultatimbre?"
+                        . "rncemisor={$rncEmisor}"
+                        . "&rnccomprador={$rncComprador}"
+                        . "&encf=" . strtolower($encf)
+                        . "&fechaemision={$fecha}"
+                        . "&montototal={$monto}"
+                        . "&fechafirma=" . urlencode($fechaFirma)
+                        . "&codigoseguridad={$codSeguridad}";
+                }
+
                 // Generate QR code: use php-qrcode v6 if available, else quickchart.io (free, reliable)
                 $qrImgSrc = '';
                 if (class_exists('\chillerlan\QRCode\QRCode')) {
@@ -375,7 +398,7 @@ if (!empty($invoice['status'])) {
                     }
                 }
                 if (empty($qrImgSrc)) {
-                    // Fallback: quickchart.io — free API, no auth, DOMPDF enable_remote = true
+                    // Fallback: quickchart.io
                     $qrImgSrc = "https://quickchart.io/qr?text=" . urlencode($qrUrl) . "&size=150&margin=1&format=png";
                 }
                 ?>

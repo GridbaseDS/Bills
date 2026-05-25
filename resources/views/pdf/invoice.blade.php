@@ -459,11 +459,11 @@ if (!empty($invoice['status'])) {
                 }
                 ?>
                 <!-- QR Code — lado inferior izquierdo, mínimo 22x22mm -->
-                <div style="margin-bottom:8px;">
-                    <img src="<?= $qrImgSrc ?>" style="width:105px; height:105px; display:block;" alt="QR DGII">
+                <div style="margin-bottom:8px; text-align:center;">
+                    <img src="<?= $qrImgSrc ?>" style="width:105px; height:105px; display:inline-block;" alt="QR DGII">
                 </div>
                 <!-- Código de Seguridad y Fecha Firma — DEBAJO del QR -->
-                <div style="font-size:9px; color:#2D2D2D; line-height:1.6; font-family:'DejaVu Sans',sans-serif;">
+                <div style="font-size:9px; color:#2D2D2D; line-height:1.6; font-family:'DejaVu Sans',sans-serif; text-align:center;">
                     <strong>Código de Seguridad:</strong> <?= htmlspecialchars($codSeguridad) ?><br>
                     <strong>Fecha Firma:</strong> <?= htmlspecialchars($fechaFirma) ?>
                 </div>

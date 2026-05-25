@@ -65,12 +65,12 @@ class DgiiApiService
                 ];
             }
 
-            // e-CF response: {"trackId": "uuid"}
+            // e-CF response: {"trackId": "uuid"} — trackId means DGII accepted the document
             if (isset($responseBody['trackId'])) {
                 Log::info("[DgiiApiService] e-CF aceptado. TrackId: {$responseBody['trackId']}");
                 return [
                     'success' => true,
-                    'status' => 'pending',
+                    'status' => 'accepted',
                     'track_id' => $responseBody['trackId'],
                     'errors' => null
                 ];

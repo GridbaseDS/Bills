@@ -419,18 +419,21 @@ if (!empty($invoice['status'])) {
                 }
 
                 // Determine QR URL based on type — per Informe Técnico DGII pág. 36
+                // Environment: testing → certecf, production → ecf (must match API submission path)
+                $dgiiEnv = $settings['dgii_env'] ?? 'testing';
+                $ecfQrPath = $dgiiEnv === 'production' ? 'ecf' : 'certecf';
                 $isRfce = $ecfType === 32 && (float)$invoice['total'] < 250000;
 
                 if ($isRfce) {
                     // FC<250k: fc.dgii.gov.do — params: RncEmisor, ENCF, MontoTotal, CodigoSeguridad
-                    $qrUrl = "https://fc.dgii.gov.do/certecf/ConsultaTimbreFC?"
+                    $qrUrl = "https://fc.dgii.gov.do/{$ecfQrPath}/ConsultaTimbreFC?"
                         . "RncEmisor={$rncEmisor}"
                         . "&ENCF={$encf}"
                         . "&MontoTotal={$monto}"
                         . "&CodigoSeguridad={$codSeguridad}";
                 } else {
                     // Regular e-CF: ecf.dgii.gov.do — all params PascalCase
-                    $qrUrl = "https://ecf.dgii.gov.do/certecf/ConsultaTimbre?"
+                    $qrUrl = "https://ecf.dgii.gov.do/{$ecfQrPath}/ConsultaTimbre?"
                         . "RncEmisor={$rncEmisor}"
                         . "&RncComprador={$rncComprador}"
                         . "&ENCF={$encf}"

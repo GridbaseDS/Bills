@@ -423,14 +423,14 @@ if (!empty($invoice['status'])) {
 
                 if ($isRfce) {
                     // FC<250k: fc.dgii.gov.do — params: RncEmisor, ENCF, MontoTotal, CodigoSeguridad
-                    $qrUrl = "https://fc.dgii.gov.do/testecf/ConsultaTimbreFC?"
+                    $qrUrl = "https://fc.dgii.gov.do/certecf/ConsultaTimbreFC?"
                         . "RncEmisor={$rncEmisor}"
                         . "&ENCF={$encf}"
                         . "&MontoTotal={$monto}"
                         . "&CodigoSeguridad={$codSeguridad}";
                 } else {
                     // Regular e-CF: ecf.dgii.gov.do — all params PascalCase
-                    $qrUrl = "https://ecf.dgii.gov.do/testecf/ConsultaTimbre?"
+                    $qrUrl = "https://ecf.dgii.gov.do/certecf/ConsultaTimbre?"
                         . "RncEmisor={$rncEmisor}"
                         . "&RncComprador={$rncComprador}"
                         . "&ENCF={$encf}"

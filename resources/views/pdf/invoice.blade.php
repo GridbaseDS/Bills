@@ -396,7 +396,27 @@ if (!empty($invoice['status'])) {
                 $monto = number_format((float)$invoice['total'], 2, '.', '');
                 $fechaEmision = date('d-m-Y', strtotime($invoice['issue_date']));
                 $codSeguridad = $invoice['security_code'] ?? '';
-                $fechaFirma = !empty($invoice['signed_at']) ? date('d-m-Y H:i:s', strtotime($invoice['signed_at'])) : date('d-m-Y H:i:s');
+
+                // FechaFirma: read from signed XML if signed_at is empty
+                $fechaFirma = '';
+                if (!empty($invoice['signed_at'])) {
+                    $fechaFirma = date('d-m-Y H:i:s', strtotime($invoice['signed_at']));
+                } elseif (!empty($invoice['signed_xml_path'])) {
+                    // Read FechaHoraFirma from the actual signed XML
+                    $xmlPath = storage_path('app/private/' . $invoice['signed_xml_path']);
+                    if (!file_exists($xmlPath)) {
+                        $xmlPath = storage_path('app/' . $invoice['signed_xml_path']);
+                    }
+                    if (file_exists($xmlPath)) {
+                        $xmlContent = file_get_contents($xmlPath);
+                        if (preg_match('/<FechaHoraFirma>([^<]+)<\/FechaHoraFirma>/', $xmlContent, $m)) {
+                            $fechaFirma = $m[1];
+                        }
+                    }
+                }
+                if (empty($fechaFirma)) {
+                    $fechaFirma = date('d-m-Y H:i:s');
+                }
 
                 // Determine QR URL based on type — per Informe Técnico DGII pág. 36
                 $isRfce = $ecfType === 32 && (float)$invoice['total'] < 250000;

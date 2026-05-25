@@ -141,7 +141,7 @@ XML;
     {
         $baseUrl = $env === 'production'
             ? 'https://ecf.dgii.gov.do/ecf'
-            : 'https://ecf.dgii.gov.do/CerteCF';
+            : 'https://ecf.dgii.gov.do/certecf';
         $endpoint = "{$baseUrl}/aprobacioncomercial/api/aprobacioncomercial";
         $filename = "{$rncComprador}{$encf}.xml";
 
@@ -183,7 +183,7 @@ XML;
             // Query DGII directory for the emisor's service URLs
             $directoryUrl = $env === 'production'
                 ? "https://ecf.dgii.gov.do/ecf/consultadirectorio/api/consultadirectorio?rnc={$rncEmisor}"
-                : "https://ecf.dgii.gov.do/testecf/consultadirectorio/api/consultadirectorio?rnc={$rncEmisor}";
+                : "https://ecf.dgii.gov.do/certecf/consultadirectorio/api/consultadirectorio?rnc={$rncEmisor}";
 
             $dirResponse = Http::withoutVerifying()
                 ->timeout(10)

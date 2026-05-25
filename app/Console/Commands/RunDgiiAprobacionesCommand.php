@@ -73,7 +73,7 @@ class RunDgiiAprobacionesCommand extends Command
         // Endpoint per DGII docs: /{ambiente}/aprobacioncomercial/api/aprobacioncomercial
         $baseUrl = $env === 'production'
             ? 'https://ecf.dgii.gov.do/ecf'
-            : 'https://ecf.dgii.gov.do/CerteCF';
+            : 'https://ecf.dgii.gov.do/certecf';
         $endpoint = "{$baseUrl}/aprobacioncomercial/api/aprobacioncomercial";
         $this->info("  📡 Endpoint: {$endpoint}");
         $this->newLine();

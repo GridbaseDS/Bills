@@ -432,7 +432,7 @@ if (!empty($invoice['status'])) {
                         . "RncEmisor={$rncEmisor}"
                         . "&ENCF={$encf}"
                         . "&MontoTotal={$monto}"
-                        . "&CodigoSeguridad={$codSeguridad}";
+                        . "&CodigoSeguridad=" . urlencode($codSeguridad);
                 } else {
                     // Regular e-CF: ecf.dgii.gov.do — all params PascalCase
                     $qrUrl = "https://ecf.dgii.gov.do/{$ecfQrPath}/ConsultaTimbre?"
@@ -444,7 +444,7 @@ if (!empty($invoice['status'])) {
                         . "&FechaEmision={$fechaEmision}"
                         . "&MontoTotal={$monto}"
                         . "&FechaFirma=" . urlencode($fechaFirma)
-                        . "&CodigoSeguridad={$codSeguridad}";
+                        . "&CodigoSeguridad=" . urlencode($codSeguridad);
                 }
 
                 // Generate QR code

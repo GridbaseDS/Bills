@@ -130,7 +130,7 @@ export default {
                                         <option value="production" ${s.dgii_env === 'production' ? 'selected' : ''}>Producción</option>
                                     </select>
                                 </div>
-                                <div class="form-group"><label class="form-label">Vence Secuencia (e-NCF)</label><input type="date" id="s_dgii_ncf_expiry_date" class="form-control" value="${s.dgii_ncf_expiry_date || '2027-12-31'}"></div>
+                                <div class="form-group"><label class="form-label">Vence Secuencia (e-NCF)</label><input type="date" id="s_dgii_ncf_expiry_date" class="form-control" value="${s.dgii_ncf_expiry_date || '2028-12-31'}"></div>
                                 <div class="form-group"><label class="form-label">Certificado (.p12 / .pfx)</label><input type="text" id="s_dgii_certificate_path" class="form-control" placeholder="certificado.p12" value="${s.dgii_certificate_path || ''}"><div style="font-size:11px;color:var(--color-text-muted);margin-top:4px;">En <code>storage/app/secure/</code></div></div>
                                 <div class="form-group"><label class="form-label">Contraseña del Certificado</label><input type="password" id="s_dgii_certificate_password" class="form-control" value="${s.dgii_certificate_password || ''}"></div>
                                 <div class="form-group"><label class="form-label">Próximo e-NCF Tipo 31</label><input type="number" id="s_dgii_next_e_ncf_31" class="form-control" value="${s.dgii_next_e_ncf_31 || '1'}"><div style="font-size:11px;color:var(--color-text-muted);margin-top:4px;">Ej: 1 → <code>E310000000001</code></div></div>

@@ -50,7 +50,7 @@ class XmlBuilderService
         // 3. Document identification
         $tipoECF = (int)$invoice->ecf_type;
         $eNCF = $invoice->encf;
-        $fechaVencimientoSecuencia = $settings['dgii_ncf_expiry_date'] ?? '2027-12-31';
+        $fechaVencimientoSecuencia = $settings['dgii_ncf_expiry_date'] ?? '2028-12-31';
         
         // TerminoPago: Contado (1), Crédito (2)
         $isCredito = $invoice->due_date && $invoice->due_date > $invoice->issue_date;

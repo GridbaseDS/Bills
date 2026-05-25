@@ -258,11 +258,27 @@
 <?php
 $isQuote   = isset($is_quote) && $is_quote;
 $isEcf     = !$isQuote && ($invoice['is_ecf'] ?? false);
+$ecfType   = (int)($invoice['ecf_type'] ?? 32);
 $docName   = $isQuote ? 'Cotización' : ($isEcf ? 'e-CF' : 'Factura');
 $docNum    = $isQuote ? ($invoice['quote_number'] ?? '') : ($isEcf ? ($invoice['encf'] ?? '') : ($invoice['invoice_number'] ?? ''));
 $dateLabel = $isQuote ? 'Válida Hasta' : 'Vencimiento';
 $dateField = $isQuote ? ($invoice['expiry_date'] ?? $invoice['due_date'] ?? '') : ($invoice['due_date'] ?? '');
 $logoUrl   = 'https://gridbase.com.do/wp-content/uploads/2025/02/imagen_2026-03-16_154236217-1024x228.png';
+
+// Fecha vencimiento secuencia: NO aplica para E32 y E34
+$showFechaVencimiento = $isEcf && !in_array($ecfType, [32, 34]);
+$fechaVencimientoSeq  = $settings['dgii_ncf_expiry_date'] ?? '31/12/2028';
+if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $fechaVencimientoSeq)) {
+    $fechaVencimientoSeq = date('d/m/Y', strtotime($fechaVencimientoSeq));
+}
+
+// Modification codes for E33/E34
+$modCodeDescriptions = [
+    1 => 'Anula el NCF modificado',
+    2 => 'Corrige Texto del Comprobante Fiscal modificado',
+    3 => 'Corrige montos del NCF modificado',
+    4 => 'Reemplazo NCF emitido en contingencia',
+];
 
 $badgeClass = 'badge-draft'; $badgeText = 'BORRADOR';
 if (!empty($invoice['status'])) {
@@ -285,6 +301,13 @@ if (!empty($invoice['status'])) {
             <div class="header-meta-box">
                 <div class="meta-row-item"><span class="meta-label"><?= $isEcf ? 'E-NCF/' : 'NÚMERO/' ?></span> <strong><?= htmlspecialchars($docNum) ?></strong></div>
                 <div class="meta-row-item"><span class="meta-label">FECHA/</span> <strong><?= !empty($invoice['issue_date']) ? date('d/ m/ Y', strtotime($invoice['issue_date'])) : '' ?></strong></div>
+                <?php if ($showFechaVencimiento): ?>
+                <div class="meta-row-item"><span class="meta-label">VENCE/</span> <strong><?= htmlspecialchars($fechaVencimientoSeq) ?></strong></div>
+                <?php endif; ?>
+                <?php if ($isEcf && in_array($ecfType, [33, 34]) && !empty($invoice['modified_ncf'])): ?>
+                <div class="meta-row-item"><span class="meta-label">E-NCF MOD./</span> <strong><?= htmlspecialchars($invoice['modified_ncf']) ?></strong></div>
+                <div class="meta-row-item"><span class="meta-label">CÓD. MOD./</span> <strong style="font-size:8px;"><?= htmlspecialchars($modCodeDescriptions[(int)($invoice['modification_code'] ?? 1)] ?? '') ?></strong></div>
+                <?php endif; ?>
                 <?php if (!$isQuote && !empty($invoice['status'])): ?>
                 <div style="margin-top:5px;"><span class="badge <?= $badgeClass ?>"><?= $badgeText ?></span></div>
                 <?php endif; ?>
@@ -371,34 +394,33 @@ if (!empty($invoice['status'])) {
                 $rncComprador = preg_replace('/[^0-9]/', '', $client['tax_id'] ?? '');
                 $encf = $invoice['encf'] ?? '';
                 $monto = number_format((float)$invoice['total'], 2, '.', '');
-                $fecha = date('d-m-Y', strtotime($invoice['issue_date']));
+                $fechaEmision = date('d-m-Y', strtotime($invoice['issue_date']));
                 $codSeguridad = $invoice['security_code'] ?? '';
                 $fechaFirma = !empty($invoice['signed_at']) ? date('d-m-Y H:i:s', strtotime($invoice['signed_at'])) : date('d-m-Y H:i:s');
 
-                // Determine QR URL based on type
-                $ecfType = (int)($invoice['ecf_type'] ?? 32);
+                // Determine QR URL based on type — per Informe Técnico DGII pág. 36
                 $isRfce = $ecfType === 32 && (float)$invoice['total'] < 250000;
 
                 if ($isRfce) {
-                    // RFCE: fc.dgii.gov.do with fewer params
-                    $qrUrl = "https://fc.dgii.gov.do/testecf/consultatimbrefc?"
-                        . "rncemisor={$rncEmisor}"
-                        . "&encf=" . strtolower($encf)
-                        . "&montototal={$monto}"
-                        . "&codigoseguridad={$codSeguridad}";
+                    // FC<250k: fc.dgii.gov.do — params: RncEmisor, ENCF, MontoTotal, CodigoSeguridad
+                    $qrUrl = "https://fc.dgii.gov.do/testecf/ConsultaTimbreFC?"
+                        . "RncEmisor={$rncEmisor}"
+                        . "&ENCF={$encf}"
+                        . "&MontoTotal={$monto}"
+                        . "&CodigoSeguridad={$codSeguridad}";
                 } else {
-                    // Regular e-CF: ecf.dgii.gov.do
-                    $qrUrl = "https://ecf.dgii.gov.do/testecf/consultatimbre?"
-                        . "rncemisor={$rncEmisor}"
-                        . "&rnccomprador={$rncComprador}"
-                        . "&encf=" . strtolower($encf)
-                        . "&fechaemision={$fecha}"
-                        . "&montototal={$monto}"
-                        . "&fechafirma=" . urlencode($fechaFirma)
-                        . "&codigoseguridad={$codSeguridad}";
+                    // Regular e-CF: ecf.dgii.gov.do — all params PascalCase
+                    $qrUrl = "https://ecf.dgii.gov.do/testecf/ConsultaTimbre?"
+                        . "RncEmisor={$rncEmisor}"
+                        . "&RncComprador={$rncComprador}"
+                        . "&ENCF={$encf}"
+                        . "&FechaEmision={$fechaEmision}"
+                        . "&MontoTotal={$monto}"
+                        . "&FechaFirma=" . urlencode($fechaFirma)
+                        . "&CodigoSeguridad={$codSeguridad}";
                 }
 
-                // Generate QR code: use php-qrcode v6 if available, else quickchart.io (free, reliable)
+                // Generate QR code
                 $qrImgSrc = '';
                 if (class_exists('\chillerlan\QRCode\QRCode')) {
                     try {
@@ -413,26 +435,18 @@ if (!empty($invoice['status'])) {
                     }
                 }
                 if (empty($qrImgSrc)) {
-                    // Fallback: quickchart.io
                     $qrImgSrc = "https://quickchart.io/qr?text=" . urlencode($qrUrl) . "&size=150&margin=1&format=png";
                 }
                 ?>
-                <table style="width:100%; border:none;">
-                    <tr style="border:none;">
-                        <td style="width:115px; padding-right:10px; border:none; vertical-align:middle;">
-                            <img src="<?= $qrImgSrc ?>" style="width:105px; height:105px; display:block;" alt="QR DGII">
-                        </td>
-                        <td style="border:none; vertical-align:middle;">
-                            <div style="font-size:8.5px; color:#444; line-height:1.45; font-family:'DejaVu Sans',sans-serif;">
-                                <strong style="color:#0B484C; font-size:9.5px; display:block; margin-bottom:3px;">Documento Firmado Digitalmente</strong>
-                                <strong>E-NCF:</strong> <?= htmlspecialchars($encf) ?><br>
-                                <strong>Cód. Seguridad:</strong> <?= htmlspecialchars($codSeguridad) ?><br>
-                                <strong>Vence e-NCF:</strong> <?= htmlspecialchars($settings['dgii_ncf_expiry_date'] ?? '31/12/2027') ?><br>
-                                <span style="font-size:7.5px; color:#777; display:block; margin-top:4px; line-height:1.2;">Escanee el QR para validar el comprobante en el portal oficial de la DGII.</span>
-                            </div>
-                        </td>
-                    </tr>
-                </table>
+                <!-- QR Code — lado inferior izquierdo, mínimo 22x22mm -->
+                <div style="margin-bottom:8px;">
+                    <img src="<?= $qrImgSrc ?>" style="width:105px; height:105px; display:block;" alt="QR DGII">
+                </div>
+                <!-- Código de Seguridad y Fecha Firma — DEBAJO del QR -->
+                <div style="font-size:9px; color:#2D2D2D; line-height:1.6; font-family:'DejaVu Sans',sans-serif;">
+                    <strong>Código de Seguridad:</strong> <?= htmlspecialchars($codSeguridad) ?><br>
+                    <strong>Fecha Firma:</strong> <?= htmlspecialchars($fechaFirma) ?>
+                </div>
                 <div style="margin-top:15px;"></div>
             <?php endif; ?>
             <?php if (!empty($invoice['notes'])): ?>

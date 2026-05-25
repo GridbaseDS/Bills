@@ -423,6 +423,8 @@ if (!empty($invoice['status'])) {
                 $dgiiEnv = $settings['dgii_env'] ?? 'testing';
                 $ecfQrPath = $dgiiEnv === 'production' ? 'ecf' : 'certecf';
                 $isRfce = $ecfType === 32 && (float)$invoice['total'] < 250000;
+                // Types 43 (Gastos Menores) and 47 (Pagos al Exterior) have no RNCComprador
+                $hasComprador = !in_array($ecfType, [43, 47]);
 
                 if ($isRfce) {
                     // FC<250k: fc.dgii.gov.do — params: RncEmisor, ENCF, MontoTotal, CodigoSeguridad
@@ -434,9 +436,11 @@ if (!empty($invoice['status'])) {
                 } else {
                     // Regular e-CF: ecf.dgii.gov.do — all params PascalCase
                     $qrUrl = "https://ecf.dgii.gov.do/{$ecfQrPath}/ConsultaTimbre?"
-                        . "RncEmisor={$rncEmisor}"
-                        . "&RncComprador={$rncComprador}"
-                        . "&ENCF={$encf}"
+                        . "RncEmisor={$rncEmisor}";
+                    if ($hasComprador) {
+                        $qrUrl .= "&RncComprador={$rncComprador}";
+                    }
+                    $qrUrl .= "&ENCF={$encf}"
                         . "&FechaEmision={$fechaEmision}"
                         . "&MontoTotal={$monto}"
                         . "&FechaFirma=" . urlencode($fechaFirma)

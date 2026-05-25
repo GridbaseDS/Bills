@@ -1,5 +1,7 @@
 const InvoicesModule = {
     statusLabel: (s) => ({draft:'Borrador',sent:'Pendiente de Pago',paid:'Pagada',overdue:'Vencida',partial:'Pago Parcial',cancelled:'Cancelada'}[s]||s),
+    dgiiLabel: (s) => ({accepted:'Aceptado',rejected:'Rechazado',pending:'Procesando',contingency:'Contingencia',portal_pending:'Portal Pendiente'}[s]||s||'—'),
+    dgiiBadgeClass: (s) => ({accepted:'badge-paid',rejected:'badge-overdue',pending:'badge-sent',contingency:'badge-draft',portal_pending:'badge-sent'}[s]||''),
 
     async render(container, id) {
         if (id === 'new' || id === 'nueva') { this.renderForm(container); return; }
@@ -47,7 +49,7 @@ const InvoicesModule = {
                     <div class="table-wrapper">
                         <table class="data-table">
                             <thead><tr>
-                                <th>Número</th><th>Cliente</th><th>Emisión</th><th>Vencimiento</th><th>Monto</th><th>Estado</th><th></th>
+                                <th>Número</th><th>Cliente</th><th>Emisión</th><th>Vencimiento</th><th>Monto</th><th>Estado</th><th>DGII</th><th></th>
                             </tr></thead>
                             <tbody id="inv-tbody"></tbody>
                         </table>
@@ -109,6 +111,7 @@ const InvoicesModule = {
                 <td style="${i.status === 'overdue' ? 'color:var(--color-danger-icon)' : ''}">${App.formatDate(i.due_date)}</td>
                 <td style="font-weight:600;color:var(--color-text-primary)">${App.formatCurrency(i.total, i.currency)}</td>
                 <td><span class="badge badge-${i.status}">${this.statusLabel(i.status)}</span></td>
+                <td>${i.is_ecf ? `<span class="badge ${this.dgiiBadgeClass(i.dgii_status)}" style="font-size:9px;">${this.dgiiLabel(i.dgii_status)}</span>` : '<span style="color:var(--color-text-tertiary)">—</span>'}</td>
                 <td>
                     <div class="row-actions">
                         <a href="#facturas/${i.id}" class="btn-icon" style="width:28px;height:28px;" title="Ver"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg></a>
@@ -117,7 +120,7 @@ const InvoicesModule = {
                     </div>
                 </td>
             </tr>
-        `).join('') : '<tr><td colspan="7" class="text-center text-muted" style="padding:48px;">No hay facturas que coincidan</td></tr>';
+        `).join('') : '<tr><td colspan="8" class="text-center text-muted" style="padding:48px;">No hay facturas que coincidan</td></tr>';
     },
 
     /* ═══════════════════════════════════════════════

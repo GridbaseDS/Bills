@@ -66,19 +66,38 @@ class InvoiceController extends Controller
             }
         }
 
-        // Auto-send email to client
-        $emailSent = false;
+        // Auto-send to client
+        $sent = false;
         $invoice->load('client');
         if ($invoice->client && !empty($invoice->client->email)) {
             try {
                 $this->autoSendInvoiceEmail($invoice);
-                $emailSent = true;
+                $sent = true;
             } catch (\Exception $e) {
                 \Illuminate\Support\Facades\Log::error("Auto-send failed for {$invoice->invoice_number}: " . $e->getMessage());
             }
+        } elseif ($invoice->client && !empty($invoice->client->whatsapp)) {
+            // Client has no email but has WhatsApp - send via WhatsApp only
+            try {
+                $whatsappService = new \App\Services\WhatsAppService();
+                if ($whatsappService->isEnabled()) {
+                    $invoice->load('items');
+                    if (!$invoice->isPaymentTokenValid()) {
+                        $invoice->generatePaymentToken();
+                    }
+                    $paymentLink = $invoice->getPaymentUrl();
+                    $waResult = $whatsappService->sendInvoice($invoice, $invoice->client->whatsapp, $paymentLink);
+                    if ($waResult['success']) {
+                        $invoice->update(['sent_at' => now(), 'sent_via' => 'whatsapp', 'status' => 'sent']);
+                        $sent = true;
+                    }
+                }
+            } catch (\Exception $e) {
+                \Illuminate\Support\Facades\Log::error("WhatsApp auto-send failed for {$invoice->invoice_number}: " . $e->getMessage());
+            }
         }
 
-        return response()->json(['success' => true, 'invoice' => $invoice, 'email_sent' => $emailSent], 201);
+        return response()->json(['success' => true, 'invoice' => $invoice, 'email_sent' => $sent], 201);
     }
 
     /**
@@ -223,6 +242,16 @@ class InvoiceController extends Controller
             } catch (\Exception $e) {
                 \Illuminate\Support\Facades\Log::error("Failed to send payment confirmation for {$invoice->invoice_number}: " . $e->getMessage());
             }
+        } elseif (!empty($invoice->client->whatsapp)) {
+            // Client has no email but has WhatsApp - send confirmation via WhatsApp only
+            try {
+                $whatsappService = new \App\Services\WhatsAppService();
+                if ($whatsappService->isEnabled()) {
+                    $whatsappService->sendPaymentConfirmation($invoice, $invoice->client->whatsapp, $amount);
+                }
+            } catch (\Exception $e) {
+                \Illuminate\Support\Facades\Log::error("WhatsApp payment confirmation error for {$invoice->invoice_number}: " . $e->getMessage());
+            }
         }
 
         return response()->json(['success' => true, 'paid' => $wasPaid]);
@@ -295,7 +324,25 @@ class InvoiceController extends Controller
                     ->attachData($pdfContent, $filename, ['mime' => 'application/pdf']);
         });
 
-        \Illuminate\Support\Facades\Log::info("Payment confirmation sent for {$invoice->invoice_number} to {$invoice->client->email}");
+        $sentVia = 'email';
+
+        // Also send payment confirmation via WhatsApp
+        if (!empty($invoice->client->whatsapp)) {
+            try {
+                $whatsappService = new \App\Services\WhatsAppService();
+                if ($whatsappService->isEnabled()) {
+                    $waResult = $whatsappService->sendPaymentConfirmation($invoice, $invoice->client->whatsapp, $paymentAmount);
+                    if ($waResult['success']) {
+                        $sentVia = 'email,whatsapp';
+                        \Illuminate\Support\Facades\Log::info("Payment confirmation for {$invoice->invoice_number} also sent via WhatsApp to {$invoice->client->whatsapp}");
+                    }
+                }
+            } catch (\Exception $e) {
+                \Illuminate\Support\Facades\Log::error("WhatsApp payment confirmation error for {$invoice->invoice_number}: " . $e->getMessage());
+            }
+        }
+
+        \Illuminate\Support\Facades\Log::info("Payment confirmation sent for {$invoice->invoice_number} to {$invoice->client->email} (via: {$sentVia})");
     }
 
     public function pdf($id)
@@ -324,8 +371,30 @@ class InvoiceController extends Controller
         $invoice = Invoice::with(['client', 'items'])->findOrFail($id);
         $settings = Setting::getAll();
 
-        if (empty($invoice->client->email)) {
-            return response()->json(['success' => false, 'error' => 'El cliente no tiene un correo electrónico configurado.'], 400);
+        if (empty($invoice->client->email) && empty($invoice->client->whatsapp)) {
+            return response()->json(['success' => false, 'error' => 'El cliente no tiene un correo electrónico ni WhatsApp configurado.'], 400);
+        }
+
+        // WhatsApp-only send (no email)
+        if (empty($invoice->client->email) && !empty($invoice->client->whatsapp)) {
+            try {
+                $whatsappService = new \App\Services\WhatsAppService();
+                if (!$whatsappService->isEnabled()) {
+                    return response()->json(['success' => false, 'error' => 'El cliente no tiene email y WhatsApp no está habilitado.'], 400);
+                }
+                if (!$invoice->isPaymentTokenValid()) {
+                    $invoice->generatePaymentToken();
+                }
+                $paymentLink = $invoice->getPaymentUrl();
+                $waResult = $whatsappService->sendInvoice($invoice, $invoice->client->whatsapp, $paymentLink);
+                if ($waResult['success']) {
+                    $invoice->update(['sent_at' => now(), 'sent_via' => 'whatsapp', 'status' => 'sent']);
+                    return response()->json(['success' => true, 'sent_via' => 'whatsapp']);
+                }
+                return response()->json(['success' => false, 'error' => $waResult['message'] ?? 'Error al enviar por WhatsApp'], 500);
+            } catch (\Exception $e) {
+                return response()->json(['success' => false, 'error' => $e->getMessage()], 500);
+            }
         }
 
         try {

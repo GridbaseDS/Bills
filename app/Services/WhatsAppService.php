@@ -130,6 +130,42 @@ class WhatsAppService
     }
 
     /**
+     * Send payment confirmation via WhatsApp
+     */
+    public function sendPaymentConfirmation($invoice, string $recipientPhone, $paymentAmount = null): array
+    {
+        if (!$this->enabled) {
+            return ['success' => false, 'message' => 'WhatsApp no está habilitado'];
+        }
+
+        $phone = $this->formatPhone($recipientPhone);
+
+        $clientName = $invoice->client->contact_name ?? 'Cliente';
+        $invoiceNumber = $invoice->invoice_number;
+        $currency = $invoice->currency ?? 'USD';
+
+        $message = "Hola {$clientName},\n\n";
+        $message .= "✅ *Pago recibido*\n\n";
+        $message .= "📄 Factura: *{$invoiceNumber}*\n";
+
+        if ($paymentAmount) {
+            $message .= "💰 Monto recibido: *" . $this->formatCurrency((float)$paymentAmount, $currency) . "*\n";
+        }
+
+        if ($invoice->status === 'paid') {
+            $message .= "\n🎉 Esta factura ha sido saldada en su totalidad.\n";
+        } else {
+            $pending = $invoice->total - $invoice->amount_paid;
+            $message .= "📊 Saldo pendiente: *" . $this->formatCurrency($pending, $currency) . "*\n";
+        }
+
+        $message .= "\n¡Gracias por su pago!\n";
+        $message .= "_GridBase Digital Solutions_";
+
+        return $this->sendTextMessage($phone, $message);
+    }
+
+    /**
      * Send a plain text message via WhatsApp
      */
     public function sendTextMessage(string $recipientPhone, string $message): array

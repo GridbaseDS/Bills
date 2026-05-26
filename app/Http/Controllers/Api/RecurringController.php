@@ -237,12 +237,35 @@ class RecurringController extends Controller
                         ->attachData($pdfContent, $filename, ['mime' => 'application/pdf']);
             });
 
+            $sentVia = 'email';
+
+            // Also send via WhatsApp if client has WhatsApp number
+            if (!empty($invoice->client->whatsapp)) {
+                try {
+                    $whatsappService = new \App\Services\WhatsAppService();
+                    if ($whatsappService->isEnabled()) {
+                        // Generate payment link
+                        if (!$invoice->isPaymentTokenValid()) {
+                            $invoice->generatePaymentToken();
+                        }
+                        $paymentLink = $invoice->getPaymentUrl();
+                        $whatsappResult = $whatsappService->sendInvoice($invoice, $invoice->client->whatsapp, $paymentLink);
+                        if ($whatsappResult['success']) {
+                            $sentVia = 'email,whatsapp';
+                            Log::info("Recurring invoice {$invoice->invoice_number} also sent via WhatsApp to {$invoice->client->whatsapp}");
+                        }
+                    }
+                } catch (\Exception $e) {
+                    Log::error("WhatsApp send error for recurring invoice {$invoice->invoice_number}: " . $e->getMessage());
+                }
+            }
+
             $invoice->update([
                 'sent_at'  => now(),
-                'sent_via' => 'email',
+                'sent_via' => $sentVia,
             ]);
 
-            Log::info("First invoice {$invoice->invoice_number} sent to {$invoice->client->email} (recurring #{$invoice->recurring_id})");
+            Log::info("First invoice {$invoice->invoice_number} sent to {$invoice->client->email} (via: {$sentVia}, recurring #{$invoice->recurring_id})");
             return true;
         } catch (\Exception $e) {
             Log::error("Failed to send first invoice {$invoice->invoice_number}: " . $e->getMessage());

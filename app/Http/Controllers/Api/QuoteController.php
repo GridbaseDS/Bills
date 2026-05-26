@@ -249,7 +249,7 @@ class QuoteController extends Controller
                 try {
                     $whatsappService = new \App\Services\WhatsAppService();
                     if ($whatsappService->isEnabled()) {
-                        $whatsappResult = $whatsappService->sendQuote($quote, $quote->client->whatsapp);
+                        $whatsappResult = $whatsappService->sendQuote($quote, $quote->client->whatsapp, $pdfContent, $filename);
                         if ($whatsappResult['success']) {
                             $sentVia = 'email,whatsapp';
                             \Illuminate\Support\Facades\Log::info("Quote {$quote->quote_number} also sent via WhatsApp to {$quote->client->whatsapp}");

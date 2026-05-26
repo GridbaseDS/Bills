@@ -86,7 +86,20 @@ class InvoiceController extends Controller
                         $invoice->generatePaymentToken();
                     }
                     $paymentLink = $invoice->getPaymentUrl();
-                    $waResult = $whatsappService->sendInvoice($invoice, $invoice->client->whatsapp, $paymentLink);
+
+                    // Generate PDF for WhatsApp
+                    $settings = Setting::getAll();
+                    $pdfData = [
+                        'invoice' => $invoice->toArray(),
+                        'company' => self::buildCompanyData($settings),
+                        'client'  => $invoice->client->toArray(),
+                        'items'   => $invoice->items->toArray(),
+                        'settings' => $settings,
+                    ];
+                    $pdfContent = \Barryvdh\DomPDF\Facade\Pdf::loadView('pdf.invoice', $pdfData)->output();
+                    $pdfFilename = "Factura-{$invoice->invoice_number}.pdf";
+
+                    $waResult = $whatsappService->sendInvoice($invoice, $invoice->client->whatsapp, $paymentLink, $pdfContent, $pdfFilename);
                     if ($waResult['success']) {
                         $invoice->update(['sent_at' => now(), 'sent_via' => 'whatsapp', 'status' => 'sent']);
                         $sent = true;
@@ -157,7 +170,7 @@ class InvoiceController extends Controller
                 $whatsappService = new \App\Services\WhatsAppService();
                 if ($whatsappService->isEnabled()) {
                     $paymentLink = $invoice->getPaymentUrl();
-                    $whatsappResult = $whatsappService->sendInvoice($invoice, $invoice->client->whatsapp, $paymentLink);
+                    $whatsappResult = $whatsappService->sendInvoice($invoice, $invoice->client->whatsapp, $paymentLink, $pdfContent, $filename);
                     if ($whatsappResult['success']) {
                         $sentVia = 'email,whatsapp';
                         \Illuminate\Support\Facades\Log::info("Invoice {$invoice->invoice_number} auto-sent via WhatsApp to {$invoice->client->whatsapp}");
@@ -386,7 +399,20 @@ class InvoiceController extends Controller
                     $invoice->generatePaymentToken();
                 }
                 $paymentLink = $invoice->getPaymentUrl();
-                $waResult = $whatsappService->sendInvoice($invoice, $invoice->client->whatsapp, $paymentLink);
+
+                // Generate PDF for WhatsApp
+                $companyData = self::buildCompanyData($settings);
+                $pdfData = [
+                    'invoice' => $invoice->toArray(),
+                    'company' => $companyData,
+                    'client'  => $invoice->client->toArray(),
+                    'items'   => $invoice->items->toArray(),
+                    'settings' => $settings,
+                ];
+                $pdfContent = \Barryvdh\DomPDF\Facade\Pdf::loadView('pdf.invoice', $pdfData)->output();
+                $pdfFilename = "Factura-{$invoice->invoice_number}.pdf";
+
+                $waResult = $whatsappService->sendInvoice($invoice, $invoice->client->whatsapp, $paymentLink, $pdfContent, $pdfFilename);
                 if ($waResult['success']) {
                     $invoice->update(['sent_at' => now(), 'sent_via' => 'whatsapp', 'status' => 'sent']);
                     return response()->json(['success' => true, 'sent_via' => 'whatsapp']);
@@ -462,7 +488,7 @@ class InvoiceController extends Controller
                             $paymentLink = url("/pay/{$invoice->payment_token}");
                         }
                         
-                        $whatsappResult = $whatsappService->sendInvoice($invoice, $invoice->client->whatsapp, $paymentLink);
+                        $whatsappResult = $whatsappService->sendInvoice($invoice, $invoice->client->whatsapp, $paymentLink, $pdfContent, $filename);
                         if ($whatsappResult['success']) {
                             $sentVia = 'email,whatsapp';
                             \Illuminate\Support\Facades\Log::info("Invoice {$invoice->invoice_number} also sent via WhatsApp to {$invoice->client->whatsapp}");

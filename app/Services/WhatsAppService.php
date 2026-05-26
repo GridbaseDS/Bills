@@ -40,10 +40,9 @@ class WhatsAppService
     public function isEnabled(): bool { return $this->enabled; }
 
     /**
-     * Send invoice notification via WhatsApp
-     * Can send with payment link or just notification
+     * Send invoice notification via WhatsApp with optional PDF attachment
      */
-    public function sendInvoice($invoice, string $recipientPhone, ?string $paymentLink = null): array
+    public function sendInvoice($invoice, string $recipientPhone, ?string $paymentLink = null, ?string $pdfContent = null, ?string $pdfFilename = null): array
     {
         if (!$this->enabled) {
             return ['success' => false, 'message' => 'WhatsApp no está habilitado'];
@@ -51,31 +50,42 @@ class WhatsAppService
 
         $phone = $this->formatPhone($recipientPhone);
         
-        // Build message
+        // Build caption/message
         $clientName = $invoice->client->contact_name ?? 'Cliente';
         $invoiceNumber = $invoice->invoice_number;
         $total = $this->formatCurrency($invoice->total, $invoice->currency);
         $dueDate = $this->formatDate($invoice->due_date);
         
-        $message = "Hola {$clientName},\n\n";
-        $message .= "Te enviamos la factura *{$invoiceNumber}*\n\n";
-        $message .= "📄 Total: *{$total}*\n";
-        $message .= "📅 Vence: {$dueDate}\n";
+        $caption = "Hola {$clientName},\n\n";
+        $caption .= "Te enviamos la factura *{$invoiceNumber}*\n\n";
+        $caption .= "📄 Total: *{$total}*\n";
+        $caption .= "📅 Vence: {$dueDate}\n";
         
         if ($paymentLink) {
-            $message .= "\n💳 Paga aquí: {$paymentLink}\n";
+            $caption .= "\n💳 Paga aquí: {$paymentLink}\n";
         }
         
-        $message .= "\nGracias por tu preferencia.\n";
-        $message .= "_GridBase Digital Solutions_";
+        $caption .= "\nGracias por tu preferencia.\n";
+        $caption .= "_GridBase Digital Solutions_";
+
+        // If we have PDF content, send as document with caption
+        if ($pdfContent) {
+            $filename = $pdfFilename ?: "Factura-{$invoiceNumber}.pdf";
+            $result = $this->sendDocument($phone, $pdfContent, $filename, $caption);
+            if ($result['success']) {
+                return $result;
+            }
+            // If document send fails, fall back to text message
+            Log::warning("WhatsApp document send failed, falling back to text: " . ($result['message'] ?? ''));
+        }
         
-        return $this->sendTextMessage($phone, $message);
+        return $this->sendTextMessage($phone, $caption);
     }
 
     /**
-     * Send quote notification via WhatsApp
+     * Send quote notification via WhatsApp with optional PDF attachment
      */
-    public function sendQuote($quote, string $recipientPhone): array
+    public function sendQuote($quote, string $recipientPhone, ?string $pdfContent = null, ?string $pdfFilename = null): array
     {
         if (!$this->enabled) {
             return ['success' => false, 'message' => 'WhatsApp no está habilitado'];
@@ -83,20 +93,30 @@ class WhatsAppService
 
         $phone = $this->formatPhone($recipientPhone);
         
-        // Build message
+        // Build caption
         $clientName = $quote->client->contact_name ?? 'Cliente';
         $quoteNumber = $quote->quote_number;
         $total = $this->formatCurrency($quote->total, $quote->currency);
         $expiryDate = $this->formatDate($quote->expiry_date);
         
-        $message = "Hola {$clientName},\n\n";
-        $message .= "Te enviamos la cotización *{$quoteNumber}*\n\n";
-        $message .= "📄 Total: *{$total}*\n";
-        $message .= "📅 Válida hasta: {$expiryDate}\n";
-        $message .= "\nGracias por tu preferencia.\n";
-        $message .= "_GridBase Digital Solutions_";
+        $caption = "Hola {$clientName},\n\n";
+        $caption .= "Te enviamos la cotización *{$quoteNumber}*\n\n";
+        $caption .= "📄 Total: *{$total}*\n";
+        $caption .= "📅 Válida hasta: {$expiryDate}\n";
+        $caption .= "\nGracias por tu preferencia.\n";
+        $caption .= "_GridBase Digital Solutions_";
+
+        // If we have PDF content, send as document
+        if ($pdfContent) {
+            $filename = $pdfFilename ?: "Cotizacion-{$quoteNumber}.pdf";
+            $result = $this->sendDocument($phone, $pdfContent, $filename, $caption);
+            if ($result['success']) {
+                return $result;
+            }
+            Log::warning("WhatsApp document send failed for quote, falling back to text: " . ($result['message'] ?? ''));
+        }
         
-        return $this->sendTextMessage($phone, $message);
+        return $this->sendTextMessage($phone, $caption);
     }
 
     /**
@@ -182,6 +202,86 @@ class WhatsAppService
             'text' => ['body' => $message],
         ];
         return $this->apiRequest($payload);
+    }
+
+    /**
+     * Send a document (PDF) via WhatsApp
+     * Uploads the file to Media API first, then sends as document message
+     */
+    public function sendDocument(string $recipientPhone, string $fileContent, string $filename, string $caption = ''): array
+    {
+        if (!$this->enabled) {
+            return ['success' => false, 'message' => 'WhatsApp no está habilitado'];
+        }
+
+        $phone = $this->formatPhone($recipientPhone);
+
+        // Step 1: Upload media to WhatsApp
+        $mediaId = $this->uploadMedia($fileContent, 'application/pdf', $filename);
+        if (!$mediaId) {
+            return ['success' => false, 'message' => 'Error al subir el documento a WhatsApp'];
+        }
+
+        // Step 2: Send document message
+        $payload = [
+            'messaging_product' => 'whatsapp',
+            'to' => $phone,
+            'type' => 'document',
+            'document' => [
+                'id' => $mediaId,
+                'filename' => $filename,
+                'caption' => $caption,
+            ],
+        ];
+
+        return $this->apiRequest($payload);
+    }
+
+    /**
+     * Upload media (file) to WhatsApp Cloud API
+     * Returns the media_id on success, null on failure
+     */
+    private function uploadMedia(string $fileContent, string $mimeType, string $filename): ?string
+    {
+        $url = sprintf('%s/%s/%s/media',
+            $this->config['api_base_url'],
+            $this->config['api_version'],
+            $this->config['phone_id']
+        );
+
+        try {
+            // Save to a temp file for the multipart upload
+            $tmpPath = tempnam(sys_get_temp_dir(), 'wa_pdf_');
+            file_put_contents($tmpPath, $fileContent);
+
+            $response = Http::withToken($this->config['access_token'])
+                ->timeout(60)
+                ->attach('file', fopen($tmpPath, 'r'), $filename, ['Content-Type' => $mimeType])
+                ->post($url, [
+                    'messaging_product' => 'whatsapp',
+                    'type' => $mimeType,
+                ]);
+
+            // Clean up temp file
+            @unlink($tmpPath);
+
+            if ($response->successful() && $response->json('id')) {
+                $mediaId = $response->json('id');
+                Log::info("WhatsApp media uploaded: {$mediaId} ({$filename})");
+                return $mediaId;
+            }
+
+            $error = $response->json('error.message', 'Unknown error');
+            Log::error('WhatsApp media upload failed', [
+                'error' => $error,
+                'response' => $response->json()
+            ]);
+            return null;
+        } catch (\Exception $e) {
+            @unlink($tmpPath ?? '');
+            Log::error('WhatsApp media upload exception: ' . $e->getMessage());
+            return null;
+        }
     }
 
     // Legacy methods for backward compatibility

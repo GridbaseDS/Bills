@@ -249,7 +249,7 @@ class RecurringController extends Controller
                             $invoice->generatePaymentToken();
                         }
                         $paymentLink = $invoice->getPaymentUrl();
-                        $whatsappResult = $whatsappService->sendInvoice($invoice, $invoice->client->whatsapp, $paymentLink);
+                        $whatsappResult = $whatsappService->sendInvoice($invoice, $invoice->client->whatsapp, $paymentLink, $pdfContent, $filename);
                         if ($whatsappResult['success']) {
                             $sentVia = 'email,whatsapp';
                             Log::info("Recurring invoice {$invoice->invoice_number} also sent via WhatsApp to {$invoice->client->whatsapp}");

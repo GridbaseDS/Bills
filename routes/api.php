@@ -17,6 +17,7 @@ use App\Http\Controllers\Api\ReceivedInvoiceController;
 use App\Http\Controllers\Api\DgiiReportController;
 use App\Http\Controllers\Api\ExpenseController;
 use App\Http\Controllers\WhatsAppWebhookController;
+use App\Http\Controllers\Api\UserController;
 
 // Public Auth
 Route::post('/auth/login', [AuthController::class, 'login']);
@@ -91,8 +92,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/settings/test-smtp', [SettingController::class, 'testSmtp'])->middleware('role:admin');
     Route::get('/settings/diagnose-smtp', [SettingController::class, 'diagnoseSmtp'])->middleware('role:admin');
 
-    // DGII Tests (Admin only)
+    // DGII Tests & User Management (Admin only)
     Route::middleware('role:admin')->group(function () {
+        Route::apiResource('users', UserController::class);
         Route::post('/dgii/run-tests', [DgiiTestUIController::class, 'runTests']);
         Route::post('/dgii/diagnose', [DgiiTestUIController::class, 'diagnose']);
         Route::post('/dgii/run-aprobaciones', [DgiiTestUIController::class, 'runAprobaciones']);

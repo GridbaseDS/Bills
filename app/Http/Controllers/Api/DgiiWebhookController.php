@@ -200,19 +200,95 @@ XML;
     /**
      * URL de Aprobación Comercial (ACECF)
      * POST /fe/aprobacioncomercial/api/ecf
+     * 
+     * Must respond with signed ACECF XML conforming to ACECF v1.0.xsd
      */
     public function aprobacionComercial(Request $request)
     {
         Log::info("DGII Webhook: Aprobacion Comercial received");
+        Log::info("DGII Webhook AC: Content-Type: " . $request->header('Content-Type'));
 
-        $xml = <<<XML
+        // Get raw XML (may be raw body or multipart)
+        $rawXml = $request->getContent();
+        if (empty(trim($rawXml)) || strpos($rawXml, '<?xml') === false) {
+            if ($request->hasFile('xml')) {
+                $rawXml = $request->file('xml')->getContent();
+            } elseif ($request->has('xml')) {
+                $rawXml = $request->input('xml');
+            }
+        }
+
+        // Save for debug
+        $debugPath = storage_path('app/dgii_debug_acecf_' . date('Ymd_His') . '.xml');
+        file_put_contents($debugPath, $rawXml);
+        Log::info("DGII Webhook AC: Raw XML saved, length: " . strlen($rawXml));
+
+        // Extract fields using case-insensitive regex
+        $rncEmisor = '999999999';
+        $rncComprador = Setting::where('setting_key', 'company_tax_id')->value('setting_value') ?? '999999999';
+        $rncComprador = preg_replace('/[^0-9]/', '', $rncComprador);
+        $encf = 'E310000000001';
+        $fechaEmision = date('d-m-Y');
+        $montoTotal = '0.00';
+
+        if (preg_match('/<(?:\w+:)?RN?C?Emisor>(\d+)</i', $rawXml, $m)) {
+            $rncEmisor = $m[1];
+        }
+        if (preg_match('/<(?:\w+:)?RN?C?(?:Comprador|Receptor)>(\d+)</i', $rawXml, $m)) {
+            $rncComprador = $m[1];
+        }
+        if (preg_match('/<(?:\w+:)?eNCF>(E\w{10,12})</i', $rawXml, $m)) {
+            $encf = $m[1];
+        }
+        if (preg_match('/<(?:\w+:)?FechaEmision>([^<]+)</i', $rawXml, $m)) {
+            $fechaEmision = trim($m[1]);
+        }
+        if (preg_match('/<(?:\w+:)?MontoTotal>([^<]+)</i', $rawXml, $m)) {
+            $montoTotal = number_format((float)trim($m[1]), 2, '.', '');
+        }
+
+        Log::info("DGII Webhook AC: Parsed — RNCEmisor:{$rncEmisor}, RNCComprador:{$rncComprador}, eNCF:{$encf}");
+
+        // ACECF response per ACECF v1.0.xsd
+        // Estado: 1 = Aceptado, 2 = Rechazado
+        $fechaHoraAprobacion = date('d-m-Y H:i:s');
+
+        $acecfXml = <<<XML
 <?xml version="1.0" encoding="utf-8"?>
-<Resultado>
-    <Estado>0</Estado>
-    <Descripcion>Aprobación Comercial recibida y guardada correctamente</Descripcion>
-</Resultado>
+<ACECF xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="ACECF v.1.0.xsd">
+    <DetalleAprobacionComercial>
+        <Version>1.0</Version>
+        <RNCEmisor>{$rncEmisor}</RNCEmisor>
+        <eNCF>{$encf}</eNCF>
+        <FechaEmision>{$fechaEmision}</FechaEmision>
+        <MontoTotal>{$montoTotal}</MontoTotal>
+        <RNCComprador>{$rncComprador}</RNCComprador>
+        <Estado>1</Estado>
+        <FechaHoraAprobacionComercial>{$fechaHoraAprobacion}</FechaHoraAprobacionComercial>
+    </DetalleAprobacionComercial>
+</ACECF>
 XML;
 
-        return response($xml, 200)->header('Content-Type', 'application/xml');
+        Log::info("DGII Webhook AC: ACECF generado para {$encf}");
+
+        // Sign with certificate
+        $certFile = Setting::where('setting_key', 'dgii_certificate_path')->value('setting_value');
+        $password = Setting::where('setting_key', 'dgii_certificate_password')->value('setting_value');
+
+        if ($certFile && $password) {
+            $p12Path = storage_path('app/secure/' . $certFile);
+            if (file_exists($p12Path)) {
+                try {
+                    $signedAcecf = $this->signatureService->signXml($acecfXml, $p12Path, $password);
+                    Log::info("DGII Webhook AC: ACECF firmado exitosamente para {$encf}");
+                    return response($signedAcecf, 200)->header('Content-Type', 'application/xml');
+                } catch (Exception $e) {
+                    Log::error("DGII Webhook AC: Error signing ACECF: " . $e->getMessage());
+                }
+            }
+        }
+
+        Log::warning("DGII Webhook AC: Returning unsigned ACECF for {$encf}");
+        return response($acecfXml, 200)->header('Content-Type', 'application/xml');
     }
 }

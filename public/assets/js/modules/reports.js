@@ -262,7 +262,7 @@ const ReportsModule = {
     },
 
     async exportTxt() {
-        const periodStr = `${this._year}${str_pad(this._month, 2, '0', STR_PAD_LEFT)}`;
+        const periodStr = `${this._year}${String(this._month).padStart(2, '0')}`;
         const records = this._currentTab === '607' ? this._records607 : this._records606;
 
         if (records.length === 0) {

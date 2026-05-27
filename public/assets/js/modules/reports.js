@@ -300,6 +300,7 @@ const ReportsModule = {
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
+            a.target = '_blank';
             
             // Retrieve company RNC
             const rnc = App.state.settings?.company_tax_id 

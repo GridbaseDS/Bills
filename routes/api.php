@@ -88,6 +88,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/dgii/run-tests', [DgiiTestUIController::class, 'runTests']);
     Route::post('/dgii/diagnose', [DgiiTestUIController::class, 'diagnose']);
     Route::post('/dgii/run-aprobaciones', [DgiiTestUIController::class, 'runAprobaciones']);
+    Route::get('/dgii/status', [DgiiTestUIController::class, 'connectionStatus']);
 
     // Received Invoices (Aprobaciones Comerciales)
     Route::get('/received-invoices', [ReceivedInvoiceController::class, 'index']);

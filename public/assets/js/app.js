@@ -345,6 +345,10 @@ window.App = {
                             </div>
                         </div>
                         <div class="topbar-actions">
+                            <div id="dgii-status-pill" style="display:inline-flex;align-items:center;gap:6px;padding:4px 12px;border-radius:var(--radius-full);font-size:11px;font-weight:600;letter-spacing:0.3px;cursor:pointer;transition:all .2s ease;background:var(--color-border);color:var(--color-text-muted);" onclick="App.navigate('pruebas-dgii')" title="Estado de conexión DGII">
+                                <span id="dgii-status-dot" style="width:7px;height:7px;border-radius:50%;background:currentColor;flex-shrink:0;"></span>
+                                <span id="dgii-status-label">DGII...</span>
+                            </div>
                             <button class="btn-icon" id="theme-toggle" onclick="App.toggleTheme()" title="Cambiar Tema" style="display:inline-flex;align-items:center;justify-content:center;"></button>
                             <button class="btn-icon" title="Notificaciones">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
@@ -371,6 +375,7 @@ window.App = {
 
         document.getElementById('sidebar-overlay')?.addEventListener('click', () => this.toggleSidebar());
         this.loadOverdueBadge();
+        this.loadDgiiStatus();
         this.bindSearch();
         this.updateThemeButton();
     },
@@ -385,6 +390,34 @@ window.App = {
                 else { badge.style.display = 'none'; }
             }
         } catch(e) {}
+    },
+
+    async loadDgiiStatus() {
+        const pill = document.getElementById('dgii-status-pill');
+        const dot = document.getElementById('dgii-status-dot');
+        const label = document.getElementById('dgii-status-label');
+        if (!pill) return;
+
+        try {
+            const res = await this.api('dgii/status', { silent: true });
+            const colors = {
+                connected: { bg: 'rgba(16,185,129,0.12)', color: '#10b981', border: 'rgba(16,185,129,0.25)' },
+                disconnected: { bg: 'rgba(239,68,68,0.12)', color: '#ef4444', border: 'rgba(239,68,68,0.25)' },
+                not_configured: { bg: 'rgba(245,158,11,0.12)', color: '#f59e0b', border: 'rgba(245,158,11,0.25)' },
+                error: { bg: 'rgba(239,68,68,0.12)', color: '#ef4444', border: 'rgba(239,68,68,0.25)' }
+            };
+            const c = colors[res.status] || colors.error;
+            pill.style.background = c.bg;
+            pill.style.color = c.color;
+            pill.style.border = `1px solid ${c.border}`;
+            dot.style.background = c.color;
+            const envTag = res.env === 'production' ? '' : ' (Test)';
+            label.textContent = res.label + envTag;
+        } catch (e) {
+            pill.style.background = 'rgba(107,114,128,0.12)';
+            pill.style.color = '#6b7280';
+            label.textContent = 'DGII N/D';
+        }
     },
 
     toggleSidebar() {

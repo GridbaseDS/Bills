@@ -261,4 +261,54 @@ class DgiiTestUIController extends Controller
             'xml_preview' => substr($signedXml, 0, 500) . '...',
         ]);
     }
+
+    /**
+     * Lightweight DGII connection status check for the topbar pill.
+     */
+    public function connectionStatus(DgiiAuthService $auth)
+    {
+        try {
+            $settings = Setting::getAll();
+            $certPath = $settings['dgii_certificate_path'] ?? '';
+            $certPass = $settings['dgii_certificate_password'] ?? '';
+            $env = $settings['dgii_env'] ?? 'testing';
+            $rnc = preg_replace('/[^0-9]/', '', $settings['company_tax_id'] ?? '');
+
+            // Check if e-CF is configured at all
+            if (empty($certPath) || empty($rnc)) {
+                return response()->json([
+                    'status' => 'not_configured',
+                    'label' => 'e-CF No Configurado',
+                    'env' => $env
+                ]);
+            }
+
+            // Check certificate file exists
+            $p12Full = storage_path('app/secure/' . $certPath);
+            if (!file_exists($p12Full)) {
+                return response()->json([
+                    'status' => 'error',
+                    'label' => 'Certificado no encontrado',
+                    'env' => $env
+                ]);
+            }
+
+            // Try to get a valid token (uses cache if available)
+            $token = $auth->getValidToken($settings);
+
+            return response()->json([
+                'status' => 'connected',
+                'label' => 'DGII Conectado',
+                'env' => $env
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => 'disconnected',
+                'label' => 'DGII Desconectado',
+                'error' => $e->getMessage(),
+                'env' => $settings['dgii_env'] ?? 'testing'
+            ]);
+        }
+    }
 }

@@ -1,4 +1,4 @@
-name: Deploy SaaS to VPS
+name: Deploy to All Servers
 
 on:
   push:
@@ -6,7 +6,11 @@ on:
       - main
 
 jobs:
-  deploy:
+  # ═══════════════════════════════════════════
+  # Job 1: Deploy SaaS to VPS (HestiaCP)
+  # ═══════════════════════════════════════════
+  deploy-vps:
+    name: 🚀 VPS (HestiaCP)
     runs-on: ubuntu-latest
 
     steps:
@@ -27,7 +31,7 @@ jobs:
         source: "bills_deploy.zip"
         target: "/home/grupaqgl/web/bills.gridbase.com.do"
 
-    - name: SSH Command Execution (Extract & Deploy)
+    - name: SSH Deploy to VPS
       uses: appleboy/ssh-action@v1.0.3
       with:
         host: ${{ secrets.VPS_HOST }}
@@ -56,3 +60,42 @@ jobs:
           sudo -u grupaqgl php artisan config:cache
           sudo -u grupaqgl php artisan route:cache
           sudo -u grupaqgl php artisan view:cache
+
+  # ═══════════════════════════════════════════
+  # Job 2: Deploy Original to cPanel
+  # ═══════════════════════════════════════════
+  deploy-cpanel:
+    name: 🌐 cPanel (Original)
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: SSH Deploy to cPanel
+      uses: appleboy/ssh-action@v1.0.3
+      with:
+        host: ${{ secrets.CPANEL_HOST }}
+        username: ${{ secrets.CPANEL_USERNAME }}
+        password: ${{ secrets.CPANEL_PASSWORD }}
+        port: ${{ secrets.CPANEL_PORT }}
+        command_timeout: 5m
+        script: |
+          APP_DIR="/home/grupaqgl/bills.gridbase.com.do"
+          cd $APP_DIR
+          
+          # Pull latest changes from GitHub
+          git fetch origin main
+          git reset --hard origin/main
+          
+          # Ensure storage directories exist
+          mkdir -p storage/framework/cache/data storage/framework/sessions storage/framework/views storage/logs bootstrap/cache
+          chmod -R 775 storage bootstrap/cache
+          
+          # Install Composer dependencies
+          /opt/alt/php82/usr/bin/composer install --no-dev --optimize-autoloader --no-interaction
+          
+          # Run migrations
+          php artisan migrate --force
+          
+          # Clear & rebuild caches
+          php artisan config:cache
+          php artisan route:cache
+          php artisan view:cache

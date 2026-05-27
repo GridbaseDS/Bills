@@ -243,6 +243,7 @@ button.tab-link {
 .metric-card {
   padding: 14px 16px;
   border-radius: var(--radius-lg);
+  min-height: 86px;
 }
 
 .metric-value {
@@ -253,13 +254,17 @@ button.tab-link {
   font-size: 11px;
 }
 
-.metric-header { margin-bottom: 8px; }
-
-.metric-icon-box {
-  width: 28px;
-  height: 28px;
+.metric-card-icon {
+  width: 52px;
+  height: 52px;
+  right: -6px;
+  bottom: -6px;
+  opacity: 0.04;
 }
-.metric-icon-box svg { width: 14px; height: 14px; }
+
+.metric-card:hover .metric-card-icon {
+  transform: scale(1.08) rotate(-6deg);
+}
 
 /* ═══════════════════════════════════════════════════════════
    DATA TABLE → MOBILE CARD LIST

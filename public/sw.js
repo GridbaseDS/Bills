@@ -1,10 +1,10 @@
-// GridBase Bills — Service Worker v4
-const CACHE_NAME = 'gridbase-bills-v4';
+// GridBase Bills — Service Worker v6
+const CACHE_NAME = 'gridbase-bills-v6';
 const STATIC_ASSETS = [
   '/',
-  '/assets/css/app.css?v=47',
-  '/assets/css/mobile.css?v=4',
-  '/assets/js/app.js?v=47',
+  '/assets/css/app.css?v=49',
+  '/assets/css/mobile.css?v=6',
+  '/assets/js/app.js?v=49',
   '/manifest.json',
   'https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap'
 ];

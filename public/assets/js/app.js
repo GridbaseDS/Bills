@@ -3,15 +3,15 @@
  * Main Frontend Application Logic — Gridbase Design Kit v3
  */
 
-import DashboardModule from './modules/dashboard.js?v=47';
-import InvoicesModule from './modules/invoices.js?v=47';
-import QuotesModule from './modules/quotes.js?v=47';
-import ClientsModule from './modules/clients.js?v=47';
-import ItemsModule from './modules/items.js?v=47';
-import SettingsModule from './modules/settings.js?v=47';
-import RecurringModule from './modules/recurring.js?v=47';
-import DgiiTestsModule from './modules/dgii-tests.js?v=47';
-import ReceivedInvoicesModule from './modules/received-invoices.js?v=47';
+import DashboardModule from './modules/dashboard.js?v=49';
+import InvoicesModule from './modules/invoices.js?v=49';
+import QuotesModule from './modules/quotes.js?v=49';
+import ClientsModule from './modules/clients.js?v=49';
+import ItemsModule from './modules/items.js?v=49';
+import SettingsModule from './modules/settings.js?v=49';
+import RecurringModule from './modules/recurring.js?v=49';
+import DgiiTestsModule from './modules/dgii-tests.js?v=49';
+import ReceivedInvoicesModule from './modules/received-invoices.js?v=49';
 
 window.App = {
     state: {

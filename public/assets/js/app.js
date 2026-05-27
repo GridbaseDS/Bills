@@ -3,15 +3,15 @@
  * Main Frontend Application Logic — Gridbase Design Kit v3
  */
 
-import DashboardModule from './modules/dashboard.js?v=42';
-import InvoicesModule from './modules/invoices.js?v=46';
-import QuotesModule from './modules/quotes.js?v=42';
-import ClientsModule from './modules/clients.js?v=42';
-import ItemsModule from './modules/items.js?v=42';
-import SettingsModule from './modules/settings.js?v=42';
-import RecurringModule from './modules/recurring.js?v=42';
-import DgiiTestsModule from './modules/dgii-tests.js?v=42';
-import ReceivedInvoicesModule from './modules/received-invoices.js?v=42';
+import DashboardModule from './modules/dashboard.js?v=47';
+import InvoicesModule from './modules/invoices.js?v=47';
+import QuotesModule from './modules/quotes.js?v=47';
+import ClientsModule from './modules/clients.js?v=47';
+import ItemsModule from './modules/items.js?v=47';
+import SettingsModule from './modules/settings.js?v=47';
+import RecurringModule from './modules/recurring.js?v=47';
+import DgiiTestsModule from './modules/dgii-tests.js?v=47';
+import ReceivedInvoicesModule from './modules/received-invoices.js?v=47';
 
 window.App = {
     state: {
@@ -265,6 +265,7 @@ window.App = {
                             </div>
                         </div>
                         <div class="topbar-actions">
+                            <button class="btn-icon" id="theme-toggle" onclick="App.toggleTheme()" title="Cambiar Tema" style="display:inline-flex;align-items:center;justify-content:center;"></button>
                             <button class="btn-icon" title="Notificaciones">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
                             </button>
@@ -291,6 +292,7 @@ window.App = {
         document.getElementById('sidebar-overlay')?.addEventListener('click', () => this.toggleSidebar());
         this.loadOverdueBadge();
         this.bindSearch();
+        this.updateThemeButton();
     },
 
     async loadOverdueBadge() {
@@ -312,6 +314,13 @@ window.App = {
 
     openMoreMenu() {
         document.getElementById('more-menu-overlay')?.remove();
+        const currentTheme = document.documentElement.getAttribute('data-theme') || 'light';
+        const isDark = currentTheme === 'dark';
+        const themeIcon = isDark ? 
+            `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>` : 
+            `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>`;
+        const themeText = isDark ? 'Modo Claro' : 'Modo Oscuro';
+
         const overlay = document.createElement('div');
         overlay.id = 'more-menu-overlay';
         overlay.className = 'action-sheet-overlay';
@@ -343,6 +352,10 @@ window.App = {
                 <button class="action-sheet-item" onclick="App.closeMoreMenu();App.navigate('pruebas-dgii')">
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"></path><rect x="9" y="3" width="6" height="4" rx="2"></rect><path d="M9 14l2 2 4-4"></path></svg>
                     Pruebas DGII
+                </button>
+                <button class="action-sheet-item" onclick="App.closeMoreMenu();App.toggleTheme()">
+                    ${themeIcon}
+                    ${themeText}
                 </button>
                 <div class="action-sheet-divider"></div>
                 <button class="action-sheet-item danger" onclick="App.closeMoreMenu();App.logout()">
@@ -399,7 +412,7 @@ window.App = {
             const searchContainer = document.getElementById('search-wrapper');
             const dropdown = document.createElement('div');
             dropdown.id = 'global-search-results';
-            dropdown.style.cssText = 'position:absolute;top:100%;left:0;right:0;background:#FFFFFF;border:1px solid var(--color-border);border-radius:var(--radius-lg);margin-top:8px;z-index:9999;max-height:400px;overflow-y:auto;padding:8px 0;box-shadow:var(--shadow-lg);';
+            dropdown.style.cssText = 'position:absolute;top:100%;left:0;right:0;background:var(--bg-card);border:1px solid var(--color-border);border-radius:var(--radius-lg);margin-top:8px;z-index:9999;max-height:400px;overflow-y:auto;padding:8px 0;box-shadow:var(--shadow-lg);';
             dropdown.innerHTML = '<div style="padding:12px 16px;color:var(--color-text-muted);font-size:13px;text-align:center;">Buscando...</div>';
             searchContainer.appendChild(dropdown);
 
@@ -454,6 +467,25 @@ window.App = {
                 document.getElementById('global-search-results')?.remove();
             }
         });
+    },
+
+    toggleTheme() {
+        const currentTheme = document.documentElement.getAttribute('data-theme') || 'light';
+        const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+        document.documentElement.setAttribute('data-theme', newTheme);
+        localStorage.setItem('theme', newTheme);
+        this.updateThemeButton();
+    },
+
+    updateThemeButton() {
+        const themeBtn = document.getElementById('theme-toggle');
+        if (!themeBtn) return;
+        const currentTheme = document.documentElement.getAttribute('data-theme') || 'light';
+        if (currentTheme === 'dark') {
+            themeBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>`;
+        } else {
+            themeBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>`;
+        }
     }
 };
 

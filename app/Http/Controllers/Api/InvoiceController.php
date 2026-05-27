@@ -214,6 +214,10 @@ class InvoiceController extends Controller
             'tax_rate' => $taxRate, 'tax_amount' => $taxAmount,
             'subtotal' => $subtotal, 'total' => $total,
             'notes' => $data['notes'] ?? null,
+            'is_ecf' => $data['is_ecf'] ?? $invoice->is_ecf,
+            'ecf_type' => $data['ecf_type'] ?? $invoice->ecf_type,
+            'modified_ncf' => $data['modified_ncf'] ?? $invoice->modified_ncf,
+            'modification_code' => $data['modification_code'] ?? $invoice->modification_code,
         ]);
 
         // Rebuild items

@@ -213,6 +213,12 @@ const InvoicesModule = {
                             <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="currentColor" style="margin-left:-2px;opacity:0.5;"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/></svg>
                         </button>
                         <button class="btn btn-secondary btn-sm" onclick="InvoicesModule.duplicateInvoice(${id})">Duplicar</button>
+                        ${inv.is_ecf && inv.encf && inv.ecf_type != 34 && inv.ecf_type != 33 ? `
+                            <button class="btn btn-secondary btn-sm" style="color:var(--color-danger-icon);border-color:rgba(239,68,68,0.2);" onclick="InvoicesModule.issueCreditNote(${id})">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:middle;margin-right:4px;"><path d="M9 14L4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5v0a5.5 5.5 0 0 1-5.5 5.5H11"/></svg>
+                                Nota de Crédito
+                            </button>
+                        ` : ''}
                         <a href="#facturas/edit/${id}" class="btn btn-secondary btn-sm">Editar</a>
                         ${inv.status !== 'paid' ? `<button class="btn btn-primary btn-sm" onclick="InvoicesModule.showPaymentModal(${id}, ${(inv.total || 0) - (inv.amount_paid || 0)})">Registrar Pago</button>` : ''}
                     </div>
@@ -350,15 +356,24 @@ const InvoicesModule = {
         
         try { this.availableItems = await App.api('items'); } catch(e) { this.availableItems = []; }
 
+        const today = new Date().toISOString().split('T')[0];
+        const nextWeek = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+
         let invoice = null;
         if (editId) {
             try { invoice = await App.api(`invoices/${editId}`); } catch(e) {
                 container.innerHTML = `<div class="text-red">Error al cargar factura</div>`; return;
             }
+        } else if (this._creditNotePrefill) {
+            invoice = { ...this._creditNotePrefill };
+            invoice.is_ecf = 1;
+            invoice.ecf_type = 34;
+            invoice.modified_ncf = this._creditNotePrefill.encf || this._creditNotePrefill.invoice_number;
+            invoice.modification_code = 1;
+            invoice.issue_date = today;
+            invoice.due_date = today;
+            this._creditNotePrefill = null;
         }
-
-        const today = new Date().toISOString().split('T')[0];
-        const nextWeek = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
 
         container.innerHTML = `
             <div style="margin-bottom:12px;">
@@ -398,16 +413,16 @@ const InvoicesModule = {
                         <div id="ecf-ncf-mod-wrapper" class="grid-2" style="grid-column:span 2;display:${invoice?.ecf_type == 33 || invoice?.ecf_type == 34 ? 'grid' : 'none'};gap:16px;background:var(--bg-hover);padding:12px 16px;border-radius:var(--radius-md);border:1px solid var(--color-border);">
                             <div class="form-group" style="margin:0;">
                                 <label class="form-label">e-NCF Modificado *</label>
-                                <input type="text" id="i_ncf_modificado" class="form-control" placeholder="Ej: E310000000001" value="${invoice?.ncf_modificado || ''}" maxlength="13">
+                                <input type="text" id="i_ncf_modificado" class="form-control" placeholder="Ej: E310000000001" value="${invoice?.modified_ncf || ''}" maxlength="13">
                                 <small style="color:var(--color-text-muted);font-size:11px;">e-NCF del documento original a modificar</small>
                             </div>
                             <div class="form-group" style="margin:0;">
                                 <label class="form-label">Codigo de Modificacion *</label>
                                 <select id="i_codigo_modificacion" class="form-control">
-                                    <option value="1" ${invoice?.codigo_modificacion == 1 ? 'selected' : ''}>1 - Anula Totalmente</option>
-                                    <option value="2" ${invoice?.codigo_modificacion == 2 ? 'selected' : ''}>2 - Corrige Texto</option>
-                                    <option value="3" ${invoice?.codigo_modificacion == 3 ? 'selected' : ''}>3 - Corrige Montos</option>
-                                    <option value="4" ${invoice?.codigo_modificacion == 4 ? 'selected' : ''}>4 - Reemplaza NCF</option>
+                                    <option value="1" ${invoice?.modification_code == 1 ? 'selected' : ''}>1 - Anula Totalmente</option>
+                                    <option value="2" ${invoice?.modification_code == 2 ? 'selected' : ''}>2 - Corrige Texto</option>
+                                    <option value="3" ${invoice?.modification_code == 3 ? 'selected' : ''}>3 - Corrige Montos</option>
+                                    <option value="4" ${invoice?.modification_code == 4 ? 'selected' : ''}>4 - Reemplaza NCF</option>
                                 </select>
                             </div>
                         </div>
@@ -750,6 +765,19 @@ const InvoicesModule = {
                 App.showToast('Factura duplicada correctamente');
                 window.App.navigate('facturas');
             } catch(e) {}
+        });
+    },
+
+    async issueCreditNote(id) {
+        this._showConfirm('¿Deseas emitir una Nota de Crédito para esta factura?', async () => {
+            try {
+                window.App.showToast('Cargando datos de factura...', 'info');
+                const invoice = await App.api(`invoices/${id}`);
+                this._creditNotePrefill = invoice;
+                window.App.navigate('facturas/nueva');
+            } catch(e) {
+                window.App.showToast('Error al cargar datos de la factura', 'error');
+            }
         });
     },
 

@@ -96,13 +96,13 @@ XML;
         try {
             if (!empty($rawXml)) {
                 // Use regex for robust extraction regardless of namespaces
-                // Extract RNCEmisor (try various tag names)
-                if (preg_match('/<(?:\w+:)?Rnc?E?misor>(\d+)</', $rawXml, $m)) {
+                // Extract RNCEmisor / RncEmisor
+                if (preg_match('/<(?:\w+:)?RN?C?Emisor>(\d+)</i', $rawXml, $m)) {
                     $rncEmisor = $m[1];
                 }
                 
-                // Extract RNCComprador/RncReceptor  
-                if (preg_match('/<(?:\w+:)?Rnc?(?:Comprador|Receptor)>(\d+)</', $rawXml, $m)) {
+                // Extract RNCComprador/RncComprador/RncReceptor  
+                if (preg_match('/<(?:\w+:)?RN?C?(?:Comprador|Receptor)>(\d+)</i', $rawXml, $m)) {
                     $rncReceptor = $m[1];
                 }
 

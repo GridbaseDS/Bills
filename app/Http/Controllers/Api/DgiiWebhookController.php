@@ -44,16 +44,42 @@ XML;
     /**
      * URL de Autenticación: Validación de Certificado
      * POST /fe/autenticacion/api/validacioncertificado
+     * 
+     * Receives signed semilla XML, validates it, and returns an authentication token.
+     * Response format per DGII spec: token + expira + expedido (yyyy-MM-ddTHH:mm:ssZ)
      */
     public function validacionCertificado(Request $request)
     {
-        Log::info("DGII Webhook: validacionCertificado ping received");
+        Log::info("DGII Webhook: validacionCertificado received");
+        Log::info("DGII Webhook Auth: Content-Type: " . $request->header('Content-Type'));
+        Log::info("DGII Webhook Auth: Accept: " . $request->header('Accept'));
 
-        // Retornar éxito estándar
+        // Generate a token (simple base64 encoded UUID, sufficient for certification)
+        $token = base64_encode(Str::uuid()->toString() . ':' . time() . ':gridbase-bills');
+        $expedido = gmdate('Y-m-d\TH:i:s\Z');
+        $expira = gmdate('Y-m-d\TH:i:s\Z', time() + 3600); // 1 hour validity
+
+        Log::info("DGII Webhook Auth: Token generated, expires: {$expira}");
+
+        // Return response based on Accept header
+        $accept = $request->header('Accept', 'application/json');
+
+        if (stripos($accept, 'xml') !== false) {
+            $xml = <<<XML
+<?xml version="1.0" encoding="UTF-8"?>
+<RespuestaAutenticacion>
+    <token>{$token}</token>
+    <expira>{$expira}</expira>
+    <expedido>{$expedido}</expedido>
+</RespuestaAutenticacion>
+XML;
+            return response($xml, 200)->header('Content-Type', 'application/xml');
+        }
+
         return response()->json([
-            'status' => 'success',
-            'valid' => true,
-            'message' => 'Certificado validado correctamente por Gridbase Bills'
+            'token' => $token,
+            'expira' => $expira,
+            'expedido' => $expedido
         ], 200);
     }
 

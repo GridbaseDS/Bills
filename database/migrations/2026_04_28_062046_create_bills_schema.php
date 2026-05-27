@@ -241,7 +241,7 @@ return new class extends Migration
         Schema::create('settings', function (Blueprint $table) {
             $table->id();
             $table->string('setting_key', 100)->unique();
-            $table->text('setting_value')->nullable();
+            $table->longText('setting_value')->nullable();
             $table->string('setting_group', 50)->default('general')->index();
             $table->dateTime('updated_at')->useCurrent()->useCurrentOnUpdate();
         });

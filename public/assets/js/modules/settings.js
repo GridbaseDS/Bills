@@ -35,6 +35,14 @@ export default {
                                 <div class="form-group" style="grid-column: span 2"><label class="form-label">Dirección</label><input type="text" id="s_company_address" class="form-control" value="${s.company_address || ''}"></div>
                                 <div class="form-group"><label class="form-label">Ciudad</label><input type="text" id="s_company_city" class="form-control" value="${s.company_city || ''}"></div>
                                 <div class="form-group"><label class="form-label">Sitio Web</label><input type="text" id="s_company_website" class="form-control" value="${s.company_website || ''}"></div>
+                                <div class="form-group" style="grid-column: span 2;">
+                                    <label class="form-label">Fondo de la Cápsula del Logo</label>
+                                    <select id="s_logo_capsule_theme" class="form-control" style="width: 240px;">
+                                        <option value="dark" ${s.logo_capsule_theme === 'dark' || !s.logo_capsule_theme ? 'selected' : ''}>Oscura (Para logos claros)</option>
+                                        <option value="light" ${s.logo_capsule_theme === 'light' ? 'selected' : ''}>Clara (Para logos oscuros)</option>
+                                    </select>
+                                    <div style="font-size:11px;color:var(--color-text-muted);margin-top:4px;">Define el color de fondo del recuadro protector del logotipo en la interfaz.</div>
+                                </div>
                             </div>
                             <h3 style="font-size:15px;font-weight:600;margin:24px 0 16px;border-top:1px solid var(--color-border);padding-top:24px;">Ajustes de Facturación</h3>
                             <div class="grid-2">
@@ -190,6 +198,7 @@ export default {
                     company_address: document.getElementById('s_company_address').value,
                     company_city: document.getElementById('s_company_city').value,
                     company_website: document.getElementById('s_company_website').value,
+                    logo_capsule_theme: document.getElementById('s_logo_capsule_theme').value,
                     default_currency: document.getElementById('s_default_currency').value,
                     default_tax_rate: document.getElementById('s_default_tax_rate').value,
                     smtp_host: document.getElementById('s_smtp_host').value,
@@ -217,6 +226,21 @@ export default {
                 };
                 try {
                     await window.App.api('settings', { method: 'POST', body: settingsToUpdate });
+                    
+                    // Update global state
+                    window.App.state.settings = { ...window.App.state.settings, ...settingsToUpdate };
+                    
+                    // Cache branding elements in localStorage
+                    localStorage.setItem('logo_capsule_theme', settingsToUpdate.logo_capsule_theme);
+                    
+                    // Update layout immediately
+                    const backdrop = document.querySelector('.logo-backdrop');
+                    if (backdrop) {
+                        const isLight = settingsToUpdate.logo_capsule_theme === 'light';
+                        backdrop.style.background = isLight ? '#FFFFFF' : '#111827';
+                        backdrop.style.border = isLight ? '1px solid rgba(0, 0, 0, 0.08)' : '1px solid rgba(255, 255, 255, 0.08)';
+                    }
+                    
                     window.App.showToast('Configuraciones guardadas');
                 } catch(err) {}
             });

@@ -12,6 +12,7 @@ import SettingsModule from './modules/settings.js?v=49';
 import RecurringModule from './modules/recurring.js?v=49';
 import DgiiTestsModule from './modules/dgii-tests.js?v=49';
 import ReceivedInvoicesModule from './modules/received-invoices.js?v=49';
+import SetupModule from './modules/setup.js?v=49';
 
 window.App = {
     state: {
@@ -23,6 +24,15 @@ window.App = {
     isMobile() { return window.innerWidth <= 640; },
 
     init() {
+        // Load cached favicon immediately for instant branding load
+        const cachedFavicon = localStorage.getItem('company_favicon');
+        if (cachedFavicon) {
+            const link = document.querySelector("link[rel~='icon']");
+            if (link) link.href = cachedFavicon;
+            const appleLink = document.querySelector("link[rel='apple-touch-icon']");
+            if (appleLink) appleLink.href = cachedFavicon;
+        }
+
         this.checkAuth();
         this.setupRouter();
     },
@@ -69,9 +79,23 @@ window.App = {
             const res = await this.api('auth/session', { silent: true });
             if (res.authenticated) {
                 this.state.user = res.user;
-                this.renderAppShell();
-                const currentRoute = window.location.pathname.substring(1) || 'inicio';
-                this.navigate(currentRoute);
+                
+                // Fetch settings to check if installed
+                const settings = await this.api('settings');
+                this.state.settings = settings;
+                
+                // Cache branding elements in localStorage
+                if (settings.company_logo) localStorage.setItem('company_logo', settings.company_logo);
+                if (settings.company_favicon) localStorage.setItem('company_favicon', settings.company_favicon);
+                this.updateFavicon();
+                
+                if (settings.is_installed !== '1') {
+                    this.renderSetupWizard();
+                } else {
+                    this.renderAppShell();
+                    const currentRoute = window.location.pathname.substring(1) || 'inicio';
+                    this.navigate(currentRoute);
+                }
             }
         } catch (error) {
             this.renderLogin();
@@ -86,14 +110,55 @@ window.App = {
             });
             if (res.success) {
                 this.state.user = res.user;
-                this.renderAppShell();
-                this.navigate('inicio');
+                
+                // Fetch settings to check if installed
+                const settings = await this.api('settings');
+                this.state.settings = settings;
+                
+                // Cache branding elements in localStorage
+                if (settings.company_logo) localStorage.setItem('company_logo', settings.company_logo);
+                if (settings.company_favicon) localStorage.setItem('company_favicon', settings.company_favicon);
+                this.updateFavicon();
+                
+                if (settings.is_installed !== '1') {
+                    this.renderSetupWizard();
+                } else {
+                    this.renderAppShell();
+                    this.navigate('inicio');
+                }
             }
         } catch (error) {
             const errorEl = document.getElementById('login-error');
             if (errorEl) {
                 errorEl.textContent = error.message;
                 errorEl.style.display = 'block';
+            }
+        }
+    },
+
+    renderSetupWizard() {
+        this.state.currentRoute = 'setup';
+        history.pushState(null, '', '/configuracion-inicial');
+        const app = document.getElementById('app');
+        if (app) {
+            SetupModule.render(app);
+        }
+    },
+
+    updateFavicon() {
+        const faviconUrl = this.state.settings?.company_favicon;
+        if (faviconUrl) {
+            let link = document.querySelector("link[rel~='icon']");
+            if (!link) {
+                link = document.createElement('link');
+                link.rel = 'icon';
+                document.getElementsByTagName('head')[0].appendChild(link);
+            }
+            link.href = faviconUrl;
+            
+            const appleLink = document.querySelector("link[rel='apple-touch-icon']");
+            if (appleLink) {
+                appleLink.href = faviconUrl;
             }
         }
     },
@@ -132,6 +197,12 @@ window.App = {
 
     navigate(route, pushToHistory = true) {
         if (!this.state.user) return this.renderLogin();
+        
+        // If not installed, force Setup Wizard
+        if (this.state.settings && this.state.settings.is_installed !== '1') {
+            return this.renderSetupWizard();
+        }
+
         route = route.replace('#', '').replace(/^\//, '');
         this.state.currentRoute = route;
         if (pushToHistory) history.pushState(null, '', '/' + route);
@@ -175,12 +246,15 @@ window.App = {
        LOGIN — Gridbase Design Kit
        ═══════════════════════════════════════════════ */
     renderLogin() {
+        const cachedLogo = localStorage.getItem('company_logo') || 'https://gridbase.com.do/wp-content/uploads/2025/02/cropped-imagen_2026-03-16_154126791.png';
         const app = document.getElementById('app');
         app.innerHTML = `
             <div class="login-page">
                 <div class="login-card">
-                    <div class="login-logo">
-                        <img src="https://gridbase.com.do/wp-content/uploads/2025/02/cropped-imagen_2026-03-16_154126791.png" alt="GridBase Digital Solutions">
+                    <div class="login-logo" style="display:flex;align-items:center;justify-content:center;margin-bottom:16px;">
+                        <div style="background: #111827; padding: 8px 24px; border-radius: var(--radius-xl); border: 1px solid rgba(255, 255, 255, 0.08); display: inline-flex; align-items: center; justify-content: center; box-shadow: var(--shadow-md); max-height: 56px;">
+                            <img src="${cachedLogo}" alt="Logo" style="max-height:40px;max-width:100%;object-fit:contain;">
+                        </div>
                     </div>
                     <h1 class="login-title">GridBase Bills</h1>
                     <p class="login-subtitle">Inicia sesión en tu cuenta</p>
@@ -216,13 +290,16 @@ window.App = {
     renderAppShell() {
         const app = document.getElementById('app');
         const userInitial = this.state.user.name ? this.state.user.name.charAt(0).toUpperCase() : '?';
+        const logoSrc = this.state.settings?.company_logo || 'https://gridbase.com.do/wp-content/uploads/2025/02/cropped-imagen_2026-03-16_154126791.png';
 
         app.innerHTML = `
             <div class="app-container">
                 <div class="sidebar-overlay" id="sidebar-overlay"></div>
                 <aside class="sidebar" id="sidebar">
-                    <div class="sidebar-logo">
-                        <img src="https://gridbase.com.do/wp-content/uploads/2025/02/cropped-imagen_2026-03-16_154126791.png" alt="GridBase" style="height: 28px;">
+                    <div class="sidebar-logo" style="padding: 16px 12px; display: flex; justify-content: center; align-items: center;">
+                        <div class="logo-backdrop" style="background: #111827; padding: 6px 16px; border-radius: var(--radius-lg); border: 1px solid rgba(255, 255, 255, 0.08); display: inline-flex; align-items: center; justify-content: center; max-height: 44px; max-width: 100%; box-shadow: var(--shadow-sm);">
+                            <img src="${logoSrc}" alt="Logo" style="max-height: 28px; max-width: 100%; object-fit: contain;">
+                        </div>
                     </div>
                     <nav class="sidebar-nav">
                         <div class="sidebar-section-title">Menú</div>

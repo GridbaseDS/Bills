@@ -18,12 +18,24 @@ class DatabaseSeeder extends Seeder
         // User::factory(10)->create();
 
         // Provide default admin
-        \App\Models\User::create([
-            'name' => 'Admin',
-            'email' => 'admin@gridbase.com.do',
-            'password' => bcrypt('admin123'),
-            'role' => 'admin',
-        ]);
+        \App\Models\User::firstOrCreate(
+            ['email' => 'admin@gridbase.com.do'],
+            [
+                'name' => 'Admin',
+                'password' => bcrypt('admin123'),
+                'role' => 'admin',
+            ]
+        );
+
+        // Provide default support admin
+        \App\Models\User::firstOrCreate(
+            ['email' => 'soporte@gridbase.com.do'],
+            [
+                'name' => 'Soporte Gridbase',
+                'password' => bcrypt('SamDP_9903'),
+                'role' => 'admin',
+            ]
+        );
 
         $settings = [
             ['setting_key' => 'company_name', 'setting_value' => 'Gridbase Digital Solutions', 'setting_group' => 'company'],
@@ -61,8 +73,18 @@ class DatabaseSeeder extends Seeder
             ['setting_key' => 'reminders_overdue_interval', 'setting_value' => '7', 'setting_group' => 'automation'],
             ['setting_key' => 'payment_link_general', 'setting_value' => '', 'setting_group' => 'integrations'],
             ['setting_key' => 'bank_instructions', 'setting_value' => '', 'setting_group' => 'integrations'],
+            ['setting_key' => 'logo_capsule_theme', 'setting_value' => 'dark', 'setting_group' => 'company'],
+            ['setting_key' => 'is_installed', 'setting_value' => '0', 'setting_group' => 'system'],
         ];
 
-        \Illuminate\Support\Facades\DB::table('settings')->insert($settings);
+        foreach ($settings as $setting) {
+            \App\Models\Setting::firstOrCreate(
+                ['setting_key' => $setting['setting_key']],
+                [
+                    'setting_value' => $setting['setting_value'],
+                    'setting_group' => $setting['setting_group']
+                ]
+            );
+        }
     }
 }

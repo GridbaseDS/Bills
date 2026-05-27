@@ -1,0 +1,58 @@
+name: Deploy SaaS to VPS
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v4
+
+    - name: Create Deployment Package
+      run: |
+        zip -r bills_deploy.zip . -x "vendor/*" "node_modules/*" ".git/*" ".github/*" "storage/framework/cache/data/*" "storage/framework/sessions/*" "storage/framework/views/*" "storage/logs/*" "*.zip" "deploy_vps.py" "create_tenant.py"
+
+    - name: Upload Package to VPS
+      uses: appleboy/scp-action@v0.1.7
+      with:
+        host: ${{ secrets.VPS_HOST }}
+        username: ${{ secrets.VPS_USERNAME }}
+        password: ${{ secrets.VPS_PASSWORD }}
+        port: 22
+        source: "bills_deploy.zip"
+        target: "/home/grupaqgl/web/bills.gridbase.com.do"
+
+    - name: SSH Command Execution (Extract & Deploy)
+      uses: appleboy/ssh-action@v1.0.3
+      with:
+        host: ${{ secrets.VPS_HOST }}
+        username: ${{ secrets.VPS_USERNAME }}
+        password: ${{ secrets.VPS_PASSWORD }}
+        port: 22
+        script: |
+          APP_DIR="/home/grupaqgl/web/bills.gridbase.com.do/public_html"
+          ZIP_FILE="/home/grupaqgl/web/bills.gridbase.com.do/bills_deploy.zip"
+          
+          # Clean and unzip
+          rm -rf $APP_DIR/*
+          unzip -o $ZIP_FILE -d $APP_DIR
+          rm -f $ZIP_FILE
+          
+          # Permissions
+          chown -R grupaqgl:grupaqgl $APP_DIR
+          mkdir -p $APP_DIR/storage/framework/cache/data $APP_DIR/storage/framework/sessions $APP_DIR/storage/framework/views $APP_DIR/storage/logs $APP_DIR/bootstrap/cache
+          chown -R grupaqgl:www-data $APP_DIR/storage $APP_DIR/bootstrap/cache
+          chmod -R 775 $APP_DIR/storage $APP_DIR/bootstrap/cache
+          
+          # Composer & Cache Optimizations
+          cd $APP_DIR
+          sudo -u grupaqgl composer install --no-dev --optimize-autoloader --no-interaction
+          sudo -u grupaqgl php artisan migrate --force
+          sudo -u grupaqgl php artisan config:cache
+          sudo -u grupaqgl php artisan route:cache
+          sudo -u grupaqgl php artisan view:cache

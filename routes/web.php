@@ -33,12 +33,13 @@ Route::post('/whatsapp-test/quote', [WhatsAppTestController::class, 'testQuote']
 Route::get('/whatsapp-test/status', [WhatsAppTestController::class, 'status'])->name('whatsapp.test.status');
 
 // DGII Electronic Invoicing Webhook Reception Endpoints (For Certification & Interchange)
-Route::post('/fe/recepcion/api/ecf', [DgiiWebhookController::class, 'recepcion']);
-Route::post('/fe/aprobacioncomercial/api/ecf', [DgiiWebhookController::class, 'aprobacionComercial']);
-Route::get('/fe/autenticacion/api/semilla', [DgiiWebhookController::class, 'semilla']);
-// ValidacionCertificado: support both casing variants and both GET/POST methods
-Route::match(['get', 'post'], '/fe/autenticacion/api/validacioncertificado', [DgiiWebhookController::class, 'validacionCertificado']);
-Route::match(['get', 'post'], '/fe/autenticacion/api/ValidacionCertificado', [DgiiWebhookController::class, 'validacionCertificado']);
+// Per DGII spec: "Servicios no sensitivos a mayúsculas y minúsculas" — accept any method
+Route::any('/fe/recepcion/api/ecf', [DgiiWebhookController::class, 'recepcion']);
+Route::any('/fe/aprobacioncomercial/api/ecf', [DgiiWebhookController::class, 'aprobacionComercial']);
+Route::any('/fe/autenticacion/api/semilla', [DgiiWebhookController::class, 'semilla']);
+Route::any('/fe/autenticacion/api/Semilla', [DgiiWebhookController::class, 'semilla']);
+Route::any('/fe/autenticacion/api/validacioncertificado', [DgiiWebhookController::class, 'validacionCertificado']);
+Route::any('/fe/autenticacion/api/ValidacionCertificado', [DgiiWebhookController::class, 'validacionCertificado']);
 
 // FC<250k file downloads for DGII certification portal upload
 Route::get('/dgii-fc250k', function () {

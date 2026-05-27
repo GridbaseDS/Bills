@@ -907,3 +907,80 @@ tr:hover .row-actions { opacity: 1; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: var(--color-border); border-radius: var(--radius-full); }
 ::-webkit-scrollbar-thumb:hover { background: var(--color-text-muted); }
+
+/* ==========================================
+   GridBase Bills — Bulk Actions Floating Bar Style
+   ========================================== */
+.bulk-actions-bar {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%) translateY(120px);
+  background: rgba(17, 24, 39, 0.95);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 12px 24px;
+  border-radius: var(--radius-xl);
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  z-index: 1100;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3), 0 10px 10px -5px rgba(0, 0, 0, 0.2);
+  transition: transform 0.30s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.30s ease;
+  opacity: 0;
+  color: #FFFFFF;
+  pointer-events: none;
+}
+.bulk-actions-bar.active {
+  transform: translateX(-50%) translateY(0);
+  opacity: 1;
+  pointer-events: auto;
+}
+.bulk-count {
+  font-size: 13px;
+  font-weight: 600;
+  background: rgba(255, 255, 255, 0.15);
+  padding: 4px 10px;
+  border-radius: var(--radius-full);
+  white-space: nowrap;
+}
+.bulk-actions-btns {
+  display: flex;
+  gap: 8px;
+}
+.bulk-btn {
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid transparent;
+  color: #FFFFFF;
+  background: rgba(255, 255, 255, 0.08);
+}
+.bulk-btn:hover {
+  background: rgba(255, 255, 255, 0.16);
+}
+.bulk-btn.bulk-btn-danger {
+  color: #FCA5A5;
+  background: rgba(239, 68, 68, 0.15);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+}
+.bulk-btn.bulk-btn-danger:hover {
+  color: #FFFFFF;
+  background: #DC2626;
+  border-color: #DC2626;
+}
+.bulk-btn-primary {
+  background: #FFFFFF;
+  color: #111827;
+}
+.bulk-btn-primary:hover {
+  background: #F3F4F6;
+}
+

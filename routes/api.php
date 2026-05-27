@@ -39,6 +39,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index']);
 
     // Invoices
+    Route::post('/invoices/bulk', [InvoiceController::class, 'bulkAction']);
     Route::apiResource('invoices', InvoiceController::class);
     Route::get('/invoices/{id}/pdf', [InvoiceController::class, 'pdf']);
     Route::post('/invoices/{id}/payment', [InvoiceController::class, 'addPayment']);

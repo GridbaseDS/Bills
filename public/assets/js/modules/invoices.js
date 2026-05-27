@@ -49,6 +49,7 @@ const InvoicesModule = {
                     <div class="table-wrapper">
                         <table class="data-table">
                             <thead><tr>
+                                <th style="width: 40px; padding-right: 0;"><input type="checkbox" id="bulk-select-all" onclick="InvoicesModule.toggleAllSelection(this.checked)" style="width:16px;height:16px;cursor:pointer;accent-color:#111827;"></th>
                                 <th>Número</th><th>Cliente</th><th>Emisión</th><th>Vencimiento</th><th>Monto</th><th>Estado</th><th>DGII</th><th></th>
                             </tr></thead>
                             <tbody id="inv-tbody"></tbody>
@@ -56,10 +57,32 @@ const InvoicesModule = {
                     </div>
                     <div id="inv-mobile-list" class="mobile-card-list"></div>
                 </div>
+
+                <!-- Floating Bulk Actions Bar -->
+                <div id="bulk-actions-bar" class="bulk-actions-bar">
+                    <div class="bulk-count" id="bulk-selected-count">0 seleccionadas</div>
+                    <div class="bulk-actions-btns">
+                        <button class="bulk-btn bulk-btn-primary" onclick="InvoicesModule.executeBulkAction('send_email')">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
+                            Enviar
+                        </button>
+                        <button class="bulk-btn bulk-btn-primary" onclick="InvoicesModule.executeBulkAction('mark_as_paid')">
+                            ✓ Cobrar
+                        </button>
+                        <button class="bulk-btn bulk-btn-primary" onclick="InvoicesModule.executeBulkAction('process_ecf')">
+                            ⚡ e-CF
+                        </button>
+                        <button class="bulk-btn bulk-btn-danger" onclick="InvoicesModule.executeBulkAction('delete')">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                            Eliminar
+                        </button>
+                    </div>
+                </div>
             `;
 
             this._allInvoices = allInvoices;
             this._currentStatus = '';
+            this.selectedIds = []; // Reset selected IDs on list render
             this.filterInvoices();
 
             document.getElementById('inv-search').addEventListener('input', () => this.filterInvoices());
@@ -98,7 +121,8 @@ const InvoicesModule = {
             listEl.innerHTML = filtered.length > 0 ? filtered.map(i => `
                 <a href="#facturas/${i.id}" class="mobile-card">
                     <div class="mobile-card-top">
-                        <div class="mobile-card-id">
+                        <div class="mobile-card-id" style="display:flex;align-items:center;gap:10px;">
+                            <input type="checkbox" class="bulk-select-item-mobile" data-id="${i.id}" onclick="event.stopPropagation(); InvoicesModule.toggleItemSelect(${i.id})" style="width: 18px; height: 18px; cursor: pointer; accent-color: #111827;" ${this.isSelected(i.id) ? 'checked' : ''}>
                             ${i.is_ecf ? (i.encf || i.invoice_number) : i.invoice_number}
                             ${i.is_ecf ? '<span class="badge" style="background:var(--color-primary);color:#FFF;font-size:8px;padding:2px 5px;">e-CF</span>' : ''}
                         </div>
@@ -125,6 +149,9 @@ const InvoicesModule = {
 
         tbody.innerHTML = filtered.length > 0 ? filtered.map(i => `
             <tr>
+                <td style="width: 40px; padding-right: 0;">
+                    <input type="checkbox" class="bulk-select-item" data-id="${i.id}" onclick="event.stopPropagation(); InvoicesModule.toggleItemSelect(${i.id})" style="width: 16px; height: 16px; cursor: pointer; accent-color: #111827;" ${this.isSelected(i.id) ? 'checked' : ''}>
+                </td>
                 <td>
                     <a href="#facturas/${i.id}" class="link-id">${i.is_ecf ? (i.encf || i.invoice_number) : i.invoice_number}</a>
                     ${i.is_ecf ? `<span class="badge" style="background:var(--color-primary);color:#FFF;margin-left:6px;font-size:8px;padding:2px 5px;">e-CF</span>` : ''}
@@ -150,7 +177,10 @@ const InvoicesModule = {
                     </div>
                 </td>
             </tr>
-        `).join('') : '<tr><td colspan="8" class="text-center text-muted" style="padding:48px;">No hay facturas que coincidan</td></tr>';
+        `).join('') : '<tr><td colspan="9" class="text-center text-muted" style="padding:48px;">No hay facturas que coincidan</td></tr>';
+
+        // Update bulk action bar count/visibility
+        this.updateBulkActionBar();
     },
 
     /* ═══════════════════════════════════════════════
@@ -791,6 +821,138 @@ const InvoicesModule = {
         modal.addEventListener('click', (e) => { if (e.target === modal) modal.remove(); });
         document.getElementById('confirm-no').addEventListener('click', () => modal.remove());
         document.getElementById('confirm-yes').addEventListener('click', () => { modal.remove(); onConfirm(); });
+    },
+
+    isSelected(id) {
+        return this.selectedIds && this.selectedIds.includes(id);
+    },
+
+    toggleAllSelection(isChecked) {
+        const checkboxes = document.querySelectorAll('.bulk-select-item, .bulk-select-item-mobile');
+        this.selectedIds = [];
+        
+        if (isChecked) {
+            const search = (document.getElementById('inv-search')?.value || '').toLowerCase();
+            const status = this._currentStatus || '';
+            
+            let filtered = this._allInvoices || [];
+            if (search) {
+                filtered = filtered.filter(i =>
+                    (i.invoice_number||'').toLowerCase().includes(search) ||
+                    (i.company_name||'').toLowerCase().includes(search) ||
+                    (i.contact_name||'').toLowerCase().includes(search)
+                );
+            }
+            if (status) filtered = filtered.filter(i => i.status === status);
+            
+            this.selectedIds = filtered.map(i => i.id);
+        }
+        
+        checkboxes.forEach(cb => {
+            cb.checked = isChecked;
+        });
+        
+        this.updateBulkActionBar();
+    },
+
+    toggleItemSelect(id) {
+        if (!this.selectedIds) this.selectedIds = [];
+        const index = this.selectedIds.indexOf(id);
+        if (index > -1) {
+            this.selectedIds.splice(index, 1);
+        } else {
+            this.selectedIds.push(id);
+        }
+        
+        const cbs = document.querySelectorAll(`.bulk-select-item[data-id="${id}"], .bulk-select-item-mobile[data-id="${id}"]`);
+        cbs.forEach(cb => {
+            cb.checked = this.selectedIds.includes(id);
+        });
+        
+        const selectAllCb = document.getElementById('bulk-select-all');
+        if (selectAllCb) {
+            const search = (document.getElementById('inv-search')?.value || '').toLowerCase();
+            const status = this._currentStatus || '';
+            let filtered = this._allInvoices || [];
+            if (search) {
+                filtered = filtered.filter(i =>
+                    (i.invoice_number||'').toLowerCase().includes(search) ||
+                    (i.company_name||'').toLowerCase().includes(search) ||
+                    (i.contact_name||'').toLowerCase().includes(search)
+                );
+            }
+            if (status) filtered = filtered.filter(i => i.status === status);
+            
+            selectAllCb.checked = filtered.length > 0 && filtered.every(i => this.selectedIds.includes(i.id));
+        }
+        
+        this.updateBulkActionBar();
+    },
+
+    updateBulkActionBar() {
+        const count = this.selectedIds ? this.selectedIds.length : 0;
+        const bar = document.getElementById('bulk-actions-bar');
+        const countEl = document.getElementById('bulk-selected-count');
+        
+        if (countEl) {
+            countEl.textContent = `${count} ${count === 1 ? 'seleccionada' : 'seleccionadas'}`;
+        }
+        
+        if (bar) {
+            if (count > 0) {
+                bar.classList.add('active');
+            } else {
+                bar.classList.remove('active');
+            }
+        }
+    },
+
+    async executeBulkAction(action) {
+        if (!this.selectedIds || this.selectedIds.length === 0) {
+            App.showToast('No hay facturas seleccionadas', 'error');
+            return;
+        }
+        
+        const count = this.selectedIds.length;
+        let confirmMsg = '';
+        switch (action) {
+            case 'delete':
+                confirmMsg = `¿Estás seguro de eliminar ${count} ${count === 1 ? 'factura' : 'facturas'}? Esta acción no se puede deshacer.`;
+                break;
+            case 'mark_as_paid':
+                confirmMsg = `¿Deseas registrar pago y marcar como pagadas ${count} ${count === 1 ? 'factura' : 'facturas'}?`;
+                break;
+            case 'send_email':
+                confirmMsg = `¿Deseas enviar ${count} ${count === 1 ? 'factura' : 'facturas'} por correo/WhatsApp a sus respectivos clientes?`;
+                break;
+            case 'process_ecf':
+                confirmMsg = `¿Deseas procesar con la DGII las ${count} ${count === 1 ? 'factura electrónica' : 'facturas electrónicas'} seleccionadas?`;
+                break;
+        }
+        
+        this._showConfirm(confirmMsg, async () => {
+            App.showToast('Procesando acción en lote...', 'info');
+            try {
+                const res = await App.api('invoices/bulk', {
+                    method: 'POST',
+                    body: { ids: this.selectedIds, action: action }
+                });
+                if (res.success) {
+                    App.showToast(res.message || 'Acción completada con éxito', 'success');
+                    this.selectedIds = [];
+                    const selectAllCb = document.getElementById('bulk-select-all');
+                    if (selectAllCb) selectAllCb.checked = false;
+                    this.updateBulkActionBar();
+                    
+                    // Refresh list
+                    this.renderList(document.getElementById('app-content'));
+                } else {
+                    App.showToast(res.error || 'Error al procesar acción masiva', 'error');
+                }
+            } catch (e) {
+                App.showToast('Ocurrió un error en el servidor', 'error');
+            }
+        });
     }
 };
 

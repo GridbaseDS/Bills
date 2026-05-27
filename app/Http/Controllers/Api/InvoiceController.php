@@ -643,4 +643,102 @@ class InvoiceController extends Controller
             ->header('Content-Type', 'application/xml')
             ->header('Content-Disposition', "attachment; filename=\"{$filename}\"");
     }
+
+    public function bulkAction(Request $request, EcfManagerService $ecfManager)
+    {
+        $ids = $request->input('ids', []);
+        $action = $request->input('action');
+        
+        if (empty($ids)) {
+            return response()->json(['success' => false, 'error' => 'No se seleccionaron facturas.'], 400);
+        }
+        
+        switch ($action) {
+            case 'delete':
+                foreach ($ids as $id) {
+                    $invoice = Invoice::find($id);
+                    if ($invoice) {
+                        $invoice->items()->delete();
+                        $invoice->payments()->delete();
+                        $invoice->delete();
+                    }
+                }
+                return response()->json(['success' => true, 'message' => count($ids) . ' facturas eliminadas exitosamente.']);
+                
+            case 'mark_as_paid':
+                foreach ($ids as $id) {
+                    $invoice = Invoice::find($id);
+                    if ($invoice && $invoice->status !== 'paid') {
+                        $pendingAmount = $invoice->total - $invoice->amount_paid;
+                        if ($pendingAmount > 0) {
+                            $invoice->payments()->create([
+                                'amount' => $pendingAmount,
+                                'payment_method' => 'other',
+                                'payment_date' => now()
+                            ]);
+                            $invoice->amount_paid = $invoice->total;
+                        }
+                        $invoice->status = 'paid';
+                        $invoice->paid_at = now();
+                        $invoice->save();
+                    }
+                }
+                return response()->json(['success' => true, 'message' => count($ids) . ' facturas marcadas como pagadas.']);
+                
+            case 'send_email':
+                $sentCount = 0;
+                $failedCount = 0;
+                foreach ($ids as $id) {
+                    $invoice = Invoice::with(['client', 'items'])->find($id);
+                    if ($invoice && $invoice->client && (!empty($invoice->client->email) || !empty($invoice->client->whatsapp))) {
+                        try {
+                            $this->autoSendInvoiceEmail($invoice);
+                            $sentCount++;
+                        } catch (\Exception $e) {
+                            \Illuminate\Support\Facades\Log::error("Bulk send failed for invoice {$invoice->invoice_number}: " . $e->getMessage());
+                            $failedCount++;
+                        }
+                    } else {
+                        $failedCount++;
+                    }
+                }
+                return response()->json([
+                    'success' => true, 
+                    'message' => "Proceso completado. Enviadas: {$sentCount}, Errores: {$failedCount}."
+                ]);
+                
+            case 'process_ecf':
+                $processedCount = 0;
+                $failedCount = 0;
+                foreach ($ids as $id) {
+                    $invoice = Invoice::find($id);
+                    if ($invoice && $invoice->is_ecf) {
+                        try {
+                            if (in_array($invoice->dgii_status, ['contingency', 'rejected', 'signed'])) {
+                                $result = $ecfManager->retryInvoice($invoice);
+                            } else {
+                                $result = $ecfManager->processInvoice($invoice);
+                            }
+                            if ($result['success']) {
+                                $processedCount++;
+                            } else {
+                                $failedCount++;
+                            }
+                        } catch (\Exception $e) {
+                            \Illuminate\Support\Facades\Log::error("Bulk e-CF failed for invoice {$invoice->invoice_number}: " . $e->getMessage());
+                            $failedCount++;
+                        }
+                    } else {
+                        $failedCount++;
+                    }
+                }
+                return response()->json([
+                    'success' => true,
+                    'message' => "Proceso e-CF completado. Aprobados/Enviados: {$processedCount}, Errores/Omitidos: {$failedCount}."
+                ]);
+                
+            default:
+                return response()->json(['success' => false, 'error' => 'Acción no válida.'], 400);
+        }
+    }
 }

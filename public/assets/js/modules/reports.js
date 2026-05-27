@@ -273,16 +273,30 @@ const ReportsModule = {
         App.showToast('Generando archivo oficial DGII...', 'info');
 
         try {
-            const res = await App.api(`dgii/reports/${this._currentTab}/export`, {
+            // App.api automatically parses JSON. Since this endpoint returns a plain text file, we must use fetch directly.
+            const response = await fetch(`/api/dgii/reports/${this._currentTab}/export`, {
                 method: 'POST',
-                body: {
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'text/plain',
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Authorization': `Bearer ${App.state.token || localStorage.getItem('token')}`
+                },
+                body: JSON.stringify({
                     period: periodStr,
                     records: records
-                }
+                }),
+                credentials: 'same-origin'
             });
 
+            if (!response.ok) {
+                throw new Error(`Error del servidor: ${response.status}`);
+            }
+
+            const text = await response.text();
+
             // Trigger file download
-            const blob = new Blob([res], { type: 'text/plain;charset=utf-8' });
+            const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;

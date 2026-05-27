@@ -599,10 +599,79 @@ class InvoiceController extends Controller
     }
 
     /**
+     * Export all invoices as a CSV file compatible with Excel.
+     */
+    public function exportCsv(Request $request)
+    {
+        $headers = [
+            'Content-Type' => 'text/csv; charset=UTF-8',
+            'Content-Disposition' => 'attachment; filename="facturas_export_' . date('Ymd_His') . '.csv"',
+            'Pragma' => 'no-cache',
+            'Cache-Control' => 'must-revalidate, post-check=0, pre-check=0',
+            'Expires' => '0'
+        ];
+
+        $callback = function() {
+            $file = fopen('php://output', 'w');
+            
+            // Add UTF-8 BOM for Excel compatibility
+            fwrite($file, "\xEF\xBB\xBF");
+            
+            // CSV Headers
+            fputcsv($file, [
+                'No. Factura',
+                'RNC/Cédula Cliente',
+                'Cliente',
+                'Fecha Emisión',
+                'Subtotal',
+                'Descuento',
+                'ITBIS',
+                'Total',
+                'Estado',
+                'e-CF',
+                'NCF/e-NCF'
+            ], ',');
+
+            $invoices = Invoice::with('client')->orderBy('created_at', 'desc')->get();
+
+            foreach ($invoices as $i) {
+                $clientName = $i->client ? ($i->client->company_name ?: $i->client->contact_name) : 'Sin cliente';
+                $clientTaxId = $i->client ? $i->client->tax_id : '';
+                
+                fputcsv($file, [
+                    $i->invoice_number,
+                    $clientTaxId,
+                    $clientName,
+                    $i->issue_date ? $i->issue_date->format('Y-m-d') : $i->created_at->format('Y-m-d'),
+                    number_format($i->subtotal, 2, '.', ''),
+                    number_format($i->discount_amount, 2, '.', ''),
+                    number_format($i->tax_amount, 2, '.', ''),
+                    number_format($i->total, 2, '.', ''),
+                    __($i->status),
+                    $i->is_ecf ? 'Sí' : 'No',
+                    $i->encf ?: ($i->ncf ?: '')
+                ], ',');
+            }
+
+            fclose($file);
+        };
+
+        return response()->stream($callback, 200, $headers);
+    }
+
+    /**
      * Delete an invoice.
      */
-    public function destroy($id)
+    public function destroy(Request $request, $id)
     {
+        if ($request->user() && $request->user()->role === 'vendedor') {
+            return response()->json([
+                'success' => false,
+                'error' => 'No autorizado.',
+                'message' => 'Los vendedores no tienen permisos para eliminar facturas.'
+            ], 403);
+        }
+
         $invoice = Invoice::findOrFail($id);
         $invoice->items()->delete();
         $invoice->payments()->delete();
@@ -685,6 +754,14 @@ class InvoiceController extends Controller
         
         switch ($action) {
             case 'delete':
+                if ($request->user() && $request->user()->role === 'vendedor') {
+                    return response()->json([
+                        'success' => false,
+                        'error' => 'No autorizado.',
+                        'message' => 'Los vendedores no tienen permisos para eliminar facturas.'
+                    ], 403);
+                }
+
                 foreach ($ids as $id) {
                     $invoice = Invoice::find($id);
                     if ($invoice) {

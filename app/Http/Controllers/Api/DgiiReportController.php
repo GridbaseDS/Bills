@@ -244,6 +244,46 @@ class DgiiReportController extends Controller
                 'proveedor_nombre' => $si->client ? ($si->client->company_name ?: $si->client->contact_name) : 'Proveedor Informal',
             ]);
         }
+
+        // 3. Fetch manual expenses (Gastos / Control de egresos)
+        $expenses = \App\Models\Expense::whereBetween('expense_date', [$startDate, $endDate])
+            ->orderBy('expense_date', 'asc')
+            ->get();
+            
+        // Process Manual Expenses
+        foreach ($expenses as $exp) {
+            $taxId = preg_replace('/[^0-9]/', '', $exp->provider_tax_id ?? '');
+            $len = strlen($taxId);
+            $typeId = ($len === 9) ? '1' : (($len === 11) ? '2' : '3');
+            
+            $records->push([
+                'id' => "exp_{$exp->id}",
+                'rnc_proveedor' => $taxId,
+                'tipo_identificacion' => $typeId,
+                'tipo_bien_servicio' => $exp->expense_type ?? '02',
+                'ncf' => $exp->ncf ?? '',
+                'ncf_modificado' => '',
+                'fecha_comprobante' => Carbon::parse($exp->expense_date)->format('Ymd'),
+                'fecha_pago' => Carbon::parse($exp->expense_date)->format('Ymd'),
+                'monto_servicios' => round((float)$exp->subtotal, 2),
+                'monto_bienes' => 0.00,
+                'total_facturado' => round((float)$exp->subtotal, 2),
+                'itbis_facturado' => round((float)$exp->tax_amount, 2),
+                'itbis_retenido' => 0.00,
+                'itbis_proporcional' => 0.00,
+                'itbis_costo' => 0.00,
+                'itbis_adelantar' => round((float)$exp->tax_amount, 2),
+                'itbis_percibido' => 0.00,
+                'tipo_retencion_isr' => '',
+                'isr_retenido' => 0.00,
+                'isr_percibido' => 0.00,
+                'isc' => 0.00,
+                'otros_impuestos' => 0.00,
+                'propina_legal' => 0.00,
+                'forma_pago' => $exp->payment_method ?? '02',
+                'proveedor_nombre' => $exp->provider_name ?: 'Proveedor de Gasto',
+            ]);
+        }
         
         return response()->json([
             'success' => true,

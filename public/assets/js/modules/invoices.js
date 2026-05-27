@@ -24,10 +24,16 @@ const InvoicesModule = {
                         <h1 class="page-title">Facturas</h1>
                         <p class="page-subtitle">Administra tu facturación y pagos</p>
                     </div>
-                    <button class="btn btn-primary" onclick="window.App.navigate('facturas/nueva')">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-                        Nueva Factura
-                    </button>
+                    <div style="display:flex; gap:12px;">
+                        <a href="/api/invoices/export/csv" class="btn btn-secondary" target="_blank" style="display:inline-flex; align-items:center; gap:6px; text-decoration:none;">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                            Exportar Excel
+                        </a>
+                        <button class="btn btn-primary" onclick="window.App.navigate('facturas/nueva')">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                            Nueva Factura
+                        </button>
+                    </div>
                 </div>
 
                 <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:var(--spacing-lg);flex-wrap:wrap;gap:12px;">

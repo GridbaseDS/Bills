@@ -59,6 +59,14 @@ class ClientController extends Controller
 
     public function destroy($id)
     {
+        if (request()->user() && request()->user()->role === 'vendedor') {
+            return response()->json([
+                'success' => false,
+                'error' => 'No autorizado.',
+                'message' => 'Los vendedores no tienen permisos para eliminar clientes.'
+            ], 403);
+        }
+
         $client = Client::findOrFail($id);
         $invoiceCount = Invoice::where('client_id', $id)->count();
         $quoteCount = Quote::where('client_id', $id)->count();

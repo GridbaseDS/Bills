@@ -311,10 +311,77 @@ class QuoteController extends Controller
     }
 
     /**
+     * Export all quotes as a CSV file compatible with Excel.
+     */
+    public function exportCsv(Request $request)
+    {
+        $headers = [
+            'Content-Type' => 'text/csv; charset=UTF-8',
+            'Content-Disposition' => 'attachment; filename="cotizaciones_export_' . date('Ymd_His') . '.csv"',
+            'Pragma' => 'no-cache',
+            'Cache-Control' => 'must-revalidate, post-check=0, pre-check=0',
+            'Expires' => '0'
+        ];
+
+        $callback = function() {
+            $file = fopen('php://output', 'w');
+            
+            // Add UTF-8 BOM for Excel compatibility
+            fwrite($file, "\xEF\xBB\xBF");
+            
+            // CSV Headers
+            fputcsv($file, [
+                'No. Cotización',
+                'RNC/Cédula Cliente',
+                'Cliente',
+                'Fecha Emisión',
+                'Fecha Vencimiento',
+                'Subtotal',
+                'Descuento',
+                'ITBIS',
+                'Total',
+                'Estado'
+            ], ',');
+
+            $quotes = Quote::with('client')->orderBy('created_at', 'desc')->get();
+
+            foreach ($quotes as $q) {
+                $clientName = $q->client ? ($q->client->company_name ?: $q->client->contact_name) : 'Sin cliente';
+                $clientTaxId = $q->client ? $q->client->tax_id : '';
+                
+                fputcsv($file, [
+                    $q->quote_number,
+                    $clientTaxId,
+                    $clientName,
+                    $q->issue_date ? date('Y-m-d', strtotime($q->issue_date)) : $q->created_at->format('Y-m-d'),
+                    $q->expiry_date ? date('Y-m-d', strtotime($q->expiry_date)) : '',
+                    number_format($q->subtotal, 2, '.', ''),
+                    number_format($q->discount_amount, 2, '.', ''),
+                    number_format($q->tax_amount, 2, '.', ''),
+                    number_format($q->total, 2, '.', ''),
+                    __($q->status)
+                ], ',');
+            }
+
+            fclose($file);
+        };
+
+        return response()->stream($callback, 200, $headers);
+    }
+
+    /**
      * Delete a quote.
      */
     public function destroy($id)
     {
+        if (request()->user() && request()->user()->role === 'vendedor') {
+            return response()->json([
+                'success' => false,
+                'error' => 'No autorizado.',
+                'message' => 'Los vendedores no tienen permisos para eliminar cotizaciones.'
+            ], 403);
+        }
+
         $quote = Quote::findOrFail($id);
         $quote->items()->delete();
         $quote->delete();

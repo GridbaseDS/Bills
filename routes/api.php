@@ -15,6 +15,7 @@ use App\Http\Controllers\Api\PaymentLinkController;
 use App\Http\Controllers\Api\DgiiTestUIController;
 use App\Http\Controllers\Api\ReceivedInvoiceController;
 use App\Http\Controllers\Api\DgiiReportController;
+use App\Http\Controllers\Api\ExpenseController;
 use App\Http\Controllers\WhatsAppWebhookController;
 
 // Public Auth
@@ -40,6 +41,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index']);
 
     // Invoices
+    Route::get('/invoices/export/csv', [InvoiceController::class, 'exportCsv']);
     Route::post('/invoices/bulk', [InvoiceController::class, 'bulkAction']);
     Route::apiResource('invoices', InvoiceController::class);
     Route::get('/invoices/{id}/pdf', [InvoiceController::class, 'pdf']);
@@ -51,6 +53,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/invoices/{id}/download-xml', [InvoiceController::class, 'downloadXml']);
 
     // Quotes
+    Route::get('/quotes/export/csv', [QuoteController::class, 'exportCsv']);
     Route::apiResource('quotes', QuoteController::class);
     Route::get('/quotes/{id}/pdf', [QuoteController::class, 'pdf']);
     Route::post('/quotes/{id}/convert', [QuoteController::class, 'convertToInvoice']);
@@ -68,6 +71,9 @@ Route::middleware('auth:sanctum')->group(function () {
     // Items
     Route::apiResource('items', ItemController::class);
 
+    // Expenses (Gastos - Admin and Contador only)
+    Route::apiResource('expenses', ExpenseController::class)->middleware('role:admin,contador');
+
     // Payment Links
     Route::prefix('invoices/{id}/payment-link')->group(function () {
         Route::post('/generate', [PaymentLinkController::class, 'generate']);
@@ -80,27 +86,33 @@ Route::middleware('auth:sanctum')->group(function () {
     });
 
     // Settings
-    Route::get('/settings', [SettingController::class, 'index']);
-    Route::post('/settings', [SettingController::class, 'updateMultiple']);
-    Route::post('/settings/test-smtp', [SettingController::class, 'testSmtp']);
-    Route::get('/settings/diagnose-smtp', [SettingController::class, 'diagnoseSmtp']);
+    Route::get('/settings', [SettingController::class, 'index']); // Read allowed for all (e.g. for general UI details)
+    Route::post('/settings', [SettingController::class, 'updateMultiple'])->middleware('role:admin');
+    Route::post('/settings/test-smtp', [SettingController::class, 'testSmtp'])->middleware('role:admin');
+    Route::get('/settings/diagnose-smtp', [SettingController::class, 'diagnoseSmtp'])->middleware('role:admin');
 
-    // DGII Tests
-    Route::post('/dgii/run-tests', [DgiiTestUIController::class, 'runTests']);
-    Route::post('/dgii/diagnose', [DgiiTestUIController::class, 'diagnose']);
-    Route::post('/dgii/run-aprobaciones', [DgiiTestUIController::class, 'runAprobaciones']);
-    Route::get('/dgii/status', [DgiiTestUIController::class, 'connectionStatus']);
+    // DGII Tests (Admin only)
+    Route::middleware('role:admin')->group(function () {
+        Route::post('/dgii/run-tests', [DgiiTestUIController::class, 'runTests']);
+        Route::post('/dgii/diagnose', [DgiiTestUIController::class, 'diagnose']);
+        Route::post('/dgii/run-aprobaciones', [DgiiTestUIController::class, 'runAprobaciones']);
+        Route::get('/dgii/status', [DgiiTestUIController::class, 'connectionStatus']);
+    });
 
-    // DGII Reports
-    Route::get('/dgii/reports/607', [DgiiReportController::class, 'report607']);
-    Route::get('/dgii/reports/606', [DgiiReportController::class, 'report606']);
-    Route::post('/dgii/reports/607/export', [DgiiReportController::class, 'export607']);
-    Route::post('/dgii/reports/606/export', [DgiiReportController::class, 'export606']);
+    // DGII Reports (Admin and Contador only)
+    Route::middleware('role:admin,contador')->group(function () {
+        Route::get('/dgii/reports/607', [DgiiReportController::class, 'report607']);
+        Route::get('/dgii/reports/606', [DgiiReportController::class, 'report606']);
+        Route::post('/dgii/reports/607/export', [DgiiReportController::class, 'export607']);
+        Route::post('/dgii/reports/606/export', [DgiiReportController::class, 'export606']);
+    });
 
-    // Received Invoices (Aprobaciones Comerciales)
-    Route::get('/received-invoices', [ReceivedInvoiceController::class, 'index']);
-    Route::get('/received-invoices/summary', [ReceivedInvoiceController::class, 'summary']);
-    Route::get('/received-invoices/{id}', [ReceivedInvoiceController::class, 'show']);
-    Route::post('/received-invoices/{id}/approve', [ReceivedInvoiceController::class, 'approve']);
-    Route::post('/received-invoices/{id}/reject', [ReceivedInvoiceController::class, 'reject']);
+    // Received Invoices (Aprobaciones Comerciales - Admin and Contador only)
+    Route::middleware('role:admin,contador')->group(function () {
+        Route::get('/received-invoices', [ReceivedInvoiceController::class, 'index']);
+        Route::get('/received-invoices/summary', [ReceivedInvoiceController::class, 'summary']);
+        Route::get('/received-invoices/{id}', [ReceivedInvoiceController::class, 'show']);
+        Route::post('/received-invoices/{id}/approve', [ReceivedInvoiceController::class, 'approve']);
+        Route::post('/received-invoices/{id}/reject', [ReceivedInvoiceController::class, 'reject']);
+    });
 });

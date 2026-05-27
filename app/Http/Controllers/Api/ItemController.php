@@ -47,6 +47,14 @@ class ItemController extends Controller
 
     public function destroy(Item $item)
     {
+        if (request()->user() && request()->user()->role === 'vendedor') {
+            return response()->json([
+                'success' => false,
+                'error' => 'No autorizado.',
+                'message' => 'Los vendedores no tienen permisos para eliminar artículos.'
+            ], 403);
+        }
+
         $item->delete();
         return response()->json(null, 204);
     }

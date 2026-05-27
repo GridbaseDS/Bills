@@ -36,7 +36,9 @@ Route::get('/whatsapp-test/status', [WhatsAppTestController::class, 'status'])->
 Route::post('/fe/recepcion/api/ecf', [DgiiWebhookController::class, 'recepcion']);
 Route::post('/fe/aprobacioncomercial/api/ecf', [DgiiWebhookController::class, 'aprobacionComercial']);
 Route::get('/fe/autenticacion/api/semilla', [DgiiWebhookController::class, 'semilla']);
-Route::post('/fe/autenticacion/api/validacioncertificado', [DgiiWebhookController::class, 'validacionCertificado']);
+// ValidacionCertificado: support both casing variants and both GET/POST methods
+Route::match(['get', 'post'], '/fe/autenticacion/api/validacioncertificado', [DgiiWebhookController::class, 'validacionCertificado']);
+Route::match(['get', 'post'], '/fe/autenticacion/api/ValidacionCertificado', [DgiiWebhookController::class, 'validacionCertificado']);
 
 // FC<250k file downloads for DGII certification portal upload
 Route::get('/dgii-fc250k', function () {

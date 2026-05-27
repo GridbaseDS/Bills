@@ -124,8 +124,18 @@ class InvoiceController extends Controller
 
         $companyData = self::buildCompanyData($settings);
         $companyName = $settings['company_name'] ?? 'GridBase';
-        $subject = "Factura {$invoice->invoice_number} de {$companyName}";
-        $filename = "Factura-{$invoice->invoice_number}.pdf";
+        
+        $docNum = $invoice->is_ecf ? ($invoice->encf ?: $invoice->invoice_number) : $invoice->invoice_number;
+        if ($invoice->ecf_type == 34) {
+            $subject = "Nota de Crédito {$docNum} de {$companyName}";
+            $filename = "NotaDeCredito-{$docNum}.pdf";
+        } elseif ($invoice->ecf_type == 33) {
+            $subject = "Nota de Débito {$docNum} de {$companyName}";
+            $filename = "NotaDeDebito-{$docNum}.pdf";
+        } else {
+            $subject = "Factura {$invoice->invoice_number} de {$companyName}";
+            $filename = "Factura-{$invoice->invoice_number}.pdf";
+        }
 
         $pdfData = [
             'invoice' => $invoice->toArray(), 'company' => $companyData,
@@ -145,7 +155,11 @@ class InvoiceController extends Controller
             'clientName' => $invoice->client->contact_name,
             'companyName' => $companyName, 'companyEmail' => $settings['company_email'] ?? '',
             'companyPhone' => $settings['company_phone'] ?? '', 'companyWebsite' => $settings['company_website'] ?? '',
-            'isQuote' => false, 'docNumber' => $invoice->invoice_number, 'status' => $invoice->status,
+            'isQuote' => false, 
+            'isCreditNote' => $invoice->ecf_type == 34,
+            'isDebitNote' => $invoice->ecf_type == 33,
+            'docNumber' => $docNum, 
+            'status' => $invoice->status,
             'issueDate' => date('d/m/Y', strtotime($invoice->issue_date)),
             'dueDate' => date('d/m/Y', strtotime($invoice->due_date)),
             'items' => $invoice->items->toArray(), 'subtotal' => $invoice->subtotal,
@@ -445,19 +459,31 @@ class InvoiceController extends Controller
             $pdfContent = $pdf->output();
 
             // Build styled email data
-            $subject = "Factura {$invoice->invoice_number} de " . ($settings['company_name'] ?? 'GridBase');
-            $filename = "Factura-{$invoice->invoice_number}.pdf";
+            $companyName = $settings['company_name'] ?? 'GridBase';
+            $docNum = $invoice->is_ecf ? ($invoice->encf ?: $invoice->invoice_number) : $invoice->invoice_number;
+            if ($invoice->ecf_type == 34) {
+                $subject = "Nota de Crédito {$docNum} de {$companyName}";
+                $filename = "NotaDeCredito-{$docNum}.pdf";
+            } elseif ($invoice->ecf_type == 33) {
+                $subject = "Nota de Débito {$docNum} de {$companyName}";
+                $filename = "NotaDeDebito-{$docNum}.pdf";
+            } else {
+                $subject = "Factura {$invoice->invoice_number} de {$companyName}";
+                $filename = "Factura-{$invoice->invoice_number}.pdf";
+            }
 
             $emailData = [
                 'subject' => $subject,
                 'logoUrl' => 'https://gridbase.com.do/wp-content/uploads/2025/02/imagen_2026-03-16_154236217-1024x228.png',
                 'clientName' => $invoice->client->contact_name,
-                'companyName' => $settings['company_name'] ?? 'GridBase',
+                'companyName' => $companyName,
                 'companyEmail' => $settings['company_email'] ?? '',
                 'companyPhone' => $settings['company_phone'] ?? '',
                 'companyWebsite' => $settings['company_website'] ?? '',
                 'isQuote' => false,
-                'docNumber' => $invoice->invoice_number,
+                'isCreditNote' => $invoice->ecf_type == 34,
+                'isDebitNote' => $invoice->ecf_type == 33,
+                'docNumber' => $docNum,
                 'status' => $invoice->status,
                 'issueDate' => date('d/m/Y', strtotime($invoice->issue_date)),
                 'dueDate' => date('d/m/Y', strtotime($invoice->due_date)),

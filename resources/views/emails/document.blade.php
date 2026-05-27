@@ -37,8 +37,24 @@
                             Hola {{ $clientName }},
                         </p>
                         <p style="font-size: 13px; color: #555555; line-height: 1.7; margin: 0;">
-                            {{ $isQuote ? 'Te enviamos la cotización' : 'Te enviamos la factura' }} <strong style="color: #0B484C;">{{ $docNumber }}</strong> de <strong style="color: #0B484C;">{{ $companyName ?? 'GridBase' }}</strong>.
-                            {{ $isQuote ? 'Revisa los detalles a continuación.' : 'Adjunta encontrarás el PDF con todos los detalles.' }}
+                            @if($isQuote)
+                                Te enviamos la cotización
+                            @elseif(!empty($isCreditNote))
+                                Te enviamos la nota de crédito
+                            @elseif(!empty($isDebitNote))
+                                Te enviamos la nota de débito
+                            @else
+                                Te enviamos la factura
+                            @endif
+                            <strong style="color: #0B484C;">{{ $docNumber }}</strong> de <strong style="color: #0B484C;">{{ $companyName ?? 'GridBase' }}</strong>.
+                            
+                            @if($isQuote)
+                                Revisa los detalles a continuación.
+                            @elseif(!empty($isCreditNote))
+                                Adjunta encontrarás la representación en PDF con todos los detalles del crédito aplicado.
+                            @else
+                                Adjunta encontrarás el PDF con todos los detalles.
+                            @endif
                         </p>
                     </td>
                 </tr>
@@ -54,7 +70,16 @@
                                     <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
                                         <tr>
                                             <td style="color: #FFFFFF; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px;">
-                                                {{ $isQuote ? '📋 Cotización' : '📄 Factura' }} {{ $docNumber }}
+                                                @if($isQuote)
+                                                    📋 Cotización
+                                                @elseif(!empty($isCreditNote))
+                                                    📉 Nota de Crédito
+                                                @elseif(!empty($isDebitNote))
+                                                    📈 Nota de Débito
+                                                @else
+                                                    📄 Factura
+                                                @endif
+                                                {{ $docNumber }}
                                             </td>
                                             <td align="right">
                                                 @if(!$isQuote && !empty($status))
@@ -161,8 +186,8 @@
                 </tr>
                 @endif
 
-                <!-- Payment Button (only for invoices) -->
-                @if(!$isQuote && !empty($paymentUrl))
+                <!-- Payment Button (only for invoices, and not for credit notes) -->
+                @if(!$isQuote && empty($isCreditNote) && !empty($paymentUrl))
                 <tr>
                     <td style="padding: 22px 40px 28px 40px; text-align: center;">
                         <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
@@ -193,7 +218,17 @@
                 <tr>
                     <td style="padding: 8px 40px 28px 40px; text-align: center;">
                         <p style="font-size: 12px; color: #7E7E7E; margin: 0;">
-                            📎 El PDF de {{ $isQuote ? 'la cotización' : 'la factura' }} está adjunto a este correo.
+                            📎 El PDF de 
+                            @if($isQuote)
+                                la cotización
+                            @elseif(!empty($isCreditNote))
+                                la nota de crédito
+                            @elseif(!empty($isDebitNote))
+                                la nota de débito
+                            @else
+                                la factura
+                            @endif
+                            está adjunto a este correo.
                         </p>
                     </td>
                 </tr>

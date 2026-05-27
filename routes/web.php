@@ -41,6 +41,20 @@ Route::any('/fe/autenticacion/api/Semilla', [DgiiWebhookController::class, 'semi
 Route::any('/fe/autenticacion/api/validacioncertificado', [DgiiWebhookController::class, 'validacionCertificado']);
 Route::any('/fe/autenticacion/api/ValidacionCertificado', [DgiiWebhookController::class, 'validacionCertificado']);
 
+// Catch-all for any /fe/* URL we might be missing
+Route::any('/fe/{path}', function (\Illuminate\Http\Request $request, $path) {
+    \Illuminate\Support\Facades\Log::warning("DGII Webhook CATCH-ALL: {$request->method()} /fe/{$path}");
+    \Illuminate\Support\Facades\Log::warning("DGII Webhook CATCH-ALL Headers: " . json_encode($request->headers->all()));
+    // Try to route to semilla or validacioncertificado based on path
+    if (stripos($path, 'semilla') !== false) {
+        return app()->call([app(DgiiWebhookController::class), 'semilla']);
+    }
+    if (stripos($path, 'validacion') !== false) {
+        return app()->call([app(DgiiWebhookController::class), 'validacionCertificado'], ['request' => $request]);
+    }
+    return response()->json(['error' => 'Endpoint not found', 'path' => "/fe/{$path}"], 404);
+})->where('path', '.*');
+
 // FC<250k file downloads for DGII certification portal upload
 Route::get('/dgii-fc250k', function () {
     $dir = storage_path('app/dgii_tests/fc_250k_upload');

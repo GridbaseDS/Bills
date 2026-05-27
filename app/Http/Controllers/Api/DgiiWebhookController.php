@@ -66,7 +66,27 @@ XML;
     public function recepcion(Request $request)
     {
         Log::info("DGII Webhook: Recepcion e-CF received");
+        Log::info("DGII Webhook: Content-Type: " . $request->header('Content-Type'));
+        
+        // DGII may send XML as raw body OR as multipart/form-data file
         $rawXml = $request->getContent();
+        
+        // If content is empty, check for file upload
+        if (empty(trim($rawXml)) || strpos($rawXml, '<?xml') === false) {
+            // Try getting from file upload
+            if ($request->hasFile('xml')) {
+                $rawXml = $request->file('xml')->getContent();
+                Log::info("DGII Webhook: XML received as file upload");
+            } elseif ($request->has('xml')) {
+                $rawXml = $request->input('xml');
+                Log::info("DGII Webhook: XML received as form field");
+            }
+        }
+        
+        // Save raw XML to file for debugging
+        $debugPath = storage_path('app/dgii_debug_received_' . date('Ymd_His') . '.xml');
+        file_put_contents($debugPath, $rawXml);
+        Log::info("DGII Webhook: Raw XML saved to {$debugPath}, length: " . strlen($rawXml));
 
         $rncEmisor = '999999999';
         $rncReceptor = Setting::where('setting_key', 'company_tax_id')->value('setting_value') ?? '999999999';
@@ -75,77 +95,60 @@ XML;
 
         try {
             if (!empty($rawXml)) {
-                $doc = new DOMDocument();
-                if ($doc->loadXML($rawXml, LIBXML_NOBLANKS | LIBXML_NOCDATA | LIBXML_NONET)) {
-                    // Extract RNCEmisor
-                    $emisorNodes = $doc->getElementsByTagName('RncEmisor');
-                    if ($emisorNodes->length === 0) {
-                        $emisorNodes = $doc->getElementsByTagName('RNCEmisor');
-                    }
-                    if ($emisorNodes->length > 0) {
-                        $rncEmisor = trim($emisorNodes->item(0)->textContent);
-                    }
-                    
-                    // Extract RNCComprador/RncReceptor
-                    $receptorNodes = $doc->getElementsByTagName('RncComprador');
-                    if ($receptorNodes->length === 0) {
-                        $receptorNodes = $doc->getElementsByTagName('RNCComprador');
-                    }
-                    if ($receptorNodes->length === 0) {
-                        $receptorNodes = $doc->getElementsByTagName('RncReceptor');
-                    }
-                    if ($receptorNodes->length > 0) {
-                        $rncReceptorParsed = trim($receptorNodes->item(0)->textContent);
-                        if (!empty($rncReceptorParsed)) {
-                            $rncReceptor = $rncReceptorParsed;
-                        }
-                    }
+                // Use regex for robust extraction regardless of namespaces
+                // Extract RNCEmisor (try various tag names)
+                if (preg_match('/<(?:\w+:)?Rnc?E?misor>(\d+)</', $rawXml, $m)) {
+                    $rncEmisor = $m[1];
+                }
+                
+                // Extract RNCComprador/RncReceptor  
+                if (preg_match('/<(?:\w+:)?Rnc?(?:Comprador|Receptor)>(\d+)</', $rawXml, $m)) {
+                    $rncReceptor = $m[1];
+                }
 
-                    $encfNodes = $doc->getElementsByTagName('eNCF');
-                    if ($encfNodes->length > 0) {
-                        $encf = trim($encfNodes->item(0)->textContent);
-                    }
+                // Extract eNCF
+                if (preg_match('/<(?:\w+:)?eNCF>(E\d{12})</', $rawXml, $m)) {
+                    $encf = $m[1];
+                }
 
-                    // Extract additional fields for storage
-                    $razonSocial = '';
-                    $razonNodes = $doc->getElementsByTagName('RazonSocialEmisor');
-                    if ($razonNodes->length > 0) {
-                        $razonSocial = trim($razonNodes->item(0)->textContent);
-                    }
+                Log::info("DGII Webhook: Parsed — RNCEmisor:{$rncEmisor}, RNCComprador:{$rncReceptor}, eNCF:{$encf}");
 
-                    $fechaEmision = date('Y-m-d');
-                    $fechaNodes = $doc->getElementsByTagName('FechaEmision');
-                    if ($fechaNodes->length > 0) {
-                        $rawFecha = trim($fechaNodes->item(0)->textContent);
-                        if (preg_match('/^(\d{2})-(\d{2})-(\d{4})$/', $rawFecha, $m)) {
-                            $fechaEmision = "{$m[3]}-{$m[2]}-{$m[1]}";
-                        } else {
-                            $fechaEmision = date('Y-m-d', strtotime($rawFecha));
-                        }
-                    }
+                // Extract additional fields for storage
+                $razonSocial = '';
+                if (preg_match('/<(?:\w+:)?RazonSocialEmisor>([^<]+)</', $rawXml, $m)) {
+                    $razonSocial = trim($m[1]);
+                }
 
-                    $montoTotal = 0;
-                    $montoNodes = $doc->getElementsByTagName('MontoTotal');
-                    if ($montoNodes->length > 0) {
-                        $montoTotal = (float)trim($montoNodes->item(0)->textContent);
+                $fechaEmision = date('Y-m-d');
+                if (preg_match('/<(?:\w+:)?FechaEmision>([^<]+)</', $rawXml, $m)) {
+                    $rawFecha = trim($m[1]);
+                    if (preg_match('/^(\d{2})-(\d{2})-(\d{4})$/', $rawFecha, $fm)) {
+                        $fechaEmision = "{$fm[3]}-{$fm[2]}-{$fm[1]}";
+                    } else {
+                        $fechaEmision = date('Y-m-d', strtotime($rawFecha));
                     }
+                }
 
-                    // Save to received_invoices table
-                    try {
-                        ReceivedInvoice::updateOrCreate(
-                            ['rnc_emisor' => $rncEmisor, 'encf' => $encf],
-                            [
-                                'razon_social_emisor' => $razonSocial,
-                                'ecf_type' => ReceivedInvoice::extractEcfType($encf),
-                                'fecha_emision' => $fechaEmision,
-                                'monto_total' => $montoTotal,
-                                'raw_xml' => $rawXml,
-                            ]
-                        );
-                        Log::info("DGII Webhook: Factura recibida guardada — RNC: {$rncEmisor}, eNCF: {$encf}");
-                    } catch (Exception $e) {
-                        Log::error("DGII Webhook: Error guardando factura recibida: " . $e->getMessage());
-                    }
+                $montoTotal = 0;
+                if (preg_match('/<(?:\w+:)?MontoTotal>([^<]+)</', $rawXml, $m)) {
+                    $montoTotal = (float)trim($m[1]);
+                }
+
+                // Save to received_invoices table
+                try {
+                    ReceivedInvoice::updateOrCreate(
+                        ['rnc_emisor' => $rncEmisor, 'encf' => $encf],
+                        [
+                            'razon_social_emisor' => $razonSocial,
+                            'ecf_type' => ReceivedInvoice::extractEcfType($encf),
+                            'fecha_emision' => $fechaEmision,
+                            'monto_total' => $montoTotal,
+                            'raw_xml' => $rawXml,
+                        ]
+                    );
+                    Log::info("DGII Webhook: Factura recibida guardada — RNC: {$rncEmisor}, eNCF: {$encf}");
+                } catch (Exception $e) {
+                    Log::error("DGII Webhook: Error guardando factura recibida: " . $e->getMessage());
                 }
             }
         } catch (Exception $e) {

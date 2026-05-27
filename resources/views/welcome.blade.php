@@ -8,7 +8,7 @@
     <title>GridBase Bills</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link rel="stylesheet" href="/assets/css/app.css?v=45">
+    <link rel="stylesheet" href="/assets/css/app.css?v=46">
     <link rel="stylesheet" href="/assets/css/mobile.css?v=3" media="(max-width: 640px)">
     <link rel="icon" type="image/png" href="https://gridbase.com.do/wp-content/uploads/2026/03/cropped-imagen_2026-03-18_101800374-180x180.png">
     <!-- PWA iOS -->
@@ -21,7 +21,7 @@
 <body>
     <div id="app"></div>
     <div class="toast-container" id="toast-container"></div>
-    <script type="module" src="/assets/js/app.js?v=45"></script>
+    <script type="module" src="/assets/js/app.js?v=46"></script>
     <script>
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {

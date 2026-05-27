@@ -67,10 +67,12 @@ const InvoicesModule = {
                             Enviar
                         </button>
                         <button class="bulk-btn bulk-btn-primary" onclick="InvoicesModule.executeBulkAction('mark_as_paid')">
-                            ✓ Cobrar
+                            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                            Cobrar
                         </button>
                         <button class="bulk-btn bulk-btn-primary" onclick="InvoicesModule.executeBulkAction('process_ecf')">
-                            ⚡ e-CF
+                            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
+                            e-CF
                         </button>
                         <button class="bulk-btn bulk-btn-danger" onclick="InvoicesModule.executeBulkAction('delete')">
                             <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
@@ -296,7 +298,7 @@ const InvoicesModule = {
                                 <div style="font-size:11px;font-weight:600;color:var(--color-text-muted);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:8px;">Detalles</div>
                                 <p style="margin:0;font-size:13px;"><strong>Vence:</strong> ${App.formatDate(inv.due_date)}</p>
                                 <p style="margin:4px 0 0 0;font-size:13px;"><strong>Estado:</strong> <span class="badge badge-${inv.status}">${this.statusLabel(inv.status)}</span></p>
-                                ${inv.sent_at ? `<p style="margin:4px 0 0 0;color:var(--color-success-icon);font-size:12px;">Enviado ${App.formatDate(inv.sent_at)}${inv.sent_via && inv.sent_via.includes('whatsapp') ? ' <span title="Enviado por WhatsApp" style="font-size:11px;">📱✓</span>' : ''}</p>` : `<p style="margin:4px 0 0 0;color:var(--color-text-muted);font-size:12px;">No enviado</p>`}
+                                ${inv.sent_at ? `<p style="margin:4px 0 0 0;color:var(--color-success-icon);font-size:12px;">Enviado ${App.formatDate(inv.sent_at)}${inv.sent_via && inv.sent_via.includes('whatsapp') ? ' <span title="Enviado por WhatsApp" style="font-size:11px;font-weight:500;"> (WhatsApp)</span>' : ''}</p>` : `<p style="margin:4px 0 0 0;color:var(--color-text-muted);font-size:12px;">No enviado</p>`}
                             </div>
                         </div>
 

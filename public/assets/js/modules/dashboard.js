@@ -107,6 +107,23 @@ const DashboardModule = {
                                     </tbody>
                                 </table>
                             </div>
+                            <div class="mobile-card-list">
+                                ${recent.length > 0 ? recent.map(i => `
+                                    <a href="#facturas/${i.id}" class="mobile-card">
+                                        <div class="mobile-card-middle">
+                                            <div class="mobile-card-avatar">${(i.company_name || i.contact_name || '?').charAt(0).toUpperCase()}</div>
+                                            <div class="mobile-card-info">
+                                                <div class="mobile-card-name">${i.invoice_number}</div>
+                                                <div class="mobile-card-sub">${i.company_name || i.contact_name}</div>
+                                            </div>
+                                            <div style="text-align:right">
+                                                <div class="mobile-card-amount" style="font-size:15px">${App.formatCurrency(i.total, i.currency)}</div>
+                                                <span class="badge badge-${i.status}" style="margin-top:4px">${i.status}</span>
+                                            </div>
+                                        </div>
+                                    </a>
+                                `).join('') : '<div class="text-center text-muted" style="padding:32px;">No hay facturas recientes</div>'}
+                            </div>
                         </div>
                     </div>
 

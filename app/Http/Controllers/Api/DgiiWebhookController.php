@@ -60,6 +60,8 @@ XML;
     /**
      * URL de Recepción de e-CF (Acuse de Recibo - ARECF)
      * POST /fe/recepcion/api/ecf
+     * 
+     * Must respond with signed ARECF XML conforming to ARECF v1.0.xsd
      */
     public function recepcion(Request $request)
     {
@@ -75,13 +77,23 @@ XML;
             if (!empty($rawXml)) {
                 $doc = new DOMDocument();
                 if ($doc->loadXML($rawXml, LIBXML_NOBLANKS | LIBXML_NOCDATA | LIBXML_NONET)) {
-                    // Intenta extraer del e-CF recibido
+                    // Extract RNCEmisor
                     $emisorNodes = $doc->getElementsByTagName('RncEmisor');
+                    if ($emisorNodes->length === 0) {
+                        $emisorNodes = $doc->getElementsByTagName('RNCEmisor');
+                    }
                     if ($emisorNodes->length > 0) {
                         $rncEmisor = trim($emisorNodes->item(0)->textContent);
                     }
                     
-                    $receptorNodes = $doc->getElementsByTagName('RncReceptor');
+                    // Extract RNCComprador/RncReceptor
+                    $receptorNodes = $doc->getElementsByTagName('RncComprador');
+                    if ($receptorNodes->length === 0) {
+                        $receptorNodes = $doc->getElementsByTagName('RNCComprador');
+                    }
+                    if ($receptorNodes->length === 0) {
+                        $receptorNodes = $doc->getElementsByTagName('RncReceptor');
+                    }
                     if ($receptorNodes->length > 0) {
                         $rncReceptorParsed = trim($receptorNodes->item(0)->textContent);
                         if (!empty($rncReceptorParsed)) {
@@ -105,7 +117,6 @@ XML;
                     $fechaNodes = $doc->getElementsByTagName('FechaEmision');
                     if ($fechaNodes->length > 0) {
                         $rawFecha = trim($fechaNodes->item(0)->textContent);
-                        // Try dd-mm-yyyy format first
                         if (preg_match('/^(\d{2})-(\d{2})-(\d{4})$/', $rawFecha, $m)) {
                             $fechaEmision = "{$m[3]}-{$m[2]}-{$m[1]}";
                         } else {
@@ -141,24 +152,27 @@ XML;
             Log::error("DGII Webhook: Error parsing received e-CF: " . $e->getMessage());
         }
 
-        $fechaRecibido = date('Y-m-d\TH:i:s');
-        $uuid = Str::uuid()->toString();
+        // ARECF must conform to ARECF v1.0.xsd
+        // Date format: dd-MM-yyyy HH:mm:ss
+        $fechaHoraAcuse = date('d-m-Y H:i:s');
 
-        // Estructura XML del Acuse de Recibo (ARECF)
         $arecfXml = <<<XML
 <?xml version="1.0" encoding="utf-8"?>
-<ARECF xmlns="http://dgii.gov.do/core/arecf">
-    <UUID>{$uuid}</UUID>
-    <RutEmisor>{$rncEmisor}</RutEmisor>
-    <RutReceptor>{$rncReceptor}</RutReceptor>
-    <eNCF>{$encf}</eNCF>
-    <EstadoRecibido>0</EstadoRecibido>
-    <Detalle>Comprobante electrónico recibido y validado con éxito en Gridbase Bills</Detalle>
-    <FechaRecibido>{$fechaRecibido}</FechaRecibido>
+<ARECF xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="ARECF v1.0.xsd">
+    <DetalleAcusedeRecibo>
+        <Version>1.0</Version>
+        <RNCEmisor>{$rncEmisor}</RNCEmisor>
+        <RNCComprador>{$rncReceptor}</RNCComprador>
+        <eNCF>{$encf}</eNCF>
+        <Estado>0</Estado>
+        <FechaHoraAcuseRecibo>{$fechaHoraAcuse}</FechaHoraAcuseRecibo>
+    </DetalleAcusedeRecibo>
 </ARECF>
 XML;
 
-        // Intentar firmar si el certificado está configurado
+        Log::info("DGII Webhook: ARECF generado para {$encf} — RNCEmisor:{$rncEmisor}, RNCComprador:{$rncReceptor}");
+
+        // Sign the ARECF with our certificate
         $certFile = Setting::where('setting_key', 'dgii_certificate_path')->value('setting_value');
         $password = Setting::where('setting_key', 'dgii_certificate_password')->value('setting_value');
 
@@ -167,6 +181,7 @@ XML;
             if (file_exists($p12Path)) {
                 try {
                     $signedArecf = $this->signatureService->signXml($arecfXml, $p12Path, $password);
+                    Log::info("DGII Webhook: ARECF firmado exitosamente para {$encf}");
                     return response($signedArecf, 200)->header('Content-Type', 'application/xml');
                 } catch (Exception $e) {
                     Log::error("DGII Webhook: Error signing ARECF: " . $e->getMessage());
@@ -174,7 +189,8 @@ XML;
             }
         }
 
-        // Si no hay certificado o falla la firma, retornar ARECF sin firmar para pasar validaciones básicas
+        // Fallback: return unsigned (will likely fail DGII validation)
+        Log::warning("DGII Webhook: Returning unsigned ARECF for {$encf}");
         return response($arecfXml, 200)->header('Content-Type', 'application/xml');
     }
 

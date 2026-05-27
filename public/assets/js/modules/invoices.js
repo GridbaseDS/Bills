@@ -54,6 +54,7 @@ const InvoicesModule = {
                             <tbody id="inv-tbody"></tbody>
                         </table>
                     </div>
+                    <div id="inv-mobile-list" class="mobile-card-list"></div>
                 </div>
             `;
 
@@ -78,8 +79,6 @@ const InvoicesModule = {
     filterInvoices() {
         const search = (document.getElementById('inv-search')?.value || '').toLowerCase();
         const status = this._currentStatus || '';
-        const tbody = document.getElementById('inv-tbody');
-        if (!tbody) return;
 
         let filtered = this._allInvoices;
         if (search) {
@@ -92,6 +91,37 @@ const InvoicesModule = {
         if (status) filtered = filtered.filter(i => i.status === status);
 
         document.getElementById('inv-count').textContent = filtered.length;
+
+        // Mobile card list (CSS shows/hides based on media query)
+        const listEl = document.getElementById('inv-mobile-list');
+        if (listEl) {
+            listEl.innerHTML = filtered.length > 0 ? filtered.map(i => `
+                <a href="#facturas/${i.id}" class="mobile-card">
+                    <div class="mobile-card-top">
+                        <div class="mobile-card-id">
+                            ${i.is_ecf ? (i.encf || i.invoice_number) : i.invoice_number}
+                            ${i.is_ecf ? '<span class="badge" style="background:var(--color-primary);color:#FFF;font-size:8px;padding:2px 5px;">e-CF</span>' : ''}
+                        </div>
+                        <span class="badge badge-${i.status}">${this.statusLabel(i.status)}</span>
+                    </div>
+                    <div class="mobile-card-middle">
+                        <div class="mobile-card-avatar">${(i.company_name || i.contact_name || '?').charAt(0).toUpperCase()}</div>
+                        <div class="mobile-card-info">
+                            <div class="mobile-card-name">${i.company_name || i.contact_name}</div>
+                            <div class="mobile-card-sub">Vence: ${App.formatDate(i.due_date)}</div>
+                        </div>
+                    </div>
+                    <div class="mobile-card-bottom">
+                        <div class="mobile-card-amount">${App.formatCurrency(i.total, i.currency)}</div>
+                        <svg class="mobile-card-chevron" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                    </div>
+                </a>
+            `).join('') : '<div class="text-center text-muted" style="padding:48px;">No hay facturas que coincidan</div>';
+        }
+
+        // Desktop table rows (CSS shows/hides based on media query)
+        const tbody = document.getElementById('inv-tbody');
+        if (!tbody) return;
 
         tbody.innerHTML = filtered.length > 0 ? filtered.map(i => `
             <tr>

@@ -40,6 +40,7 @@ const ClientsModule = {
                             <tbody id="cl-tbody"></tbody>
                         </table>
                     </div>
+                    <div id="cl-mobile-list" class="mobile-card-list"></div>
                 </div>
             `;
 
@@ -63,7 +64,31 @@ const ClientsModule = {
         }
         document.getElementById('cl-count').textContent = filtered.length;
 
-        document.getElementById('cl-tbody').innerHTML = filtered.length > 0 ? filtered.map(c => `
+        // Mobile card list (CSS controls visibility)
+        const listEl = document.getElementById('cl-mobile-list');
+        if (listEl) {
+            listEl.innerHTML = filtered.length > 0 ? filtered.map(c => `
+                <a href="#clientes/profile/${c.id}" class="mobile-card">
+                    <div class="mobile-card-middle">
+                        <div class="mobile-card-avatar">${(c.company_name || c.contact_name || '?').charAt(0).toUpperCase()}</div>
+                        <div class="mobile-card-info">
+                            <div class="mobile-card-name">${c.company_name || c.contact_name}</div>
+                            <div class="mobile-card-sub">${c.email}</div>
+                        </div>
+                        <svg class="mobile-card-chevron" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                    </div>
+                    <div class="mobile-card-bottom">
+                        <div class="mobile-card-meta">${c.invoice_count || 0} facturas · ${window.App.formatCurrency(c.total_invoiced || 0)}</div>
+                        <span class="badge badge-${c.is_active ? 'active' : 'inactive'}">${c.is_active ? 'Activo' : 'Inactivo'}</span>
+                    </div>
+                </a>
+            `).join('') : '<div class="text-center text-muted" style="padding:48px;">No hay clientes registrados</div>';
+        }
+
+        // Desktop table (CSS controls visibility)
+        const tbody = document.getElementById('cl-tbody');
+        if (tbody) {
+            tbody.innerHTML = filtered.length > 0 ? filtered.map(c => `
             <tr>
                 <td>
                     <div class="user-cell">
@@ -88,6 +113,7 @@ const ClientsModule = {
                 </td>
             </tr>
         `).join('') : '<tr><td colspan="7" class="text-center text-muted" style="padding:48px;">No hay clientes registrados</td></tr>';
+        }
     },
 
     async renderProfile(container, id) {

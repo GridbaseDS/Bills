@@ -57,6 +57,27 @@ const RecurringModule = {
                             </tbody>
                         </table>
                     </div>
+                    <div class="mobile-card-list">
+                        ${items.length > 0 ? items.map(i => `
+                            <a href="#recurring/${i.id}" class="mobile-card">
+                                <div class="mobile-card-top">
+                                    <div class="mobile-card-id">#${i.id} · ${this.freqLabels[i.frequency]||i.frequency}</div>
+                                    <span class="badge badge-${this.statusBadge[i.status]||'draft'}">${this.statusLabels[i.status]||i.status}</span>
+                                </div>
+                                <div class="mobile-card-middle">
+                                    <div class="mobile-card-avatar">${(i.company_name||i.contact_name||'?').charAt(0).toUpperCase()}</div>
+                                    <div class="mobile-card-info">
+                                        <div class="mobile-card-name">${i.company_name||i.contact_name||'—'}</div>
+                                        <div class="mobile-card-sub">Próxima: ${App.formatDate(i.next_issue_date)}</div>
+                                    </div>
+                                </div>
+                                <div class="mobile-card-bottom">
+                                    <div class="mobile-card-amount">${App.formatCurrency(i.calculated_total||0, i.currency)}</div>
+                                    <svg class="mobile-card-chevron" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                                </div>
+                            </a>
+                        `).join('') : '<div class="text-center text-muted" style="padding:48px;">No hay suscripciones recurrentes</div>'}
+                    </div>
                 </div>`;
         } catch (e) {
             container.innerHTML = `<div class="text-red">Error al cargar suscripciones</div>`;

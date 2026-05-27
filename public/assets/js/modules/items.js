@@ -44,6 +44,7 @@ const ItemsModule = {
                             </tbody>
                         </table>
                     </div>
+                    <div id="items-mobile-list" class="mobile-card-list">${this.generateMobileCards(items)}</div>
                 </div>
             `;
 
@@ -57,6 +58,8 @@ const ItemsModule = {
                         (i.description && i.description.toLowerCase().includes(query))
                     );
                     document.getElementById('items-table-body').innerHTML = this.generateTableRows(filtered);
+                    const mobileList = document.getElementById('items-mobile-list');
+                    if (mobileList) mobileList.innerHTML = this.generateMobileCards(filtered);
                 });
             }
 
@@ -83,6 +86,24 @@ const ItemsModule = {
                     </div>
                 </td>
             </tr>
+        `).join('');
+    },
+
+    generateMobileCards(items) {
+        if (!items || items.length === 0) {
+            return '<div class="text-center text-muted" style="padding:32px;">No hay artículos registrados</div>';
+        }
+        return items.map(item => `
+            <a href="#articulos/${item.id}" class="mobile-card">
+                <div class="mobile-card-top">
+                    <div class="mobile-card-id">${item.name}</div>
+                    <span class="badge badge-${item.is_active ? 'active' : 'inactive'}">${item.is_active ? 'Activo' : 'Inactivo'}</span>
+                </div>
+                <div class="mobile-card-bottom">
+                    <div class="mobile-card-amount">${window.App.formatCurrency(item.price, 'DOP')}</div>
+                    <svg class="mobile-card-chevron" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                </div>
+            </a>
         `).join('');
     },
 

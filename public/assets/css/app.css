@@ -493,6 +493,8 @@ hr { border: 0; border-top: 1px solid var(--color-border); margin: var(--spacing
   background-color: #FFFFFF;
 }
 .table-wrapper { overflow-x: auto; width: 100%; }
+.mobile-card-list { display: none; }
+.mobile-tab-bar { display: none; }
 
 .data-table { width: 100%; border-collapse: collapse; text-align: left; }
 .data-table th {

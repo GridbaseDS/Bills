@@ -109,6 +109,38 @@ const ReceivedInvoices = {
                             ` : this.data.map(inv => this.renderRow(inv)).join('')}
                         </tbody>
                     </table>
+                    <div class="mobile-card-list">
+                        ${this.data.length === 0 ? '<div class="text-center text-muted" style="padding:48px;">No hay facturas recibidas</div>' :
+                        this.data.map(inv => {
+                            const fecha = inv.fecha_emision ? new Date(inv.fecha_emision).toLocaleDateString('es-DO') : '—';
+                            const monto = inv.monto_total ? parseFloat(inv.monto_total).toLocaleString('es-DO', { style: 'currency', currency: 'DOP' }) : '$0.00';
+                            const statusLabel = { pending: 'Pendiente', approved: 'Aprobada', rejected: 'Rechazada' };
+                            const statusClass = { pending: 'badge-onboarding', approved: 'badge-active', rejected: 'badge-overdue' };
+                            return `
+                                <div class="mobile-card">
+                                    <div class="mobile-card-top">
+                                        <div class="mobile-card-id" style="font-family:'JetBrains Mono',monospace;font-size:11px;">${inv.encf || '—'}</div>
+                                        <span class="badge ${statusClass[inv.approval_status] || ''}">${statusLabel[inv.approval_status] || '—'}</span>
+                                    </div>
+                                    <div class="mobile-card-middle">
+                                        <div class="mobile-card-avatar">${(inv.razon_social_emisor || '?').charAt(0).toUpperCase()}</div>
+                                        <div class="mobile-card-info">
+                                            <div class="mobile-card-name">${inv.razon_social_emisor || '—'}</div>
+                                            <div class="mobile-card-sub">RNC: ${inv.rnc_emisor || '—'} · ${fecha}</div>
+                                        </div>
+                                    </div>
+                                    <div class="mobile-card-bottom">
+                                        <div class="mobile-card-amount">${monto}</div>
+                                        ${inv.approval_status === 'pending' ? `
+                                            <div style="display:flex;gap:6px;">
+                                                <button class="btn btn-primary" style="font-size:11px;padding:6px 14px;" data-approve="${inv.id}">Aprobar</button>
+                                                <button class="btn btn-secondary" style="font-size:11px;padding:6px 14px;color:#ef4444;" data-reject="${inv.id}" data-encf="${inv.encf}">Rechazar</button>
+                                            </div>
+                                        ` : ''}
+                                    </div>
+                                </div>`;
+                        }).join('')}
+                    </div>
                 </div>
             </div>
 

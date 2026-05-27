@@ -46,6 +46,7 @@ const QuotesModule = {
                             <tbody id="qt-tbody"></tbody>
                         </table>
                     </div>
+                    <div id="qt-mobile-list" class="mobile-card-list"></div>
                 </div>
             `;
 
@@ -74,7 +75,34 @@ const QuotesModule = {
         if (status) filtered = filtered.filter(q => q.status === status);
         document.getElementById('qt-count').textContent = filtered.length;
 
-        document.getElementById('qt-tbody').innerHTML = filtered.length > 0 ? filtered.map(q => `
+        // Mobile card list (CSS controls visibility)
+        const listEl = document.getElementById('qt-mobile-list');
+        if (listEl) {
+            listEl.innerHTML = filtered.length > 0 ? filtered.map(q => `
+                <a href="#cotizaciones/${q.id}" class="mobile-card">
+                    <div class="mobile-card-top">
+                        <div class="mobile-card-id">${q.quote_number}</div>
+                        <span class="badge badge-${q.status}">${this.statusLabel(q.status)}</span>
+                    </div>
+                    <div class="mobile-card-middle">
+                        <div class="mobile-card-avatar">${(q.company_name || q.contact_name || '?').charAt(0).toUpperCase()}</div>
+                        <div class="mobile-card-info">
+                            <div class="mobile-card-name">${q.company_name || q.contact_name}</div>
+                            <div class="mobile-card-sub">Válida: ${window.App.formatDate(q.expiry_date)}</div>
+                        </div>
+                    </div>
+                    <div class="mobile-card-bottom">
+                        <div class="mobile-card-amount">${window.App.formatCurrency(q.total, q.currency)}</div>
+                        <svg class="mobile-card-chevron" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                    </div>
+                </a>
+            `).join('') : '<div class="text-center text-muted" style="padding:48px;">No hay cotizaciones</div>';
+        }
+
+        // Desktop table (CSS controls visibility)
+        const tbody = document.getElementById('qt-tbody');
+        if (tbody) {
+            tbody.innerHTML = filtered.length > 0 ? filtered.map(q => `
             <tr>
                 <td><a href="#cotizaciones/${q.id}" class="link-id">${q.quote_number}</a></td>
                 <td>
@@ -96,6 +124,7 @@ const QuotesModule = {
                 </td>
             </tr>
         `).join('') : '<tr><td colspan="7" class="text-center text-muted" style="padding:48px;">No hay cotizaciones</td></tr>';
+        }
     },
 
     async renderDetails(container, id) {

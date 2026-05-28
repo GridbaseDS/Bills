@@ -8,6 +8,56 @@ use App\Models\User;
 
 class AuthController extends Controller
 {
+    private function base32Decode(string $b32): string {
+        $b32 = strtoupper($b32);
+        if (!preg_match('/^[A-Z2-7]+$/', $b32)) {
+            return '';
+        }
+        $chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
+        $buf = 0;
+        $bufSize = 0;
+        $res = '';
+        for ($i = 0; $i < strlen($b32); $i++) {
+            $c = $b32[$i];
+            $val = strpos($chars, $c);
+            $buf = ($buf << 5) | $val;
+            $bufSize += 5;
+            if ($bufSize >= 8) {
+                $bufSize -= 8;
+                $res .= chr(($buf >> $bufSize) & 0xFF);
+            }
+        }
+        return $res;
+    }
+
+    private function verifyTotp(string $secret, string $code, int $discrepancy = 1): bool {
+        $key = $this->base32Decode($secret);
+        if (empty($key)) return false;
+        $currentTime = floor(time() / 30);
+        for ($i = -$discrepancy; $i <= $discrepancy; $i++) {
+            $timeWindow = $currentTime + $i;
+            $timeBinary = pack('N*', 0) . pack('N*', $timeWindow);
+            $hmac = hash_hmac('sha1', $timeBinary, $key, true);
+            $offset = ord($hmac[19]) & 0x0F;
+            $hashPart = substr($hmac, $offset, 4);
+            $value = unpack('N', $hashPart)[1] & 0x7FFFFFFF;
+            $totp = str_pad(strval($value % 1000000), 6, '0', STR_PAD_LEFT);
+            if (hash_equals($totp, $code)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private function generate2faSecret(): string {
+        $chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
+        $secret = '';
+        for ($i = 0; $i < 16; $i++) {
+            $secret .= $chars[random_int(0, 31)];
+        }
+        return $secret;
+    }
+
     public function login(Request $request)
     {
         $request->validate([
@@ -21,20 +71,99 @@ class AuthController extends Controller
             return response()->json(['error' => 'Credenciales inválidas'], 401);
         }
 
-        $user->last_login = now();
-        $user->save();
+        // Store pre-authenticated state in session
+        $request->session()->put('pre_auth_user_id', $user->id);
 
-        Auth::login($user);
+        if (empty($user->two_factor_secret)) {
+            // Setup Mode
+            $temp_secret = $this->generate2faSecret();
+            $request->session()->put('temp_2fa_secret', $temp_secret);
+            
+            return response()->json([
+                'requires_2fa' => true,
+                'setup_mode' => true,
+                'temp_secret' => $temp_secret,
+                'qr_uri' => 'otpauth://totp/Bills%20(' . rawurlencode($user->email) . ')?secret=' . $temp_secret . '&issuer=Bills'
+            ]);
+        }
 
+        // Standard 2FA Verification Mode
         return response()->json([
-            'success' => true,
-            'user' => [
-                'id' => $user->id,
-                'name' => $user->name,
-                'email' => $user->email,
-                'role' => $user->role,
-            ]
+            'requires_2fa' => true,
+            'setup_mode' => false
         ]);
+    }
+
+    public function verify2fa(Request $request)
+    {
+        $request->validate([
+            'code' => 'required|string|size:6',
+        ]);
+
+        $userId = $request->session()->get('pre_auth_user_id');
+        if (empty($userId)) {
+            return response()->json(['error' => 'La sesión de pre-autenticación ha expirado.'], 401);
+        }
+
+        $user = User::find($userId);
+        if (!$user) {
+            return response()->json(['error' => 'Usuario no encontrado.'], 404);
+        }
+
+        $code = str_replace(' ', '', $request->code);
+
+        if (empty($user->two_factor_secret)) {
+            // Setup Verification
+            $secret = $request->session()->get('temp_2fa_secret');
+            if (empty($secret)) {
+                return response()->json(['error' => 'No se ha podido iniciar la configuración del 2FA. Reintente.'], 422);
+            }
+
+            if ($this->verifyTotp($secret, $code)) {
+                // Save secret permanently
+                $user->two_factor_secret = $secret;
+                $user->save();
+
+                // Complete authentication
+                $user->last_login = now();
+                $user->save();
+                Auth::login($user);
+
+                $request->session()->forget(['pre_auth_user_id', 'temp_2fa_secret']);
+
+                return response()->json([
+                    'success' => true,
+                    'user' => [
+                        'id' => $user->id,
+                        'name' => $user->name,
+                        'email' => $user->email,
+                        'role' => $user->role,
+                    ]
+                ]);
+            }
+        } else {
+            // Standard Verification
+            if ($this->verifyTotp($user->two_factor_secret, $code)) {
+                // Complete authentication
+                $user->last_login = now();
+                $user->save();
+                Auth::login($user);
+
+                $request->session()->forget('pre_auth_user_id');
+
+                return response()->json([
+                    'success' => true,
+                    'user' => [
+                        'id' => $user->id,
+                        'name' => $user->name,
+                        'email' => $user->email,
+                        'role' => $user->role,
+                    ]
+                ]);
+            }
+        }
+
+        return response()->json(['error' => 'Código de verificación incorrecto. Inténtalo de nuevo.'], 422);
     }
 
     public function logout(Request $request)

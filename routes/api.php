@@ -21,6 +21,8 @@ use App\Http\Controllers\Api\UserController;
 
 // Public Auth
 Route::post('/auth/login', [AuthController::class, 'login']);
+Route::post('/auth/verify-2fa', [AuthController::class, 'verify2fa']);
+
 
 // Lookups (Public or Protected, placing them here as public, but could be protected)
 Route::get('/lookup/rnc/{rnc}', [LookupController::class, 'rnc']);

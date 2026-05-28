@@ -111,6 +111,10 @@ window.App = {
                 method: 'POST',
                 body: { email, password }
             });
+            if (res.requires_2fa) {
+                this.render2FA(res.setup_mode, res.temp_secret, res.qr_uri);
+                return;
+            }
             if (res.success) {
                 this.state.user = res.user;
                 
@@ -304,6 +308,136 @@ window.App = {
         document.getElementById('login-form').addEventListener('submit', (e) => {
             e.preventDefault();
             this.login(document.getElementById('login-email').value, document.getElementById('login-password').value);
+        });
+    },
+
+    render2FA(setupMode, tempSecret, qrUri) {
+        const cachedLogo = localStorage.getItem('company_logo') || 'https://gridbase.com.do/wp-content/uploads/2025/02/cropped-imagen_2026-03-16_154126791.png';
+        const app = document.getElementById('app');
+        
+        let subHtml = '';
+        if (setupMode) {
+            subHtml = `
+                <h1 class="login-title">Configurar Doble Factor (2FA)</h1>
+                <p class="login-subtitle">Protege tu cuenta activando el segundo factor</p>
+                <div id="login-error" class="login-error"></div>
+                
+                <div style="background:var(--color-danger-bg); color:var(--color-danger-text); border:1px solid rgba(239, 68, 68, 0.25); border-radius:var(--radius-md); padding:10px 12px; font-size:11px; margin-bottom:20px; text-align:center; font-weight:600; line-height:1.4; letter-spacing:0.1px;">
+                    Por motivos de seguridad y resguardo de su información, la activación del segundo factor de autenticación (2FA) es obligatoria para acceder a la plataforma.
+                </div>
+                
+                <p style="font-size:12px; color:var(--color-text-secondary); margin-bottom:20px; line-height:1.5; text-align:center;">
+                    Escanea este código QR con tu aplicación autenticadora (Google Authenticator, Authy, etc.) e ingresa el código de 6 dígitos para activarlo.
+                </p>
+                
+                <div style="display:flex; justify-content:center; margin-bottom:20px; background:#ffffff; padding:12px; border-radius:var(--radius-md); border:1px solid var(--color-border); width:fit-content; margin-left:auto; margin-right:auto; box-shadow:var(--shadow-sm);">
+                    <canvas id="qr-canvas"></canvas>
+                </div>
+                
+                <div style="background:var(--bg-page); border:1px solid var(--color-border); border-radius:var(--radius-md); padding:10px 12px; font-size:12px; margin-bottom:20px; text-align:left; word-break:break-all; font-family:monospace; display:flex; justify-content:space-between; align-items:center; gap:8px;">
+                    <div>
+                        <span style="color:var(--color-text-muted); font-size:9px; font-weight:600; text-transform:uppercase; display:block; letter-spacing:0.05em; margin-bottom:2px;">Clave manual</span>
+                        <span style="color:var(--color-text-primary); font-size:13px; font-weight:700;">${tempSecret}</span>
+                    </div>
+                </div>
+            `;
+        } else {
+            subHtml = `
+                <h1 class="login-title">Verificación de Seguridad</h1>
+                <p class="login-subtitle">Ingresa el código dinámico de 6 dígitos generado por tu aplicación</p>
+                <div id="login-error" class="login-error"></div>
+            `;
+        }
+        
+        app.innerHTML = `
+            <div class="login-page">
+                <div class="login-card animate-fade-in">
+                    <div class="login-logo" style="display:flex;align-items:center;justify-content:center;margin-bottom:16px;">
+                        <div style="background: #111827; padding: 8px 24px; border-radius: var(--radius-xl); border: 1px solid rgba(255, 255, 255, 0.08); display: inline-flex; align-items: center; justify-content: center; box-shadow: var(--shadow-md); max-height: 56px;">
+                            <img src="${cachedLogo}" alt="Logo" style="max-height:40px;max-width:100%;object-fit:contain;">
+                        </div>
+                    </div>
+                    ${subHtml}
+                    <form id="2fa-form">
+                        <div class="form-group text-left">
+                            <label class="form-label" style="text-align:center;">Código de Seguridad (2FA)</label>
+                            <input type="text" id="2fa-code" class="form-control" placeholder="000 000" pattern="[0-9]*" inputmode="numeric" maxlength="6" required autofocus autocomplete="one-time-code" style="text-align:center; font-size:24px; letter-spacing:0.1em; padding:8px 12px;">
+                        </div>
+                        <div style="display:flex; gap:12px; margin-top:16px;">
+                            <button type="button" id="btn-cancel-2fa" class="btn btn-secondary" style="flex:1;">Regresar</button>
+                            <button type="submit" class="btn btn-primary" style="flex:1;">Verificar</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        `;
+        
+        if (setupMode) {
+            if (typeof QRious === 'undefined') {
+                const script = document.createElement('script');
+                script.src = "https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js";
+                script.onload = () => {
+                    new QRious({
+                        element: document.getElementById('qr-canvas'),
+                        value: qrUri,
+                        size: 160,
+                        background: '#ffffff',
+                        foreground: '#111827',
+                        level: 'H'
+                    });
+                };
+                document.head.appendChild(script);
+            } else {
+                new QRious({
+                    element: document.getElementById('qr-canvas'),
+                    value: qrUri,
+                    size: 160,
+                    background: '#ffffff',
+                    foreground: '#111827',
+                    level: 'H'
+                });
+            }
+        }
+        
+        document.getElementById('btn-cancel-2fa').addEventListener('click', () => {
+            this.logout(false);
+        });
+        
+        document.getElementById('2fa-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const code = document.getElementById('2fa-code').value.trim();
+            const btn = e.target.querySelector('button[type="submit"]');
+            btn.disabled = true;
+            btn.innerHTML = `<span class="spinner"></span>`;
+            
+            try {
+                const res = await this.api('auth/verify-2fa', {
+                    method: 'POST',
+                    body: { code }
+                });
+                
+                if (res.success) {
+                    this.state.user = res.user;
+                    
+                    const settings = await this.api('settings');
+                    this.state.settings = settings;
+                    
+                    if (settings.is_installed !== '1') {
+                        this.renderSetupWizard();
+                    } else {
+                        this.renderAppShell();
+                        this.navigate('inicio');
+                    }
+                }
+            } catch (error) {
+                btn.disabled = false;
+                btn.innerHTML = 'Verificar';
+                const errorEl = document.getElementById('login-error');
+                if (errorEl) {
+                    errorEl.textContent = error.message;
+                    errorEl.style.display = 'block';
+                }
+            }
         });
     },
 

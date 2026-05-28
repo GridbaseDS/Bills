@@ -39,22 +39,37 @@ export default {
                 </div>
             </div>
 
-            <!-- Certification Test Section -->
+            <!-- Certification Test Runner Section -->
             <div class="table-outer" style="margin-bottom:var(--spacing-xl);">
-                <div style="padding:48px;max-width:800px;margin:0 auto;text-align:center;">
-                    <div style="width:56px;height:56px;border-radius:var(--radius-xl);background:var(--bg-hover);display:inline-flex;align-items:center;justify-content:center;margin-bottom:16px;">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--color-primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <polygon points="12 2 22 8.5 22 15.5 12 22 2 15.5 2 8.5 12 2"></polygon>
-                            <line x1="12" y1="22" x2="12" y2="15.5"></line>
-                            <polyline points="22 8.5 12 15.5 2 8.5"></polyline>
-                        </svg>
+                <div style="padding:24px var(--spacing-xl);border-bottom:1px solid var(--color-border);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
+                    <div style="display:flex;align-items:center;gap:16px;">
+                        <div style="width:48px;height:48px;border-radius:var(--radius-xl);background:linear-gradient(135deg,#3b82f620,#6366f120);display:flex;align-items:center;justify-content:center;">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#6366f1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <polygon points="12 2 22 8.5 22 15.5 12 22 2 15.5 2 8.5 12 2"></polygon>
+                                <line x1="12" y1="22" x2="12" y2="15.5"></line>
+                                <polyline points="22 8.5 12 15.5 2 8.5"></polyline>
+                            </svg>
+                        </div>
+                        <div>
+                            <h2 style="font-size:18px;font-weight:700;color:var(--color-text-primary);margin:0;">Certificación e-CF (Datos Exactos)</h2>
+                            <p style="margin:4px 0 0 0;color:var(--color-text-secondary);font-size:12px;">Genera XML directamente desde el set de pruebas DGII — sin usar facturas del sistema</p>
+                        </div>
                     </div>
-                    <h2 style="font-size:18px;font-weight:700;color:var(--color-text-primary);margin-bottom:8px;">Set de Pruebas DGII</h2>
-                    <p style="color:var(--color-text-secondary);font-size:13px;margin-bottom:20px;">Para certificación inicial. Envía las 29 facturas ficticias al ambiente CerteCF.</p>
-                    <button id="btn-run-tests" class="btn btn-secondary" style="padding:10px 24px;font-size:14px;">
-                        Ejecutar Set de Pruebas
-                    </button>
+                    <div style="display:flex;gap:8px;">
+                        <button id="btn-cert-load" class="btn btn-secondary" style="padding:8px 16px;font-size:13px;">
+                            Cargar Casos
+                        </button>
+                        <button id="btn-cert-run-all" class="btn btn-primary" style="padding:8px 16px;font-size:13px;" disabled>
+                            Ejecutar Todos
+                        </button>
+                    </div>
                 </div>
+                <div id="cert-table-container" style="padding:24px var(--spacing-xl);">
+                    <div style="text-align:center;color:var(--color-text-muted);font-size:13px;padding:32px;">
+                        Presiona <strong>"Cargar Casos"</strong> para ver los 25 test cases del set de pruebas DGII.
+                    </div>
+                </div>
+                <div id="cert-summary" style="display:none;padding:16px var(--spacing-xl);border-top:1px solid var(--color-border);"></div>
             </div>
 
             <!-- Aprobaciones Comerciales Section -->
@@ -92,7 +107,6 @@ export default {
     bindEvents() {
         const btnDiag = document.getElementById('btn-diagnose');
         const btnDiagSend = document.getElementById('btn-diagnose-send');
-        const btnRun = document.getElementById('btn-run-tests');
         const consoleContainer = document.getElementById('console-container');
         const consoleOutput = document.getElementById('console-output');
         const consoleStatus = document.getElementById('console-status');
@@ -129,51 +143,85 @@ export default {
             });
         }
 
-        // Certification tests
-        if (btnRun) {
-            btnRun.addEventListener('click', async () => {
-                btnRun.disabled = true;
-                btnRun.innerHTML = `<span class="spinner" style="width:16px;height:16px;border-width:2px;margin-right:8px;"></span> Procesando...`;
+        // Certification test runner
+        const btnCertLoad = document.getElementById('btn-cert-load');
+        const btnCertRunAll = document.getElementById('btn-cert-run-all');
+        const certContainer = document.getElementById('cert-table-container');
+        const certSummary = document.getElementById('cert-summary');
+
+        if (btnCertLoad) {
+            btnCertLoad.addEventListener('click', async () => {
+                btnCertLoad.disabled = true;
+                btnCertLoad.innerHTML = `<span class="spinner" style="width:14px;height:14px;border-width:2px;margin-right:6px;"></span> Cargando...`;
+                try {
+                    const res = await App.api('dgii/certification/list');
+                    this._certCases = res.cases;
+                    this.renderCertTable(certContainer, res.cases);
+                    btnCertRunAll.disabled = false;
+                } catch (e) {
+                    certContainer.innerHTML = `<div style="padding:24px;color:#ef4444;font-weight:600;">Error: ${e.message}</div>`;
+                } finally {
+                    btnCertLoad.disabled = false;
+                    btnCertLoad.innerHTML = 'Cargar Casos';
+                }
+            });
+        }
+
+        if (btnCertRunAll) {
+            btnCertRunAll.addEventListener('click', async () => {
+                if (!this._certCases?.length) return;
+                btnCertRunAll.disabled = true;
+                btnCertRunAll.innerHTML = `<span class="spinner" style="width:14px;height:14px;border-width:2px;margin-right:6px;"></span> Ejecutando...`;
+
                 consoleContainer.style.display = 'block';
-                consoleOutput.innerHTML = `<span style="color:#64748b;">[${new Date().toLocaleTimeString()}]</span> Iniciando proceso de certificación...\n`;
+                consoleOutput.innerHTML = `<span style="color:#64748b;">[${new Date().toLocaleTimeString()}]</span> Ejecutando ${this._certCases.length} test cases de certificación...\n`;
                 consoleStatus.innerHTML = `<span class="spinner" style="width:12px;height:12px;border-width:2px;"></span> <span style="color:#fbbf24;">Ejecutando</span>`;
 
-                try {
-                    const res = await App.api('dgii/run-tests', { method: 'POST' });
-                    let coloredOutput = res.output
-                        .replace(/ERROR/g, '<span style="color:#ef4444;font-weight:bold;">$&</span>')
-                        .replace(/Failed/g, '<span style="color:#ef4444;font-weight:bold;">$&</span>')
-                        .replace(/SUCCESS/g, '<span style="color:#22c55e;font-weight:bold;">$&</span>')
-                        .replace(/Done!/g, '<span style="color:#22c55e;font-weight:bold;">$&</span>');
-                    consoleOutput.innerHTML += `\n${coloredOutput}`;
-                    consoleStatus.innerHTML = res.success
-                        ? `<span style="color:#22c55e;">COMPLETADO</span>`
-                        : `<span style="color:#ef4444;">ERROR</span>`;
+                let passed = 0, failed = 0;
+                for (const tc of this._certCases) {
+                    const row = document.getElementById(`cert-row-${tc.encf}`);
+                    const statusCell = document.getElementById(`cert-status-${tc.encf}`);
+                    if (statusCell) statusCell.innerHTML = `<span class="spinner" style="width:14px;height:14px;border-width:2px;"></span>`;
 
-                    if (res.fc250k_files && res.fc250k_files.length > 0) {
-                        consoleOutput.innerHTML += `\n<span style="color:#fbbf24;font-weight:bold;">Descargando ${res.fc250k_files.length} archivos FC<250k...</span>\n`;
-                        for (const file of res.fc250k_files) {
-                            const bytes = atob(file.content);
-                            const arr = new Uint8Array(bytes.length);
-                            for (let i = 0; i < bytes.length; i++) arr[i] = bytes.charCodeAt(i);
-                            const blob = new Blob([arr], { type: 'text/xml' });
-                            const url = URL.createObjectURL(blob);
-                            const a = document.createElement('a');
-                            a.href = url; a.download = file.name;
-                            document.body.appendChild(a); a.click(); a.remove();
-                            URL.revokeObjectURL(url);
-                            consoleOutput.innerHTML += `<span style="color:#22c55e;">  OK: ${file.name}</span>\n`;
-                            await new Promise(r => setTimeout(r, 500));
+                    try {
+                        const res = await App.api('dgii/certification/run-single', {
+                            method: 'POST',
+                            body: JSON.stringify({ encf: tc.encf }),
+                            headers: { 'Content-Type': 'application/json' }
+                        });
+                        if (res.success) {
+                            passed++;
+                            if (statusCell) statusCell.innerHTML = `<span style="color:#22c55e;font-weight:600;">✅ ${res.status || 'Aceptado'}</span>`;
+                            consoleOutput.innerHTML += `<span style="color:#22c55e;">✅ ${tc.encf} (Tipo ${tc.tipo})</span> — ${res.track_id || 'OK'}\n`;
+                        } else {
+                            failed++;
+                            const errMsg = typeof res.errors === 'string' ? res.errors : JSON.stringify(res.errors);
+                            if (statusCell) statusCell.innerHTML = `<span style="color:#ef4444;font-weight:600;" title="${errMsg}">❌ Error</span>`;
+                            consoleOutput.innerHTML += `<span style="color:#ef4444;">❌ ${tc.encf} (Tipo ${tc.tipo})</span> — ${errMsg}\n`;
                         }
+                    } catch (e) {
+                        failed++;
+                        if (statusCell) statusCell.innerHTML = `<span style="color:#ef4444;font-weight:600;">❌ ${e.message}</span>`;
+                        consoleOutput.innerHTML += `<span style="color:#ef4444;">❌ ${tc.encf}</span> — ${e.message}\n`;
                     }
-                } catch (error) {
-                    consoleOutput.innerHTML += `\n<span style="color:#ef4444;font-weight:bold;">ERROR:</span> ${error.message}`;
-                    consoleStatus.innerHTML = `<span style="color:#ef4444;">ERROR</span>`;
-                } finally {
-                    btnRun.disabled = false;
-                    btnRun.innerHTML = `Ejecutar Set de Pruebas`;
                     consoleOutput.scrollTop = consoleOutput.scrollHeight;
                 }
+
+                // Summary
+                certSummary.style.display = 'block';
+                const allPassed = failed === 0;
+                certSummary.innerHTML = `
+                    <div style="display:flex;align-items:center;justify-content:center;gap:16px;padding:8px;border-radius:var(--radius-md);${allPassed ? 'background:#f0fdf4;color:#16a34a;' : 'background:#fef2f2;color:#dc2626;'}">
+                        <span style="font-weight:700;font-size:15px;">${allPassed ? '✅ CERTIFICACIÓN COMPLETADA' : `⚠️ ${failed} CASO(S) FALLIDOS`}</span>
+                        <span style="font-size:13px;">Aprobados: ${passed} | Fallidos: ${failed} | Total: ${this._certCases.length}</span>
+                    </div>`;
+
+                consoleStatus.innerHTML = allPassed
+                    ? `<span style="color:#22c55e;">COMPLETADO (${passed}/${this._certCases.length})</span>`
+                    : `<span style="color:#ef4444;">ERRORES (${passed}/${this._certCases.length})</span>`;
+
+                btnCertRunAll.disabled = false;
+                btnCertRunAll.innerHTML = 'Ejecutar Todos';
             });
         }
     },
@@ -230,5 +278,49 @@ export default {
             btn.disabled = false;
             btn.innerHTML = sendForReal ? 'Diagnosticar + Enviar' : 'Ejecutar Diagnóstico';
         }
+    },
+
+    renderCertTable(container, cases) {
+        const typeNames = {31:'Factura Crédito Fiscal',32:'Factura Consumo',33:'Nota Débito',34:'Nota Crédito',41:'Compras',43:'Gastos Menores',44:'Pagos Exterior',45:'Gubernamental',46:'Exportación',47:'Venta Zona Franca'};
+        let html = `
+            <div style="overflow-x:auto;">
+                <table style="width:100%;border-collapse:collapse;font-size:13px;">
+                    <thead>
+                        <tr style="border-bottom:2px solid var(--color-border);">
+                            <th style="padding:12px 16px;text-align:left;font-weight:600;color:var(--color-text-secondary);font-size:11px;text-transform:uppercase;letter-spacing:0.5px;">#</th>
+                            <th style="padding:12px 16px;text-align:left;font-weight:600;color:var(--color-text-secondary);font-size:11px;text-transform:uppercase;letter-spacing:0.5px;">e-NCF</th>
+                            <th style="padding:12px 16px;text-align:left;font-weight:600;color:var(--color-text-secondary);font-size:11px;text-transform:uppercase;letter-spacing:0.5px;">Tipo</th>
+                            <th style="padding:12px 16px;text-align:left;font-weight:600;color:var(--color-text-secondary);font-size:11px;text-transform:uppercase;letter-spacing:0.5px;">Comprador</th>
+                            <th style="padding:12px 16px;text-align:right;font-weight:600;color:var(--color-text-secondary);font-size:11px;text-transform:uppercase;letter-spacing:0.5px;">Monto</th>
+                            <th style="padding:12px 16px;text-align:center;font-weight:600;color:var(--color-text-secondary);font-size:11px;text-transform:uppercase;letter-spacing:0.5px;">Items</th>
+                            <th style="padding:12px 16px;text-align:center;font-weight:600;color:var(--color-text-secondary);font-size:11px;text-transform:uppercase;letter-spacing:0.5px;">Estado</th>
+                        </tr>
+                    </thead>
+                    <tbody>`;
+
+        cases.forEach((tc, i) => {
+            const typeBadge = `<span style="display:inline-block;padding:2px 8px;border-radius:var(--radius-sm);font-size:11px;font-weight:600;background:rgba(99,102,241,0.08);color:#6366f1;">${tc.tipo}</span>`;
+            const typeName = typeNames[tc.tipo] || 'Otro';
+            const monto = tc.monto_total ? parseFloat(tc.monto_total).toLocaleString('es-DO', {minimumFractionDigits:2}) : '—';
+            const items = tc.items?.join(', ') || '—';
+
+            html += `
+                <tr id="cert-row-${tc.encf}" style="border-bottom:1px solid var(--color-border);transition:background 0.15s;" onmouseover="this.style.background='var(--bg-hover)'" onmouseout="this.style.background='transparent'">
+                    <td style="padding:10px 16px;color:var(--color-text-muted);font-size:12px;">${i+1}</td>
+                    <td style="padding:10px 16px;font-weight:600;font-family:'JetBrains Mono',monospace;font-size:12px;">${tc.encf}</td>
+                    <td style="padding:10px 16px;">${typeBadge} <span style="color:var(--color-text-muted);font-size:11px;">${typeName}</span></td>
+                    <td style="padding:10px 16px;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${tc.razon_social_comprador || ''}">${tc.razon_social_comprador || '<span style="color:var(--color-text-muted);">—</span>'}</td>
+                    <td style="padding:10px 16px;text-align:right;font-family:'JetBrains Mono',monospace;font-size:12px;">$${monto}</td>
+                    <td style="padding:10px 16px;text-align:center;">
+                        <span style="display:inline-block;padding:2px 8px;border-radius:var(--radius-sm);font-size:11px;background:var(--bg-hover);color:var(--color-text-secondary);" title="${items}">${tc.items_count}</span>
+                    </td>
+                    <td style="padding:10px 16px;text-align:center;" id="cert-status-${tc.encf}">
+                        <span style="color:var(--color-text-muted);font-size:12px;">⏳ Pendiente</span>
+                    </td>
+                </tr>`;
+        });
+
+        html += `</tbody></table></div>`;
+        container.innerHTML = html;
     }
 };

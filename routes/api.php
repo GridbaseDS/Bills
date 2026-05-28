@@ -22,6 +22,7 @@ use App\Http\Controllers\Api\ApiKeyController;
 use App\Http\Controllers\Api\External\ExternalInvoiceController;
 use App\Http\Controllers\Api\External\ExternalQuoteController;
 use App\Http\Controllers\Api\External\ExternalClientController;
+use App\Http\Controllers\Api\CertificationController;
 
 // Public Auth
 Route::post('/auth/login', [AuthController::class, 'login']);
@@ -110,6 +111,11 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/dgii/diagnose', [DgiiTestUIController::class, 'diagnose']);
         Route::post('/dgii/run-aprobaciones', [DgiiTestUIController::class, 'runAprobaciones']);
         Route::get('/dgii/status', [DgiiTestUIController::class, 'connectionStatus']);
+
+        // DGII Certification Test Runner
+        Route::get('/dgii/certification/list', [CertificationController::class, 'listCases']);
+        Route::post('/dgii/certification/run-single', [CertificationController::class, 'runSingle']);
+        Route::post('/dgii/certification/run-all', [CertificationController::class, 'runAll']);
 
         // API Key Management
         Route::apiResource('api-keys', ApiKeyController::class);

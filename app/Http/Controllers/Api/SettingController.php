@@ -122,4 +122,69 @@ class SettingController extends Controller
             ]
         ]);
     }
+
+    public function resetDatabase(Request $request)
+    {
+        $request->validate([
+            'confirm_email' => 'required|email',
+        ]);
+
+        $currentUser = auth()->user();
+        if ($request->input('confirm_email') !== $currentUser->email) {
+            return response()->json([
+                'success' => false,
+                'error' => 'El correo de confirmación no coincide con tu correo actual.'
+            ], 422);
+        }
+
+        try {
+            // Disable foreign key checks
+            \Illuminate\Support\Facades\Schema::disableForeignKeyConstraints();
+
+            // Clear operational tables
+            \Illuminate\Support\Facades\DB::table('payments')->truncate();
+            \Illuminate\Support\Facades\DB::table('quote_items')->truncate();
+            \Illuminate\Support\Facades\DB::table('quotes')->truncate();
+            \Illuminate\Support\Facades\DB::table('invoice_items')->truncate();
+            \Illuminate\Support\Facades\DB::table('invoices')->truncate();
+            \Illuminate\Support\Facades\DB::table('recurring_invoice_items')->truncate();
+            \Illuminate\Support\Facades\DB::table('recurring_invoices')->truncate();
+            \Illuminate\Support\Facades\DB::table('clients')->truncate();
+            \Illuminate\Support\Facades\DB::table('expenses')->truncate();
+            \Illuminate\Support\Facades\DB::table('items')->truncate();
+            \Illuminate\Support\Facades\DB::table('received_invoices')->truncate();
+            \Illuminate\Support\Facades\DB::table('activity_log')->truncate();
+            
+            // Clear sessions except current session
+            \Illuminate\Support\Facades\DB::table('sessions')
+                ->where('id', '!=', session()->getId())
+                ->delete();
+
+            // Reset Settings table to default values using the Seeder
+            \Illuminate\Support\Facades\DB::table('settings')->truncate();
+
+            // Run the seeder to repopulate default settings (including is_installed = '0')
+            $seeder = new \Database\Seeders\DatabaseSeeder();
+            $seeder->run();
+
+            // Re-enable foreign key checks
+            \Illuminate\Support\Facades\Schema::enableForeignKeyConstraints();
+
+            // Log activity
+            \Illuminate\Support\Facades\Log::warning("DATABASE RESET PERFORMED by Admin user ID {$currentUser->id} ({$currentUser->email})");
+
+            return response()->json([
+                'success' => true,
+                'message' => 'La base de datos ha sido reiniciada con éxito. Se mantuvieron los usuarios y roles.'
+            ]);
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Schema::enableForeignKeyConstraints();
+            \Illuminate\Support\Facades\Log::error("Database reset failed: " . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'error' => 'Error al reiniciar la base de datos: ' . $e->getMessage()
+            ], 500);
+        }
+    }
 }
+

@@ -94,6 +94,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/settings', [SettingController::class, 'updateMultiple'])->middleware('role:admin');
     Route::post('/settings/test-smtp', [SettingController::class, 'testSmtp'])->middleware('role:admin');
     Route::get('/settings/diagnose-smtp', [SettingController::class, 'diagnoseSmtp'])->middleware('role:admin');
+    Route::post('/settings/reset-database', [SettingController::class, 'resetDatabase'])->middleware('role:admin');
 
     // DGII Tests & User Management (Admin only)
     Route::middleware('role:admin')->group(function () {

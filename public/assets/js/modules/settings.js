@@ -20,6 +20,7 @@ export default {
                     <button class="segment-item" data-tab="automation">Recordatorios</button>
                     <button class="segment-item" data-tab="integrations">Integraciones</button>
                     <button class="segment-item" data-tab="dgii">e-CF / DGII</button>
+                    <button class="segment-item" data-tab="support" style="color:var(--color-danger);">Soporte</button>
                 </div>
 
                 <form id="settings-form" class="table-outer">
@@ -212,7 +213,42 @@ export default {
                             </div>
                         </div>
 
-                        <div style="border-top:1px solid var(--color-border);padding-top:16px;margin-top:24px;">
+                        <!-- TAB: SUPPORT / RESET -->
+                        <div class="tab-content" id="tab-support" style="display:none;">
+                            <h3 style="font-size:15px;font-weight:600;margin:0 0 8px;color:#ef4444;">Soporte Técnico — Restablecer Sistema</h3>
+                            <p style="color:var(--color-text-muted);font-size:13px;margin:0 0 24px;">Esta sección está diseñada para el mantenimiento técnico. Utiliza estas herramientas con extrema precaución.</p>
+                            
+                            <div style="background:rgba(239,68,68,0.06);border:1px solid rgba(239,68,68,0.2);border-radius:var(--radius-lg);padding:24px;max-width:600px;">
+                                <h4 style="font-size:14px;font-weight:700;color:#ef4444;margin:0 0 10px;display:flex;align-items:center;gap:8px;">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+                                    Acción Altamente Destructiva
+                                </h4>
+                                <p style="font-size:13px;line-height:1.5;margin:0 0 16px;color:var(--color-text-secondary);">
+                                    Esta acción eliminará de forma <strong>permanente e irreversible</strong> todos los datos operativos de tu sistema, incluyendo:
+                                </p>
+                                <ul style="font-size:13px;margin:0 0 16px 20px;padding:0;color:var(--color-text-secondary);line-height:1.6;">
+                                    <li>Todas las Facturas y Cotizaciones emitidas</li>
+                                    <li>Historial de Pagos y Transacciones</li>
+                                    <li>Clientes y Proveedores</li>
+                                    <li>Artículos y Productos en inventario</li>
+                                    <li>Gastos registrados y reportes fiscales</li>
+                                    <li>Configuraciones de la empresa (se restaurarán las de fábrica)</li>
+                                </ul>
+                                <p style="font-size:13px;font-weight:600;margin:0 0 20px;color:var(--color-text);">
+                                    🔑 Tu usuario actual, tu contraseña y tu rol de administrador se conservarán para que puedas seguir accediendo al sistema vacío.
+                                </p>
+                                <div class="form-group" style="margin-bottom:20px;">
+                                    <label class="form-label" style="font-weight:600;">Escribe tu correo de usuario para confirmar:</label>
+                                    <input type="text" id="db_reset_confirm_email" class="form-control" placeholder="Ingresa tu correo actual" style="max-width:320px;margin-top:6px;">
+                                </div>
+                                <button type="button" id="btn-reset-db" class="btn btn-danger" style="background-color: #ef4444; color: #fff; border: none; font-weight:600; display:inline-flex; align-items:center; gap:8px;">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><path d="M3 3v5h5"></path><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"></path><path d="M16 16h5v5"></path></svg>
+                                    Reiniciar Sistema desde Cero
+                                </button>
+                            </div>
+                        </div>
+
+                        <div style="border-top:1px solid var(--color-border);padding-top:16px;margin-top:24px;" id="settings-save-actions">
                             <button type="submit" class="btn btn-primary">Guardar Configuraciones</button>
                         </div>
                     </div>
@@ -438,6 +474,55 @@ export default {
             if (footerToggle) {
                 footerToggle.addEventListener('change', updatePdfPreview);
             }
+
+            // Database Reset
+            document.getElementById('btn-reset-db')?.addEventListener('click', async () => {
+                const btn = document.getElementById('btn-reset-db');
+                const confirmEmail = document.getElementById('db_reset_confirm_email').value.trim();
+                
+                if (!confirmEmail) {
+                    return window.App.showToast('Por favor, ingresa tu correo para confirmar.', 'error');
+                }
+                
+                if (confirmEmail.toLowerCase() !== (window.App.state.user?.email || '').toLowerCase()) {
+                    return window.App.showToast('El correo ingresado no coincide con tu correo de usuario.', 'error');
+                }
+                
+                if (!confirm('¿ESTÁS ABSOLUTAMENTE SEGURO? Esta acción borrará todas las facturas, cotizaciones, clientes, artículos, gastos y configuraciones del sistema de forma irreversible. Tu usuario de acceso se conservará.')) {
+                    return;
+                }
+                
+                const originalText = btn.innerHTML;
+                btn.innerHTML = '<span class="spinner" style="width:14px;height:14px;border-width:2px;border-color:#fff;margin:0 auto;"></span>';
+                btn.disabled = true;
+                
+                try {
+                    const res = await window.App.api('settings/reset-database', {
+                        method: 'POST',
+                        body: { confirm_email: confirmEmail }
+                    });
+                    
+                    window.App.showToast(res.message, 'success');
+                    
+                    // Reload the page after 2 seconds to force the setup wizard
+                    setTimeout(() => {
+                        window.location.href = '/configuracion-inicial';
+                    }, 2000);
+                } catch(err) {
+                    btn.innerHTML = originalText;
+                    btn.disabled = false;
+                }
+            });
+
+            // Hide/Show Save button based on active tab
+            tabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    const saveActions = container.querySelector('#settings-save-actions');
+                    if (saveActions) {
+                        saveActions.style.display = tab.dataset.tab === 'support' ? 'none' : 'block';
+                    }
+                });
+            });
 
         } catch (e) {
             container.innerHTML = `<div class="text-red">Error al cargar configuraciones</div>`;

@@ -42,11 +42,12 @@ const DashboardModule = {
                         flex-direction: column;
                         gap: 24px;
                         width: 100%;
+                        padding-bottom: 72px !important;
                     }
                     
                     @media (max-width: 640px) {
                         .dashboard-wrapper {
-                            padding: 16px 16px 40px 16px !important;
+                            padding: 16px 16px 140px 16px !important;
                             gap: 16px;
                         }
                     }
@@ -140,6 +141,30 @@ const DashboardModule = {
                         100% {
                             transform: scale(0.95);
                             box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);
+                        }
+                    /* White fixed brand footer stuck to the bottom of the screen */
+                    .dashboard-footer {
+                        position: fixed;
+                        bottom: 0;
+                        right: 0;
+                        left: var(--sidebar-w);
+                        background-color: var(--bg-card);
+                        border-top: 1px solid var(--color-border);
+                        padding: 14px 24px;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        z-index: 100;
+                        box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.02);
+                        transition: left var(--transition-normal);
+                    }
+                    
+                    @media (max-width: 640px) {
+                        .dashboard-footer {
+                            left: 0;
+                            bottom: calc(60px + env(safe-area-inset-bottom));
+                            padding: 12px 16px;
+                            box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.04);
                         }
                     }
                 </style>
@@ -298,9 +323,9 @@ const DashboardModule = {
                         </div>
                     </div>
 
-                    <!-- Clean Brand Footer -->
-                    <footer style="margin-top: 32px; padding: 24px 0 16px 0; border-top: 1px solid var(--color-border); text-align: center;">
-                        <a href="https://gridbase.com.do" target="_blank" style="font-size: 12px; color: var(--color-text-muted); text-decoration: none; font-weight: 500; transition: color 0.2s ease;" onmouseover="this.style.color='var(--color-primary)'" onmouseout="this.style.color='var(--color-text-muted)'">
+                    <!-- Fixed White Brand Footer -->
+                    <footer class="dashboard-footer">
+                        <a href="https://gridbase.com.do" target="_blank" style="font-size: 11px; color: var(--color-text-muted); text-decoration: none; font-weight: 500; transition: color 0.2s ease;" onmouseover="this.style.color='var(--color-primary)'" onmouseout="this.style.color='var(--color-text-muted)'">
                             Bills by <span style="font-weight: 600; color: var(--color-primary);">GridBase Digital Solutions</span>
                         </a>
                     </footer>

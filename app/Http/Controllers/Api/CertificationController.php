@@ -98,10 +98,10 @@ class CertificationController extends Controller
             $results[] = $this->executeRfceTestCase($tc);
         }
 
-        // Phase 4: FC < 250k ECFs → ecf.dgii.gov.do
+        // Phase 4: FC < 250k ECFs → fc.dgii.gov.do (B2C channel, NOT ecf.dgii.gov.do)
         Log::info("[Certification] === PHASE 4: FC<250k ECFs (" . count($phase4) . " cases) ===");
         foreach ($phase4 as $tc) {
-            $results[] = $this->executeEcfTestCase($tc);
+            $results[] = $this->executeEcfTestCase($tc, true);
         }
 
         $passed = collect($results)->where('success', true)->count();
@@ -185,7 +185,7 @@ class CertificationController extends Controller
 
     // ─── ECF Execution ────────────────────────────────
 
-    private function executeEcfTestCase(array $testCase): array
+    private function executeEcfTestCase(array $testCase, bool $isRfce = false): array
     {
         $encf = $testCase['ENCF'];
         $tipoECF = $testCase['TipoeCF'];
@@ -238,8 +238,9 @@ class CertificationController extends Controller
             $token = $authService->getValidToken($settings);
             $env = $settings['dgii_env'] ?? 'testing';
 
-            Log::info("[Certification] Submitting ECF {$encf} to ecf.dgii.gov.do");
-            $result = $apiService->submitInvoice($signedXml, $token, $env, false);
+            $endpoint = $isRfce ? 'fc.dgii.gov.do' : 'ecf.dgii.gov.do';
+            Log::info("[Certification] Submitting ECF {$encf} to {$endpoint}");
+            $result = $apiService->submitInvoice($signedXml, $token, $env, $isRfce);
 
             Log::info("[Certification] ECF Result for {$encf}: " . json_encode($result));
 

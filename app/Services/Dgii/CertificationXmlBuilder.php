@@ -17,6 +17,7 @@ class CertificationXmlBuilder
 {
     private DOMDocument $dom;
     private array $tc; // test case data
+    private int $tipoECF; // current type for format decisions
 
     /**
      * Build a complete e-CF XML from a single test case array.
@@ -27,6 +28,7 @@ class CertificationXmlBuilder
     public function buildFromTestCase(array $testCase): string
     {
         $this->tc = $testCase;
+        $this->tipoECF = (int)($testCase['TipoeCF'] ?? 0);
         $this->dom = new DOMDocument('1.0', 'UTF-8');
         $this->dom->formatOutput = true;
 
@@ -765,29 +767,37 @@ class CertificationXmlBuilder
     }
 
     /**
-     * Format unit prices — always 4 decimal places.
-     * DGII requires: PrecioUnitarioItem, PrecioUnitarioReferencia, etc.
+     * Format unit prices — type-dependent decimal places.
+     * T41/T43 (Compras/Gastos Menores): 2 decimal places
+     * T31-34, T44-47: 4 decimal places
      */
     private function fmtPrice($value): string
     {
-        return number_format((float)$value, 4, '.', '');
+        $decimals = in_array($this->tipoECF, [41, 43]) ? 2 : 4;
+        return number_format((float)$value, $decimals, '.', '');
     }
 
     /**
-     * Format quantities — integer if whole, otherwise preserve decimals.
-     * DGII requires: CantidadItem "1" not "1.00", but "1.5" stays "1.5".
+     * Format quantities — type-dependent.
+     * T31-34: integer (no decimals) — e.g. "1", "23"
+     * T41-47: 2 decimal places — e.g. "1.00", "20.00"
      */
     private function fmtQty($value): string
     {
-        $float = (float)$value;
-        if (floor($float) == $float) {
-            return (string)(int)$float;
+        if (in_array($this->tipoECF, [31, 32, 33, 34])) {
+            // Integer format for standard invoice types
+            $float = (float)$value;
+            if (floor($float) == $float) {
+                return (string)(int)$float;
+            }
+            return (string)$float;
         }
-        return (string)$float;
+        // 2 decimal places for compras, gastos, special types
+        return number_format((float)$value, 2, '.', '');
     }
 
     /**
-     * Format decimal values — 2 decimal places by default (backward compat).
+     * Format decimal values — 2 decimal places by default.
      */
     private function fmtDecimal($value): string
     {

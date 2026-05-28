@@ -170,16 +170,33 @@ const DashboardModule = {
     },
 
     renderChart(months) {
+        this.activeMonthsData = months;
+        this.drawSvgChart();
+
+        // Re-render on window resize to ensure fluid responsiveness without any pixelation
+        if (window.revenueChartResizeListener) {
+            window.removeEventListener('resize', window.revenueChartResizeListener);
+        }
+        window.revenueChartResizeListener = () => {
+            if (this.activeMonthsData) {
+                this.drawSvgChart();
+            }
+        };
+        window.addEventListener('resize', window.revenueChartResizeListener);
+    },
+
+    drawSvgChart() {
         const container = document.getElementById('revenue-chart-container');
-        if (!container || months.length === 0) return;
+        const months = this.activeMonthsData;
+        if (!container || !months || months.length === 0) return;
 
         // Clear container
         container.innerHTML = '';
 
-        // Standard dimensions
-        const W = 700;
-        const H = 280;
-        const pad = { top: 20, right: 30, bottom: 35, left: 65 };
+        // Dynamic width based on actual screen size, and a locked elegant height
+        const W = container.offsetWidth || 700;
+        const H = 220;
+        const pad = { top: 20, right: 20, bottom: 25, left: 65 };
         const chartW = W - pad.left - pad.right;
         const chartH = H - pad.top - pad.bottom;
 
@@ -227,7 +244,7 @@ const DashboardModule = {
 
         // Generate SVG elements
         let svgHTML = `
-            <svg viewBox="0 0 ${W} ${H}" width="100%" height="100%" style="overflow: visible;">
+            <svg viewBox="0 0 ${W} ${H}" width="100%" height="${H}" style="display:block; overflow: visible;">
                 <defs>
                     <!-- Gradients for Area Fills -->
                     <linearGradient id="grad-revenue" x1="0" y1="0" x2="0" y2="1">

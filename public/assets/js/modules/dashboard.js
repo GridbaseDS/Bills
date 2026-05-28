@@ -466,15 +466,8 @@ const DashboardModule = {
                             gap: 12px;
                         }
 
-                        /* Header */
-                        .db-header {
-                            flex-direction: row;
-                            align-items: center;
-                            gap: 8px;
-                        }
-                        .db-welcome { font-size: 18px; }
-                        .db-date { font-size: 12px; padding: 6px 10px; }
-                        .db-date svg { width: 13px; height: 13px; }
+                        /* Header — hidden on mobile, topbar already greets */
+                        .db-header { display: none !important; }
 
                         /* KPI cards: main full-width, rest 2-col */
                         .db-kpi-row {

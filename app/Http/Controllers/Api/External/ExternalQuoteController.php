@@ -196,9 +196,129 @@ class ExternalQuoteController extends Controller
     }
 
     /**
+     * Download or stream the quote PDF.
+     */
+    public function pdf($id)
+    {
+        $quote = Quote::with(['client', 'items'])->find($id);
+
+        if (!$quote) {
+            return response()->json([
+                'success' => false,
+                'error' => 'Cotización no encontrada.',
+            ], 404);
+        }
+
+        $settings = Setting::getAll();
+
+        $data = [
+            'invoice' => $quote->toArray(),
+            'is_quote' => true,
+            'company' => \App\Http\Controllers\Api\InvoiceController::buildCompanyData($settings),
+            'client' => $quote->client->toArray(),
+            'items' => $quote->items->toArray(),
+            'settings' => $settings,
+        ];
+
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('pdf.invoice', $data);
+
+        return $pdf->download('Cotizacion-' . $quote->quote_number . '.pdf');
+    }
+
+    /**
+     * Update an existing quote.
+     */
+    public function update(Request $request, $id)
+    {
+        $quote = Quote::find($id);
+
+        if (!$quote) {
+            return response()->json([
+                'success' => false,
+                'error' => 'Cotización no encontrada.',
+            ], 404);
+        }
+
+        $validator = Validator::make($request->all(), [
+            'status' => 'sometimes|string|in:draft,sent,accepted,declined,converted',
+            'notes' => 'sometimes|string|max:2000',
+            'terms' => 'sometimes|string|max:2000',
+            'expiry_date' => 'sometimes|date',
+            'items' => 'sometimes|array|min:1',
+            'items.*.description' => 'required_with:items|string|max:500',
+            'items.*.quantity' => 'required_with:items|numeric|min:0.01',
+            'items.*.unit_price' => 'required_with:items|numeric|min:0',
+            'currency' => 'sometimes|string|in:DOP,USD,EUR',
+            'tax_rate' => 'sometimes|numeric|min:0|max:100',
+            'discount_type' => 'sometimes|string|in:percentage,fixed',
+            'discount_value' => 'sometimes|numeric|min:0',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'error' => 'Datos de validación inválidos.',
+                'errors' => $validator->errors(),
+            ], 422);
+        }
+
+        $data = $request->all();
+
+        // Update fields if provided
+        $quote->fill($request->only(['status', 'notes', 'terms', 'expiry_date', 'currency', 'tax_rate', 'discount_type', 'discount_value']));
+
+        // Recalculate totals if items or discount/tax are modified
+        if ($request->has('items') || $request->has('discount_value') || $request->has('tax_rate')) {
+            $items = $request->has('items') ? $request->input('items') : $quote->items->toArray();
+            
+            $subtotal = collect($items)->sum(fn($i) => $i['quantity'] * $i['unit_price']);
+            $discountValue = $request->input('discount_value', $quote->discount_value ?? 0);
+            $discountType = $request->input('discount_type', $quote->discount_type ?? 'percentage');
+            $discountAmount = $discountType === 'percentage' ? ($subtotal * ($discountValue / 100)) : $discountValue;
+            
+            $taxRate = $request->input('tax_rate', $quote->tax_rate ?? 0);
+            $taxAmount = ($subtotal - $discountAmount) * ($taxRate / 100);
+            $total = $subtotal - $discountAmount + $taxAmount;
+
+            $quote->subtotal = $subtotal;
+            $quote->discount_amount = $discountAmount;
+            $quote->tax_amount = $taxAmount;
+            $quote->total = $total;
+        }
+
+        if ($request->has('currency') && empty($data['exchange_rate'])) {
+            $quote->exchange_rate = CurrencyConverter::getConversionRate($request->input('currency'), 'DOP');
+        }
+
+        $quote->save();
+
+        // Sync items if provided
+        if ($request->has('items')) {
+            $quote->items()->delete();
+            foreach ($request->input('items') as $idx => $item) {
+                $quote->items()->create([
+                    'description' => $item['description'],
+                    'quantity' => $item['quantity'],
+                    'unit_price' => $item['unit_price'],
+                    'amount' => $item['quantity'] * $item['unit_price'],
+                    'sort_order' => $idx,
+                ]);
+            }
+        }
+
+        $quote->load(['client', 'items']);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Cotización actualizada exitosamente.',
+            'data' => $quote,
+        ]);
+    }
+
+    /**
      * Convert a quote to an invoice.
      */
-    public function convertToInvoice($id)
+    public function convertToInvoice(Request $request, $id)
     {
         $quote = Quote::with('items')->find($id);
 
@@ -246,6 +366,9 @@ class ExternalQuoteController extends Controller
             'exchange_rate' => $quote->exchange_rate,
             'notes' => $quote->notes,
             'terms' => $quote->terms,
+            // e-CF fields
+            'is_ecf' => $request->boolean('is_ecf', false),
+            'ecf_type' => $request->input('ecf_type'),
         ]);
 
         foreach ($quote->items as $item) {
@@ -256,6 +379,17 @@ class ExternalQuoteController extends Controller
                 'amount' => $item->amount,
                 'sort_order' => $item->sort_order,
             ]);
+        }
+
+        // ── ECF processing if applicable ──
+        if (!empty($invoice->is_ecf) && $invoice->is_ecf) {
+            try {
+                $ecfManager = app(\App\Services\Dgii\EcfManagerService::class);
+                $ecfManager->processInvoice($invoice);
+                $invoice->refresh();
+            } catch (\Exception $e) {
+                Log::error("External API: DGII auto-processing failed for converted {$invoice->invoice_number}: " . $e->getMessage());
+            }
         }
 
         $quote->status = 'converted';
@@ -269,6 +403,7 @@ class ExternalQuoteController extends Controller
                 'quote_id' => $quote->id,
                 'invoice_id' => $invoice->id,
                 'invoice_number' => $invoice->invoice_number,
+                'encf' => $invoice->encf,
             ],
         ]);
     }

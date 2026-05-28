@@ -802,7 +802,7 @@
             <p>Todas las peticiones a la API deben incluir tu API Key en el header <code class="inline">Authorization</code> usando el esquema Bearer Token.</p>
 
             <div class="pre-wrap">
-                <pre><code>Authorization: Bearer gb_xxxxxxxxxxxxxxxxxxxxxxxxxxxx</code></pre>
+                <pre><code>Authorization: Bearer {{ $api_key ?? 'gb_tu_api_key_aqui' }}</code></pre>
             </div>
 
             <div class="alert alert-warning">
@@ -841,7 +841,7 @@
             <table>
                 <thead><tr><th>Header</th><th>Valor</th><th>Requerido</th></tr></thead>
                 <tbody>
-                    <tr><td><code>Authorization</code></td><td><code>Bearer gb_tu_token...</code></td><td><span class="tag tag-required">Requerido</span></td></tr>
+                    <tr><td><code>Authorization</code></td><td><code>Bearer {{ $api_key ?? 'gb_tu_api_key_aqui' }}</code></td><td><span class="tag tag-required">Requerido</span></td></tr>
                     <tr><td><code>Content-Type</code></td><td><code>application/json</code></td><td><span class="tag tag-required">Requerido (POST/PUT)</span></td></tr>
                     <tr><td><code>Accept</code></td><td><code>application/json</code></td><td><span class="tag tag-optional">Recomendado</span></td></tr>
                 </tbody>
@@ -958,7 +958,7 @@
                     <h4>Ejemplo de Request</h4>
                     <pre><code>POST /api/v1/invoices
 Content-Type: application/json
-Authorization: Bearer gb_xxxxxxxxxxxx...
+Authorization: Bearer {{ $api_key ?? 'gb_tu_api_key_aqui' }}
 
 {
     "client": {
@@ -1380,7 +1380,7 @@ POST /api/v1/invoices { "client": {"tax_id": "131456789"}, ... }
                 <!-- cURL -->
                 <div class="code-panel active" id="panel-curl">
                     <pre style="margin:0;border:none;border-radius:0;"><code>curl -X POST {{ url('/api/v1/invoices') }} \
-  -H "Authorization: Bearer gb_tu_api_key_aqui" \
+  -H "Authorization: Bearer {{ $api_key ?? 'gb_tu_api_key_aqui' }}" \
   -H "Content-Type: application/json" \
   -H "Accept: application/json" \
   -d '{
@@ -1406,7 +1406,7 @@ POST /api/v1/invoices { "client": {"tax_id": "131456789"}, ... }
                 <div class="code-panel" id="panel-javascript">
                     <pre style="margin:0;border:none;border-radius:0;"><code>// ═══ JavaScript (Node.js / Fetch API) ═══
 
-const API_KEY = 'gb_tu_api_key_aqui';
+const API_KEY = '{{ $api_key ?? 'gb_tu_api_key_aqui' }}';
 const BASE_URL = '{{ url('/api/v1') }}';
 
 async function crearFactura(datosCliente, items, opciones = {}) {
@@ -1463,7 +1463,7 @@ try {
                     <pre style="margin:0;border:none;border-radius:0;"><code>&lt;?php
 // ═══ PHP (cURL nativo) ═══
 
-define('BILLS_API_KEY', 'gb_tu_api_key_aqui');
+define('BILLS_API_KEY', '{{ $api_key ?? 'gb_tu_api_key_aqui' }}');
 define('BILLS_API_URL', '{{ url('/api/v1') }}');
 
 function crearFacturaBills(array $cliente, array $items, array $opciones = []): array
@@ -1531,7 +1531,7 @@ try {
 
 import requests
 
-API_KEY = "gb_tu_api_key_aqui"
+API_KEY = "{{ $api_key ?? 'gb_tu_api_key_aqui' }}"
 BASE_URL = "{{ url('/api/v1') }}"
 
 headers = {
@@ -1589,7 +1589,7 @@ except Exception as e:
 
 using System.Net.Http.Json;
 
-const string API_KEY = "gb_tu_api_key_aqui";
+const string API_KEY = "{{ $api_key ?? 'gb_tu_api_key_aqui' }}";
 const string BASE_URL = "{{ url('/api/v1') }}";
 
 var client = new HttpClient();
@@ -1622,7 +1622,7 @@ Console.WriteLine($"Factura creada: {result.data.invoice_number}");</code></pre>
 // ═══ WordPress — Enviar factura a Gridbase Bills desde WooCommerce ═══
 // Agregar en functions.php o en un plugin custom
 
-define('BILLS_API_KEY', 'gb_tu_api_key_aqui');
+define('BILLS_API_KEY', '{{ $api_key ?? 'gb_tu_api_key_aqui' }}');
 define('BILLS_API_URL', '{{ url('/api/v1') }}');
 
 /**

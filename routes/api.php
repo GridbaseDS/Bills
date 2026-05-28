@@ -147,6 +147,8 @@ Route::prefix('v1')->middleware(['api.key', 'api.throttle'])->group(function () 
         ->middleware('api.permission:invoices.read');
     Route::get('/invoices/{id}/pdf', [ExternalInvoiceController::class, 'pdf'])
         ->middleware('api.permission:invoices.read');
+    Route::put('/invoices/{id}', [ExternalInvoiceController::class, 'update'])
+        ->middleware('api.permission:invoices.create');
 
     // Quotes
     Route::get('/quotes', [ExternalQuoteController::class, 'index'])
@@ -155,6 +157,10 @@ Route::prefix('v1')->middleware(['api.key', 'api.throttle'])->group(function () 
         ->middleware('api.permission:quotes.create');
     Route::get('/quotes/{id}', [ExternalQuoteController::class, 'show'])
         ->middleware('api.permission:quotes.read');
+    Route::get('/quotes/{id}/pdf', [ExternalQuoteController::class, 'pdf'])
+        ->middleware('api.permission:quotes.read');
+    Route::put('/quotes/{id}', [ExternalQuoteController::class, 'update'])
+        ->middleware('api.permission:quotes.create');
     Route::post('/quotes/{id}/convert', [ExternalQuoteController::class, 'convertToInvoice'])
         ->middleware('api.permission:quotes.convert');
 

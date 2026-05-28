@@ -10,6 +10,7 @@ class ApiKey extends Model
     protected $fillable = [
         'name',
         'key',
+        'plain_key',
         'plain_key_prefix',
         'permissions',
         'rate_limit',

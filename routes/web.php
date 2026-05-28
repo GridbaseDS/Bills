@@ -77,7 +77,16 @@ Route::get('/dgii-fc250k/{filename}', function ($filename) {
 
 // API Documentation (public)
 Route::get('/api-docs', function () {
-    return view('api-docs');
+    $apiKey = \App\Models\ApiKey::where('is_active', true)
+        ->where(function($q) {
+            $q->whereNull('expires_at')->orWhere('expires_at', '>', now());
+        })
+        ->orderBy('created_at', 'desc')
+        ->first();
+
+    return view('api-docs', [
+        'api_key' => $apiKey ? $apiKey->plain_key : null
+    ]);
 })->name('api.docs');
 
 Route::get('/{any}', function () {

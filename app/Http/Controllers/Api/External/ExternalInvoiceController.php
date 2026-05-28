@@ -242,6 +242,96 @@ class ExternalInvoiceController extends Controller
     }
 
     /**
+     * Update an existing invoice.
+     */
+    public function update(Request $request, $id)
+    {
+        $invoice = Invoice::find($id);
+
+        if (!$invoice) {
+            return response()->json([
+                'success' => false,
+                'error' => 'Factura no encontrada.',
+            ], 404);
+        }
+
+        $validator = Validator::make($request->all(), [
+            'status' => 'sometimes|string|in:draft,sent,paid,cancelled',
+            'notes' => 'sometimes|string|max:2000',
+            'terms' => 'sometimes|string|max:2000',
+            'due_date' => 'sometimes|date',
+            'items' => 'sometimes|array|min:1',
+            'items.*.description' => 'required_with:items|string|max:500',
+            'items.*.quantity' => 'required_with:items|numeric|min:0.01',
+            'items.*.unit_price' => 'required_with:items|numeric|min:0',
+            'currency' => 'sometimes|string|in:DOP,USD,EUR',
+            'tax_rate' => 'sometimes|numeric|min:0|max:100',
+            'discount_type' => 'sometimes|string|in:percentage,fixed',
+            'discount_value' => 'sometimes|numeric|min:0',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'error' => 'Datos de validación inválidos.',
+                'errors' => $validator->errors(),
+            ], 422);
+        }
+
+        $data = $request->all();
+
+        // Update fields if provided
+        $invoice->fill($request->only(['status', 'notes', 'terms', 'due_date', 'currency', 'tax_rate', 'discount_type', 'discount_value']));
+
+        // Recalculate totals if items or discount/tax are modified
+        if ($request->has('items') || $request->has('discount_value') || $request->has('tax_rate')) {
+            $items = $request->has('items') ? $request->input('items') : $invoice->items->toArray();
+            
+            $subtotal = collect($items)->sum(fn($i) => $i['quantity'] * $i['unit_price']);
+            $discountValue = $request->input('discount_value', $invoice->discount_value ?? 0);
+            $discountType = $request->input('discount_type', $invoice->discount_type ?? 'percentage');
+            $discountAmount = $discountType === 'percentage' ? ($subtotal * ($discountValue / 100)) : $discountValue;
+            
+            $taxRate = $request->input('tax_rate', $invoice->tax_rate ?? 0);
+            $taxAmount = ($subtotal - $discountAmount) * ($taxRate / 100);
+            $total = $subtotal - $discountAmount + $taxAmount;
+
+            $invoice->subtotal = $subtotal;
+            $invoice->discount_amount = $discountAmount;
+            $invoice->tax_amount = $taxAmount;
+            $invoice->total = $total;
+        }
+
+        if ($request->has('currency') && empty($data['exchange_rate'])) {
+            $invoice->exchange_rate = CurrencyConverter::getConversionRate($request->input('currency'), 'DOP');
+        }
+
+        $invoice->save();
+
+        // Sync items if provided
+        if ($request->has('items')) {
+            $invoice->items()->delete();
+            foreach ($request->input('items') as $idx => $item) {
+                $invoice->items()->create([
+                    'description' => $item['description'],
+                    'quantity' => $item['quantity'],
+                    'unit_price' => $item['unit_price'],
+                    'amount' => $item['quantity'] * $item['unit_price'],
+                    'sort_order' => $idx,
+                ]);
+            }
+        }
+
+        $invoice->load(['client', 'items']);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Factura actualizada exitosamente.',
+            'data' => $invoice,
+        ]);
+    }
+
+    /**
      * Resolve client_id from the request data.
      * Supports: direct client_id, upsert by tax_id, or create new.
      *

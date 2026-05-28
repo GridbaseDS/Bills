@@ -22,6 +22,7 @@ class ApiKeyController extends Controller
                     'id' => $key->id,
                     'name' => $key->name,
                     'prefix' => $key->plain_key_prefix,
+                    'token' => $key->plain_key,
                     'permissions' => $key->permissions ?? [],
                     'rate_limit' => $key->rate_limit,
                     'is_active' => $key->is_active,
@@ -58,6 +59,7 @@ class ApiKeyController extends Controller
         $apiKey = ApiKey::create([
             'name' => $request->name,
             'key' => $token['hash'],
+            'plain_key' => $token['plain'],
             'plain_key_prefix' => $token['prefix'],
             'permissions' => $request->permissions,
             'rate_limit' => $request->rate_limit ?? 60,
@@ -172,6 +174,7 @@ class ApiKeyController extends Controller
 
         $apiKey->update([
             'key' => $token['hash'],
+            'plain_key' => $token['plain'],
             'plain_key_prefix' => $token['prefix'],
         ]);
 

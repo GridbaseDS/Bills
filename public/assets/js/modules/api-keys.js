@@ -118,6 +118,20 @@ export default {
             // Create API Key
             container.querySelector('#btn-create-api-key')?.addEventListener('click', () => this.showCreateModal(container));
 
+            // Inline Copy Buttons
+            container.querySelectorAll('.btn-copy-inline').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const text = e.currentTarget.dataset.text;
+                    navigator.clipboard.writeText(text);
+                    e.currentTarget.textContent = '✓ Copiado';
+                    e.currentTarget.style.color = 'var(--color-success-text, #22c55e)';
+                    setTimeout(() => {
+                        e.currentTarget.textContent = '📋 Copiar';
+                        e.currentTarget.style.color = '';
+                    }, 2000);
+                });
+            });
+
             // Card actions (edit, toggle, regenerate, delete)
             container.querySelectorAll('[data-action]').forEach(btn => {
                 btn.addEventListener('click', (e) => {
@@ -149,7 +163,14 @@ export default {
                         <span style="background:${statusColor}22;color:${statusColor};font-size:11px;padding:2px 10px;border-radius:12px;font-weight:600;">${statusText}</span>
                         ${isExpired ? '<span style="background:#ef444422;color:#ef4444;font-size:11px;padding:2px 10px;border-radius:12px;font-weight:600;">Expirada</span>' : ''}
                     </div>
-                    <div style="font-family:monospace;font-size:13px;color:var(--color-text-secondary);margin-bottom:10px;">${k.prefix}${'•'.repeat(20)}</div>
+                    <div style="font-family:monospace;font-size:13px;color:var(--color-text-secondary);margin-bottom:10px;display:flex;align-items:center;gap:12px;">
+                        <span style="background:var(--bg-hover);padding:2px 8px;border-radius:4px;border:1px solid var(--color-border);letter-spacing:0.02em;">${k.token || `${k.prefix}${'•'.repeat(20)}`}</span>
+                        ${k.token ? `
+                            <button type="button" class="btn-copy-inline" data-text="${k.token}" style="background:none;border:none;color:var(--color-text-muted);cursor:pointer;padding:2px 6px;border-radius:4px;font-size:11px;transition:all 0.15s;font-family:sans-serif;">
+                                📋 Copiar
+                            </button>
+                        ` : ''}
+                    </div>
                     <div style="margin-bottom:10px;">${renderPermissionBadges(k.permissions)}</div>
                     <div style="display:flex;gap:20px;font-size:12px;color:var(--color-text-muted);">
                         <span>📊 ${k.rate_limit} req/min</span>

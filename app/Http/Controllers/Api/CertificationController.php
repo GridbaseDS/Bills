@@ -113,32 +113,29 @@ class CertificationController extends Controller
             Log::info("[Certification] Building XML for {$encf} (Tipo {$tipoECF})");
             $rawXml = $builder->buildFromTestCase($testCase);
 
-            // 1b. Validate against XSD before sending
-            $xsdPath = base_path("xsd/e-CF {$tipoECF} v.1.0.xsd");
-            if (file_exists($xsdPath)) {
-                libxml_use_internal_errors(true);
-                $validationDom = new \DOMDocument();
-                $validationDom->loadXML($rawXml);
-                if (!$validationDom->schemaValidate($xsdPath)) {
-                    $errors = libxml_get_errors();
-                    libxml_clear_errors();
-                    libxml_use_internal_errors(false);
-                    $errorMsgs = array_map(fn($e) => "L{$e->line}: " . trim($e->message), array_slice($errors, 0, 5));
-                    Log::error("[Certification] XSD validation failed for {$encf}: " . implode(' | ', $errorMsgs));
-                    return [
-                        'encf' => $encf,
-                        'tipo' => $tipoECF,
-                        'success' => false,
-                        'status' => 'xsd_invalid',
-                        'track_id' => null,
-                        'errors' => 'XSD: ' . implode(' | ', $errorMsgs),
-                        'xml_path' => null,
-                    ];
+            // 1b. Structural pre-check (DGII XSDs have internal type errors, so we validate structure manually)
+            $validationDom = new \DOMDocument();
+            $validationDom->loadXML($rawXml);
+            $missing = [];
+            foreach (['TipoeCF', 'eNCF', 'RNCEmisor', 'FechaEmision', 'MontoTotal', 'FechaHoraFirma'] as $req) {
+                if ($validationDom->getElementsByTagName($req)->length === 0) {
+                    $missing[] = $req;
                 }
-                libxml_clear_errors();
-                libxml_use_internal_errors(false);
-                Log::info("[Certification] XSD validation passed for {$encf}");
             }
+            if (!empty($missing)) {
+                $errorMsg = 'Elementos faltantes: ' . implode(', ', $missing);
+                Log::error("[Certification] Structural check failed for {$encf}: {$errorMsg}");
+                return [
+                    'encf' => $encf,
+                    'tipo' => $tipoECF,
+                    'success' => false,
+                    'status' => 'invalid_structure',
+                    'track_id' => null,
+                    'errors' => $errorMsg,
+                    'xml_path' => null,
+                ];
+            }
+            Log::info("[Certification] Structural check passed for {$encf}");
 
             // 2. Sign the XML
             $p12Path = storage_path('app/secure/' . ($settings['dgii_certificate_path'] ?? ''));

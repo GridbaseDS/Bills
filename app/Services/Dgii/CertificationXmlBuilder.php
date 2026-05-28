@@ -77,6 +77,27 @@ class CertificationXmlBuilder
             $ecf->appendChild($subtotales);
         }
 
+        // DescuentosORecargos (if applicable)
+        $descRecargos = $this->buildDescuentosORecargos();
+        if ($descRecargos) {
+            $ecf->appendChild($descRecargos);
+        }
+
+        // Paginacion (if applicable)
+        $paginacion = $this->buildPaginacion();
+        if ($paginacion) {
+            $ecf->appendChild($paginacion);
+        }
+
+        // InformacionReferencia (required for types 33, 34)
+        $infoRef = $this->buildInformacionReferencia();
+        if ($infoRef) {
+            $ecf->appendChild($infoRef);
+        }
+
+        // FechaHoraFirma (required at root level, must be last before signature)
+        $ecf->appendChild($this->el('FechaHoraFirma', date('d-m-Y H:i:s')));
+
         return $this->dom->saveXML();
     }
 
@@ -86,18 +107,44 @@ class CertificationXmlBuilder
     {
         $idDoc = $this->el('IdDoc');
 
-        $fields = [
-            'TipoeCF', 'eNCF', 'FechaVencimientoSecuencia',
-            'IndicadorNotaCredito', 'IndicadorEnvioDiferido', 'IndicadorMontoGravado',
-            'IndicadorServicioTodoIncluido', 'TipoIngresos', 'TipoPago',
-            'FechaLimitePago', 'TerminoPago',
-        ];
+        // TipoeCF (required, always first)
+        $this->appendIfPresent($idDoc, 'TipoeCF');
 
-        foreach ($fields as $f) {
-            $this->appendIfPresent($idDoc, $f);
+        // eNCF — JSON key is 'ENCF' (uppercase), XML element is 'eNCF'
+        $encf = $this->v('ENCF') ?? $this->v('eNCF');
+        if ($encf !== null) {
+            $idDoc->appendChild($this->el('eNCF', $encf));
         }
 
-        // eNCF uses exact field name from JSON
+        // FechaVencimientoSecuencia — NOT in types 32, 34
+        $tipoECF = (int)($this->v('TipoeCF') ?? 0);
+        if (!in_array($tipoECF, [32, 34])) {
+            $this->appendIfPresent($idDoc, 'FechaVencimientoSecuencia');
+        }
+
+        // IndicadorNotaCredito — ONLY for type 34
+        if ($tipoECF === 34) {
+            $this->appendIfPresent($idDoc, 'IndicadorNotaCredito');
+        }
+
+        $this->appendIfPresent($idDoc, 'IndicadorEnvioDiferido');
+
+        // IndicadorMontoGravado — NOT in types 43, 44, 46, 47
+        if (!in_array($tipoECF, [43, 44, 46, 47])) {
+            $this->appendIfPresent($idDoc, 'IndicadorMontoGravado');
+        }
+
+        $this->appendIfPresent($idDoc, 'IndicadorServicioTodoIncluido');
+
+        // TipoIngresos — NOT in types 41, 43, 47
+        if (!in_array($tipoECF, [41, 43, 47])) {
+            $this->appendIfPresent($idDoc, 'TipoIngresos');
+        }
+
+        $this->appendIfPresent($idDoc, 'TipoPago');
+        $this->appendIfPresent($idDoc, 'FechaLimitePago');
+        $this->appendIfPresent($idDoc, 'TerminoPago');
+
         // TablaFormasPago
         $formasPago = $this->buildTablaFormasPago();
         if ($formasPago) {
@@ -599,13 +646,69 @@ class CertificationXmlBuilder
 
     private function buildSubtotales(): ?DOMElement
     {
-        // Check if any subtotal fields exist
         $tipoAjuste = $this->v('TipoAjuste');
         if ($tipoAjuste === null) return null;
 
         $subtotales = $this->el('Subtotales');
-        // This is simplified — implement if needed for test cases
         return null; // Most test cases don't use global Subtotales
+    }
+
+    // ─── DescuentosORecargos ──────────────────────────
+
+    private function buildDescuentosORecargos(): ?DOMElement
+    {
+        // Check if any global discount/surcharge fields exist
+        $tipoAjuste = $this->v('TipoAjusteGlobal');
+        if ($tipoAjuste === null) return null;
+
+        $desc = $this->el('DescuentosORecargos');
+        $desc->appendChild($this->el('TipoAjuste', $tipoAjuste));
+        $this->appendIfPresent($desc, 'IndicadorNorma', 'IndicadorNorma');
+        $this->appendIfPresent($desc, 'DescripcionAjuste', 'DescripcionAjuste');
+        $val = $this->v('ValorAjusteGlobal');
+        if ($val !== null) $desc->appendChild($this->el('ValorAjuste', $this->fmtDecimal($val)));
+        $monto = $this->v('MontoAjusteGlobal');
+        if ($monto !== null) $desc->appendChild($this->el('MontoAjuste', $this->fmtDecimal($monto)));
+        return $desc;
+    }
+
+    // ─── Paginacion ───────────────────────────────────
+
+    private function buildPaginacion(): ?DOMElement
+    {
+        $paginaActual = $this->v('PaginaActual');
+        if ($paginaActual === null) return null;
+
+        $pag = $this->el('Paginacion');
+        $pag->appendChild($this->el('PaginaActual', $paginaActual));
+        $this->appendIfPresent($pag, 'TotalPaginas');
+        return $pag;
+    }
+
+    // ─── InformacionReferencia ─────────────────────────
+
+    private function buildInformacionReferencia(): ?DOMElement
+    {
+        $ncfMod = $this->v('NCFModificado');
+        if ($ncfMod === null) return null;
+
+        $infoRef = $this->el('InformacionReferencia');
+        $infoRef->appendChild($this->el('NCFModificado', $ncfMod));
+
+        $this->appendIfPresent($infoRef, 'RNCOtroContribuyente');
+        $this->appendIfPresent($infoRef, 'FechaNCFModificado');
+
+        $codMod = $this->v('CodigoModificacion');
+        if ($codMod !== null) {
+            $infoRef->appendChild($this->el('CodigoModificacion', $codMod));
+        }
+
+        $razon = $this->v('RazonModificacion');
+        if ($razon !== null) {
+            $infoRef->appendChild($this->el('RazonModificacion', $this->xmlSafe($razon)));
+        }
+
+        return $infoRef;
     }
 
     // ─── Helpers ───────────────────────────────────────

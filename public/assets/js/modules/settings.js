@@ -38,12 +38,28 @@ export default {
                                 <div class="form-group"><label class="form-label">Ciudad</label><input type="text" id="s_company_city" class="form-control" value="${s.company_city || ''}"></div>
                                 <div class="form-group"><label class="form-label">Sitio Web</label><input type="text" id="s_company_website" class="form-control" value="${s.company_website || ''}"></div>
                                 <div class="form-group" style="grid-column: span 2;">
-                                    <label class="form-label">Fondo de la Cápsula del Logo</label>
-                                    <select id="s_logo_capsule_theme" class="form-control" style="width: 240px;">
-                                        <option value="dark" ${s.logo_capsule_theme === 'dark' || !s.logo_capsule_theme ? 'selected' : ''}>Oscura (Para logos claros)</option>
-                                        <option value="light" ${s.logo_capsule_theme === 'light' ? 'selected' : ''}>Clara (Para logos oscuros)</option>
-                                    </select>
-                                    <div style="font-size:11px;color:var(--color-text-muted);margin-top:4px;">Define el color de fondo del recuadro protector del logotipo en la interfaz.</div>
+                                    <label class="form-label">Personalización del Menú Lateral</label>
+                                    <div style="display:flex;gap:24px;align-items:flex-start;flex-wrap:wrap;">
+                                        <div>
+                                            <div style="font-size:12px;font-weight:500;color:var(--color-text-secondary);margin-bottom:6px;">Color de Fondo</div>
+                                            <div style="display:flex;gap:8px;align-items:center;">
+                                                <input type="color" id="s_sidebar_bg_color" value="${s.sidebar_bg_color || '#FFFFFF'}" style="width:42px;height:34px;border:1px solid var(--color-border);border-radius:var(--radius-md);cursor:pointer;padding:2px;">
+                                                <input type="text" id="s_sidebar_bg_color_hex" class="form-control" value="${s.sidebar_bg_color || '#FFFFFF'}" style="width:100px;font-family:monospace;font-size:12px;" maxlength="7">
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <div style="font-size:12px;font-weight:500;color:var(--color-text-secondary);margin-bottom:6px;">Color de Texto</div>
+                                            <div style="display:flex;gap:8px;align-items:center;">
+                                                <input type="color" id="s_sidebar_text_color" value="${s.sidebar_text_color || '#374151'}" style="width:42px;height:34px;border:1px solid var(--color-border);border-radius:var(--radius-md);cursor:pointer;padding:2px;">
+                                                <input type="text" id="s_sidebar_text_color_hex" class="form-control" value="${s.sidebar_text_color || '#374151'}" style="width:100px;font-family:monospace;font-size:12px;" maxlength="7">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div style="font-size:11px;color:var(--color-text-muted);margin-top:6px;">Personaliza el fondo y color de texto del menú lateral. Úsalo para adaptar el menú a tu marca.</div>
+                                    <div id="sidebar-preview" style="margin-top:12px;width:180px;height:60px;border-radius:var(--radius-md);border:1px solid var(--color-border);display:flex;align-items:center;padding:0 16px;gap:10px;transition:all .2s ease;">
+                                        <svg style="width:16px;height:16px;flex-shrink:0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+                                        <span style="font-size:13px;font-weight:500;">Vista previa</span>
+                                    </div>
                                 </div>
                             </div>
                             <h3 style="font-size:15px;font-weight:600;margin:24px 0 16px;border-top:1px solid var(--color-border);padding-top:24px;">Ajustes de Facturación</h3>
@@ -289,6 +305,42 @@ export default {
                 }
             });
 
+            // Sidebar color picker sync + live preview
+            const updateSidebarPreview = () => {
+                const bg = document.getElementById('s_sidebar_bg_color').value;
+                const text = document.getElementById('s_sidebar_text_color').value;
+                const preview = document.getElementById('sidebar-preview');
+                if (preview) {
+                    preview.style.backgroundColor = bg;
+                    preview.style.color = text;
+                    preview.querySelectorAll('svg').forEach(s => s.style.color = text);
+                }
+            };
+            // BG color
+            document.getElementById('s_sidebar_bg_color')?.addEventListener('input', (e) => {
+                document.getElementById('s_sidebar_bg_color_hex').value = e.target.value;
+                updateSidebarPreview();
+            });
+            document.getElementById('s_sidebar_bg_color_hex')?.addEventListener('input', (e) => {
+                if (/^#[0-9A-Fa-f]{6}$/.test(e.target.value)) {
+                    document.getElementById('s_sidebar_bg_color').value = e.target.value;
+                    updateSidebarPreview();
+                }
+            });
+            // Text color
+            document.getElementById('s_sidebar_text_color')?.addEventListener('input', (e) => {
+                document.getElementById('s_sidebar_text_color_hex').value = e.target.value;
+                updateSidebarPreview();
+            });
+            document.getElementById('s_sidebar_text_color_hex')?.addEventListener('input', (e) => {
+                if (/^#[0-9A-Fa-f]{6}$/.test(e.target.value)) {
+                    document.getElementById('s_sidebar_text_color').value = e.target.value;
+                    updateSidebarPreview();
+                }
+            });
+            // Init preview
+            updateSidebarPreview();
+
             // Save all settings
             document.getElementById('settings-form').addEventListener('submit', async (e) => {
                 e.preventDefault();
@@ -300,7 +352,9 @@ export default {
                     company_address: document.getElementById('s_company_address').value,
                     company_city: document.getElementById('s_company_city').value,
                     company_website: document.getElementById('s_company_website').value,
-                    logo_capsule_theme: document.getElementById('s_logo_capsule_theme').value,
+                    logo_capsule_theme: 'custom',
+                    sidebar_bg_color: document.getElementById('s_sidebar_bg_color').value,
+                    sidebar_text_color: document.getElementById('s_sidebar_text_color').value,
                     default_currency: document.getElementById('s_default_currency').value,
                     default_tax_rate: document.getElementById('s_default_tax_rate').value,
                     smtp_host: document.getElementById('s_smtp_host').value,
@@ -337,14 +391,19 @@ export default {
                     window.App.state.settings = { ...window.App.state.settings, ...settingsToUpdate };
                     
                     // Cache branding elements in localStorage
-                    localStorage.setItem('logo_capsule_theme', settingsToUpdate.logo_capsule_theme);
+                    if (settingsToUpdate.sidebar_bg_color) localStorage.setItem('sidebar_bg_color', settingsToUpdate.sidebar_bg_color);
+                    if (settingsToUpdate.sidebar_text_color) localStorage.setItem('sidebar_text_color', settingsToUpdate.sidebar_text_color);
                     
-                    // Update layout immediately
-                    const backdrop = document.querySelector('.logo-backdrop');
-                    if (backdrop) {
-                        const isLight = settingsToUpdate.logo_capsule_theme === 'light';
-                        backdrop.style.background = isLight ? '#FFFFFF' : '#111827';
-                        backdrop.style.border = isLight ? '1px solid rgba(0, 0, 0, 0.08)' : '1px solid rgba(255, 255, 255, 0.08)';
+                    // Apply sidebar colors immediately
+                    const sidebar = document.querySelector('.sidebar');
+                    if (sidebar) {
+                        sidebar.style.setProperty('--sb-bg', settingsToUpdate.sidebar_bg_color);
+                        sidebar.style.setProperty('--sb-text', settingsToUpdate.sidebar_text_color);
+                        sidebar.style.backgroundColor = settingsToUpdate.sidebar_bg_color;
+                        sidebar.style.borderRightColor = 'transparent';
+                        sidebar.querySelectorAll('.sidebar-link, .sidebar-section-title, .sidebar-link svg, .profile-name').forEach(el => {
+                            el.style.color = settingsToUpdate.sidebar_text_color;
+                        });
                     }
                     
                     window.App.showToast('Configuraciones guardadas');

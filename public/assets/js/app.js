@@ -3,12 +3,12 @@
  * Main Frontend Application Logic — Gridbase Design Kit v3
  */
 
-import DashboardModule from './modules/dashboard.js?v=56';
+import DashboardModule from './modules/dashboard.js?v=57';
 import InvoicesModule from './modules/invoices.js?v=54';
 import QuotesModule from './modules/quotes.js?v=54';
 import ClientsModule from './modules/clients.js?v=54';
 import ItemsModule from './modules/items.js?v=54';
-import SettingsModule from './modules/settings.js?v=54';
+import SettingsModule from './modules/settings.js?v=57';
 import RecurringModule from './modules/recurring.js?v=54';
 import DgiiTestsModule from './modules/dgii-tests.js?v=54';
 import ReceivedInvoicesModule from './modules/received-invoices.js?v=54';
@@ -179,6 +179,22 @@ window.App = {
     updateTitle() {
         const name = this.state.settings?.company_name;
         document.title = name ? `${name} - Bills` : 'Bills';
+    },
+
+    applySidebarColors() {
+        const bgColor = this.state.settings?.sidebar_bg_color || localStorage.getItem('sidebar_bg_color');
+        const textColor = this.state.settings?.sidebar_text_color || localStorage.getItem('sidebar_text_color');
+        const sidebar = document.querySelector('.sidebar');
+        if (!sidebar) return;
+        if (bgColor) {
+            sidebar.style.backgroundColor = bgColor;
+            sidebar.style.borderRightColor = 'transparent';
+        }
+        if (textColor) {
+            sidebar.querySelectorAll('.sidebar-link, .sidebar-section-title, .sidebar-link svg, .profile-name, .profile-role').forEach(el => {
+                el.style.color = textColor;
+            });
+        }
     },
 
     async logout(callApi = true) {
@@ -479,9 +495,7 @@ window.App = {
                 <div class="sidebar-overlay" id="sidebar-overlay"></div>
                 <aside class="sidebar" id="sidebar">
                     <div class="sidebar-logo" style="padding: 16px 12px; display: flex; justify-content: center; align-items: center;">
-                        <div class="logo-backdrop" style="background: #111827; padding: 6px 16px; border-radius: var(--radius-lg); border: 1px solid rgba(255, 255, 255, 0.08); display: inline-flex; align-items: center; justify-content: center; max-height: 44px; max-width: 100%; box-shadow: var(--shadow-sm);">
-                            <img src="${logoSrc}" alt="Logo" style="max-height: 28px; max-width: 100%; object-fit: contain;">
-                        </div>
+                        <img src="${logoSrc}" alt="Logo" style="max-height: 32px; max-width: 100%; object-fit: contain;">
                     </div>
                     <nav class="sidebar-nav">
                         <div class="sidebar-section-title">Menú</div>
@@ -563,6 +577,7 @@ window.App = {
         `;
 
         document.getElementById('sidebar-overlay')?.addEventListener('click', () => this.toggleSidebar());
+        this.applySidebarColors();
         this.loadOverdueBadge();
         this.loadDgiiStatus();
         this.bindSearch();

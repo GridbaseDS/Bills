@@ -245,6 +245,18 @@ export default {
                             <h3 style="font-size:15px;font-weight:600;margin:0 0 8px;">Facturación Electrónica (DGII)</h3>
                             <p style="color:var(--color-text-muted);font-size:13px;margin:0 0 24px;">Datos fiscales del emisor, certificado digital y secuencias e-NCF para facturación electrónica.</p>
 
+                            <!-- Preset: Datos de Prueba DGII -->
+                            <div id="dgii_preset_banner" style="background:rgba(245,158,11,0.06);border:1px solid rgba(245,158,11,0.25);border-radius:var(--radius-lg);padding:14px 20px;margin-bottom:20px;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;">
+                                <div>
+                                    <div style="font-size:13px;font-weight:600;color:#b45309;">Preset de Certificación DGII</div>
+                                    <div style="font-size:12px;color:var(--color-text-muted);margin-top:2px;">Carga automáticamente los datos del emisor y secuencias del set de pruebas oficial (RNC 40214827087).</div>
+                                </div>
+                                <button type="button" id="btn_dgii_load_preset" class="btn btn-secondary" style="white-space:nowrap;display:inline-flex;align-items:center;gap:6px;border-color:rgba(245,158,11,0.4);color:#b45309;font-weight:600;">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                                    Cargar Datos de Prueba
+                                </button>
+                            </div>
+
                             <!-- Datos Fiscales del Emisor -->
                             <div style="background:var(--color-bg-secondary);border:1px solid var(--color-border);border-radius:var(--radius-lg);padding:20px;margin-bottom:24px;">
                                 <h4 style="font-size:14px;font-weight:600;margin:0 0 4px;display:flex;align-items:center;gap:8px;">
@@ -501,6 +513,73 @@ export default {
                     window.App.showToast('Error al subir certificado', 'error');
                 }
                 e.target.value = '';
+            });
+
+            // DGII Test Preset handler
+            document.getElementById('btn_dgii_load_preset')?.addEventListener('click', () => {
+                if (!confirm('¿Cargar los datos del set de pruebas DGII?\n\nEsto sobreescribirá los campos del emisor (General + DGII) y reiniciará las secuencias e-NCF a 1.\n\nLos cambios no se guardarán hasta que presiones "Guardar Configuraciones".')) return;
+
+                // General tab fields (Emisor data from Excel)
+                const generalFields = {
+                    's_company_tax_id': '40214827087',
+                    's_company_name': 'DOCUMENTOS ELECTRONICOS DE 02',
+                    's_company_email': 'pruebas@facturaelectronica.com',
+                    's_company_phone': '809-472-7676',
+                    's_company_address': 'AVE. ISABEL AGUIAR NO. 269, ZONA INDUSTRIAL DE HERRERA',
+                    's_company_city': 'Santo Domingo',
+                    's_company_website': 'www.facturaelectronica.com',
+                };
+
+                // DGII tab fields
+                const dgiiFields = {
+                    's_dgii_razon_social': 'DOCUMENTOS ELECTRONICOS DE 02',
+                    's_dgii_nombre_comercial': 'DOCUMENTOS ELECTRONICOS DE 02',
+                    's_dgii_municipio': '010101',
+                    's_dgii_provincia': '010000',
+                    's_dgii_env': 'testing',
+                    's_dgii_ncf_expiry_date': '2028-12-31',
+                };
+
+                // e-NCF sequences — all reset to 1
+                const ncfFields = {
+                    's_dgii_next_e_ncf_31': '1',
+                    's_dgii_next_e_ncf_32': '1',
+                    's_dgii_next_e_ncf_33': '1',
+                    's_dgii_next_e_ncf_34': '1',
+                    's_dgii_next_e_ncf_41': '1',
+                    's_dgii_next_e_ncf_43': '1',
+                    's_dgii_next_e_ncf_44': '1',
+                    's_dgii_next_e_ncf_45': '1',
+                    's_dgii_next_e_ncf_46': '1',
+                    's_dgii_next_e_ncf_47': '1',
+                };
+
+                // Apply all fields
+                const allFields = { ...generalFields, ...dgiiFields, ...ncfFields };
+                let filled = 0;
+                for (const [id, val] of Object.entries(allFields)) {
+                    const el = document.getElementById(id);
+                    if (el) { el.value = val; filled++; }
+                }
+
+                // Visual feedback on the banner
+                const banner = document.getElementById('dgii_preset_banner');
+                if (banner) {
+                    banner.style.background = 'rgba(34,197,94,0.08)';
+                    banner.style.borderColor = 'rgba(34,197,94,0.3)';
+                    banner.querySelector('div > div:first-child').style.color = '#16a34a';
+                    banner.querySelector('div > div:first-child').textContent = 'Datos de prueba cargados';
+                    banner.querySelector('div > div:last-child').textContent = `${filled} campos actualizados. Presiona "Guardar Configuraciones" para aplicar.`;
+                    setTimeout(() => {
+                        banner.style.background = 'rgba(245,158,11,0.06)';
+                        banner.style.borderColor = 'rgba(245,158,11,0.25)';
+                        banner.querySelector('div > div:first-child').style.color = '#b45309';
+                        banner.querySelector('div > div:first-child').textContent = 'Preset de Certificación DGII';
+                        banner.querySelector('div > div:last-child').textContent = 'Carga automáticamente los datos del emisor y secuencias del set de pruebas oficial (RNC 40214827087).';
+                    }, 5000);
+                }
+
+                window.App.showToast(`${filled} campos cargados con datos de prueba DGII`, 'success');
             });
 
             // Save all settings

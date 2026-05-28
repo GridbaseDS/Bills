@@ -294,6 +294,7 @@ export default {
                             <th style="padding:12px 16px;text-align:right;font-weight:600;color:var(--color-text-secondary);font-size:11px;text-transform:uppercase;letter-spacing:0.5px;">Monto</th>
                             <th style="padding:12px 16px;text-align:center;font-weight:600;color:var(--color-text-secondary);font-size:11px;text-transform:uppercase;letter-spacing:0.5px;">Items</th>
                             <th style="padding:12px 16px;text-align:center;font-weight:600;color:var(--color-text-secondary);font-size:11px;text-transform:uppercase;letter-spacing:0.5px;">Estado</th>
+                            <th style="padding:12px 16px;text-align:center;font-weight:600;color:var(--color-text-secondary);font-size:11px;text-transform:uppercase;letter-spacing:0.5px;">Acción</th>
                         </tr>
                     </thead>
                     <tbody>`;
@@ -308,7 +309,7 @@ export default {
                 <tr id="cert-row-${tc.encf}" style="border-bottom:1px solid var(--color-border);transition:background 0.15s;" onmouseover="this.style.background='var(--bg-hover)'" onmouseout="this.style.background='transparent'">
                     <td style="padding:10px 16px;color:var(--color-text-muted);font-size:12px;">${i+1}</td>
                     <td style="padding:10px 16px;font-weight:600;font-family:'JetBrains Mono',monospace;font-size:12px;">${tc.encf}</td>
-                    <td style="padding:10px 16px;">${typeBadge} <span style="color:var(--color-text-muted);font-size:11px;">${typeName}</span></td>
+                    <td style="padding:10px 16px;">${typeBadge} <span style="color:var(--color-text-muted);font-size:11px;">${typeName}</span>${tc.phase ? `<br><span style="font-size:10px;color:var(--color-text-muted);">${tc.phase}</span>` : ''}</td>
                     <td style="padding:10px 16px;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${tc.razon_social_comprador || ''}">${tc.razon_social_comprador || '<span style="color:var(--color-text-muted);">—</span>'}</td>
                     <td style="padding:10px 16px;text-align:right;font-family:'JetBrains Mono',monospace;font-size:12px;">$${monto}</td>
                     <td style="padding:10px 16px;text-align:center;">
@@ -317,10 +318,67 @@ export default {
                     <td style="padding:10px 16px;text-align:center;" id="cert-status-${tc.encf}">
                         <span style="color:var(--color-text-muted);font-size:12px;">⏳ Pendiente</span>
                     </td>
+                    <td style="padding:10px 16px;text-align:center;">
+                        <button class="btn-run-single" data-encf="${tc.encf}" data-tipo="${tc.tipo}" style="padding:4px 12px;font-size:11px;font-weight:600;border:1px solid var(--color-border);border-radius:var(--radius-sm);background:var(--color-bg-primary);color:var(--color-text-primary);cursor:pointer;transition:all 0.15s;" onmouseover="this.style.background='var(--color-primary)';this.style.color='white';this.style.borderColor='var(--color-primary)'" onmouseout="this.style.background='var(--color-bg-primary)';this.style.color='var(--color-text-primary)';this.style.borderColor='var(--color-border)'">▶ Ejecutar</button>
+                    </td>
                 </tr>`;
         });
 
         html += `</tbody></table></div>`;
         container.innerHTML = html;
+
+        // Bind individual run buttons
+        container.querySelectorAll('.btn-run-single').forEach(btn => {
+            btn.addEventListener('click', (e) => this.runSingleCase(e.target.closest('.btn-run-single')));
+        });
+    },
+
+    async runSingleCase(btn) {
+        const encf = btn.dataset.encf;
+        const tipo = btn.dataset.tipo;
+        const statusCell = document.getElementById(`cert-status-${encf}`);
+        const consoleContainer = document.getElementById('console-container');
+        const consoleOutput = document.getElementById('console-output');
+        const consoleStatus = document.getElementById('console-status');
+
+        // Show console
+        consoleContainer.style.display = 'block';
+
+        // Disable button and show spinner
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner" style="width:12px;height:12px;border-width:2px;"></span>';
+        btn.style.pointerEvents = 'none';
+        if (statusCell) statusCell.innerHTML = '<span class="spinner" style="width:14px;height:14px;border-width:2px;"></span>';
+
+        consoleOutput.innerHTML += `<span style="color:#64748b;">[${new Date().toLocaleTimeString()}]</span> Ejecutando ${encf} (Tipo ${tipo})...\n`;
+        consoleStatus.innerHTML = `<span class="spinner" style="width:12px;height:12px;border-width:2px;"></span> <span style="color:#fbbf24;">Ejecutando</span>`;
+
+        try {
+            const res = await App.api('dgii/certification/run-single', {
+                method: 'POST',
+                body: JSON.stringify({ encf }),
+                headers: { 'Content-Type': 'application/json' }
+            });
+
+            if (res.success) {
+                if (statusCell) statusCell.innerHTML = `<span style="color:#22c55e;font-weight:600;">✅ ${res.status || 'Aceptado'}</span>`;
+                consoleOutput.innerHTML += `<span style="color:#22c55e;">✅ ${encf} (Tipo ${tipo})</span> — ${res.track_id || 'OK'}\n`;
+                consoleStatus.innerHTML = `<span style="color:#22c55e;">COMPLETADO</span>`;
+            } else {
+                const errMsg = typeof res.errors === 'string' ? res.errors : JSON.stringify(res.errors);
+                if (statusCell) statusCell.innerHTML = `<span style="color:#ef4444;font-weight:600;cursor:pointer;" title="${errMsg.replace(/"/g, '&quot;')}">❌ Error</span>`;
+                consoleOutput.innerHTML += `<span style="color:#ef4444;">❌ ${encf} (Tipo ${tipo})</span> — ${errMsg}\n`;
+                consoleStatus.innerHTML = `<span style="color:#ef4444;">ERROR</span>`;
+            }
+        } catch (e) {
+            if (statusCell) statusCell.innerHTML = `<span style="color:#ef4444;font-weight:600;">❌ ${e.message}</span>`;
+            consoleOutput.innerHTML += `<span style="color:#ef4444;">❌ ${encf}</span> — ${e.message}\n`;
+            consoleStatus.innerHTML = `<span style="color:#ef4444;">ERROR</span>`;
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = '▶ Ejecutar';
+            btn.style.pointerEvents = '';
+            consoleOutput.scrollTop = consoleOutput.scrollHeight;
+        }
     }
 };

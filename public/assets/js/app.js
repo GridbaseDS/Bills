@@ -408,79 +408,89 @@ window.App = {
         const cachedLogo = localStorage.getItem('company_logo') || 'https://gridbase.com.do/wp-content/uploads/2025/02/cropped-imagen_2026-03-16_154126791.png';
         const app = document.getElementById('app');
         
-        let subHtml = '';
+        let formContent = '';
         if (setupMode) {
-            subHtml = `
-                <h1 class="login-title">Configurar Doble Factor (2FA)</h1>
-                <p class="login-subtitle">Protege tu cuenta activando el segundo factor</p>
+            formContent = `
+                <h1 class="login-title">Configurar 2FA</h1>
+                <p class="login-subtitle">Protege tu cuenta activando el segundo factor de autenticaci\u00f3n</p>
                 <div id="login-error" class="login-error"></div>
                 
-                <div style="background:var(--color-danger-bg); color:var(--color-danger-text); border:1px solid rgba(239, 68, 68, 0.25); border-radius:var(--radius-md); padding:10px 12px; font-size:11px; margin-bottom:20px; text-align:center; font-weight:600; line-height:1.4; letter-spacing:0.1px;">
-                    Por motivos de seguridad y resguardo de su información, la activación del segundo factor de autenticación (2FA) es obligatoria para acceder a la plataforma.
+                <div style="background:#FEF2F2; color:#DC2626; border:1px solid rgba(239,68,68,0.2); border-radius:10px; padding:10px 14px; font-size:11px; margin-bottom:20px; font-weight:600; line-height:1.4;">
+                    La activaci\u00f3n del 2FA es obligatoria para acceder a la plataforma.
                 </div>
                 
-                <p style="font-size:12px; color:var(--color-text-secondary); margin-bottom:20px; line-height:1.5; text-align:center;">
-                    Escanea este código QR con tu aplicación autenticadora (Google Authenticator, Authy, etc.) e ingresa el código de 6 dígitos para activarlo.
+                <p style="font-size:13px; color:#6B7280; margin-bottom:20px; line-height:1.5;">
+                    Escanea este c\u00f3digo QR con tu app autenticadora (Google Authenticator, Authy, etc.)
                 </p>
                 
-                <div style="display:flex; justify-content:center; margin-bottom:20px; background:#ffffff; padding:12px; border-radius:var(--radius-md); border:1px solid var(--color-border); width:fit-content; margin-left:auto; margin-right:auto; box-shadow:var(--shadow-sm);">
+                <div style="display:flex; justify-content:center; margin-bottom:20px; background:#fff; padding:14px; border-radius:12px; border:1.5px solid #E5E7EB; width:fit-content; margin-left:auto; margin-right:auto;">
                     <canvas id="qr-canvas"></canvas>
                 </div>
                 
-                <div style="background:var(--bg-page); border:1px solid var(--color-border); border-radius:var(--radius-md); padding:10px 12px; font-size:12px; margin-bottom:20px; text-align:left; word-break:break-all; font-family:monospace; display:flex; justify-content:space-between; align-items:center; gap:8px;">
-                    <div>
-                        <span style="color:var(--color-text-muted); font-size:9px; font-weight:600; text-transform:uppercase; display:block; letter-spacing:0.05em; margin-bottom:2px;">Clave manual</span>
-                        <span style="color:var(--color-text-primary); font-size:13px; font-weight:700;">${tempSecret}</span>
-                    </div>
+                <div style="background:#F9FAFB; border:1.5px solid #E5E7EB; border-radius:10px; padding:10px 14px; font-size:12px; margin-bottom:24px; word-break:break-all; font-family:monospace;">
+                    <span style="color:#9CA3AF; font-size:10px; font-weight:600; text-transform:uppercase; display:block; letter-spacing:0.05em; margin-bottom:3px;">Clave manual</span>
+                    <span style="color:#111827; font-size:14px; font-weight:700;">${tempSecret}</span>
                 </div>
             `;
         } else {
-            subHtml = `
-                <h1 class="login-title">Verificación de Seguridad</h1>
-                <p class="login-subtitle">Ingresa el código dinámico de 6 dígitos generado por tu aplicación</p>
+            formContent = `
+                <h1 class="login-title">Verificaci\u00f3n de Seguridad</h1>
+                <p class="login-subtitle">Ingresa el c\u00f3digo din\u00e1mico de 6 d\u00edgitos generado por tu aplicaci\u00f3n</p>
                 <div id="login-error" class="login-error"></div>
             `;
         }
         
         app.innerHTML = `
             <div class="login-page">
-                <div class="login-card animate-fade-in">
-                    <div class="login-logo" style="display:flex;align-items:center;justify-content:center;margin-bottom:16px;">
-                        <div style="background: #111827; padding: 8px 24px; border-radius: var(--radius-xl); border: 1px solid rgba(255, 255, 255, 0.08); display: inline-flex; align-items: center; justify-content: center; box-shadow: var(--shadow-md); max-height: 56px;">
-                            <img src="${cachedLogo}" alt="Logo" style="max-height:40px;max-width:100%;object-fit:contain;">
+                <div class="login-left">
+                    <div class="login-brand">
+                        <img src="${cachedLogo}" alt="Logo">
+                    </div>
+                    <div class="login-form-wrap">
+                        ${formContent}
+                        <form id="2fa-form">
+                            <div class="login-field">
+                                <label>C\u00f3digo de Seguridad (2FA)</label>
+                                <input type="text" id="2fa-code" placeholder="000000" pattern="[0-9]*" inputmode="numeric" maxlength="6" required autofocus autocomplete="one-time-code" style="text-align:center; font-size:24px; letter-spacing:0.15em; font-weight:700;">
+                            </div>
+                            <div style="display:flex; gap:12px; margin-top:8px;">
+                                <button type="button" id="btn-cancel-2fa" style="flex:1; padding:13px 24px; border:1.5px solid #E5E7EB; border-radius:10px; font-size:14px; font-weight:600; color:#374151; background:#fff; cursor:pointer; transition:all .15s;">Regresar</button>
+                                <button type="submit" class="login-submit" style="flex:1;">Verificar</button>
+                            </div>
+                        </form>
+                        <p class="login-footer">
+                            Powered by <span>GridBase</span> Digital Solutions
+                        </p>
+                    </div>
+                </div>
+                <div class="login-right">
+                    <div class="login-hero-text">
+                        <h2>Tu cuenta<br>est\u00e1 protegida,<br><span>siempre</span></h2>
+                        <p class="login-hero-sub">Verificaci\u00f3n en dos pasos para mantener tu informaci\u00f3n segura en todo momento.</p>
+                    </div>
+                    <div class="login-float-card">
+                        <div class="login-float-label">Seguridad Activa</div>
+                        <div class="login-float-amount" style="font-size:24px;">2FA Habilitado</div>
+                        <div class="login-float-sub">Protecci\u00f3n de doble factor</div>
+                        <div class="login-float-row">
+                            <div class="login-float-row-item">
+                                <div class="login-float-dot">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                                </div>
+                                <div>
+                                    <div class="login-float-row-label">Encriptaci\u00f3n</div>
+                                    <div class="login-float-row-val">AES-256</div>
+                                </div>
+                            </div>
+                            <div style="font-size:16px;font-weight:700;color:#0B484C;">100%</div>
                         </div>
                     </div>
-                    ${subHtml}
-                    <form id="2fa-form">
-                        <div class="form-group text-left">
-                            <label class="form-label" style="text-align:center;">Código de Seguridad (2FA)</label>
-                            <input type="text" id="2fa-code" class="form-control" placeholder="000 000" pattern="[0-9]*" inputmode="numeric" maxlength="6" required autofocus autocomplete="one-time-code" style="text-align:center; font-size:24px; letter-spacing:0.1em; padding:8px 12px;">
-                        </div>
-                        <div style="display:flex; gap:12px; margin-top:16px;">
-                            <button type="button" id="btn-cancel-2fa" class="btn btn-secondary" style="flex:1;">Regresar</button>
-                            <button type="submit" class="btn btn-primary" style="flex:1;">Verificar</button>
-                        </div>
-                    </form>
                 </div>
             </div>
         `;
         
         if (setupMode) {
-            if (typeof QRious === 'undefined') {
-                const script = document.createElement('script');
-                script.src = "https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js";
-                script.onload = () => {
-                    new QRious({
-                        element: document.getElementById('qr-canvas'),
-                        value: qrUri,
-                        size: 160,
-                        background: '#ffffff',
-                        foreground: '#111827',
-                        level: 'H'
-                    });
-                };
-                document.head.appendChild(script);
-            } else {
+            const renderQR = () => {
                 new QRious({
                     element: document.getElementById('qr-canvas'),
                     value: qrUri,
@@ -489,6 +499,14 @@ window.App = {
                     foreground: '#111827',
                     level: 'H'
                 });
+            };
+            if (typeof QRious === 'undefined') {
+                const script = document.createElement('script');
+                script.src = "https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js";
+                script.onload = renderQR;
+                document.head.appendChild(script);
+            } else {
+                renderQR();
             }
         }
         

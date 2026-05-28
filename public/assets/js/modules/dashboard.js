@@ -43,7 +43,7 @@ const DashboardModule = {
                         flex-direction: column;
                         gap: 20px;
                         width: 100%;
-                        padding-bottom: 64px;
+                        padding-bottom: 24px;
                         animation: dbIn 0.35s ease both;
                     }
                     @keyframes dbIn {
@@ -445,80 +445,104 @@ const DashboardModule = {
                         font-size: 13px;
                     }
 
-                    /* ── Footer ── */
-                    .db-footer {
-                        position: fixed;
-                        bottom: 0; right: 0;
-                        left: var(--sidebar-w);
-                        background: var(--bg-card);
-                        border-top: 1px solid var(--color-border);
-                        padding: 11px 24px;
-                        display: flex;
-                        align-items: center;
-                        justify-content: center;
-                        z-index: 100;
-                        transition: left var(--transition-normal);
-                    }
-                    .db-footer a {
-                        font-size: 11px;
-                        color: var(--color-text-muted);
-                        text-decoration: none;
-                        font-weight: 500;
-                        transition: color 0.15s ease;
-                    }
-                    .db-footer a:hover { color: var(--color-text-primary); }
-                    .db-footer a span { font-weight: 700; color: var(--color-text-secondary); }
-
                     /* Mobile cards (hidden desktop) */
                     .db-mobile-cards { display: none; }
 
                     /* ═══ Responsive ═══ */
                     @media (max-width: 1100px) {
-                        .db-kpi-row { grid-template-columns: 1fr; }
+                        .db-kpi-row { grid-template-columns: 1fr 1fr; }
+                        .db-kpi-main { grid-column: 1 / -1; }
                         .db-kpi-main .db-kpi-amount { font-size: 28px; }
                     }
                     @media (max-width: 960px) {
                         .db-body { grid-template-columns: 1fr; }
                     }
+
+                    /* ── Mobile: iPhone 14 Pro Max (430px) and below ── */
                     @media (max-width: 640px) {
                         .db {
-                            padding: 0 0 140px 0;
+                            padding: 0;
+                            padding-bottom: calc(80px + env(safe-area-inset-bottom));
                             gap: 12px;
                         }
-                        .db-header { flex-wrap: wrap; gap: 8px; }
-                        .db-welcome { font-size: 18px; }
-                        .db-kpi-row { gap: 10px; }
-                        .db-kpi { padding: 16px 18px; border-radius: var(--radius-lg); }
-                        .db-kpi-main .db-kpi-amount { font-size: 24px; }
-                        .db-kpi-amount { font-size: 22px; }
-                        .db-kpi-actions { flex-wrap: wrap; }
 
+                        /* Header */
+                        .db-header {
+                            flex-direction: row;
+                            align-items: center;
+                            gap: 8px;
+                        }
+                        .db-welcome { font-size: 18px; }
+                        .db-date { font-size: 12px; padding: 6px 10px; }
+                        .db-date svg { width: 13px; height: 13px; }
+
+                        /* KPI cards: main full-width, rest 2-col */
+                        .db-kpi-row {
+                            grid-template-columns: 1fr 1fr;
+                            gap: 10px;
+                        }
+                        .db-kpi-main { grid-column: 1 / -1; }
+                        .db-kpi {
+                            padding: 16px;
+                            border-radius: var(--radius-lg);
+                        }
+                        .db-kpi-main .db-kpi-amount { font-size: 26px; }
+                        .db-kpi-amount { font-size: 19px; }
+                        .db-kpi-top { margin-bottom: 10px; }
+                        .db-kpi-label { font-size: 12px; }
+                        .db-kpi-meta { font-size: 12px; }
+                        .db-kpi-actions { gap: 8px; }
+                        .db-kpi-btn { padding: 8px 14px; font-size: 12px; }
+                        .db-kpi-btn svg { width: 13px; height: 13px; }
+                        .db-kpi-compare { font-size: 11px; margin-top: 6px; }
+
+                        /* Body single column */
+                        .db-body { grid-template-columns: 1fr; gap: 12px; }
+
+                        /* Cards */
                         .db-card { border-radius: var(--radius-lg); }
                         .db-card-head { padding: 14px 16px 10px; }
                         .db-card-title { font-size: 14px; }
-                        .db-activity-head { padding: 0 16px 8px; }
-                        .db-activity-row { padding: 12px 16px; }
-                        .db-chart-info { padding: 0 16px 4px; }
-                        .db-chart-amount { font-size: 22px; }
-                        .db-overdue-item { padding: 12px 16px; }
-                        .db-overdue-cell { padding: 14px 16px; }
+                        .db-card-badge { font-size: 11px; padding: 3px 10px; }
 
-                        /* Show mobile cards, hide table-like rows */
+                        /* Activity — hide desktop table, show mobile cards */
                         .db-activity-head { display: none !important; }
                         .db-desktop-rows { display: none !important; }
                         .db-mobile-cards {
                             display: flex !important;
                             flex-direction: column;
                         }
+                        .db-activity-row {
+                            padding: 12px 16px;
+                            grid-template-columns: 1fr auto;
+                        }
+                        .db-activity-avatar { width: 32px; height: 32px; font-size: 12px; }
+                        .db-activity-name { font-size: 13px; }
+                        .db-activity-sub { font-size: 11px; }
+                        .db-activity-amount { font-size: 13px; }
 
+                        /* Chart */
+                        .db-chart-info { padding: 0 16px 4px; }
+                        .db-chart-amount { font-size: 22px; }
+                        .db-chart-amount-row { flex-wrap: wrap; gap: 6px; }
+                        .db-chart-legend { margin-left: 0; margin-top: 4px; width: 100%; }
+
+                        /* Overdue */
+                        .db-overdue-item { padding: 12px 16px; }
+                        .db-overdue-grid { grid-template-columns: 1fr 1fr; }
+                        .db-overdue-cell { padding: 14px 14px; }
+                        .db-overdue-cell-title { font-size: 12px; }
+                        .db-overdue-cell-amount { font-size: 14px; }
+                    }
+
+                    /* ── Extra small phones (≤375px, iPhone SE/Mini) ── */
+                    @media (max-width: 375px) {
+                        .db-kpi-row { grid-template-columns: 1fr; }
+                        .db-kpi-main .db-kpi-amount { font-size: 24px; }
+                        .db-kpi-amount { font-size: 18px; }
                         .db-overdue-grid { grid-template-columns: 1fr; }
                         .db-overdue-cell:first-child { border-right: none; }
-
-                        .db-footer {
-                            left: 0;
-                            bottom: calc(60px + env(safe-area-inset-bottom));
-                            padding: 10px 16px;
-                        }
+                        .db-welcome { font-size: 17px; }
                     }
                 </style>
 
@@ -727,12 +751,7 @@ const DashboardModule = {
                         </div>
                     </div>
 
-                    <!-- Footer -->
-                    <footer class="db-footer">
-                        <a href="https://gridbase.com.do" target="_blank">
-                            Bills by <span>GridBase Digital Solutions</span>
-                        </a>
-                    </footer>
+
                 </div>
             `;
 

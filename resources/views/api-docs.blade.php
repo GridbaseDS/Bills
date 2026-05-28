@@ -787,8 +787,7 @@
             <p>La API REST de Gridbase Bills te permite crear facturas, cotizaciones y gestionar clientes de forma programática. Todos los endpoints retornan JSON y usan autenticación via API Key.</p>
 
             <div class="alert alert-info">
-                <span>💡</span>
-                <span>Para obtener una API Key, ingresa a <strong>Configuración → 🔑 API Keys</strong> en tu panel de Gridbase Bills y crea una nueva.</span>
+                <span>Para obtener una API Key, ingresa a <strong>Configuración → API Keys</strong> en tu panel de Gridbase Bills y crea una nueva.</span>
             </div>
         </section>
 
@@ -806,14 +805,13 @@
             </div>
 
             <div class="alert alert-warning">
-                <span>⚠️</span>
                 <span><strong>Nunca expongas tu API Key</strong> en código del lado del cliente (JavaScript del navegador). Siempre usa la API desde tu servidor backend.</span>
             </div>
 
             <h4>Obtener tu API Key</h4>
             <ol style="color:var(--text-secondary);font-size:14px;padding-left:20px;margin-bottom:20px;line-height:2;">
                 <li>Inicia sesión como administrador en Gridbase Bills</li>
-                <li>Ve a <strong>Configuración → 🔑 API Keys</strong></li>
+                <li>Ve a <strong>Configuración → API Keys</strong></li>
                 <li>Haz clic en <strong>"Nueva API Key"</strong></li>
                 <li>Asigna un nombre descriptivo (ej: "Mi Tienda Online")</li>
                 <li>Selecciona los permisos necesarios</li>
@@ -907,7 +905,7 @@
         <!-- ════════════════════════════════════════════════════════════════ -->
         <!-- INVOICES -->
         <!-- ════════════════════════════════════════════════════════════════ -->
-        <h2 style="padding-top:0;">📝 Facturas</h2>
+        <h2 style="padding-top:0;">Facturas</h2>
         <p class="subtitle">Crea, consulta y descarga facturas electrónicas.</p>
 
         <!-- CREATE INVOICE -->
@@ -951,7 +949,6 @@
                     </table>
 
                     <div class="alert alert-info">
-                        <span>💡</span>
                         <span>Debes proporcionar <code>client_id</code> <strong>o</strong> un objeto <code>client</code>, no ambos. Si envías <code>client</code>, el sistema buscará un cliente existente por <code>tax_id</code> o <code>email</code>, y lo creará si no existe.</span>
                     </div>
 
@@ -1096,7 +1093,7 @@ Authorization: Bearer {{ $api_key ?? 'gb_tu_api_key_aqui' }}
         <!-- ════════════════════════════════════════════════════════════════ -->
         <!-- QUOTES -->
         <!-- ════════════════════════════════════════════════════════════════ -->
-        <h2>📋 Cotizaciones</h2>
+        <h2>Cotizaciones</h2>
         <p class="subtitle">Crea, consulta y convierte cotizaciones a facturas.</p>
 
         <!-- CREATE QUOTE -->
@@ -1191,7 +1188,6 @@ Authorization: Bearer {{ $api_key ?? 'gb_tu_api_key_aqui' }}
 }</code></pre>
 
                     <div class="alert alert-warning">
-                        <span>⚠️</span>
                         <span>Una cotización solo puede convertirse una vez. Si ya fue convertida, recibirás un <code>409 Conflict</code>.</span>
                     </div>
                 </div>
@@ -1203,7 +1199,7 @@ Authorization: Bearer {{ $api_key ?? 'gb_tu_api_key_aqui' }}
         <!-- ════════════════════════════════════════════════════════════════ -->
         <!-- CLIENTS -->
         <!-- ════════════════════════════════════════════════════════════════ -->
-        <h2>👤 Clientes</h2>
+        <h2>Clientes</h2>
         <p class="subtitle">Gestiona la base de clientes para asociar a facturas y cotizaciones.</p>
 
         <!-- CREATE CLIENT -->
@@ -1289,7 +1285,7 @@ Authorization: Bearer {{ $api_key ?? 'gb_tu_api_key_aqui' }}
         <!-- CLIENT UPSERT -->
         <!-- ════════════════════════════════════════════════════════════════ -->
         <section id="client-upsert">
-            <h2>🔄 Upsert de Clientes</h2>
+            <h2>Upsert de Clientes</h2>
             <p>Cuando creas una factura o cotización con el objeto <code class="inline">client</code> (en lugar de <code class="inline">client_id</code>), el sistema usa un patrón <strong>upsert</strong>:</p>
 
             <ol style="color:var(--text-secondary);font-size:14px;padding-left:20px;margin-bottom:20px;line-height:2.2;">
@@ -1300,7 +1296,6 @@ Authorization: Bearer {{ $api_key ?? 'gb_tu_api_key_aqui' }}
             </ol>
 
             <div class="alert alert-success">
-                <span>✅</span>
                 <span>Esto significa que puedes enviar los mismos datos de cliente repetidamente sin generar duplicados. Ideal para integraciones automatizadas.</span>
             </div>
 
@@ -1319,7 +1314,7 @@ POST /api/v1/invoices { "client": {"tax_id": "131456789"}, ... }
         <!-- PERMISSIONS -->
         <!-- ════════════════════════════════════════════════════════════════ -->
         <section id="permissions">
-            <h2>🔐 Permisos</h2>
+            <h2>Permisos</h2>
             <p>Cada API Key tiene permisos granulares. Si intentas usar un endpoint sin el permiso correspondiente, recibirás un <code class="inline">403 Forbidden</code>.</p>
 
             <table>
@@ -1342,7 +1337,7 @@ POST /api/v1/invoices { "client": {"tax_id": "131456789"}, ... }
         <!-- STATUS CODES -->
         <!-- ════════════════════════════════════════════════════════════════ -->
         <section id="status-codes">
-            <h2>📊 Códigos de Estado HTTP</h2>
+            <h2>Códigos de Estado HTTP</h2>
 
             <ul class="status-list">
                 <li><span class="status-code" style="color:var(--green);">200</span><div><strong>OK</strong> — La petición fue exitosa.</div></li>
@@ -1363,7 +1358,7 @@ POST /api/v1/invoices { "client": {"tax_id": "131456789"}, ... }
         <!-- CODE EXAMPLES -->
         <!-- ════════════════════════════════════════════════════════════════ -->
         <section id="examples">
-            <h2>💻 Ejemplos por Lenguaje</h2>
+            <h2>Ejemplos por Lenguaje</h2>
             <p>Ejemplos completos de cómo crear una factura desde distintas tecnologías.</p>
 
             <!-- Tab navigation -->
@@ -1452,9 +1447,9 @@ try {
     { tax_rate: 18, notes: 'Desde cotizador web' }
   );
 
-  console.log(`✅ Factura ${factura.invoice_number} creada por DOP ${factura.total}`);
+  console.log(`Factura ${factura.invoice_number} creada por DOP ${factura.total}`);
 } catch (error) {
-  console.error('❌ Error:', error.message);
+  console.error('Error:', error.message);
 }</code></pre>
                 </div>
 
@@ -1578,9 +1573,9 @@ try:
         notes="Desde script Python",
     )
 
-    print(f"✅ Factura {factura['invoice_number']} creada - Total: {factura['total']}")
+    print(f"Factura {factura['invoice_number']} creada - Total: {factura['total']}")
 except Exception as e:
-    print(f"❌ Error: {e}")</code></pre>
+    print(f"Error: {e}")</code></pre>
                 </div>
 
                 <!-- C# -->
@@ -1675,7 +1670,7 @@ add_action('woocommerce_order_status_completed', function ($order_id) {
     $body = json_decode(wp_remote_retrieve_body($response), true);
     if ($body['success'] ?? false) {
         $order->add_order_note(
-            "✅ Factura Bills: {$body['data']['invoice_number']} (Total: {$body['data']['total']})"
+            "Factura Bills: {$body['data']['invoice_number']} (Total: {$body['data']['total']})"
         );
     }
 });</code></pre>

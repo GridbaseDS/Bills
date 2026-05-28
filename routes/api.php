@@ -113,6 +113,7 @@ Route::middleware('auth:sanctum')->group(function () {
         // API Key Management
         Route::apiResource('api-keys', ApiKeyController::class);
         Route::post('/api-keys/{id}/regenerate', [ApiKeyController::class, 'regenerate']);
+        Route::get('/api-keys/{id}/logs', [ApiKeyController::class, 'logs']);
     });
 
     // DGII Reports (Admin and Contador only)
@@ -136,7 +137,7 @@ Route::middleware('auth:sanctum')->group(function () {
 // ═══════════════════════════════════════════════════════════════════════
 // External API v1 — Authenticated via API Key (Bearer Token)
 // ═══════════════════════════════════════════════════════════════════════
-Route::prefix('v1')->middleware(['api.key', 'api.throttle'])->group(function () {
+Route::prefix('v1')->middleware(['api.log', 'api.key', 'api.throttle'])->group(function () {
 
     // Invoices
     Route::get('/invoices', [ExternalInvoiceController::class, 'index'])

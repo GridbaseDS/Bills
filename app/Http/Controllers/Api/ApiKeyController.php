@@ -191,4 +191,35 @@ class ApiKeyController extends Controller
             ],
         ]);
     }
+
+    /**
+     * Get the 50 most recent logs for a specific API key.
+     */
+    public function logs($id)
+    {
+        $apiKey = ApiKey::findOrFail($id);
+
+        $logs = \App\Models\ApiLog::where('api_key_id', $id)
+            ->orderBy('created_at', 'desc')
+            ->limit(50)
+            ->get()
+            ->map(function ($log) {
+                return [
+                    'id' => $log->id,
+                    'method' => $log->method,
+                    'path' => $log->path,
+                    'ip_address' => $log->ip_address,
+                    'request_body' => $log->request_body,
+                    'response_status' => $log->response_status,
+                    'response_body' => $log->response_body,
+                    'duration_ms' => $log->duration_ms,
+                    'created_at' => $log->created_at->toIso8601String(),
+                ];
+            });
+
+        return response()->json([
+            'success' => true,
+            'data' => $logs,
+        ]);
+    }
 }

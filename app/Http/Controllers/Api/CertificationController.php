@@ -465,14 +465,9 @@ class CertificationController extends Controller
             throw new \RuntimeException("Test cases file not found: dgii_test_ecf.json");
         }
 
-        $raw = file_get_contents($path);
-
-        // CRITICAL: Preserve exact numeric formatting from JSON.
-        // json_decode converts 900.0000 → 900.0 (float) → "900" (string).
-        // DGII requires EXACT decimal formatting from their test data.
-        $raw = preg_replace('/:\s*(-?\d+(?:\.\d+)?)\s*([,}\]])/', ': "$1"$2', $raw);
-
-        $data = json_decode($raw, true);
+        // JSON was generated from DGII XLSX with all values as exact strings.
+        // No regex quoting or number conversion needed.
+        $data = json_decode(file_get_contents($path), true);
         if (json_last_error() !== JSON_ERROR_NONE) {
             throw new \RuntimeException("Invalid JSON in ECF test cases: " . json_last_error_msg());
         }
@@ -488,10 +483,7 @@ class CertificationController extends Controller
             return [];
         }
 
-        $raw = file_get_contents($path);
-        $raw = preg_replace('/:\s*(-?\d+(?:\.\d+)?)\s*([,}\]])/', ': "$1"$2', $raw);
-
-        $data = json_decode($raw, true);
+        $data = json_decode(file_get_contents($path), true);
         if (json_last_error() !== JSON_ERROR_NONE) {
             throw new \RuntimeException("Invalid JSON in RFCE test cases: " . json_last_error_msg());
         }

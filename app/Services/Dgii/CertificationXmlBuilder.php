@@ -758,49 +758,31 @@ class CertificationXmlBuilder
     }
 
     /**
-     * Format monetary amounts — always 2 decimal places.
-     * DGII requires: MontoTotal, MontoItem, MontoGravado*, etc.
+     * ALL formatting functions now return the raw string value as-is.
+     *
+     * The JSON test data was generated directly from the DGII XLSX,
+     * where every cell is already a string with the exact format DGII expects.
+     * Examples: "35.0000", "23.00", "1", "400.00", "10000.0000"
+     * There is NO consistent rule per type — each cell has its own precision.
+     * Any reformatting would corrupt the values.
      */
     private function fmtMoney($value): string
     {
-        return number_format((float)$value, 2, '.', '');
+        return (string)$value;
     }
 
-    /**
-     * Format unit prices — type-dependent decimal places.
-     * T31/T32 (Facturas), T44-47 (Especiales): 4 decimal places
-     * T33/T34 (Notas), T41/T43 (Compras/Gastos): 2 decimal places
-     */
     private function fmtPrice($value): string
     {
-        $decimals = in_array($this->tipoECF, [33, 34, 41, 43]) ? 2 : 4;
-        return number_format((float)$value, $decimals, '.', '');
+        return (string)$value;
     }
 
-    /**
-     * Format quantities — type-dependent.
-     * T31/T32: integer (no decimals) — e.g. "1", "23"
-     * Everything else: 2 decimal places — e.g. "1.00", "20.00"
-     */
     private function fmtQty($value): string
     {
-        if (in_array($this->tipoECF, [31, 32])) {
-            // Integer format for standard invoice/consumo types only
-            $float = (float)$value;
-            if (floor($float) == $float) {
-                return (string)(int)$float;
-            }
-            return (string)$float;
-        }
-        // 2 decimal places for notes, compras, gastos, special types
-        return number_format((float)$value, 2, '.', '');
+        return (string)$value;
     }
 
-    /**
-     * Format decimal values — 2 decimal places by default.
-     */
     private function fmtDecimal($value): string
     {
-        return number_format((float)$value, 2, '.', '');
+        return (string)$value;
     }
 }

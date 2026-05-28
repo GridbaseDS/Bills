@@ -1751,11 +1751,50 @@ textarea.form-control { resize: vertical; min-height: 80px; }
 .login-float-mini-text { font-size: 12px; color: #374151; font-weight: 500; }
 .login-float-mini-val { font-size: 13px; font-weight: 700; color: #111827; }
 
-/* Mobile: hide right panel */
+/* Mobile: compact login with mini hero banner */
 @media (max-width: 768px) {
+  .login-page { flex-direction: column; }
   .login-right { display: none; }
-  .login-left { max-width: 100%; padding: 40px 28px; min-height: 100vh; }
-  .login-brand { position: static; margin-bottom: 40px; }
+  .login-left {
+    max-width: 100%; min-width: 0; padding: 0; min-height: 100vh; min-height: 100dvh;
+    justify-content: flex-start;
+  }
+  .login-brand {
+    position: static; display: flex; justify-content: center; align-items: center;
+    padding: 20px 24px 0; z-index: 2;
+  }
+  .login-brand img { height: 30px; }
+  .login-left::before {
+    content: ''; display: block; width: 100%;
+    height: 140px; min-height: 140px;
+    background: linear-gradient(160deg, #0a3d3f 0%, #0B484C 40%, #0d5249 100%);
+    border-radius: 0 0 28px 28px;
+    margin-bottom: -60px;
+    position: relative; z-index: 0;
+  }
+  .login-form-wrap {
+    position: relative; z-index: 1;
+    background: #fff;
+    margin: 0 16px; padding: 28px 24px 32px;
+    border-radius: 20px;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.08);
+    max-width: 100%;
+  }
+  .login-title { font-size: 22px; text-align: center; }
+  .login-subtitle { font-size: 13px; text-align: center; margin-bottom: 24px; }
+  .login-field { margin-bottom: 16px; }
+  .login-field input { padding: 14px 14px; font-size: 16px; border-radius: 12px; }
+  .login-submit { padding: 14px 24px; font-size: 16px; border-radius: 12px; }
+  .login-footer { text-align: center; margin-top: 20px; }
+  /* 2FA specific */
+  #qr-canvas { max-width: 140px !important; max-height: 140px !important; }
+}
+
+/* iPhone SE / small phones */
+@media (max-width: 375px) {
+  .login-left::before { height: 110px; min-height: 110px; margin-bottom: -50px; }
+  .login-form-wrap { margin: 0 12px; padding: 22px 18px 28px; }
+  .login-title { font-size: 20px; }
 }
 
 .login-card .form-control { background: var(--bg-app); }

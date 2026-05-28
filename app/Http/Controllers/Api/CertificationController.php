@@ -24,32 +24,84 @@ class CertificationController extends Controller
         $request->validate(['encf' => 'required|string']);
         $encf = $request->input('encf');
 
-        $testCases = $this->loadTestCases();
+        $testCases = $this->loadEcfTestCases();
         $testCase = collect($testCases)->firstWhere('ENCF', $encf);
 
         if (!$testCase) {
+            // Check RFCE cases
+            $rfceCases = $this->loadRfceTestCases();
+            $testCase = collect($rfceCases)->firstWhere('ENCF', $encf);
+            if ($testCase) {
+                $result = $this->executeRfceTestCase($testCase);
+                return response()->json($result);
+            }
+
             return response()->json([
                 'success' => false,
                 'error' => "Test case with eNCF {$encf} not found in test data.",
             ], 404);
         }
 
-        $result = $this->executeTestCase($testCase);
-
+        $result = $this->executeEcfTestCase($testCase);
         return response()->json($result);
     }
 
     /**
-     * Run ALL certification test cases.
+     * Run ALL certification test cases in correct 4-phase order.
      * POST /api/dgii/certification/run-all
+     *
+     * Phase 1: Base types (31, 32≥250k, 41, 43, 44, 45, 46, 47) → ecf.dgii.gov.do
+     * Phase 2: Notes (33, 34) → ecf.dgii.gov.do
+     * Phase 3: RFCE summaries → fc.dgii.gov.do
+     * Phase 4: FC<250k ECFs (32<250k) → ecf.dgii.gov.do
      */
     public function runAll(Request $request)
     {
-        $testCases = $this->loadTestCases();
+        $allEcf = $this->loadEcfTestCases();
+        $rfceCases = $this->loadRfceTestCases();
+
+        // Classify ECF test cases into phases
+        $phase1 = []; // Base types
+        $phase2 = []; // Notes 33/34
+        $phase4 = []; // FC < 250k
+
+        foreach ($allEcf as $tc) {
+            $tipo = (int)$tc['TipoeCF'];
+            $monto = (float)($tc['MontoTotal'] ?? 0);
+
+            if (in_array($tipo, [33, 34])) {
+                $phase2[] = $tc;
+            } elseif ($tipo === 32 && $monto < 250000) {
+                $phase4[] = $tc;
+            } else {
+                $phase1[] = $tc;
+            }
+        }
+
         $results = [];
 
-        foreach ($testCases as $testCase) {
-            $results[] = $this->executeTestCase($testCase);
+        // Phase 1: Base types → ecf.dgii.gov.do
+        Log::info("[Certification] === PHASE 1: Base types (" . count($phase1) . " cases) ===");
+        foreach ($phase1 as $tc) {
+            $results[] = $this->executeEcfTestCase($tc);
+        }
+
+        // Phase 2: Notes 33/34 → ecf.dgii.gov.do
+        Log::info("[Certification] === PHASE 2: Notes 33/34 (" . count($phase2) . " cases) ===");
+        foreach ($phase2 as $tc) {
+            $results[] = $this->executeEcfTestCase($tc);
+        }
+
+        // Phase 3: RFCE summaries → fc.dgii.gov.do
+        Log::info("[Certification] === PHASE 3: RFCE summaries (" . count($rfceCases) . " cases) ===");
+        foreach ($rfceCases as $tc) {
+            $results[] = $this->executeRfceTestCase($tc);
+        }
+
+        // Phase 4: FC < 250k ECFs → ecf.dgii.gov.do
+        Log::info("[Certification] === PHASE 4: FC<250k ECFs (" . count($phase4) . " cases) ===");
+        foreach ($phase4 as $tc) {
+            $results[] = $this->executeEcfTestCase($tc);
         }
 
         $passed = collect($results)->where('success', true)->count();
@@ -60,6 +112,12 @@ class CertificationController extends Controller
                 'total' => count($results),
                 'passed' => $passed,
                 'failed' => $failed,
+                'phases' => [
+                    'phase1_base' => count($phase1),
+                    'phase2_notes' => count($phase2),
+                    'phase3_rfce' => count($rfceCases),
+                    'phase4_fc250k' => count($phase4),
+                ],
             ],
             'results' => $results,
         ]);
@@ -71,14 +129,27 @@ class CertificationController extends Controller
      */
     public function listCases()
     {
-        $testCases = $this->loadTestCases();
+        $ecfCases = $this->loadEcfTestCases();
+        $rfceCases = $this->loadRfceTestCases();
         $cases = [];
 
-        foreach ($testCases as $tc) {
+        foreach ($ecfCases as $tc) {
             $items = [];
             for ($i = 1; $i <= 20; $i++) {
                 $name = $tc["NombreItem[$i]"] ?? '#e';
                 if ($name !== '#e') $items[] = $name;
+            }
+
+            $tipo = (int)$tc['TipoeCF'];
+            $monto = (float)($tc['MontoTotal'] ?? 0);
+
+            // Determine phase
+            if (in_array($tipo, [33, 34])) {
+                $phase = 'Phase 2 - Notas';
+            } elseif ($tipo === 32 && $monto < 250000) {
+                $phase = 'Phase 4 - FC<250k';
+            } else {
+                $phase = 'Phase 1 - Base';
             }
 
             $cases[] = [
@@ -89,15 +160,32 @@ class CertificationController extends Controller
                 'fecha_emision' => $tc['FechaEmision'] ?? null,
                 'items_count' => count($items),
                 'items' => $items,
+                'phase' => $phase,
+                'format' => 'ECF',
+            ];
+        }
+
+        // Add RFCE cases
+        foreach ($rfceCases as $tc) {
+            $cases[] = [
+                'encf' => $tc['ENCF'] . ' (RFCE)',
+                'tipo' => '32-RFCE',
+                'razon_social_comprador' => $tc['RazonSocialComprador'] ?? null,
+                'monto_total' => $tc['MontoTotal'] ?? null,
+                'fecha_emision' => $tc['FechaEmision'] ?? null,
+                'items_count' => 0,
+                'items' => [],
+                'phase' => 'Phase 3 - RFCE',
+                'format' => 'RFCE',
             ];
         }
 
         return response()->json(['cases' => $cases]);
     }
 
-    // ─── Internal ──────────────────────────────────────
+    // ─── ECF Execution ────────────────────────────────
 
-    private function executeTestCase(array $testCase): array
+    private function executeEcfTestCase(array $testCase): array
     {
         $encf = $testCase['ENCF'];
         $tipoECF = $testCase['TipoeCF'];
@@ -110,10 +198,10 @@ class CertificationController extends Controller
             $apiService = app(DgiiApiService::class);
 
             // 1. Build raw XML from test data
-            Log::info("[Certification] Building XML for {$encf} (Tipo {$tipoECF})");
+            Log::info("[Certification] Building ECF XML for {$encf} (Tipo {$tipoECF})");
             $rawXml = $builder->buildFromTestCase($testCase);
 
-            // 1b. Structural pre-check (DGII XSDs have internal type errors, so we validate structure manually)
+            // 1b. Structural pre-check
             $validationDom = new \DOMDocument();
             $validationDom->loadXML($rawXml);
             $missing = [];
@@ -133,30 +221,27 @@ class CertificationController extends Controller
                     'track_id' => null,
                     'errors' => $errorMsg,
                     'xml_path' => null,
+                    'format' => 'ECF',
                 ];
             }
-            Log::info("[Certification] Structural check passed for {$encf}");
 
             // 2. Sign the XML
             $p12Path = storage_path('app/secure/' . ($settings['dgii_certificate_path'] ?? ''));
             $p12Password = $settings['dgii_certificate_password'] ?? '';
-
-            Log::info("[Certification] Signing XML for {$encf}");
             $signedXml = $signatureService->signXml($rawXml, $p12Path, $p12Password);
 
-            // Save signed XML for archiving/debugging
+            // Save signed XML
             $fileName = "certification_ecf/{$encf}.xml";
             Storage::put($fileName, $signedXml);
 
-            // 3. Get auth token
+            // 3. Submit to ecf.dgii.gov.do
             $token = $authService->getValidToken($settings);
             $env = $settings['dgii_env'] ?? 'testing';
 
-            // 4. Submit to DGII (all ECF test cases go to ecf endpoint, RFCE tests are separate)
-            Log::info("[Certification] Submitting {$encf} to DGII ({$env})");
+            Log::info("[Certification] Submitting ECF {$encf} to ecf.dgii.gov.do");
             $result = $apiService->submitInvoice($signedXml, $token, $env, false);
 
-            Log::info("[Certification] Result for {$encf}: " . json_encode($result));
+            Log::info("[Certification] ECF Result for {$encf}: " . json_encode($result));
 
             return [
                 'encf' => $encf,
@@ -166,11 +251,11 @@ class CertificationController extends Controller
                 'track_id' => $result['track_id'] ?? null,
                 'errors' => $result['errors'] ?? null,
                 'xml_path' => $fileName,
+                'format' => 'ECF',
             ];
 
         } catch (\Exception $e) {
-            Log::error("[Certification] Error for {$encf}: " . $e->getMessage());
-
+            Log::error("[Certification] ECF Error for {$encf}: " . $e->getMessage());
             return [
                 'encf' => $encf,
                 'tipo' => $tipoECF,
@@ -179,11 +264,200 @@ class CertificationController extends Controller
                 'track_id' => null,
                 'errors' => $e->getMessage(),
                 'xml_path' => null,
+                'format' => 'ECF',
             ];
         }
     }
 
-    private function loadTestCases(): array
+    // ─── RFCE Execution ───────────────────────────────
+
+    private function executeRfceTestCase(array $testCase): array
+    {
+        $encf = $testCase['ENCF'];
+
+        try {
+            $settings = Setting::getAll();
+            $signatureService = app(XmlSignatureService::class);
+            $authService = app(DgiiAuthService::class);
+            $apiService = app(DgiiApiService::class);
+
+            // 1. Build RFCE XML
+            Log::info("[Certification] Building RFCE XML for {$encf}");
+            $rawXml = $this->buildRfceXml($testCase);
+
+            // 2. Sign the XML
+            $p12Path = storage_path('app/secure/' . ($settings['dgii_certificate_path'] ?? ''));
+            $p12Password = $settings['dgii_certificate_password'] ?? '';
+            $signedXml = $signatureService->signXml($rawXml, $p12Path, $p12Password);
+
+            // Save signed XML
+            $fileName = "certification_rfce/{$encf}_rfce.xml";
+            Storage::put($fileName, $signedXml);
+
+            // 3. Submit to fc.dgii.gov.do (RFCE endpoint)
+            $token = $authService->getValidToken($settings);
+            $env = $settings['dgii_env'] ?? 'testing';
+
+            Log::info("[Certification] Submitting RFCE {$encf} to fc.dgii.gov.do");
+            $result = $apiService->submitInvoice($signedXml, $token, $env, true);
+
+            Log::info("[Certification] RFCE Result for {$encf}: " . json_encode($result));
+
+            return [
+                'encf' => $encf . ' (RFCE)',
+                'tipo' => '32-RFCE',
+                'success' => $result['success'],
+                'status' => $result['status'] ?? null,
+                'track_id' => $result['track_id'] ?? null,
+                'errors' => $result['errors'] ?? null,
+                'xml_path' => $fileName,
+                'format' => 'RFCE',
+            ];
+
+        } catch (\Exception $e) {
+            Log::error("[Certification] RFCE Error for {$encf}: " . $e->getMessage());
+            return [
+                'encf' => $encf . ' (RFCE)',
+                'tipo' => '32-RFCE',
+                'success' => false,
+                'status' => 'error',
+                'track_id' => null,
+                'errors' => $e->getMessage(),
+                'xml_path' => null,
+                'format' => 'RFCE',
+            ];
+        }
+    }
+
+    /**
+     * Build RFCE XML from test case data.
+     * RFCE is a simpler format: <RFCE> with Encabezado only (no DetallesItems).
+     */
+    private function buildRfceXml(array $tc): string
+    {
+        $v = function (string $key) use ($tc): ?string {
+            $val = $tc[$key] ?? null;
+            if ($val === null || $val === '#e') return null;
+            return (string)$val;
+        };
+
+        $fmt = function ($val): string {
+            return number_format((float)$val, 2, '.', '');
+        };
+
+        $dom = new \DOMDocument('1.0', 'UTF-8');
+        $dom->formatOutput = true;
+
+        $rfce = $dom->createElement('RFCE');
+        $dom->appendChild($rfce);
+
+        $enc = $dom->createElement('Encabezado');
+        $rfce->appendChild($enc);
+
+        $enc->appendChild($dom->createElement('Version', '1.0'));
+
+        // IdDoc
+        $idDoc = $dom->createElement('IdDoc');
+        $enc->appendChild($idDoc);
+        $idDoc->appendChild($dom->createElement('TipoeCF', $v('TipoeCF')));
+        $idDoc->appendChild($dom->createElement('eNCF', $v('ENCF')));
+
+        $tipoIng = $v('TipoIngresos');
+        if ($tipoIng !== null) $idDoc->appendChild($dom->createElement('TipoIngresos', str_pad($tipoIng, 2, '0', STR_PAD_LEFT)));
+
+        $tipoPago = $v('TipoPago');
+        if ($tipoPago !== null) $idDoc->appendChild($dom->createElement('TipoPago', $tipoPago));
+
+        // TablaFormasPago
+        $formas = [];
+        for ($i = 1; $i <= 7; $i++) {
+            $fp = $v("FormaPago[$i]");
+            $mp = $v("MontoPago[$i]");
+            if ($fp === null && $mp === null) continue;
+            $forma = $dom->createElement('FormaDePago');
+            if ($fp !== null) $forma->appendChild($dom->createElement('FormaPago', $fp));
+            if ($mp !== null) $forma->appendChild($dom->createElement('MontoPago', $fmt($mp)));
+            $formas[] = $forma;
+        }
+        if (!empty($formas)) {
+            $tabla = $dom->createElement('TablaFormasPago');
+            foreach ($formas as $f) $tabla->appendChild($f);
+            $idDoc->appendChild($tabla);
+        }
+
+        // Emisor
+        $emisor = $dom->createElement('Emisor');
+        $enc->appendChild($emisor);
+        $emisor->appendChild($dom->createElement('RNCEmisor', $v('RNCEmisor')));
+        $emisor->appendChild($dom->createElement('RazonSocialEmisor', htmlspecialchars($v('RazonSocialEmisor'), ENT_XML1 | ENT_QUOTES, 'UTF-8')));
+        $emisor->appendChild($dom->createElement('FechaEmision', $v('FechaEmision')));
+
+        // Comprador
+        $comp = $dom->createElement('Comprador');
+        $enc->appendChild($comp);
+
+        $rncComp = $v('RNCComprador');
+        $idExt = $v('IdentificadorExtranjero');
+        if ($rncComp !== null) {
+            $comp->appendChild($dom->createElement('RNCComprador', $rncComp));
+        } elseif ($idExt !== null) {
+            $comp->appendChild($dom->createElement('IdentificadorExtranjero', $idExt));
+        }
+        $comp->appendChild($dom->createElement('RazonSocialComprador', htmlspecialchars($v('RazonSocialComprador'), ENT_XML1 | ENT_QUOTES, 'UTF-8')));
+
+        // Totales
+        $totales = $dom->createElement('Totales');
+        $enc->appendChild($totales);
+
+        $moneyFields = [
+            'MontoGravadoTotal', 'MontoGravadoI1', 'MontoGravadoI2', 'MontoGravadoI3',
+            'MontoExento', 'TotalITBIS', 'TotalITBIS1', 'TotalITBIS2', 'TotalITBIS3',
+            'MontoImpuestoAdicional',
+        ];
+        foreach ($moneyFields as $f) {
+            $val = $v($f);
+            if ($val !== null) $totales->appendChild($dom->createElement($f, $fmt($val)));
+        }
+
+        // ImpuestosAdicionales
+        $impItems = [];
+        for ($i = 1; $i <= 4; $i++) {
+            $tipo = $v("TipoImpuesto[$i]");
+            if ($tipo === null) continue;
+            $imp = $dom->createElement('ImpuestoAdicional');
+            $imp->appendChild($dom->createElement('TipoImpuesto', $tipo));
+            $especifico = $v("MontoImpuestoSelectivoConsumoEspecifico[$i]");
+            if ($especifico !== null) $imp->appendChild($dom->createElement('MontoImpuestoSelectivoConsumoEspecifico', $fmt($especifico)));
+            $advalorem = $v("MontoImpuestoSelectivoConsumoAdvalorem[$i]");
+            if ($advalorem !== null) $imp->appendChild($dom->createElement('MontoImpuestoSelectivoConsumoAdvalorem', $fmt($advalorem)));
+            $otros = $v("OtrosImpuestosAdicionales[$i]");
+            if ($otros !== null) $imp->appendChild($dom->createElement('OtrosImpuestosAdicionales', $fmt($otros)));
+            $impItems[] = $imp;
+        }
+        if (!empty($impItems)) {
+            $impWrapper = $dom->createElement('ImpuestosAdicionales');
+            foreach ($impItems as $imp) $impWrapper->appendChild($imp);
+            $totales->appendChild($impWrapper);
+        }
+
+        $montoTotal = $v('MontoTotal');
+        if ($montoTotal !== null) $totales->appendChild($dom->createElement('MontoTotal', $fmt($montoTotal)));
+
+        $montoNF = $v('MontoNoFacturable');
+        if ($montoNF !== null) $totales->appendChild($dom->createElement('MontoNoFacturable', $fmt($montoNF)));
+
+        $montoPeriodo = $v('MontoPeriodo');
+        if ($montoPeriodo !== null) $totales->appendChild($dom->createElement('MontoPeriodo', $fmt($montoPeriodo)));
+
+        // FechaHoraFirma
+        $rfce->appendChild($dom->createElement('FechaHoraFirma', date('d-m-Y H:i:s')));
+
+        return $dom->saveXML();
+    }
+
+    // ─── Data Loaders ─────────────────────────────────
+
+    private function loadEcfTestCases(): array
     {
         $path = base_path('dgii_test_ecf.json');
         if (!file_exists($path)) {
@@ -195,23 +469,31 @@ class CertificationController extends Controller
         // CRITICAL: Preserve exact numeric formatting from JSON.
         // json_decode converts 900.0000 → 900.0 (float) → "900" (string).
         // DGII requires EXACT decimal formatting from their test data.
-        // Solution: Quote all unquoted numeric values before decoding.
-        $raw = preg_replace('/:\s*(-?\d+\.?\d*)\s*([,}\]])/', ': "$1"$2', $raw);
+        $raw = preg_replace('/:\s*(-?\d+(?:\.\d+)?)\s*([,}\]])/', ': "$1"$2', $raw);
 
         $data = json_decode($raw, true);
         if (json_last_error() !== JSON_ERROR_NONE) {
-            throw new \RuntimeException("Invalid JSON in test cases: " . json_last_error_msg());
+            throw new \RuntimeException("Invalid JSON in ECF test cases: " . json_last_error_msg());
         }
 
-        // Sort: base types first (31,32,41,43,44,45,46,47), then 33/34 last
-        // Types 33/34 reference other eNCFs which must exist first
-        usort($data, function ($a, $b) {
-            $aIsNote = in_array($a['TipoeCF'], ['33', '34', 33, 34]);
-            $bIsNote = in_array($b['TipoeCF'], ['33', '34', 33, 34]);
-            if ($aIsNote && !$bIsNote) return 1;
-            if (!$aIsNote && $bIsNote) return -1;
-            return 0;
-        });
+        return $data;
+    }
+
+    private function loadRfceTestCases(): array
+    {
+        $path = base_path('dgii_test_rfce.json');
+        if (!file_exists($path)) {
+            Log::warning("[Certification] RFCE test data not found: dgii_test_rfce.json");
+            return [];
+        }
+
+        $raw = file_get_contents($path);
+        $raw = preg_replace('/:\s*(-?\d+(?:\.\d+)?)\s*([,}\]])/', ': "$1"$2', $raw);
+
+        $data = json_decode($raw, true);
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            throw new \RuntimeException("Invalid JSON in RFCE test cases: " . json_last_error_msg());
+        }
 
         return $data;
     }

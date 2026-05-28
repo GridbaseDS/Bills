@@ -661,7 +661,7 @@ export default {
                     if (tab.dataset.tab === 'apikeys' && !apiKeysLoaded) {
                         apiKeysLoaded = true;
                         try {
-                            const mod = await import('./api-keys.js');
+                            const mod = await import('./api-keys.js?v=58');
                             mod.default.render(document.getElementById('api-keys-container'));
                         } catch (e) {
                             document.getElementById('api-keys-container').innerHTML = '<div class="text-red">Error al cargar módulo de API Keys</div>';

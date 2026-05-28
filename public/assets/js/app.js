@@ -95,6 +95,7 @@ window.App = {
                 if (settings.company_logo) localStorage.setItem('company_logo', settings.company_logo);
                 if (settings.company_favicon) localStorage.setItem('company_favicon', settings.company_favicon);
                 this.updateFavicon();
+                this.updateTitle();
                 
                 if (settings.is_installed !== '1') {
                     this.renderSetupWizard();
@@ -130,6 +131,7 @@ window.App = {
                 if (settings.company_logo) localStorage.setItem('company_logo', settings.company_logo);
                 if (settings.company_favicon) localStorage.setItem('company_favicon', settings.company_favicon);
                 this.updateFavicon();
+                this.updateTitle();
                 
                 if (settings.is_installed !== '1') {
                     this.renderSetupWizard();
@@ -172,6 +174,11 @@ window.App = {
                 appleLink.href = faviconUrl;
             }
         }
+    },
+
+    updateTitle() {
+        const name = this.state.settings?.company_name;
+        document.title = name ? `${name} - Bills` : 'Bills';
     },
 
     async logout(callApi = true) {

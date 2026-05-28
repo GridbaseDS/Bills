@@ -27,7 +27,8 @@
 <body>
     <div id="app"></div>
     <div class="toast-container" id="toast-container"></div>
-    <script type="module" src="/assets/js/app.js?v=52"></script>
+    <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+    <script type="module" src="/assets/js/app.js?v=53"></script>
     <script>
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {

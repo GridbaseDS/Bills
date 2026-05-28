@@ -3,19 +3,20 @@
  * Main Frontend Application Logic — Gridbase Design Kit v3
  */
 
-import DashboardModule from './modules/dashboard.js?v=53';
-import InvoicesModule from './modules/invoices.js?v=53';
-import QuotesModule from './modules/quotes.js?v=53';
-import ClientsModule from './modules/clients.js?v=53';
-import ItemsModule from './modules/items.js?v=53';
-import SettingsModule from './modules/settings.js?v=53';
-import RecurringModule from './modules/recurring.js?v=53';
-import DgiiTestsModule from './modules/dgii-tests.js?v=53';
-import ReceivedInvoicesModule from './modules/received-invoices.js?v=53';
-import ReportsModule from './modules/reports.js?v=53';
-import SetupModule from './modules/setup.js?v=53';
-import ExpensesModule from './modules/expenses.js?v=53';
-import UsersModule from './modules/users.js?v=53';
+import DashboardModule from './modules/dashboard.js?v=54';
+import InvoicesModule from './modules/invoices.js?v=54';
+import QuotesModule from './modules/quotes.js?v=54';
+import ClientsModule from './modules/clients.js?v=54';
+import ItemsModule from './modules/items.js?v=54';
+import SettingsModule from './modules/settings.js?v=54';
+import RecurringModule from './modules/recurring.js?v=54';
+import DgiiTestsModule from './modules/dgii-tests.js?v=54';
+import ReceivedInvoicesModule from './modules/received-invoices.js?v=54';
+import ReportsModule from './modules/reports.js?v=54';
+import SetupModule from './modules/setup.js?v=54';
+import ExpensesModule from './modules/expenses.js?v=54';
+import UsersModule from './modules/users.js?v=54';
+
 
 
 

@@ -6,6 +6,32 @@ const DashboardModule = {
             const recent = data.recent_invoices || [];
             const overdue = data.overdue_invoices || [];
 
+            // Calculate monthly trend dynamically
+            const monthlyData = data.monthly_data || [];
+            const currentMonthData = monthlyData[monthlyData.length - 1] || { revenue: 0, expense: 0 };
+            const prevMonthData = monthlyData[monthlyData.length - 2] || { revenue: 0, expense: 0 };
+            let trendPct = 0;
+            let isTrendUp = true;
+            if (prevMonthData.revenue > 0) {
+                const diff = currentMonthData.revenue - prevMonthData.revenue;
+                trendPct = Math.round((diff / prevMonthData.revenue) * 100);
+                isTrendUp = diff >= 0;
+            } else if (currentMonthData.revenue > 0) {
+                trendPct = 100;
+                isTrendUp = true;
+            }
+
+            const trendBadge = trendPct !== 0 ? `
+                <div style="display:flex; align-items:center; gap:4px; padding:4px 8px; border-radius:6px; font-weight:600; font-size:13px; color:${isTrendUp ? '#10B981' : '#EF4444'}; background:${isTrendUp ? 'rgba(16,185,129,0.1)' : 'rgba(239,68,68,0.1)'};">
+                    <svg style="width:14px; height:14px;" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                        ${isTrendUp 
+                            ? '<path stroke-linecap="round" stroke-linejoin="round" d="M12 19V5m0 0 4 4m-4-4-4 4"/>' 
+                            : '<path stroke-linecap="round" stroke-linejoin="round" d="M12 5v14m0 0 4-4m-4 4-4-4"/>'}
+                    </svg>
+                    <span>${Math.abs(trendPct)}%</span>
+                </div>
+            ` : '';
+
             container.innerHTML = `
                 <div class="page-header">
                     <div>

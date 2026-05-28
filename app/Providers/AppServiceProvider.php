@@ -41,20 +41,29 @@ class AppServiceProvider extends ServiceProvider
             $host = $_SERVER['HTTP_HOST'];
             $suffix = 'bills.gridbase.com.do';
             
-            // If host is a subdomain of bills.gridbase.com.do (e.g. empresa1.bills.gridbase.com.do)
+            $subdomain = null;
+            
+            // Format 1: tenant.bills.gridbase.com.do
             if (str_ends_with($host, '.' . $suffix)) {
                 $subdomain = substr($host, 0, -strlen('.' . $suffix));
-                
-                if (!empty($subdomain) && preg_match('/^[a-z0-9\-]+$/i', $subdomain)) {
-                    $dbName = 'grupaqgl_' . strtolower($subdomain);
-                    
-                    // Switch the active database name in the configuration
-                    config(['database.connections.mysql.database' => $dbName]);
-                    
-                    // Purge and reconnect to apply changes instantly
-                    DB::purge('mysql');
-                    DB::reconnect('mysql');
+            }
+            // Format 2: bills.tenant.domain (e.g. bills.ejesalud.com.do)
+            elseif (str_starts_with($host, 'bills.')) {
+                $parts = explode('.', $host);
+                if (count($parts) >= 3 && $parts[1] !== 'gridbase') {
+                    $subdomain = $parts[1];
                 }
+            }
+            
+            if (!empty($subdomain) && preg_match('/^[a-z0-9\-]+$/i', $subdomain)) {
+                $dbName = 'grupaqgl_' . strtolower($subdomain);
+                
+                // Switch the active database name in the configuration
+                config(['database.connections.mysql.database' => $dbName]);
+                
+                // Purge and reconnect to apply changes instantly
+                DB::purge('mysql');
+                DB::reconnect('mysql');
             }
         }
     }

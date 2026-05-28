@@ -32,17 +32,71 @@ const DashboardModule = {
                 </div>
             ` : '';
 
+            const firstName = (App.state?.user?.name || 'Usuario').split(' ')[0];
+
             container.innerHTML = `
+                <style>
+                    /* Premium Custom Styling & Dynamic Transitions for Tenant Dashboard */
+                    .dashboard-card-hover {
+                        transition: transform 0.22s cubic-bezier(0.4, 0, 0.2, 1), 
+                                    box-shadow 0.22s cubic-bezier(0.4, 0, 0.2, 1), 
+                                    border-color 0.22s cubic-bezier(0.4, 0, 0.2, 1) !important;
+                    }
+                    .dashboard-card-hover:hover {
+                        transform: translateY(-4px);
+                        box-shadow: 0 12px 20px -8px rgba(0, 0, 0, 0.08), 0 4px 12px -2px rgba(0, 0, 0, 0.03) !important;
+                        border-color: rgba(17, 24, 39, 0.12) !important;
+                    }
+                    [data-theme="dark"] .dashboard-card-hover:hover {
+                        border-color: rgba(255, 255, 255, 0.15) !important;
+                        box-shadow: 0 12px 24px -10px rgba(0, 0, 0, 0.5), 0 4px 12px -2px rgba(0, 0, 0, 0.3) !important;
+                    }
+                    
+                    /* Accentuated visual response on hover for metric icons */
+                    .metric-card .metric-card-icon {
+                        transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
+                    }
+                    .metric-card:hover .metric-card-icon {
+                        transform: scale(1.12) rotate(6deg);
+                    }
+                    
+                    /* Red pulse dot for overdue invoices indicator */
+                    .pulse-dot {
+                        width: 8px;
+                        height: 8px;
+                        border-radius: 50%;
+                        background-color: #EF4444;
+                        display: inline-block;
+                        margin-right: 8px;
+                        box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7);
+                        animation: pulse-red 2s infinite;
+                    }
+                    @keyframes pulse-red {
+                        0% {
+                            transform: scale(0.95);
+                            box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7);
+                        }
+                        70% {
+                            transform: scale(1);
+                            box-shadow: 0 0 0 6px rgba(239, 68, 68, 0);
+                        }
+                        100% {
+                            transform: scale(0.95);
+                            box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);
+                        }
+                    }
+                </style>
+
                 <div class="page-header">
                     <div>
-                        <h1 class="page-title">Dashboard</h1>
+                        <h1 class="page-title">Hola, ${firstName}</h1>
                         <p class="page-subtitle">Resumen general de tu negocio</p>
                     </div>
                 </div>
 
                 <!-- Metric Cards -->
                 <div class="grid-metrics">
-                    <div class="metric-card">
+                    <div class="metric-card dashboard-card-hover">
                         <div class="metric-body">
                             <span class="metric-value">${App.formatCurrency(stats.revenue_this_month || 0)}</span>
                         </div>
@@ -51,7 +105,7 @@ const DashboardModule = {
                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
                         </div>
                     </div>
-                    <div class="metric-card">
+                    <div class="metric-card dashboard-card-hover">
                         <div class="metric-body">
                             <span class="metric-value">${stats.invoiced_this_month || 0}</span>
                         </div>
@@ -60,7 +114,7 @@ const DashboardModule = {
                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
                         </div>
                     </div>
-                    <div class="metric-card">
+                    <div class="metric-card dashboard-card-hover">
                         <div class="metric-body">
                             <span class="metric-value">${App.formatCurrency(stats.pending_amount || 0)}</span>
                         </div>
@@ -69,7 +123,7 @@ const DashboardModule = {
                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
                         </div>
                     </div>
-                    <div class="metric-card">
+                    <div class="metric-card dashboard-card-hover">
                         <div class="metric-body">
                             <span class="metric-value">${stats.overdue_count || 0}</span>
                             ${stats.overdue_count > 0 ? '<span class="metric-trend down">Vencidas</span>' : '<span class="metric-trend up">Al día</span>'}
@@ -82,7 +136,7 @@ const DashboardModule = {
                 </div>
 
                 <!-- Monthly Revenue Chart Section -->
-                <div class="table-outer" style="margin-top:24px; padding: 24px;">
+                <div class="table-outer dashboard-card-hover" style="margin-top:24px; padding: 24px;">
                     <div style="display:flex; justify-content:space-between; align-items:start; margin-bottom: 16px;">
                         <div>
                             <span style="font-size:12px; color:var(--color-text-muted); display:block; text-transform:uppercase; font-weight:600; letter-spacing:0.05em; margin-bottom:4px;">Análisis de Facturación</span>
@@ -105,10 +159,10 @@ const DashboardModule = {
                 </div>
 
                 <!-- Recent and Overdue Grid -->
-                <div class="grid-2-1" style="margin-top:24px;">
+                <div class="dashboard-grid" style="margin-top:24px;">
                     <!-- Left Column: Recent Invoices -->
                     <div>
-                        <div class="table-outer">
+                        <div class="table-outer dashboard-card-hover">
                             <div class="table-toolbar">
                                 <span style="font-size:14px;font-weight:600;">Facturas Recientes</span>
                                 <a href="#facturas" class="btn btn-ghost btn-sm btn-view-all">Ver todas <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="btn-arrow-icon"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg></a>
@@ -160,9 +214,12 @@ const DashboardModule = {
 
                     <!-- Right Column: Overdue -->
                     <div>
-                        <div class="table-outer">
+                        <div class="table-outer dashboard-card-hover">
                             <div class="table-toolbar">
-                                <span style="font-size:14px;font-weight:600;">Vencidas</span>
+                                <div style="display:flex;align-items:center;">
+                                    ${overdue.length > 0 ? '<span class="pulse-dot"></span>' : ''}
+                                    <span style="font-size:14px;font-weight:600;">Vencidas</span>
+                                </div>
                                 <span class="badge badge-overdue">${overdue.length}</span>
                             </div>
                             <div style="padding: 0;">

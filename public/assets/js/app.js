@@ -3,7 +3,7 @@
  * Main Frontend Application Logic — Gridbase Design Kit v3
  */
 
-import DashboardModule from './modules/dashboard.js?v=54';
+import DashboardModule from './modules/dashboard.js?v=55';
 import InvoicesModule from './modules/invoices.js?v=54';
 import QuotesModule from './modules/quotes.js?v=54';
 import ClientsModule from './modules/clients.js?v=54';
@@ -257,6 +257,18 @@ window.App = {
             const subParts = route.split('/');
             const subView = subParts[0];
             const subId = subParts.length > 1 ? subParts.slice(1).join('/') : undefined;
+
+            // Dynamically flatten workspace-panel styles for dashboard view to prevent card nesting
+            const isDashboard = subView === 'inicio' || subView === 'dashboard';
+            if (isDashboard) {
+                appContent.style.background = 'transparent';
+                appContent.style.border = 'none';
+                appContent.style.boxShadow = 'none';
+                appContent.style.padding = '0';
+            } else {
+                appContent.removeAttribute('style');
+            }
+
             switch (subView) {
                 case 'inicio': case 'dashboard': DashboardModule.render(appContent); break;
                 case 'facturas': case 'invoices': InvoicesModule.render(appContent, subId); break;
@@ -506,7 +518,7 @@ window.App = {
                                 <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
                             </button>
                             <div id="greeting-text" style="font-size:14px;font-weight:600;color:var(--color-text);white-space:nowrap;">
-                                ${this.getGreeting()}, <span style="color:var(--color-primary)">${this.state.user.name.split(' ')[0]}</span> 👋
+                                ${this.getGreeting()}, <span style="color:var(--color-primary)">${this.state.user.name.split(' ')[0]}</span>
                             </div>
                             <div class="search-wrapper" id="search-wrapper">
                                 <svg class="search-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>

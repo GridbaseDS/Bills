@@ -60,11 +60,28 @@ const DashboardModule = {
                     <div>
                         <!-- Revenue Chart -->
                         <div class="table-outer" style="margin-bottom: var(--spacing-xl);">
-                            <div class="table-toolbar">
-                                <span style="font-size:14px;font-weight:600;">Facturación Mensual</span>
+                            <div class="table-toolbar" style="display: flex; align-items: center; justify-content: space-between; padding: 16px 24px; border-bottom: 1px solid var(--color-border);">
+                                <div>
+                                    <span style="font-size:15px; font-weight:700; color:var(--color-text-primary);">Análisis de Facturación</span>
+                                    <div style="display: flex; align-items: center; gap: 16px; margin-top: 6px;">
+                                        <span style="display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--color-text-secondary); font-weight: 500;">
+                                            <span style="width: 8px; height: 8px; border-radius: 50%; background: #10B981; display: inline-block;"></span>
+                                            Ingresos
+                                        </span>
+                                        <span style="display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--color-text-secondary); font-weight: 500;">
+                                            <span style="width: 8px; height: 8px; border-radius: 50%; background: #3B82F6; display: inline-block;"></span>
+                                            Gastos
+                                        </span>
+                                    </div>
+                                </div>
+                                <div style="display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border: 1px solid var(--color-border); border-radius: 8px; background: var(--bg-surface); font-size: 12px; font-weight: 600; color: var(--color-text-primary); cursor: pointer; box-shadow: var(--shadow-sm);">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--color-text-muted);"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                                    Este Año
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="color:var(--color-text-muted); margin-left: 2px;"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                                </div>
                             </div>
                             <div style="padding: var(--spacing-xl);">
-                                <canvas id="revenue-chart" width="700" height="260" style="width:100%;height:260px;"></canvas>
+                                <div id="revenue-chart-container" style="position:relative; width:100%; height:220px; user-select:none;"></div>
                             </div>
                         </div>
 
@@ -153,88 +170,237 @@ const DashboardModule = {
     },
 
     renderChart(months) {
-        const canvas = document.getElementById('revenue-chart');
-        if (!canvas || months.length === 0) return;
+        const container = document.getElementById('revenue-chart-container');
+        if (!container || months.length === 0) return;
 
-        const ctx = canvas.getContext('2d');
-        const W = canvas.width = canvas.offsetWidth * 2;
-        const H = canvas.height = 520;
-        ctx.scale(1, 1);
+        // Clear container
+        container.innerHTML = '';
 
-        const pad = { top: 24, right: 20, bottom: 50, left: 80 };
+        // Standard dimensions
+        const W = 700;
+        const H = 220;
+        const pad = { top: 15, right: 30, bottom: 30, left: 65 };
         const chartW = W - pad.left - pad.right;
         const chartH = H - pad.top - pad.bottom;
 
-        const maxVal = Math.max(...months.map(m => Math.max(m.invoiced, m.revenue)), 1000) * 1.15;
-        const barW = chartW / months.length;
+        // Max value for scaling
+        const maxVal = Math.max(...months.map(m => Math.max(m.revenue, m.expense)), 100) * 1.15;
 
-        // Dynamic Computed Styles
-        const style = getComputedStyle(document.documentElement);
-        const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
-        const gridColor = style.getPropertyValue('--color-border').trim() || '#E5E7EB';
-        const textColor = style.getPropertyValue('--color-text-muted').trim() || '#9CA3AF';
-        const primaryColor = style.getPropertyValue('--color-text-primary').trim() || '#111827';
-
-        // Grid lines
-        ctx.strokeStyle = gridColor;
-        ctx.lineWidth = 1;
-        for (let i = 0; i <= 4; i++) {
-            const y = pad.top + (chartH / 4) * i;
-            ctx.beginPath(); ctx.moveTo(pad.left, y); ctx.lineTo(W - pad.right, y); ctx.stroke();
-            ctx.fillStyle = textColor;
-            ctx.font = '11px Inter, sans-serif';
-            ctx.textAlign = 'right';
-            ctx.fillText(window.App.formatCurrency(maxVal - (maxVal / 4) * i, ''), pad.left - 10, y + 4);
-        }
-
+        // Compute coordinate points
+        const pointsRev = [];
+        const pointsExp = [];
         months.forEach((m, i) => {
-            const x = pad.left + i * barW + barW * 0.15;
-            const bw = barW * 0.3;
-
-            // Invoiced bar with linear gradient
-            const ih = (m.invoiced / maxVal) * chartH;
-            const yStartInv = pad.top + chartH - ih;
-            const yEndInv = pad.top + chartH;
-            const invGrad = ctx.createLinearGradient(0, yStartInv, 0, yEndInv);
-            invGrad.addColorStop(0, isDark ? 'rgba(255, 255, 255, 0.18)' : 'rgba(17, 24, 39, 0.12)');
-            invGrad.addColorStop(1, isDark ? 'rgba(255, 255, 255, 0.02)' : 'rgba(17, 24, 39, 0.02)');
-
-            ctx.fillStyle = invGrad;
-            ctx.beginPath();
-            ctx.roundRect(x, yStartInv, bw, ih, [4, 4, 0, 0]);
-            ctx.fill();
-
-            // Revenue bar with linear gradient
-            const rh = (m.revenue / maxVal) * chartH;
-            const yStartRev = pad.top + chartH - rh;
-            const yEndRev = pad.top + chartH;
-            const revGrad = ctx.createLinearGradient(0, yStartRev, 0, yEndRev);
-            revGrad.addColorStop(0, primaryColor);
-            revGrad.addColorStop(1, isDark ? 'rgba(255, 255, 255, 0.25)' : 'rgba(17, 24, 39, 0.3)');
-
-            ctx.fillStyle = revGrad;
-            ctx.beginPath();
-            ctx.roundRect(x + bw + 2, yStartRev, bw, rh, [4, 4, 0, 0]);
-            ctx.fill();
-
-            // X-axis label
-            ctx.fillStyle = textColor;
-            ctx.font = '11px Inter, sans-serif';
-            ctx.textAlign = 'center';
-            ctx.fillText(m.label, pad.left + i * barW + barW / 2, H - 12);
+            const x = pad.left + (i / (months.length - 1)) * chartW;
+            const yRev = pad.top + chartH - (m.revenue / maxVal) * chartH;
+            const yExp = pad.top + chartH - (m.expense / maxVal) * chartH;
+            pointsRev.push({ x, y: yRev, value: m.revenue, label: m.label, month: m.month });
+            pointsExp.push({ x, y: yExp, value: m.expense, label: m.label, month: m.month });
         });
 
-        // Legend matched to gradients
-        const legendY = H - 20;
-        ctx.fillStyle = isDark ? 'rgba(255, 255, 255, 0.18)' : 'rgba(17, 24, 39, 0.12)';
-        ctx.beginPath(); ctx.roundRect(pad.left, legendY, 12, 10, 2); ctx.fill();
-        ctx.fillStyle = textColor; ctx.font = '11px Inter, sans-serif'; ctx.textAlign = 'left';
-        ctx.fillText('Facturado', pad.left + 16, legendY + 9);
+        // Generate bezier path
+        const getBezierPath = (pts) => {
+            if (pts.length === 0) return '';
+            let d = `M ${pts[0].x} ${pts[0].y}`;
+            for (let i = 1; i < pts.length; i++) {
+                const p0 = pts[i - 1];
+                const p1 = pts[i];
+                const cp1x = p0.x + (p1.x - p0.x) * 0.35;
+                const cp1y = p0.y;
+                const cp2x = p1.x - (p1.x - p0.x) * 0.35;
+                const cp2y = p1.y;
+                d += ` C ${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${p1.x} ${p1.y}`;
+            }
+            return d;
+        };
 
-        ctx.fillStyle = primaryColor;
-        ctx.beginPath(); ctx.roundRect(pad.left + 90, legendY, 12, 10, 2); ctx.fill();
-        ctx.fillStyle = textColor;
-        ctx.fillText('Cobrado', pad.left + 106, legendY + 9);
+        const getAreaPath = (pts) => {
+            if (pts.length === 0) return '';
+            const bezier = getBezierPath(pts);
+            const bottomY = pad.top + chartH;
+            return `${bezier} L ${pts[pts.length - 1].x} ${bottomY} L ${pts[0].x} ${bottomY} Z`;
+        };
+
+        const pathRev = getBezierPath(pointsRev);
+        const areaRev = getAreaPath(pointsRev);
+        const pathExp = getBezierPath(pointsExp);
+        const areaExp = getAreaPath(pointsExp);
+
+        // Generate SVG elements
+        let svgHTML = `
+            <svg viewBox="0 0 ${W} ${H}" width="100%" height="100%" style="overflow: visible;">
+                <defs>
+                    <!-- Gradients for Area Fills -->
+                    <linearGradient id="grad-revenue" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stop-color="#10B981" stop-opacity="0.08"/>
+                        <stop offset="100%" stop-color="#10B981" stop-opacity="0.0"/>
+                    </linearGradient>
+                    <linearGradient id="grad-expense" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stop-color="#3B82F6" stop-opacity="0.08"/>
+                        <stop offset="100%" stop-color="#3B82F6" stop-opacity="0.0"/>
+                    </linearGradient>
+                </defs>
+
+                <!-- Grid Lines & Y-Axis Labels -->
+        `;
+
+        // Horizontal Grid Lines
+        for (let i = 0; i <= 4; i++) {
+            const y = pad.top + (chartH / 4) * i;
+            const gridVal = maxVal - (maxVal / 4) * i;
+            svgHTML += `
+                <line x1="${pad.left}" y1="${y}" x2="${W - pad.right}" y2="${y}" stroke="var(--color-border)" stroke-width="0.75" />
+                <text x="${pad.left - 12}" y="${y + 4}" fill="var(--color-text-muted)" font-family="Inter, sans-serif" font-size="10px" text-anchor="end" font-weight="500">
+                    ${App.formatCurrency(gridVal, '').replace(',00', '')}
+                </text>
+            `;
+        }
+
+        // Vertical Dotted Guide Lines for each Month
+        months.forEach((m, i) => {
+            const x = pad.left + (i / (months.length - 1)) * chartW;
+            svgHTML += `
+                <line x1="${x}" y1="${pad.top}" x2="${x}" y2="${pad.top + chartH}" stroke="var(--color-border)" stroke-width="0.75" stroke-dasharray="3,3" opacity="0.5" />
+                <text x="${x}" y="${H - 10}" fill="var(--color-text-muted)" font-family="Inter, sans-serif" font-size="10px" text-anchor="middle" font-weight="500">
+                    ${m.label}
+                </text>
+            `;
+        });
+
+        svgHTML += `
+                <!-- Fills under curves -->
+                <path d="${areaRev}" fill="url(#grad-revenue)" />
+                <path d="${areaExp}" fill="url(#grad-expense)" />
+
+                <!-- Main Smooth Curves -->
+                <path d="${pathRev}" fill="none" stroke="#10B981" stroke-width="2.5" stroke-linecap="round" />
+                <path d="${pathExp}" fill="none" stroke="#3B82F6" stroke-width="2.5" stroke-linecap="round" />
+
+                <!-- Dynamic Hover Guide Elements (Initially Hidden) -->
+                <line id="chart-hover-line" x1="0" y1="${pad.top}" x2="0" y2="${pad.top + chartH}" stroke="var(--color-text-muted)" stroke-width="1" stroke-dasharray="3,3" style="display:none;" />
+                <circle id="chart-hover-dot-rev" r="5.5" fill="#10B981" stroke="#FFFFFF" stroke-width="2" style="display:none; filter: drop-shadow(0 2px 4px rgba(16,185,129,0.3));" />
+                <circle id="chart-hover-dot-exp" r="5.5" fill="#3B82F6" stroke="#FFFFFF" stroke-width="2" style="display:none; filter: drop-shadow(0 2px 4px rgba(59,130,246,0.3));" />
+            </svg>
+        `;
+
+        // Render to container
+        container.innerHTML = svgHTML;
+
+        // Dynamic Interactive Tooltip element
+        const tooltip = document.createElement('div');
+        tooltip.style.position = 'absolute';
+        tooltip.style.display = 'none';
+        tooltip.style.background = '#1E293B';
+        tooltip.style.color = '#FFFFFF';
+        tooltip.style.padding = '10px 14px';
+        tooltip.style.borderRadius = '8px';
+        tooltip.style.fontFamily = "'Inter', sans-serif";
+        tooltip.style.fontSize = '12px';
+        tooltip.style.boxShadow = '0 4px 16px rgba(0,0,0,0.18)';
+        tooltip.style.pointerEvents = 'none';
+        tooltip.style.zIndex = '100';
+        tooltip.style.transform = 'translate(-50%, -100%)';
+        tooltip.style.marginTop = '-14px';
+        tooltip.style.transition = 'left 0.08s ease, top 0.08s ease';
+        container.appendChild(tooltip);
+
+        // Fetch element references for interaction
+        const hoverLine = document.getElementById('chart-hover-line');
+        const hoverDotRev = document.getElementById('chart-hover-dot-rev');
+        const hoverDotExp = document.getElementById('chart-hover-dot-exp');
+
+        // Mouse Move Interaction Handler
+        const handleInteraction = (e) => {
+            const rect = container.getBoundingClientRect();
+            // Get mouse position relative to container
+            let clientX = e.clientX;
+            if (e.touches && e.touches.length > 0) {
+                clientX = e.touches[0].clientX;
+            }
+            const mouseX = clientX - rect.left;
+            
+            // Map mouseX relative pixels to SVG viewBox W (700)
+            const svgX = (mouseX / rect.width) * W;
+
+            // Constrain search to active chart area
+            if (svgX < pad.left - 15 || svgX > W - pad.right + 15) {
+                hideHover();
+                return;
+            }
+
+            // Find closest index
+            let closestIdx = 0;
+            let minDist = Infinity;
+            pointsRev.forEach((p, idx) => {
+                const dist = Math.abs(p.x - svgX);
+                if (dist < minDist) {
+                    minDist = dist;
+                    closestIdx = idx;
+                }
+            });
+
+            const pRev = pointsRev[closestIdx];
+            const pExp = pointsExp[closestIdx];
+
+            // Update interactive elements position
+            hoverLine.setAttribute('x1', pRev.x);
+            hoverLine.setAttribute('x2', pRev.x);
+            hoverLine.style.display = 'block';
+
+            hoverDotRev.setAttribute('cx', pRev.x);
+            hoverDotRev.setAttribute('cy', pRev.y);
+            hoverDotRev.style.display = 'block';
+
+            hoverDotExp.setAttribute('cx', pExp.x);
+            hoverDotExp.setAttribute('cy', pExp.y);
+            hoverDotExp.style.display = 'block';
+
+            // Show and position tooltip
+            tooltip.style.display = 'block';
+            
+            // Map svg coords back to CSS client pixels
+            const cssX = (pRev.x / W) * rect.width;
+            
+            // Use the higher point vertically for tooltip placement
+            const targetY = Math.min(pRev.y, pExp.y);
+            const cssY = (targetY / H) * rect.height;
+
+            tooltip.style.left = `${cssX}px`;
+            tooltip.style.top = `${cssY}px`;
+
+            // Dynamic interactive tooltip content
+            tooltip.innerHTML = `
+                <div style="font-weight:700; font-size:10px; text-transform:uppercase; letter-spacing:0.06em; color:#9CA3AF; margin-bottom:6px;">${pRev.month}</div>
+                <div style="display:flex; flex-direction:column; gap:4px;">
+                    <div style="display:flex; align-items:center; justify-content:space-between; gap:20px;">
+                        <span style="color:#10B981; font-weight:600; display:inline-flex; align-items:center; gap:5px; font-size:11px;">
+                            <span style="width:6px; height:6px; border-radius:50%; background:#10B981; display:inline-block;"></span>
+                            Ingresos:
+                        </span>
+                        <span style="font-weight:700; font-size:11px;">${App.formatCurrency(pRev.value)}</span>
+                    </div>
+                    <div style="display:flex; align-items:center; justify-content:space-between; gap:20px;">
+                        <span style="color:#3B82F6; font-weight:600; display:inline-flex; align-items:center; gap:5px; font-size:11px;">
+                            <span style="width:6px; height:6px; border-radius:50%; background:#3B82F6; display:inline-block;"></span>
+                            Gastos:
+                        </span>
+                        <span style="font-weight:700; font-size:11px;">${App.formatCurrency(pExp.value)}</span>
+                    </div>
+                </div>
+            `;
+        };
+
+        const hideHover = () => {
+            if (hoverLine) hoverLine.style.display = 'none';
+            if (hoverDotRev) hoverDotRev.style.display = 'none';
+            if (hoverDotExp) hoverDotExp.style.display = 'none';
+            if (tooltip) tooltip.style.display = 'none';
+        };
+
+        container.addEventListener('mousemove', handleInteraction);
+        container.addEventListener('touchstart', handleInteraction, { passive: true });
+        container.addEventListener('touchmove', handleInteraction, { passive: true });
+        container.addEventListener('mouseleave', hideHover);
+        container.addEventListener('touchend', hideHover);
     }
 };
 

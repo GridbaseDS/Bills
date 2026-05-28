@@ -40,18 +40,26 @@ class DashboardController extends Controller
         $conversionRate = $totalQuotes > 0 ? round(($quotesConverted / $totalQuotes) * 100) : 0;
         $quotesPending = Quote::whereIn('status', ['draft', 'sent'])->sum('total');
 
-        // Monthly revenue chart (last 6 months)
-        $monthlyRevenue = [];
-        for ($i = 5; $i >= 0; $i--) {
+        // Monthly stats chart (last 12 months)
+        $monthlyData = [];
+        for ($i = 11; $i >= 0; $i--) {
             $month = $now->copy()->subMonths($i);
             $monthStart = $month->copy()->startOfMonth();
             $monthEnd = $month->copy()->endOfMonth();
-            $monthlyRevenue[] = [
-                'month' => $month->translatedFormat('M Y'),
-                'label' => $month->format('M'),
-                'revenue' => (float) Invoice::whereIn('status', ['paid', 'partial'])
-                    ->whereBetween('paid_at', [$monthStart, $monthEnd])->sum('amount_paid'),
-                'invoiced' => (float) Invoice::whereBetween('created_at', [$monthStart, $monthEnd])->sum('total'),
+            
+            $revenue = (float) Invoice::whereIn('status', ['paid', 'partial'])
+                ->whereBetween('paid_at', [$monthStart, $monthEnd])->sum('amount_paid');
+                
+            $expense = (float) \App\Models\Expense::whereBetween('expense_date', [$monthStart, $monthEnd])->sum('total');
+
+            $label = ucfirst($month->translatedFormat('M'));
+            $label = rtrim($label, '.');
+
+            $monthlyData[] = [
+                'month' => ucfirst($month->translatedFormat('F Y')),
+                'label' => $label,
+                'revenue' => $revenue,
+                'expense' => $expense,
             ];
         }
 
@@ -94,7 +102,8 @@ class DashboardController extends Controller
                 'conversion_rate' => $conversionRate,
                 'quotes_pending' => $quotesPending,
             ],
-            'monthly_revenue' => $monthlyRevenue,
+            'monthly_data' => $monthlyData,
+            'monthly_revenue' => $monthlyData,
             'recent_invoices' => $recentInvoices,
             'overdue_invoices' => $overdueInvoices,
         ]);

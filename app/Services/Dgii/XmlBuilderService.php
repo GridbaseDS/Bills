@@ -28,9 +28,14 @@ class XmlBuilderService
 
         // 1. Emitter details
         $rncEmisor = preg_replace('/[^0-9]/', '', $settings['company_tax_id'] ?? '');
-        $razonSocialEmisor = trim($settings['company_name'] ?? 'GridBase');
+        $razonSocialEmisor = trim($settings['dgii_razon_social'] ?? '') ?: trim($settings['company_name'] ?? 'GridBase');
+        $nombreComercial = trim($settings['dgii_nombre_comercial'] ?? '');
         $direccionEmisor = trim($settings['company_address'] ?? 'Santo Domingo, Rep. Dom.');
+        $municipioEmisor = trim($settings['dgii_municipio'] ?? '');
+        $provinciaEmisor = trim($settings['dgii_provincia'] ?? '');
+        $telefonoEmisor = trim($settings['company_phone'] ?? '');
         $correoEmisor = trim($settings['company_email'] ?? '');
+        $webSiteEmisor = trim($settings['company_website'] ?? '');
 
         if (empty($rncEmisor)) {
             throw new Exception("El RNC del Emisor es obligatorio en los Ajustes del sistema.");
@@ -139,14 +144,34 @@ class XmlBuilderService
         $emisor->appendChild($dom->createElement('RNCEmisor', $rncEmisor));
         $emisor->appendChild($dom->createElement('RazonSocialEmisor', htmlspecialchars($razonSocialEmisor, ENT_XML1)));
         
+        if (!empty($nombreComercial)) {
+            $emisor->appendChild($dom->createElement('NombreComercial', htmlspecialchars(substr($nombreComercial, 0, 150), ENT_XML1)));
+        }
+
         if (!empty($direccionEmisor)) {
             $emisor->appendChild($dom->createElement('DireccionEmisor', htmlspecialchars(substr($direccionEmisor, 0, 100), ENT_XML1)));
         } else {
             $emisor->appendChild($dom->createElement('DireccionEmisor', 'Santo Domingo'));
         }
 
+        if (!empty($municipioEmisor)) {
+            $emisor->appendChild($dom->createElement('Municipio', $municipioEmisor));
+        }
+
+        if (!empty($provinciaEmisor)) {
+            $emisor->appendChild($dom->createElement('Provincia', $provinciaEmisor));
+        }
+
+        if (!empty($telefonoEmisor)) {
+            $emisor->appendChild($dom->createElement('TelefonoEmisor', htmlspecialchars(substr($telefonoEmisor, 0, 12), ENT_XML1)));
+        }
+
         if (!empty($correoEmisor)) {
             $emisor->appendChild($dom->createElement('CorreoEmisor', htmlspecialchars($correoEmisor, ENT_XML1)));
+        }
+
+        if (!empty($webSiteEmisor)) {
+            $emisor->appendChild($dom->createElement('WebSite', htmlspecialchars(substr($webSiteEmisor, 0, 50), ENT_XML1)));
         }
 
         $emisor->appendChild($dom->createElement('FechaEmision', $invoice->issue_date->format('d-m-Y')));
@@ -342,7 +367,7 @@ class XmlBuilderService
         $invoice->load(['client', 'items']);
 
         $rncEmisor = preg_replace('/[^0-9]/', '', $settings['company_tax_id'] ?? '');
-        $razonSocialEmisor = trim($settings['company_name'] ?? 'GridBase');
+        $razonSocialEmisor = trim($settings['dgii_razon_social'] ?? '') ?: trim($settings['company_name'] ?? 'GridBase');
         $client = $invoice->client;
         $rncComprador = preg_replace('/[^0-9]/', '', $client->tax_id ?? '');
         $razonSocialComprador = trim($client->company_name ?: $client->contact_name);

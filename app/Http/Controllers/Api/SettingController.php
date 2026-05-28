@@ -189,5 +189,55 @@ class SettingController extends Controller
             ], 500);
         }
     }
+
+    public function uploadCertificate(Request $request)
+    {
+        $request->validate([
+            'certificate' => 'required|file|max:5120', // max 5MB
+        ]);
+
+        $file = $request->file('certificate');
+        $ext = strtolower($file->getClientOriginalExtension());
+
+        if (!in_array($ext, ['p12', 'pfx'])) {
+            return response()->json([
+                'success' => false,
+                'error' => 'Solo se permiten archivos .p12 o .pfx'
+            ], 422);
+        }
+
+        try {
+            $filename = $file->getClientOriginalName();
+
+            // Ensure the secure directory exists
+            $securePath = storage_path('app/secure');
+            if (!is_dir($securePath)) {
+                mkdir($securePath, 0755, true);
+            }
+
+            // Move the file
+            $file->move($securePath, $filename);
+
+            // Auto-update the setting
+            Setting::updateOrCreate(
+                ['setting_key' => 'dgii_certificate_path'],
+                ['setting_value' => $filename, 'setting_group' => 'dgii']
+            );
+
+            \Illuminate\Support\Facades\Log::info("[SettingController] Certificate uploaded: {$filename}");
+
+            return response()->json([
+                'success' => true,
+                'filename' => $filename,
+                'message' => "Certificado '{$filename}' subido correctamente."
+            ]);
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error("[SettingController] Certificate upload failed: " . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'error' => 'Error al subir el certificado: ' . $e->getMessage()
+            ], 500);
+        }
+    }
 }
 

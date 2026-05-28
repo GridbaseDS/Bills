@@ -243,19 +243,74 @@ export default {
                         <!-- TAB: DGII -->
                         <div class="tab-content" id="tab-dgii" style="display:none;">
                             <h3 style="font-size:15px;font-weight:600;margin:0 0 8px;">Facturación Electrónica (DGII)</h3>
-                            <p style="color:var(--color-text-muted);font-size:13px;margin:0 0 24px;">Credenciales de firma y secuenciación e-CF.</p>
-                            <div class="grid-2">
-                                <div class="form-group"><label class="form-label">Entorno DGII</label>
-                                    <select id="s_dgii_env" class="form-control">
-                                        <option value="testing" ${s.dgii_env === 'testing' || !s.dgii_env ? 'selected' : ''}>Certificación / Pruebas</option>
-                                        <option value="production" ${s.dgii_env === 'production' ? 'selected' : ''}>Producción</option>
-                                    </select>
+                            <p style="color:var(--color-text-muted);font-size:13px;margin:0 0 24px;">Datos fiscales del emisor, certificado digital y secuencias e-NCF para facturación electrónica.</p>
+
+                            <!-- Datos Fiscales del Emisor -->
+                            <div style="background:var(--color-bg-secondary);border:1px solid var(--color-border);border-radius:var(--radius-lg);padding:20px;margin-bottom:24px;">
+                                <h4 style="font-size:14px;font-weight:600;margin:0 0 4px;display:flex;align-items:center;gap:8px;">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                                    Datos Fiscales del Emisor
+                                </h4>
+                                <p style="color:var(--color-text-muted);font-size:12px;margin:0 0 16px;">Estos campos se usan en el XML del e-CF. Si se dejan vacíos, se toman de la pestaña General.</p>
+                                <div class="grid-2">
+                                    <div class="form-group"><label class="form-label">Razón Social (DGII)</label><input type="text" id="s_dgii_razon_social" class="form-control" placeholder="Ej: EMPRESA XYZ SRL" value="${s.dgii_razon_social || ''}"><div style="font-size:11px;color:var(--color-text-muted);margin-top:4px;">Si vacío, se usa el Nombre Comercial de la pestaña General.</div></div>
+                                    <div class="form-group"><label class="form-label">Nombre Comercial</label><input type="text" id="s_dgii_nombre_comercial" class="form-control" placeholder="Ej: Mi Negocio" value="${s.dgii_nombre_comercial || ''}"><div style="font-size:11px;color:var(--color-text-muted);margin-top:4px;">Nombre con el que opera comercialmente.</div></div>
+                                    <div class="form-group"><label class="form-label">Código de Municipio</label><input type="text" id="s_dgii_municipio" class="form-control" placeholder="Ej: 010101" maxlength="6" value="${s.dgii_municipio || ''}"><div style="font-size:11px;color:var(--color-text-muted);margin-top:4px;">Código DGII de 6 dígitos del municipio del emisor.</div></div>
+                                    <div class="form-group"><label class="form-label">Código de Provincia</label><input type="text" id="s_dgii_provincia" class="form-control" placeholder="Ej: 010000" maxlength="6" value="${s.dgii_provincia || ''}"><div style="font-size:11px;color:var(--color-text-muted);margin-top:4px;">Código DGII de 6 dígitos de la provincia del emisor.</div></div>
                                 </div>
-                                <div class="form-group"><label class="form-label">Vence Secuencia (e-NCF)</label><input type="date" id="s_dgii_ncf_expiry_date" class="form-control" value="${s.dgii_ncf_expiry_date || '2028-12-31'}"></div>
-                                <div class="form-group"><label class="form-label">Certificado (.p12 / .pfx)</label><input type="text" id="s_dgii_certificate_path" class="form-control" placeholder="certificado.p12" value="${s.dgii_certificate_path || ''}"><div style="font-size:11px;color:var(--color-text-muted);margin-top:4px;">En <code>storage/app/secure/</code></div></div>
-                                <div class="form-group"><label class="form-label">Contraseña del Certificado</label><input type="password" id="s_dgii_certificate_password" class="form-control" value="${s.dgii_certificate_password || ''}"></div>
-                                <div class="form-group"><label class="form-label">Próximo e-NCF Tipo 31</label><input type="number" id="s_dgii_next_e_ncf_31" class="form-control" value="${s.dgii_next_e_ncf_31 || '1'}"><div style="font-size:11px;color:var(--color-text-muted);margin-top:4px;">Ej: 1 → <code>E310000000001</code></div></div>
-                                <div class="form-group"><label class="form-label">Próximo e-NCF Tipo 32</label><input type="number" id="s_dgii_next_e_ncf_32" class="form-control" value="${s.dgii_next_e_ncf_32 || '1'}"><div style="font-size:11px;color:var(--color-text-muted);margin-top:4px;">Ej: 1 → <code>E320000000001</code></div></div>
+                            </div>
+
+                            <!-- Certificado y Entorno -->
+                            <div style="background:var(--color-bg-secondary);border:1px solid var(--color-border);border-radius:var(--radius-lg);padding:20px;margin-bottom:24px;">
+                                <h4 style="font-size:14px;font-weight:600;margin:0 0 4px;display:flex;align-items:center;gap:8px;">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                                    Certificado Digital y Entorno
+                                </h4>
+                                <p style="color:var(--color-text-muted);font-size:12px;margin:0 0 16px;">Certificado de firma digital y entorno de la DGII.</p>
+                                <div class="grid-2">
+                                    <div class="form-group"><label class="form-label">Entorno DGII</label>
+                                        <select id="s_dgii_env" class="form-control">
+                                            <option value="testing" ${s.dgii_env === 'testing' || !s.dgii_env ? 'selected' : ''}>Certificación / Pruebas</option>
+                                            <option value="production" ${s.dgii_env === 'production' ? 'selected' : ''}>Producción</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group"><label class="form-label">Vence Secuencia (e-NCF)</label><input type="date" id="s_dgii_ncf_expiry_date" class="form-control" value="${s.dgii_ncf_expiry_date || '2028-12-31'}"></div>
+                                    <div class="form-group">
+                                        <label class="form-label">Certificado (.p12 / .pfx)</label>
+                                        <div style="display:flex;gap:8px;align-items:flex-start;">
+                                            <input type="text" id="s_dgii_certificate_path" class="form-control" placeholder="certificado.p12" value="${s.dgii_certificate_path || ''}" style="flex:1;">
+                                            <label for="dgii_cert_upload" class="btn btn-secondary" style="cursor:pointer;white-space:nowrap;margin:0;display:inline-flex;align-items:center;gap:6px;">
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+                                                Subir
+                                            </label>
+                                            <input type="file" id="dgii_cert_upload" accept=".p12,.pfx" style="display:none;">
+                                        </div>
+                                        <div style="font-size:11px;color:var(--color-text-muted);margin-top:4px;">Almacenado en <code>storage/app/secure/</code>. Sube un .p12 o .pfx directamente.</div>
+                                        <div id="cert_upload_status" style="display:none;font-size:12px;margin-top:6px;padding:8px 12px;border-radius:var(--radius-md);"></div>
+                                    </div>
+                                    <div class="form-group"><label class="form-label">Contraseña del Certificado</label><input type="password" id="s_dgii_certificate_password" class="form-control" value="${s.dgii_certificate_password || ''}"></div>
+                                </div>
+                            </div>
+
+                            <!-- Secuencias e-NCF -->
+                            <div style="background:var(--color-bg-secondary);border:1px solid var(--color-border);border-radius:var(--radius-lg);padding:20px;">
+                                <h4 style="font-size:14px;font-weight:600;margin:0 0 4px;display:flex;align-items:center;gap:8px;">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>
+                                    Secuencias e-NCF (Próximo Número)
+                                </h4>
+                                <p style="color:var(--color-text-muted);font-size:12px;margin:0 0 16px;">El sistema genera automáticamente el eNCF combinando el tipo + número secuencial con ceros a la izquierda.</p>
+                                <div style="display:grid;grid-template-columns:repeat(auto-fill, minmax(220px, 1fr));gap:12px;">
+                                    <div class="form-group" style="margin:0;"><label class="form-label" style="font-size:12px;">Tipo 31 — Crédito Fiscal</label><input type="number" id="s_dgii_next_e_ncf_31" class="form-control" min="1" value="${s.dgii_next_e_ncf_31 || '1'}"><div style="font-size:10px;color:var(--color-text-muted);margin-top:2px;">→ <code>E31</code>0000000001</div></div>
+                                    <div class="form-group" style="margin:0;"><label class="form-label" style="font-size:12px;">Tipo 32 — Consumo</label><input type="number" id="s_dgii_next_e_ncf_32" class="form-control" min="1" value="${s.dgii_next_e_ncf_32 || '1'}"><div style="font-size:10px;color:var(--color-text-muted);margin-top:2px;">→ <code>E32</code>0000000001</div></div>
+                                    <div class="form-group" style="margin:0;"><label class="form-label" style="font-size:12px;">Tipo 33 — Nota de Débito</label><input type="number" id="s_dgii_next_e_ncf_33" class="form-control" min="1" value="${s.dgii_next_e_ncf_33 || '1'}"><div style="font-size:10px;color:var(--color-text-muted);margin-top:2px;">→ <code>E33</code>0000000001</div></div>
+                                    <div class="form-group" style="margin:0;"><label class="form-label" style="font-size:12px;">Tipo 34 — Nota de Crédito</label><input type="number" id="s_dgii_next_e_ncf_34" class="form-control" min="1" value="${s.dgii_next_e_ncf_34 || '1'}"><div style="font-size:10px;color:var(--color-text-muted);margin-top:2px;">→ <code>E34</code>0000000001</div></div>
+                                    <div class="form-group" style="margin:0;"><label class="form-label" style="font-size:12px;">Tipo 41 — Compras</label><input type="number" id="s_dgii_next_e_ncf_41" class="form-control" min="1" value="${s.dgii_next_e_ncf_41 || '1'}"><div style="font-size:10px;color:var(--color-text-muted);margin-top:2px;">→ <code>E41</code>0000000001</div></div>
+                                    <div class="form-group" style="margin:0;"><label class="form-label" style="font-size:12px;">Tipo 43 — Gastos Menores</label><input type="number" id="s_dgii_next_e_ncf_43" class="form-control" min="1" value="${s.dgii_next_e_ncf_43 || '1'}"><div style="font-size:10px;color:var(--color-text-muted);margin-top:2px;">→ <code>E43</code>0000000001</div></div>
+                                    <div class="form-group" style="margin:0;"><label class="form-label" style="font-size:12px;">Tipo 44 — Regímenes Especiales</label><input type="number" id="s_dgii_next_e_ncf_44" class="form-control" min="1" value="${s.dgii_next_e_ncf_44 || '1'}"><div style="font-size:10px;color:var(--color-text-muted);margin-top:2px;">→ <code>E44</code>0000000001</div></div>
+                                    <div class="form-group" style="margin:0;"><label class="form-label" style="font-size:12px;">Tipo 45 — Gubernamental</label><input type="number" id="s_dgii_next_e_ncf_45" class="form-control" min="1" value="${s.dgii_next_e_ncf_45 || '1'}"><div style="font-size:10px;color:var(--color-text-muted);margin-top:2px;">→ <code>E45</code>0000000001</div></div>
+                                    <div class="form-group" style="margin:0;"><label class="form-label" style="font-size:12px;">Tipo 46 — Exportaciones</label><input type="number" id="s_dgii_next_e_ncf_46" class="form-control" min="1" value="${s.dgii_next_e_ncf_46 || '1'}"><div style="font-size:10px;color:var(--color-text-muted);margin-top:2px;">→ <code>E46</code>0000000001</div></div>
+                                    <div class="form-group" style="margin:0;"><label class="form-label" style="font-size:12px;">Tipo 47 — Pagos al Exterior</label><input type="number" id="s_dgii_next_e_ncf_47" class="form-control" min="1" value="${s.dgii_next_e_ncf_47 || '1'}"><div style="font-size:10px;color:var(--color-text-muted);margin-top:2px;">→ <code>E47</code>0000000001</div></div>
+                                </div>
                             </div>
                         </div>
 
@@ -409,6 +464,45 @@ export default {
                 else if (preview) { preview.style.display = 'none'; }
             });
 
+            // Certificate upload handler
+            document.getElementById('dgii_cert_upload')?.addEventListener('change', async (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+                const statusEl = document.getElementById('cert_upload_status');
+                statusEl.style.display = 'block';
+                statusEl.style.background = 'rgba(59,130,246,0.08)';
+                statusEl.style.color = 'var(--color-primary)';
+                statusEl.textContent = `Subiendo ${file.name}...`;
+                try {
+                    const formData = new FormData();
+                    formData.append('certificate', file);
+                    const token = document.querySelector('meta[name="csrf-token"]')?.content 
+                        || window.App.state?.csrfToken || '';
+                    const resp = await fetch('/api/settings/upload-certificate', {
+                        method: 'POST',
+                        headers: { 'X-CSRF-TOKEN': token, 'Accept': 'application/json' },
+                        body: formData,
+                        credentials: 'same-origin'
+                    });
+                    const data = await resp.json();
+                    if (data.success) {
+                        document.getElementById('s_dgii_certificate_path').value = data.filename;
+                        statusEl.style.background = 'rgba(34,197,94,0.08)';
+                        statusEl.style.color = '#16a34a';
+                        statusEl.textContent = `Certificado "${data.filename}" subido correctamente.`;
+                        window.App.showToast('Certificado subido', 'success');
+                    } else {
+                        throw new Error(data.error || 'Error al subir');
+                    }
+                } catch (err) {
+                    statusEl.style.background = 'rgba(239,68,68,0.08)';
+                    statusEl.style.color = '#ef4444';
+                    statusEl.textContent = `Error: ${err.message}`;
+                    window.App.showToast('Error al subir certificado', 'error');
+                }
+                e.target.value = '';
+            });
+
             // Save all settings
             document.getElementById('settings-form').addEventListener('submit', async (e) => {
                 e.preventDefault();
@@ -444,12 +538,24 @@ export default {
                     reminders_overdue_interval: document.getElementById('s_reminders_overdue_interval').value,
                     payment_link_general: document.getElementById('s_payment_link_general').value,
                     bank_instructions: document.getElementById('s_bank_instructions').value,
+                    dgii_razon_social: document.getElementById('s_dgii_razon_social').value,
+                    dgii_nombre_comercial: document.getElementById('s_dgii_nombre_comercial').value,
+                    dgii_municipio: document.getElementById('s_dgii_municipio').value,
+                    dgii_provincia: document.getElementById('s_dgii_provincia').value,
                     dgii_env: document.getElementById('s_dgii_env').value,
                     dgii_ncf_expiry_date: document.getElementById('s_dgii_ncf_expiry_date').value,
                     dgii_certificate_path: document.getElementById('s_dgii_certificate_path').value,
                     dgii_certificate_password: document.getElementById('s_dgii_certificate_password').value,
                     dgii_next_e_ncf_31: document.getElementById('s_dgii_next_e_ncf_31').value,
                     dgii_next_e_ncf_32: document.getElementById('s_dgii_next_e_ncf_32').value,
+                    dgii_next_e_ncf_33: document.getElementById('s_dgii_next_e_ncf_33').value,
+                    dgii_next_e_ncf_34: document.getElementById('s_dgii_next_e_ncf_34').value,
+                    dgii_next_e_ncf_41: document.getElementById('s_dgii_next_e_ncf_41').value,
+                    dgii_next_e_ncf_43: document.getElementById('s_dgii_next_e_ncf_43').value,
+                    dgii_next_e_ncf_44: document.getElementById('s_dgii_next_e_ncf_44').value,
+                    dgii_next_e_ncf_45: document.getElementById('s_dgii_next_e_ncf_45').value,
+                    dgii_next_e_ncf_46: document.getElementById('s_dgii_next_e_ncf_46').value,
+                    dgii_next_e_ncf_47: document.getElementById('s_dgii_next_e_ncf_47').value,
                     pdf_primary_color: document.getElementById('s_pdf_primary_color').value,
                     pdf_accent_color: document.getElementById('s_pdf_accent_color').value,
                     pdf_logo_url: document.getElementById('s_pdf_logo_url').value,

@@ -163,7 +163,9 @@ class XmlBuilderService
         }
 
         if (!empty($telefonoEmisor)) {
-            $emisor->appendChild($dom->createElement('TelefonoEmisor', htmlspecialchars(substr($telefonoEmisor, 0, 12), ENT_XML1)));
+            $tablaTelefono = $dom->createElement('TablaTelefonoEmisor');
+            $emisor->appendChild($tablaTelefono);
+            $tablaTelefono->appendChild($dom->createElement('TelefonoEmisor', htmlspecialchars(substr($telefonoEmisor, 0, 12), ENT_XML1)));
         }
 
         if (!empty($correoEmisor)) {

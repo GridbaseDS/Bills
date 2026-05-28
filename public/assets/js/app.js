@@ -205,11 +205,16 @@ window.App = {
         }
         const hv = hoverColor || 'rgba(0,0,0,0.08)';
         const tc = textColor || '';
+        const bg = bgColor || '';
         styleTag.textContent = `
             .sidebar-link:hover { background-color: ${hv} !important; }
             .sidebar-link.active { background-color: ${hv} !important; }
             ${tc ? `.sidebar-link:hover, .sidebar-link:hover svg { color: ${tc} !important; }` : ''}
             ${tc ? `.sidebar-footer { border-top-color: ${hv} !important; }` : ''}
+            .profile-card { background-color: ${hv} !important; border-radius: 10px; }
+            .profile-card:hover { opacity: 0.85; }
+            ${tc ? `.profile-card, .profile-card svg { color: ${tc} !important; }` : ''}
+            .profile-avatar { background-color: ${bg ? bg : '#111827'} !important; border: 2px solid ${hv} !important; ${tc ? `color: ${tc} !important;` : ''} }
         `;
     },
 
@@ -331,32 +336,65 @@ window.App = {
        ═══════════════════════════════════════════════ */
     renderLogin() {
         const cachedLogo = localStorage.getItem('company_logo') || 'https://gridbase.com.do/wp-content/uploads/2025/02/cropped-imagen_2026-03-16_154126791.png';
+        const companyName = localStorage.getItem('company_name') || this.state.settings?.company_name || 'Bills';
         const app = document.getElementById('app');
         app.innerHTML = `
             <div class="login-page">
-                <div class="login-card">
-                    <div class="login-logo" style="display:flex;align-items:center;justify-content:center;margin-bottom:16px;">
-                        <div style="background: #111827; padding: 8px 24px; border-radius: var(--radius-xl); border: 1px solid rgba(255, 255, 255, 0.08); display: inline-flex; align-items: center; justify-content: center; box-shadow: var(--shadow-md); max-height: 56px;">
-                            <img src="${cachedLogo}" alt="Logo" style="max-height:40px;max-width:100%;object-fit:contain;">
+                <div class="login-left">
+                    <div class="login-brand">
+                        <img src="${cachedLogo}" alt="Logo">
+                    </div>
+                    <div class="login-form-wrap">
+                        <h1 class="login-title">Bienvenido</h1>
+                        <p class="login-subtitle">Inicia sesi\u00f3n para acceder a tu cuenta</p>
+                        <div id="login-error" class="login-error"></div>
+                        <form id="login-form">
+                            <div class="login-field">
+                                <label>Correo Electr\u00f3nico</label>
+                                <input type="email" id="login-email" placeholder="tu@correo.com" required autocomplete="email">
+                            </div>
+                            <div class="login-field">
+                                <label>Contrase\u00f1a</label>
+                                <input type="password" id="login-password" placeholder="\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022" required autocomplete="current-password">
+                            </div>
+                            <button type="submit" class="login-submit">Iniciar Sesi\u00f3n</button>
+                        </form>
+                        <p class="login-footer">
+                            Powered by <span>GridBase</span> Digital Solutions
+                        </p>
+                    </div>
+                </div>
+                <div class="login-right">
+                    <div class="login-hero-text">
+                        <h2>Simplifica<br>tu Facturaci\u00f3n,<br><span>hoy</span></h2>
+                        <p class="login-hero-sub">Gestiona facturas, cotizaciones y clientes desde una plataforma dise\u00f1ada para tu negocio.</p>
+                    </div>
+                    <div class="login-float-card">
+                        <div class="login-float-label">Cobrado Este Mes</div>
+                        <div class="login-float-amount">RD$ 248,500</div>
+                        <div class="login-float-sub">+12.4% vs mes anterior</div>
+                        <div class="login-float-row">
+                            <div class="login-float-row-item">
+                                <div class="login-float-dot">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                                </div>
+                                <div>
+                                    <div class="login-float-row-label">Facturas</div>
+                                    <div class="login-float-row-val">24 emitidas</div>
+                                </div>
+                            </div>
+                            <div style="font-size:20px;font-weight:700;color:#0B484C;">98%</div>
                         </div>
                     </div>
-                    <h1 class="login-title">GridBase Bills</h1>
-                    <p class="login-subtitle">Inicia sesión en tu cuenta</p>
-                    <div id="login-error" class="login-error"></div>
-                    <form id="login-form">
-                        <div class="form-group text-left">
-                            <label class="form-label">Correo Electrónico</label>
-                            <input type="email" id="login-email" class="form-control" placeholder="tu@correo.com" required autocomplete="email">
+                    <div class="login-float-mini">
+                        <div class="login-float-mini-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
                         </div>
-                        <div class="form-group text-left">
-                            <label class="form-label">Contraseña</label>
-                            <input type="password" id="login-password" class="form-control" placeholder="••••••••" required autocomplete="current-password">
+                        <div>
+                            <div class="login-float-mini-text">Clientes activos</div>
+                            <div class="login-float-mini-val">156 registrados</div>
                         </div>
-                        <button type="submit" class="btn btn-primary" style="width:100%;margin-top:8px;">Iniciar Sesión</button>
-                    </form>
-                    <p style="margin-top: 20px; font-size: 11px; color: var(--color-text-muted);">
-                        Powered by <span style="color: var(--color-primary); font-weight: 600;">GridBase</span> Digital Solutions
-                    </p>
+                    </div>
                 </div>
             </div>
         `;

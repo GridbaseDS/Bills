@@ -214,17 +214,59 @@ class DgiiTestUIController extends Controller
             return response()->json(['success' => false, 'log' => $log]);
         }
 
-        // Step 6: Validate XML structure
-        $log[] = ['step' => 'Validar Estructura XML', 'status' => 'running'];
+        // Step 6: Validate XML against XSD
+        $log[] = ['step' => 'Validar XML contra XSD', 'status' => 'running'];
         $dom = new \DOMDocument();
-        $dom->loadXML($signedXml);
-        $checks = [];
-        $checks[] = $dom->getElementsByTagName('RNCEmisor')->length > 0 ? '✅ RNCEmisor' : '❌ RNCEmisor falta';
-        $checks[] = $dom->getElementsByTagName('eNCF')->length > 0 ? '✅ eNCF' : '❌ eNCF falta';
-        $checks[] = $dom->getElementsByTagName('MontoTotal')->length > 0 ? '✅ MontoTotal' : '❌ MontoTotal falta';
-        $checks[] = $dom->getElementsByTagName('Signature')->length > 0 ? '✅ Firma' : '❌ Firma falta';
-        $checks[] = $dom->getElementsByTagName('X509Certificate')->length > 0 ? '✅ Certificado' : '❌ Certificado falta';
-        $log[count($log)-1] = ['step' => 'Validar Estructura XML', 'status' => 'ok', 'detail' => implode(' | ', $checks)];
+        $dom->loadXML($rawXml); // Validate the raw (unsigned) XML against XSD
+
+        $xsdPath = base_path("xsd/e-CF {$invoice->ecf_type} v.1.0.xsd");
+        if (file_exists($xsdPath)) {
+            libxml_use_internal_errors(true);
+            $isValid = $dom->schemaValidate($xsdPath);
+            $errors = libxml_get_errors();
+            libxml_clear_errors();
+            libxml_use_internal_errors(false);
+
+            if ($isValid) {
+                $log[count($log)-1] = [
+                    'step' => 'Validar XML contra XSD',
+                    'status' => 'ok',
+                    'detail' => "✅ XML válido contra e-CF {$invoice->ecf_type} v.1.0.xsd"
+                ];
+            } else {
+                $errorMessages = array_map(function($e) {
+                    return "Línea {$e->line}: {$e->message}";
+                }, array_slice($errors, 0, 5));
+                $log[count($log)-1] = [
+                    'step' => 'Validar XML contra XSD',
+                    'status' => 'error',
+                    'detail' => implode(' | ', $errorMessages)
+                ];
+                $success = false;
+            }
+        } else {
+            // Fallback: basic structural checks
+            $checks = [];
+            $checks[] = $dom->getElementsByTagName('RNCEmisor')->length > 0 ? '✅ RNCEmisor' : '❌ RNCEmisor falta';
+            $checks[] = $dom->getElementsByTagName('eNCF')->length > 0 ? '✅ eNCF' : '❌ eNCF falta';
+            $checks[] = $dom->getElementsByTagName('MontoTotal')->length > 0 ? '✅ MontoTotal' : '❌ MontoTotal falta';
+            $checks[] = $dom->getElementsByTagName('FechaEmision')->length > 0 ? '✅ FechaEmision' : '❌ FechaEmision falta';
+            $log[count($log)-1] = [
+                'step' => 'Validar XML contra XSD',
+                'status' => 'ok',
+                'detail' => "⚠️ XSD no disponible (copiar XSDs a /xsd/) | " . implode(' | ', $checks)
+            ];
+        }
+
+        // Step 6b: Validate signed XML has signature elements
+        $log[] = ['step' => 'Validar Firma Digital', 'status' => 'running'];
+        $signedDom = new \DOMDocument();
+        $signedDom->loadXML($signedXml);
+        $sigChecks = [];
+        $sigChecks[] = $signedDom->getElementsByTagName('Signature')->length > 0 ? '✅ Firma' : '❌ Firma falta';
+        $sigChecks[] = $signedDom->getElementsByTagName('X509Certificate')->length > 0 ? '✅ Certificado' : '❌ Certificado falta';
+        $sigChecks[] = $signedDom->getElementsByTagName('SignatureValue')->length > 0 ? '✅ SignatureValue' : '❌ SignatureValue falta';
+        $log[count($log)-1] = ['step' => 'Validar Firma Digital', 'status' => 'ok', 'detail' => implode(' | ', $sigChecks)];
 
         // Step 7: Filename check
         $rncFromXml = '';

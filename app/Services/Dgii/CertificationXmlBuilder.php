@@ -30,7 +30,7 @@ class CertificationXmlBuilder
         $this->dom = new DOMDocument('1.0', 'UTF-8');
         $this->dom->formatOutput = true;
 
-        $ecf = $this->dom->createElementNS('https://dgii.gov.do/feDC', 'ECF');
+        $ecf = $this->dom->createElement('ECF');
         $this->dom->appendChild($ecf);
 
         // Encabezado

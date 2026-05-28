@@ -20,397 +20,501 @@ const DashboardModule = {
                 trendPct = 100;
             }
 
+            // Expense trend
+            let expTrendPct = 0;
+            let isExpUp = true;
+            if (prev.expense > 0) {
+                const diff = cur.expense - prev.expense;
+                expTrendPct = Math.round((diff / prev.expense) * 100);
+                isExpUp = diff >= 0;
+            }
+
             const firstName = (App.state?.user?.name || 'Usuario').split(' ')[0];
+            const today = new Date();
+            const dateStr = today.toLocaleDateString('es-DO', { day: 'numeric', month: 'short', year: 'numeric' });
 
             container.innerHTML = `
                 <style>
-                    /* ═══════════════════════════════════════════════
-                       DASHBOARD — Premium Redesign v4
-                       GridBase Charcoal Design Language
-                       ═══════════════════════════════════════════════ */
-
-                    .dash {
+                    /* ═══════════════════════════════════════════
+                       DASHBOARD v5 — Reference-based Redesign
+                       ═══════════════════════════════════════════ */
+                    .db {
                         display: flex;
                         flex-direction: column;
                         gap: 20px;
                         width: 100%;
                         padding-bottom: 64px;
-                        animation: dashFadeIn 0.4s ease both;
+                        animation: dbIn 0.35s ease both;
                     }
-
-                    @keyframes dashFadeIn {
-                        from { opacity: 0; transform: translateY(8px); }
+                    @keyframes dbIn {
+                        from { opacity: 0; transform: translateY(6px); }
                         to   { opacity: 1; transform: none; }
                     }
 
-                    /* ── Hero Banner ── */
-                    .dash-hero {
+                    /* ── Top Header ── */
+                    .db-header {
+                        display: flex;
+                        align-items: center;
+                        justify-content: space-between;
+                    }
+                    .db-welcome {
+                        font-size: 22px;
+                        font-weight: 700;
+                        color: var(--color-text-primary);
+                        letter-spacing: -0.02em;
+                    }
+                    .db-date {
+                        display: inline-flex;
+                        align-items: center;
+                        gap: 8px;
+                        font-size: 13px;
+                        font-weight: 500;
+                        color: var(--color-text-secondary);
+                        background: var(--bg-card);
+                        border: 1px solid var(--color-border);
+                        border-radius: var(--radius-md);
+                        padding: 7px 14px;
+                    }
+                    .db-date svg { width: 15px; height: 15px; color: var(--color-text-muted); }
+
+                    /* ── Top 3 KPI Row ── */
+                    .db-kpi-row {
+                        display: grid;
+                        grid-template-columns: 1.4fr 1fr 1fr;
+                        gap: 16px;
+                    }
+                    .db-kpi {
                         background: var(--bg-card);
                         border: 1px solid var(--color-border);
                         border-radius: var(--radius-xl);
-                        padding: 28px 32px 24px;
-                        position: relative;
-                        overflow: hidden;
+                        padding: 24px;
                         box-shadow: var(--shadow-sm);
-                    }
-                    .dash-hero::before {
-                        content: '';
-                        position: absolute;
-                        top: 0; left: 0; right: 0;
-                        height: 3px;
-                        background: linear-gradient(90deg, #111827 0%, #4B5563 50%, #9CA3AF 100%);
-                        border-radius: var(--radius-xl) var(--radius-xl) 0 0;
-                    }
-                    [data-theme="dark"] .dash-hero::before {
-                        background: linear-gradient(90deg, #F9FAFB 0%, #6B7280 50%, #374151 100%);
-                    }
-                    .dash-hero-top {
                         display: flex;
-                        align-items: flex-start;
-                        justify-content: space-between;
-                        gap: 16px;
+                        flex-direction: column;
                     }
-                    .dash-hero-greeting {
+                    .db-kpi-top {
+                        display: flex;
+                        align-items: center;
+                        justify-content: space-between;
+                        margin-bottom: 16px;
+                    }
+                    .db-kpi-label {
                         font-size: 13px;
                         font-weight: 500;
-                        color: var(--color-text-muted);
-                        letter-spacing: 0.02em;
-                        margin-bottom: 6px;
+                        color: var(--color-text-secondary);
                     }
-                    .dash-hero-revenue {
-                        font-size: 34px;
+                    .db-kpi-amount {
+                        font-size: 30px;
                         font-weight: 800;
                         color: var(--color-text-primary);
                         letter-spacing: -0.03em;
                         line-height: 1.1;
                     }
-                    .dash-hero-label {
-                        font-size: 13px;
-                        color: var(--color-text-secondary);
-                        margin-top: 6px;
-                        font-weight: 500;
-                    }
-                    .dash-hero-trend {
+                    .db-kpi-tag {
                         display: inline-flex;
                         align-items: center;
-                        gap: 4px;
-                        padding: 5px 10px;
-                        border-radius: var(--radius-full);
+                        gap: 3px;
                         font-size: 12px;
                         font-weight: 600;
-                        flex-shrink: 0;
-                        margin-top: 4px;
+                        padding: 3px 8px;
+                        border-radius: var(--radius-full);
+                        margin-left: 10px;
+                        vertical-align: middle;
                     }
-                    .dash-hero-trend.up {
+                    .db-kpi-tag.up {
                         background: var(--color-success-bg);
                         color: var(--color-success-text);
                     }
-                    .dash-hero-trend.down {
+                    .db-kpi-tag.down {
                         background: var(--color-danger-bg);
                         color: var(--color-danger-text);
                     }
-                    .dash-hero-trend svg { width: 13px; height: 13px; }
-
-                    /* ── KPI Strip ── */
-                    .dash-kpis {
-                        display: grid;
-                        grid-template-columns: repeat(4, 1fr);
-                        gap: 14px;
-                    }
-                    .dash-kpi {
-                        background: var(--bg-card);
-                        border: 1px solid var(--color-border);
-                        border-radius: var(--radius-lg);
-                        padding: 18px 20px;
-                        display: flex;
-                        align-items: flex-start;
-                        gap: 12px;
-                        transition: transform 0.2s cubic-bezier(0.4,0,0.2,1),
-                                    box-shadow 0.2s cubic-bezier(0.4,0,0.2,1),
-                                    border-color 0.2s ease;
-                        box-shadow: var(--shadow-sm);
-                    }
-                    .dash-kpi:hover {
-                        transform: translateY(-3px);
-                        box-shadow: 0 8px 20px -6px rgba(0,0,0,0.08);
-                        border-color: var(--color-border-hover);
-                    }
-                    [data-theme="dark"] .dash-kpi:hover {
-                        box-shadow: 0 8px 24px -8px rgba(0,0,0,0.5);
-                    }
-                    .dash-kpi-dot {
-                        width: 8px;
-                        height: 8px;
-                        border-radius: 50%;
-                        margin-top: 7px;
-                        flex-shrink: 0;
-                    }
-                    .dash-kpi-dot.green  { background: var(--color-success-icon); }
-                    .dash-kpi-dot.purple { background: var(--purple); }
-                    .dash-kpi-dot.amber  { background: var(--amber); }
-                    .dash-kpi-dot.red    { background: var(--color-danger-icon); }
-                    .dash-kpi-value {
-                        font-size: 20px;
-                        font-weight: 700;
-                        color: var(--color-text-primary);
-                        letter-spacing: -0.02em;
-                        line-height: 1.2;
-                    }
-                    .dash-kpi-label {
+                    .db-kpi-tag svg { width: 11px; height: 11px; }
+                    .db-kpi-compare {
                         font-size: 12px;
-                        font-weight: 500;
                         color: var(--color-text-muted);
-                        margin-top: 2px;
+                        margin-top: 8px;
                     }
-                    .dash-kpi-badge {
-                        display: inline-block;
-                        margin-top: 4px;
-                        font-size: 10px;
-                        font-weight: 600;
-                        padding: 2px 7px;
-                        border-radius: var(--radius-full);
-                    }
-                    .dash-kpi-badge.success {
-                        background: var(--color-success-bg);
-                        color: var(--color-success-text);
-                    }
-                    .dash-kpi-badge.danger {
-                        background: var(--color-danger-bg);
-                        color: var(--color-danger-text);
-                    }
+                    .db-kpi-compare .trend-val { font-weight: 600; }
+                    .db-kpi-compare .trend-val.up { color: var(--color-success-icon); }
+                    .db-kpi-compare .trend-val.down { color: var(--color-danger-icon); }
 
-                    /* ── Chart Section ── */
-                    .dash-chart-card {
-                        background: var(--bg-card);
-                        border: 1px solid var(--color-border);
-                        border-radius: var(--radius-xl);
-                        padding: 24px 28px;
-                        box-shadow: var(--shadow-sm);
-                    }
-                    .dash-chart-header {
+                    /* Main KPI extra elements */
+                    .db-kpi-main .db-kpi-amount { font-size: 34px; }
+                    .db-kpi-main .db-kpi-meta {
+                        font-size: 13px;
+                        color: var(--color-text-muted);
+                        margin-top: 6px;
                         display: flex;
                         align-items: center;
-                        justify-content: space-between;
-                        margin-bottom: 20px;
+                        gap: 8px;
                     }
-                    .dash-chart-title {
-                        font-size: 14px;
+                    .db-kpi-actions {
+                        display: flex;
+                        gap: 8px;
+                        margin-top: 18px;
+                    }
+                    .db-kpi-btn {
+                        padding: 8px 18px;
+                        font-size: 13px;
                         font-weight: 600;
-                        color: var(--color-text-primary);
-                    }
-                    .dash-chart-subtitle {
-                        font-size: 12px;
-                        color: var(--color-text-muted);
-                        margin-top: 2px;
-                    }
-                    .dash-chart-legend {
-                        display: flex;
-                        gap: 16px;
-                    }
-                    .dash-legend-item {
-                        display: flex;
+                        border-radius: var(--radius-md);
+                        cursor: pointer;
+                        transition: all 0.15s ease;
+                        text-decoration: none;
+                        display: inline-flex;
                         align-items: center;
                         gap: 6px;
-                        font-size: 12px;
-                        font-weight: 500;
-                        color: var(--color-text-secondary);
+                        border: none;
                     }
-                    .dash-legend-dot {
-                        width: 8px;
-                        height: 8px;
-                        border-radius: 50%;
+                    .db-kpi-btn svg { width: 15px; height: 15px; }
+                    .db-kpi-btn-primary {
+                        background: #111827;
+                        color: #FFFFFF;
                     }
+                    [data-theme="dark"] .db-kpi-btn-primary {
+                        background: #F9FAFB;
+                        color: #111827;
+                    }
+                    .db-kpi-btn-primary:hover { opacity: 0.88; }
+                    .db-kpi-btn-secondary {
+                        background: var(--bg-hover);
+                        color: var(--color-text-primary);
+                        border: 1px solid var(--color-border);
+                    }
+                    .db-kpi-btn-secondary:hover { background: var(--color-border); }
 
-                    /* ── Bottom Two-Column Grid ── */
-                    .dash-bottom {
+                    /* ── Two-column Body ── */
+                    .db-body {
                         display: grid;
-                        grid-template-columns: 1.6fr 1fr;
-                        gap: 20px;
+                        grid-template-columns: 1fr 1.5fr;
+                        gap: 16px;
+                        align-items: start;
+                    }
+                    .db-col {
+                        display: flex;
+                        flex-direction: column;
+                        gap: 16px;
                     }
 
-                    /* ── Section Card (shared for recent + overdue) ── */
-                    .dash-section {
+                    /* ── Card Wrapper (shared) ── */
+                    .db-card {
                         background: var(--bg-card);
                         border: 1px solid var(--color-border);
                         border-radius: var(--radius-xl);
                         box-shadow: var(--shadow-sm);
                         overflow: hidden;
-                        display: flex;
-                        flex-direction: column;
                     }
-                    .dash-section-head {
+                    .db-card-head {
                         display: flex;
                         align-items: center;
                         justify-content: space-between;
-                        padding: 16px 24px;
-                        border-bottom: 1px solid var(--color-border);
+                        padding: 18px 24px 14px;
                     }
-                    .dash-section-title {
-                        font-size: 14px;
-                        font-weight: 600;
+                    .db-card-title {
+                        font-size: 16px;
+                        font-weight: 700;
                         color: var(--color-text-primary);
-                        display: flex;
-                        align-items: center;
-                        gap: 8px;
                     }
-                    .dash-section-link {
+                    .db-card-badge {
                         font-size: 12px;
-                        font-weight: 600;
+                        font-weight: 500;
                         color: var(--color-text-muted);
-                        text-decoration: none;
-                        display: inline-flex;
-                        align-items: center;
-                        gap: 4px;
-                        transition: color 0.15s ease;
-                    }
-                    .dash-section-link:hover {
-                        color: var(--color-text-primary);
-                    }
-                    .dash-section-link svg {
-                        width: 13px; height: 13px;
-                        transition: transform 0.15s ease;
-                    }
-                    .dash-section-link:hover svg {
-                        transform: translateX(2px);
+                        background: var(--bg-hover);
+                        padding: 4px 12px;
+                        border-radius: var(--radius-full);
+                        border: 1px solid var(--color-border);
                     }
 
-                    /* ── Recent Invoices Table ── */
-                    .dash-table { width: 100%; border-collapse: collapse; }
-                    .dash-table th {
-                        text-align: left;
-                        padding: 10px 24px;
+                    /* ── Activity Table ── */
+                    .db-activity-head {
+                        display: grid;
+                        grid-template-columns: 1fr auto auto;
+                        gap: 16px;
+                        padding: 0 24px 10px;
                         font-size: 11px;
                         font-weight: 600;
                         color: var(--color-text-muted);
                         text-transform: uppercase;
-                        letter-spacing: 0.05em;
-                        border-bottom: 1px solid var(--color-border);
+                        letter-spacing: 0.04em;
                     }
-                    .dash-table td {
-                        padding: 12px 24px;
-                        font-size: 13px;
-                        color: var(--color-text-secondary);
-                        border-bottom: 1px solid var(--color-border);
-                        vertical-align: middle;
-                    }
-                    .dash-table tbody tr { transition: background 0.12s ease; }
-                    .dash-table tbody tr:hover { background: var(--bg-hover); }
-                    .dash-table tbody tr:last-child td { border-bottom: none; }
-
-                    /* ── Overdue List ── */
-                    .dash-overdue-item {
-                        display: flex;
+                    .db-activity-row {
+                        display: grid;
+                        grid-template-columns: 1fr auto auto;
+                        gap: 16px;
                         align-items: center;
-                        justify-content: space-between;
                         padding: 14px 24px;
-                        border-bottom: 1px solid var(--color-border);
+                        border-top: 1px solid var(--color-border);
                         text-decoration: none;
                         color: inherit;
                         transition: background 0.12s ease;
                     }
-                    .dash-overdue-item:hover { background: var(--bg-hover); }
-                    .dash-overdue-item:last-child { border-bottom: none; }
+                    .db-activity-row:hover { background: var(--bg-hover); }
+                    .db-activity-who {
+                        display: flex;
+                        align-items: center;
+                        gap: 12px;
+                        min-width: 0;
+                    }
+                    .db-activity-avatar {
+                        width: 36px; height: 36px;
+                        border-radius: var(--radius-full);
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        font-weight: 700;
+                        font-size: 13px;
+                        flex-shrink: 0;
+                        color: #FFFFFF;
+                    }
+                    .db-av-green  { background: #059669; }
+                    .db-av-blue   { background: #2563EB; }
+                    .db-av-purple { background: #7C3AED; }
+                    .db-av-amber  { background: #D97706; }
+                    .db-av-red    { background: #DC2626; }
+                    .db-av-gray   { background: #6B7280; }
+                    .db-activity-name {
+                        font-size: 13px;
+                        font-weight: 600;
+                        color: var(--color-text-primary);
+                        white-space: nowrap;
+                        overflow: hidden;
+                        text-overflow: ellipsis;
+                    }
+                    .db-activity-sub {
+                        font-size: 12px;
+                        color: var(--color-text-muted);
+                        margin-top: 1px;
+                    }
+                    .db-activity-date {
+                        font-size: 13px;
+                        color: var(--color-text-secondary);
+                        white-space: nowrap;
+                    }
+                    .db-activity-amount {
+                        font-size: 14px;
+                        font-weight: 700;
+                        white-space: nowrap;
+                        text-align: right;
+                    }
+                    .db-amount-pos { color: var(--color-success-icon); }
+                    .db-amount-neg { color: var(--color-text-primary); }
 
-                    /* ── Pulse dot for overdue ── */
-                    .dash-pulse {
+                    /* ── Cashflow / Chart Card ── */
+                    .db-chart-info {
+                        padding: 0 24px 4px;
+                    }
+                    .db-chart-label {
+                        font-size: 12px;
+                        color: var(--color-text-muted);
+                        font-weight: 500;
+                    }
+                    .db-chart-amount-row {
+                        display: flex;
+                        align-items: baseline;
+                        gap: 10px;
+                        margin-top: 4px;
+                    }
+                    .db-chart-amount {
+                        font-size: 28px;
+                        font-weight: 800;
+                        color: var(--color-text-primary);
+                        letter-spacing: -0.03em;
+                    }
+                    .db-chart-legend {
+                        display: flex;
+                        gap: 14px;
+                        margin-left: auto;
+                        align-self: center;
+                    }
+                    .db-lg-item {
+                        display: flex;
+                        align-items: center;
+                        gap: 5px;
+                        font-size: 12px;
+                        font-weight: 500;
+                        color: var(--color-text-secondary);
+                    }
+                    .db-lg-dot {
+                        width: 7px; height: 7px;
+                        border-radius: 50%;
+                    }
+
+                    /* ── Overdue Section ── */
+                    .db-overdue-item {
+                        display: flex;
+                        align-items: center;
+                        justify-content: space-between;
+                        padding: 14px 24px;
+                        border-top: 1px solid var(--color-border);
+                        text-decoration: none;
+                        color: inherit;
+                        transition: background 0.12s ease;
+                    }
+                    .db-overdue-item:hover { background: var(--bg-hover); }
+                    .db-overdue-left {
+                        display: flex;
+                        flex-direction: column;
+                    }
+                    .db-overdue-name {
+                        font-size: 14px;
+                        font-weight: 700;
+                        color: var(--color-text-primary);
+                    }
+                    .db-overdue-sub {
+                        font-size: 12px;
+                        color: var(--color-text-muted);
+                        margin-top: 1px;
+                    }
+                    .db-overdue-amount {
+                        font-size: 15px;
+                        font-weight: 800;
+                        color: var(--color-text-primary);
+                        letter-spacing: -0.02em;
+                    }
+                    .db-overdue-bar-wrap {
+                        margin-top: 8px;
+                        width: 100%;
+                        height: 6px;
+                        background: var(--bg-hover);
+                        border-radius: var(--radius-full);
+                        overflow: hidden;
+                    }
+                    .db-overdue-bar {
+                        height: 100%;
+                        border-radius: var(--radius-full);
+                        background: var(--color-danger-icon);
+                        transition: width 0.6s cubic-bezier(0.4,0,0.2,1);
+                    }
+
+                    /* Overdue split cards */
+                    .db-overdue-grid {
+                        display: grid;
+                        grid-template-columns: 1fr 1fr;
+                        gap: 0;
+                    }
+                    .db-overdue-cell {
+                        padding: 18px 20px;
+                        border-top: 1px solid var(--color-border);
+                        text-decoration: none;
+                        color: inherit;
+                        transition: background 0.12s ease;
+                    }
+                    .db-overdue-cell:first-child {
+                        border-right: 1px solid var(--color-border);
+                    }
+                    .db-overdue-cell:hover { background: var(--bg-hover); }
+                    .db-overdue-cell-title {
+                        font-size: 13px;
+                        font-weight: 700;
+                        color: var(--color-text-primary);
+                    }
+                    .db-overdue-cell-sub {
+                        font-size: 11px;
+                        color: var(--color-text-muted);
+                        margin-top: 1px;
+                    }
+                    .db-overdue-cell-amount {
+                        font-size: 16px;
+                        font-weight: 800;
+                        color: var(--color-text-primary);
+                        margin-top: 6px;
+                        letter-spacing: -0.02em;
+                    }
+
+                    /* Pulse dot */
+                    .db-pulse {
                         width: 7px; height: 7px;
                         border-radius: 50%;
                         background: var(--color-danger-icon);
                         display: inline-block;
+                        margin-right: 6px;
                         box-shadow: 0 0 0 0 rgba(239,68,68,0.6);
-                        animation: dashPulse 2s infinite;
+                        animation: dbPulse 2s infinite;
                     }
-                    @keyframes dashPulse {
-                        0%  { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(239,68,68,0.6); }
-                        70% { transform: scale(1);    box-shadow: 0 0 0 5px rgba(239,68,68,0); }
-                        100%{ transform: scale(0.95); box-shadow: 0 0 0 0 rgba(239,68,68,0); }
+                    @keyframes dbPulse {
+                        0%  { box-shadow: 0 0 0 0 rgba(239,68,68,0.6); }
+                        70% { box-shadow: 0 0 0 5px rgba(239,68,68,0); }
+                        100%{ box-shadow: 0 0 0 0 rgba(239,68,68,0); }
                     }
 
-                    /* ── Empty State ── */
-                    .dash-empty {
+                    .db-empty {
                         padding: 32px 24px;
                         text-align: center;
                         color: var(--color-text-muted);
                         font-size: 13px;
                     }
 
-                    /* ── Mobile Card List (hidden on desktop) ── */
-                    .dash-mobile-cards { display: none; }
-
                     /* ── Footer ── */
-                    .dash-footer {
+                    .db-footer {
                         position: fixed;
                         bottom: 0; right: 0;
                         left: var(--sidebar-w);
                         background: var(--bg-card);
                         border-top: 1px solid var(--color-border);
-                        padding: 12px 24px;
+                        padding: 11px 24px;
                         display: flex;
                         align-items: center;
                         justify-content: center;
                         z-index: 100;
-                        box-shadow: 0 -1px 6px rgba(0,0,0,0.02);
                         transition: left var(--transition-normal);
                     }
-                    .dash-footer-link {
+                    .db-footer a {
                         font-size: 11px;
                         color: var(--color-text-muted);
                         text-decoration: none;
                         font-weight: 500;
                         transition: color 0.15s ease;
                     }
-                    .dash-footer-link:hover { color: var(--color-text-primary); }
-                    .dash-footer-link span { font-weight: 700; color: var(--color-text-secondary); }
+                    .db-footer a:hover { color: var(--color-text-primary); }
+                    .db-footer a span { font-weight: 700; color: var(--color-text-secondary); }
+
+                    /* Mobile cards (hidden desktop) */
+                    .db-mobile-cards { display: none; }
 
                     /* ═══ Responsive ═══ */
-
                     @media (max-width: 1100px) {
-                        .dash-kpis { grid-template-columns: repeat(2, 1fr); }
+                        .db-kpi-row { grid-template-columns: 1fr; }
+                        .db-kpi-main .db-kpi-amount { font-size: 28px; }
                     }
-
                     @media (max-width: 960px) {
-                        .dash-bottom { grid-template-columns: 1fr; }
+                        .db-body { grid-template-columns: 1fr; }
                     }
-
                     @media (max-width: 640px) {
-                        .dash {
-                            padding: 16px 16px 140px;
-                            gap: 14px;
+                        .db {
+                            padding: 0 0 140px 0;
+                            gap: 12px;
                         }
-                        .dash-hero {
-                            padding: 20px 18px 18px;
-                            border-radius: var(--radius-lg);
+                        .db-header { flex-wrap: wrap; gap: 8px; }
+                        .db-welcome { font-size: 18px; }
+                        .db-kpi-row { gap: 10px; }
+                        .db-kpi { padding: 16px 18px; border-radius: var(--radius-lg); }
+                        .db-kpi-main .db-kpi-amount { font-size: 24px; }
+                        .db-kpi-amount { font-size: 22px; }
+                        .db-kpi-actions { flex-wrap: wrap; }
+
+                        .db-card { border-radius: var(--radius-lg); }
+                        .db-card-head { padding: 14px 16px 10px; }
+                        .db-card-title { font-size: 14px; }
+                        .db-activity-head { padding: 0 16px 8px; }
+                        .db-activity-row { padding: 12px 16px; }
+                        .db-chart-info { padding: 0 16px 4px; }
+                        .db-chart-amount { font-size: 22px; }
+                        .db-overdue-item { padding: 12px 16px; }
+                        .db-overdue-cell { padding: 14px 16px; }
+
+                        /* Show mobile cards, hide table-like rows */
+                        .db-activity-head { display: none !important; }
+                        .db-desktop-rows { display: none !important; }
+                        .db-mobile-cards {
+                            display: flex !important;
+                            flex-direction: column;
                         }
-                        .dash-hero-revenue { font-size: 26px; }
-                        .dash-hero-greeting { font-size: 12px; }
 
-                        .dash-kpis { grid-template-columns: 1fr 1fr; gap: 10px; }
-                        .dash-kpi {
-                            padding: 14px 14px;
-                            border-radius: var(--radius-md);
-                        }
-                        .dash-kpi-value { font-size: 17px; }
-                        .dash-kpi-label { font-size: 11px; }
+                        .db-overdue-grid { grid-template-columns: 1fr; }
+                        .db-overdue-cell:first-child { border-right: none; }
 
-                        .dash-chart-card {
-                            padding: 16px 14px;
-                            border-radius: var(--radius-lg);
-                        }
-                        .dash-chart-header { flex-direction: column; align-items: flex-start; gap: 8px; }
-
-                        .dash-bottom { grid-template-columns: 1fr; gap: 14px; }
-
-                        .dash-section { border-radius: var(--radius-lg); }
-                        .dash-section-head { padding: 14px 16px; }
-                        .dash-table th, .dash-table td { padding: 10px 16px; font-size: 12px; }
-
-                        /* Show mobile cards, hide table */
-                        .dash-table-wrap { display: none !important; }
-                        .dash-mobile-cards { display: flex !important; flex-direction: column; }
-
-                        .dash-overdue-item { padding: 12px 16px; }
-
-                        .dash-footer {
+                        .db-footer {
                             left: 0;
                             bottom: calc(60px + env(safe-area-inset-bottom));
                             padding: 10px 16px;
@@ -418,170 +522,223 @@ const DashboardModule = {
                     }
                 </style>
 
-                <div class="dash">
-                    <!-- Hero Revenue Banner -->
-                    <div class="dash-hero">
-                        <div class="dash-hero-top">
-                            <div>
-                                <div class="dash-hero-greeting">Bienvenido, ${firstName}</div>
-                                <div class="dash-hero-revenue">${App.formatCurrency(stats.revenue_this_month || 0)}</div>
-                                <div class="dash-hero-label">Ingresos cobrados este mes</div>
-                            </div>
-                            ${trendPct !== 0 ? `
-                                <div class="dash-hero-trend ${isTrendUp ? 'up' : 'down'}">
-                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                                        ${isTrendUp
-                                            ? '<path d="M12 19V5m0 0 4 4m-4-4-4 4"/>'
-                                            : '<path d="M12 5v14m0 0 4-4m-4 4-4-4"/>'}
-                                    </svg>
-                                    ${Math.abs(trendPct)}% vs mes anterior
-                                </div>
-                            ` : ''}
+                <div class="db">
+                    <!-- Header -->
+                    <div class="db-header">
+                        <div class="db-welcome">Hola, ${firstName}</div>
+                        <div class="db-date">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                            ${dateStr}
                         </div>
                     </div>
 
-                    <!-- KPI Strip -->
-                    <div class="dash-kpis">
-                        <div class="dash-kpi">
-                            <span class="dash-kpi-dot green"></span>
+                    <!-- Top 3 KPI Cards -->
+                    <div class="db-kpi-row">
+                        <!-- Main Balance Card -->
+                        <div class="db-kpi db-kpi-main">
+                            <div class="db-kpi-top">
+                                <span class="db-kpi-label">Cobrado Este Mes</span>
+                            </div>
                             <div>
-                                <div class="dash-kpi-value">${App.formatCurrency(stats.revenue_this_month || 0)}</div>
-                                <div class="dash-kpi-label">Cobrado</div>
+                                <span class="db-kpi-amount">${App.formatCurrency(stats.revenue_this_month || 0)}</span>
+                                ${trendPct !== 0 ? `
+                                    <span class="db-kpi-tag ${isTrendUp ? 'up' : 'down'}">
+                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                                            ${isTrendUp ? '<path d="M12 19V5m0 0 4 4m-4-4-4 4"/>' : '<path d="M12 5v14m0 0 4-4m-4 4-4-4"/>'}
+                                        </svg>
+                                        ${Math.abs(trendPct)}%
+                                    </span>
+                                ` : ''}
                             </div>
-                        </div>
-                        <div class="dash-kpi">
-                            <span class="dash-kpi-dot purple"></span>
-                            <div>
-                                <div class="dash-kpi-value">${stats.invoiced_this_month || 0}</div>
-                                <div class="dash-kpi-label">Facturas emitidas</div>
-                            </div>
-                        </div>
-                        <div class="dash-kpi">
-                            <span class="dash-kpi-dot amber"></span>
-                            <div>
-                                <div class="dash-kpi-value">${App.formatCurrency(stats.pending_amount || 0)}</div>
-                                <div class="dash-kpi-label">Pendiente de cobro</div>
-                            </div>
-                        </div>
-                        <div class="dash-kpi">
-                            <span class="dash-kpi-dot red"></span>
-                            <div>
-                                <div class="dash-kpi-value">${stats.overdue_count || 0}</div>
-                                <div class="dash-kpi-label">Vencidas</div>
-                                ${stats.overdue_count > 0
-                                    ? '<span class="dash-kpi-badge danger">Atención</span>'
-                                    : '<span class="dash-kpi-badge success">Al día</span>'}
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Chart -->
-                    <div class="dash-chart-card">
-                        <div class="dash-chart-header">
-                            <div>
-                                <div class="dash-chart-title">Análisis de Facturación</div>
-                                <div class="dash-chart-subtitle">Últimos 12 meses</div>
-                            </div>
-                            <div class="dash-chart-legend">
-                                <span class="dash-legend-item"><span class="dash-legend-dot" style="background:#10B981"></span> Ingresos</span>
-                                <span class="dash-legend-item"><span class="dash-legend-dot" style="background:#3B82F6"></span> Gastos</span>
-                            </div>
-                        </div>
-                        <div id="area-chart" style="width:100%; min-height:240px;"></div>
-                    </div>
-
-                    <!-- Bottom Two-Column Grid -->
-                    <div class="dash-bottom">
-                        <!-- Recent Invoices -->
-                        <div class="dash-section">
-                            <div class="dash-section-head">
-                                <span class="dash-section-title">Facturas Recientes</span>
-                                <a href="#facturas" class="dash-section-link">
-                                    Ver todas
-                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                            <div class="db-kpi-meta">${stats.invoiced_this_month || 0} facturas emitidas</div>
+                            <div class="db-kpi-actions">
+                                <a href="#facturas" class="db-kpi-btn db-kpi-btn-primary">
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                                    Facturas
+                                </a>
+                                <a href="#clientes" class="db-kpi-btn db-kpi-btn-secondary">
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+                                    Clientes
                                 </a>
                             </div>
-                            <div class="dash-table-wrap">
-                                <table class="dash-table">
-                                    <thead><tr>
-                                        <th>Número</th><th>Cliente</th><th>Monto</th><th>Estado</th>
-                                    </tr></thead>
-                                    <tbody>
-                                        ${recent.length > 0 ? recent.map(i => `
-                                            <tr>
-                                                <td><a href="#facturas/${i.id}" class="link-id">${i.invoice_number}</a></td>
-                                                <td>
-                                                    <div class="user-cell">
-                                                        <div class="user-avatar-sm">${(i.company_name || i.contact_name || '?').charAt(0).toUpperCase()}</div>
-                                                        <span class="user-name" style="font-size:13px">${i.company_name || i.contact_name}</span>
-                                                    </div>
-                                                </td>
-                                                <td style="font-weight:600;color:var(--color-text-primary)">${App.formatCurrency(i.total, i.currency)}</td>
-                                                <td><span class="badge badge-${i.status}">${i.status}</span></td>
-                                            </tr>
-                                        `).join('') : '<tr><td colspan="4" class="dash-empty">No hay facturas recientes</td></tr>'}
-                                    </tbody>
-                                </table>
+                        </div>
+
+                        <!-- Monthly Invoiced -->
+                        <div class="db-kpi">
+                            <div class="db-kpi-top">
+                                <span class="db-kpi-label">Facturado Este Mes</span>
                             </div>
-                            <!-- Mobile version -->
-                            <div class="dash-mobile-cards">
-                                ${recent.length > 0 ? recent.map(i => `
-                                    <a href="#facturas/${i.id}" class="mobile-card">
-                                        <div class="mobile-card-middle">
-                                            <div class="mobile-card-avatar">${(i.company_name || i.contact_name || '?').charAt(0).toUpperCase()}</div>
-                                            <div class="mobile-card-info">
-                                                <div class="mobile-card-name">${i.invoice_number}</div>
-                                                <div class="mobile-card-sub">${i.company_name || i.contact_name}</div>
-                                            </div>
-                                            <div style="text-align:right">
-                                                <div class="mobile-card-amount" style="font-size:15px">${App.formatCurrency(i.total, i.currency)}</div>
-                                                <span class="badge badge-${i.status}" style="margin-top:4px">${i.status}</span>
-                                            </div>
-                                        </div>
-                                    </a>
-                                `).join('') : '<div class="dash-empty">No hay facturas recientes</div>'}
+                            <div class="db-kpi-amount">${App.formatCurrency(stats.invoiced_amount_this_month || stats.revenue_this_month || 0)}</div>
+                            <div class="db-kpi-compare">
+                                ${trendPct !== 0 ? `<span class="trend-val ${isTrendUp ? 'up' : 'down'}">${isTrendUp ? '+' : ''}${trendPct}%</span>` : ''}
+                                Comparado al mes pasado
                             </div>
                         </div>
 
-                        <!-- Overdue Invoices -->
-                        <div class="dash-section">
-                            <div class="dash-section-head">
-                                <span class="dash-section-title">
-                                    ${overdue.length > 0 ? '<span class="dash-pulse"></span>' : ''}
-                                    Vencidas
-                                </span>
-                                <span class="badge badge-overdue">${overdue.length}</span>
+                        <!-- Pending -->
+                        <div class="db-kpi">
+                            <div class="db-kpi-top">
+                                <span class="db-kpi-label">Pendiente de Cobro</span>
                             </div>
-                            <div style="display:flex; flex-direction:column; flex:1;">
-                                ${overdue.length > 0 ? overdue.map(o => `
-                                    <a href="#facturas/${o.id}" class="dash-overdue-item">
-                                        <div>
-                                            <div style="font-weight:600;font-size:13px;color:var(--color-text-primary)">${o.invoice_number}</div>
-                                            <div style="font-size:12px;color:var(--color-text-muted);margin-top:1px">${o.company_name || o.contact_name}</div>
+                            <div class="db-kpi-amount">${App.formatCurrency(stats.pending_amount || 0)}</div>
+                            <div class="db-kpi-compare">
+                                ${stats.overdue_count > 0
+                                    ? `<span class="trend-val down">${stats.overdue_count} vencida${stats.overdue_count > 1 ? 's' : ''}</span>`
+                                    : '<span class="trend-val up">Al día</span>'}
+                                del total pendiente
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Two-Column Body -->
+                    <div class="db-body">
+                        <!-- LEFT: Recent Activity -->
+                        <div class="db-col">
+                            <div class="db-card">
+                                <div class="db-card-head">
+                                    <span class="db-card-title">Actividad Reciente</span>
+                                    <a href="#facturas" class="db-card-badge" style="text-decoration:none;">Ver todas</a>
+                                </div>
+                                <div class="db-activity-head">
+                                    <span>Cliente</span>
+                                    <span>Fecha</span>
+                                    <span style="text-align:right">Monto</span>
+                                </div>
+                                <div class="db-desktop-rows">
+                                    ${recent.length > 0 ? recent.map((inv, idx) => {
+                                        const avatarColors = ['db-av-green','db-av-blue','db-av-purple','db-av-amber','db-av-red','db-av-gray'];
+                                        const avColor = avatarColors[idx % avatarColors.length];
+                                        const name = inv.company_name || inv.contact_name || '?';
+                                        const initial = name.charAt(0).toUpperCase();
+                                        const isPaid = inv.status === 'paid' || inv.status === 'accepted';
+                                        return `
+                                        <a href="#facturas/${inv.id}" class="db-activity-row">
+                                            <div class="db-activity-who">
+                                                <div class="db-activity-avatar ${avColor}">${initial}</div>
+                                                <div>
+                                                    <div class="db-activity-name">${name}</div>
+                                                    <div class="db-activity-sub">${inv.invoice_number}</div>
+                                                </div>
+                                            </div>
+                                            <div class="db-activity-date">${App.formatDate(inv.issue_date)}</div>
+                                            <div class="db-activity-amount ${isPaid ? 'db-amount-pos' : 'db-amount-neg'}">${isPaid ? '+' : ''}${App.formatCurrency(inv.total, inv.currency)}</div>
+                                        </a>`;
+                                    }).join('') : '<div class="db-empty">No hay actividad reciente</div>'}
+                                </div>
+                                <!-- Mobile version -->
+                                <div class="db-mobile-cards">
+                                    ${recent.length > 0 ? recent.map((inv, idx) => {
+                                        const avatarColors = ['db-av-green','db-av-blue','db-av-purple','db-av-amber','db-av-red','db-av-gray'];
+                                        const avColor = avatarColors[idx % avatarColors.length];
+                                        const name = inv.company_name || inv.contact_name || '?';
+                                        const initial = name.charAt(0).toUpperCase();
+                                        const isPaid = inv.status === 'paid' || inv.status === 'accepted';
+                                        return `
+                                        <a href="#facturas/${inv.id}" class="db-activity-row">
+                                            <div class="db-activity-who">
+                                                <div class="db-activity-avatar ${avColor}">${initial}</div>
+                                                <div>
+                                                    <div class="db-activity-name">${name}</div>
+                                                    <div class="db-activity-sub">${inv.invoice_number}</div>
+                                                </div>
+                                            </div>
+                                            <div class="db-activity-amount ${isPaid ? 'db-amount-pos' : 'db-amount-neg'}" style="margin-left:auto">${isPaid ? '+' : ''}${App.formatCurrency(inv.total, inv.currency)}</div>
+                                        </a>`;
+                                    }).join('') : '<div class="db-empty">No hay actividad reciente</div>'}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- RIGHT: Chart + Overdue -->
+                        <div class="db-col">
+                            <!-- Cashflow Chart -->
+                            <div class="db-card">
+                                <div class="db-card-head">
+                                    <span class="db-card-title">Flujo de Caja</span>
+                                    <span class="db-card-badge">Este Año</span>
+                                </div>
+                                <div class="db-chart-info">
+                                    <div class="db-chart-label">Balance Total</div>
+                                    <div class="db-chart-amount-row">
+                                        <span class="db-chart-amount">${App.formatCurrency(stats.revenue_this_month || 0)}</span>
+                                        ${trendPct !== 0 ? `
+                                            <span class="db-kpi-tag ${isTrendUp ? 'up' : 'down'}" style="font-size:11px">
+                                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="width:10px;height:10px">
+                                                    ${isTrendUp ? '<path d="M12 19V5m0 0 4 4m-4-4-4 4"/>' : '<path d="M12 5v14m0 0 4-4m-4 4-4-4"/>'}
+                                                </svg>
+                                                ${Math.abs(trendPct)}%
+                                            </span>
+                                        ` : ''}
+                                        <div class="db-chart-legend">
+                                            <span class="db-lg-item"><span class="db-lg-dot" style="background:#3B82F6"></span>Gastos</span>
+                                            <span class="db-lg-item"><span class="db-lg-dot" style="background:#F59E0B"></span>Ingresos</span>
                                         </div>
-                                        <div style="text-align:right">
-                                            <div style="font-weight:700;font-size:14px;color:var(--color-danger-icon)">${App.formatCurrency(o.total, o.currency)}</div>
-                                            <div style="font-size:11px;color:var(--color-text-muted);margin-top:1px">${App.formatDate(o.due_date)}</div>
+                                    </div>
+                                </div>
+                                <div id="area-chart" style="width:100%;min-height:220px;padding:0 12px;"></div>
+                            </div>
+
+                            <!-- Overdue / Savings-style -->
+                            <div class="db-card">
+                                <div class="db-card-head">
+                                    <span class="db-card-title">
+                                        ${overdue.length > 0 ? '<span class="db-pulse"></span>' : ''}
+                                        Facturas Vencidas
+                                    </span>
+                                    <span class="badge badge-overdue">${overdue.length}</span>
+                                </div>
+                                ${overdue.length > 0 ? (overdue.length >= 2 ? `
+                                    <div class="db-overdue-grid">
+                                        ${overdue.slice(0, 2).map(o => `
+                                            <a href="#facturas/${o.id}" class="db-overdue-cell">
+                                                <div class="db-overdue-cell-title">${o.invoice_number}</div>
+                                                <div class="db-overdue-cell-sub">${o.company_name || o.contact_name}</div>
+                                                <div class="db-overdue-cell-amount">${App.formatCurrency(o.total, o.currency)}</div>
+                                                <div class="db-overdue-bar-wrap">
+                                                    <div class="db-overdue-bar" style="width:${Math.min(100, Math.max(30, Math.random() * 100))}%"></div>
+                                                </div>
+                                            </a>
+                                        `).join('')}
+                                    </div>
+                                    ${overdue.length > 2 ? overdue.slice(2).map(o => `
+                                        <a href="#facturas/${o.id}" class="db-overdue-item">
+                                            <div class="db-overdue-left">
+                                                <div style="font-weight:600;font-size:13px;color:var(--color-text-primary)">${o.invoice_number}</div>
+                                                <div style="font-size:12px;color:var(--color-text-muted);margin-top:1px">${o.company_name || o.contact_name}</div>
+                                            </div>
+                                            <div style="text-align:right">
+                                                <div style="font-weight:700;font-size:14px;color:var(--color-danger-icon)">${App.formatCurrency(o.total, o.currency)}</div>
+                                                <div style="font-size:11px;color:var(--color-text-muted);margin-top:1px">${App.formatDate(o.due_date)}</div>
+                                            </div>
+                                        </a>
+                                    `).join('') : ''}
+                                ` : overdue.map(o => `
+                                    <a href="#facturas/${o.id}" class="db-overdue-item">
+                                        <div class="db-overdue-left">
+                                            <div class="db-overdue-name">${o.invoice_number}</div>
+                                            <div class="db-overdue-sub">${o.company_name || o.contact_name}</div>
+                                        </div>
+                                        <div>
+                                            <div class="db-overdue-amount" style="color:var(--color-danger-icon)">${App.formatCurrency(o.total, o.currency)}</div>
                                         </div>
                                     </a>
-                                `).join('') : '<div class="dash-empty">No hay facturas vencidas</div>'}
+                                `).join('')) : '<div class="db-empty">No hay facturas vencidas</div>'}
                             </div>
                         </div>
                     </div>
 
                     <!-- Footer -->
-                    <footer class="dash-footer">
-                        <a href="https://gridbase.com.do" target="_blank" class="dash-footer-link">
+                    <footer class="db-footer">
+                        <a href="https://gridbase.com.do" target="_blank">
                             Bills by <span>GridBase Digital Solutions</span>
                         </a>
                     </footer>
                 </div>
             `;
 
-            // Render chart
             this.renderChart(monthlyData);
         } catch (e) {
-            container.innerHTML = `<div class="text-red" style="padding:32px;text-align:center;">Error al cargar el dashboard</div>`;
+            container.innerHTML = '<div class="text-red" style="padding:32px;text-align:center;">Error al cargar el dashboard</div>';
         }
     },
 
@@ -601,51 +758,31 @@ const DashboardModule = {
         }
 
         container.innerHTML = '';
-
         const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
 
         const options = {
             chart: {
-                height: 240,
+                height: 220,
                 type: 'area',
                 fontFamily: 'Inter, sans-serif',
                 toolbar: { show: false },
                 sparkline: { enabled: false },
-                animations: {
-                    enabled: true,
-                    easing: 'easeinout',
-                    speed: 800
-                }
+                animations: { enabled: true, easing: 'easeinout', speed: 800 }
             },
-            stroke: {
-                curve: 'smooth',
-                width: 2.5
-            },
+            stroke: { curve: 'smooth', width: 2.5 },
             fill: {
                 type: 'gradient',
-                gradient: {
-                    opacityFrom: 0.35,
-                    opacityTo: 0.0,
-                    shadeIntensity: 1
-                }
+                gradient: { opacityFrom: 0.3, opacityTo: 0.0, shadeIntensity: 1 }
             },
             grid: {
                 show: true,
                 strokeDashArray: 4,
                 borderColor: isDark ? '#1F2937' : '#F3F4F6',
-                padding: { left: 8, right: 8, top: 0, bottom: 0 }
+                padding: { left: 4, right: 4, top: 0, bottom: 0 }
             },
             series: [
-                {
-                    name: 'Ingresos',
-                    data: months.map(m => m.revenue),
-                    color: '#10B981'
-                },
-                {
-                    name: 'Gastos',
-                    data: months.map(m => m.expense),
-                    color: '#3B82F6'
-                }
+                { name: 'Gastos', data: months.map(m => m.expense), color: '#3B82F6' },
+                { name: 'Ingresos', data: months.map(m => m.revenue), color: '#F59E0B' }
             ],
             xaxis: {
                 categories: months.map(m => m.label),
@@ -671,25 +808,17 @@ const DashboardModule = {
                         fontWeight: 500
                     },
                     formatter: function(val) {
+                        if (val >= 1000) return (val / 1000).toFixed(0) + 'K';
                         return App.formatCurrency(val, '').replace(',00', '');
                     }
                 }
             },
             tooltip: {
                 theme: isDark ? 'dark' : 'light',
-                y: {
-                    formatter: function(val) {
-                        return App.formatCurrency(val);
-                    }
-                }
+                y: { formatter: function(val) { return App.formatCurrency(val); } }
             },
-            markers: {
-                size: 0,
-                hover: { size: 5 }
-            },
-            dataLabels: {
-                enabled: false
-            }
+            markers: { size: 0, hover: { size: 5 } },
+            dataLabels: { enabled: false }
         };
 
         const chart = new ApexCharts(container, options);

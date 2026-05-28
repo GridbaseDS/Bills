@@ -37,27 +37,84 @@ const DashboardModule = {
             container.innerHTML = `
                 <style>
                     /* Premium Custom Styling & Dynamic Transitions for Tenant Dashboard */
+                    .dashboard-wrapper {
+                        display: flex;
+                        flex-direction: column;
+                        gap: 24px;
+                        width: 100%;
+                    }
+                    
+                    @media (max-width: 640px) {
+                        .dashboard-wrapper {
+                            padding: 16px 16px 40px 16px !important;
+                            gap: 16px;
+                        }
+                    }
+
                     .dashboard-card-hover {
                         transition: transform 0.22s cubic-bezier(0.4, 0, 0.2, 1), 
                                     box-shadow 0.22s cubic-bezier(0.4, 0, 0.2, 1), 
                                     border-color 0.22s cubic-bezier(0.4, 0, 0.2, 1) !important;
                     }
-                    .dashboard-card-hover:hover {
-                        transform: translateY(-4px);
-                        box-shadow: 0 12px 20px -8px rgba(0, 0, 0, 0.08), 0 4px 12px -2px rgba(0, 0, 0, 0.03) !important;
-                        border-color: rgba(17, 24, 39, 0.12) !important;
-                    }
-                    [data-theme="dark"] .dashboard-card-hover:hover {
-                        border-color: rgba(255, 255, 255, 0.15) !important;
-                        box-shadow: 0 12px 24px -10px rgba(0, 0, 0, 0.5), 0 4px 12px -2px rgba(0, 0, 0, 0.3) !important;
+                    
+                    @media (min-width: 641px) {
+                        .dashboard-card-hover:hover {
+                            transform: translateY(-4px);
+                            box-shadow: 0 12px 20px -8px rgba(0, 0, 0, 0.08), 0 4px 12px -2px rgba(0, 0, 0, 0.03) !important;
+                            border-color: rgba(17, 24, 39, 0.12) !important;
+                        }
+                        [data-theme="dark"] .dashboard-card-hover:hover {
+                            border-color: rgba(255, 255, 255, 0.15) !important;
+                            box-shadow: 0 12px 24px -10px rgba(0, 0, 0, 0.5), 0 4px 12px -2px rgba(0, 0, 0, 0.3) !important;
+                        }
                     }
                     
                     /* Accentuated visual response on hover for metric icons */
                     .metric-card .metric-card-icon {
                         transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
                     }
-                    .metric-card:hover .metric-card-icon {
-                        transform: scale(1.12) rotate(6deg);
+                    @media (min-width: 641px) {
+                        .metric-card:hover .metric-card-icon {
+                            transform: scale(1.12) rotate(6deg);
+                        }
+                    }
+                    
+                    /* Responsive Chart Card padding */
+                    .chart-card {
+                        padding: 24px !important;
+                    }
+                    @media (max-width: 640px) {
+                        .chart-card {
+                            padding: 16px 14px !important;
+                        }
+                    }
+
+                    /* Overdue list items visually transform into gorgeous cards on mobile */
+                    .overdue-item {
+                        display: flex;
+                        align-items: center;
+                        justify-content: space-between;
+                        padding: 14px 24px;
+                        border-bottom: 1px solid var(--color-border);
+                        text-decoration: none;
+                        color: inherit;
+                        transition: background var(--transition-fast) ease, transform 0.2s ease;
+                    }
+                    .overdue-item:hover {
+                        background: var(--bg-hover);
+                    }
+                    @media (max-width: 640px) {
+                        .overdue-item {
+                            background: var(--bg-card);
+                            border: 1px solid var(--color-border) !important;
+                            border-radius: var(--radius-lg);
+                            padding: 14px 16px !important;
+                            margin-bottom: 8px;
+                            box-shadow: var(--shadow-sm);
+                        }
+                        .overdue-item:active {
+                            background: var(--bg-hover);
+                        }
                     }
                     
                     /* Red pulse dot for overdue invoices indicator */
@@ -87,157 +144,166 @@ const DashboardModule = {
                     }
                 </style>
 
-                <div class="page-header">
-                    <div>
-                        <h1 class="page-title">Hola, ${firstName}</h1>
-                        <p class="page-subtitle">Resumen general de tu negocio</p>
-                    </div>
-                </div>
-
-                <!-- Metric Cards -->
-                <div class="grid-metrics">
-                    <div class="metric-card dashboard-card-hover">
-                        <div class="metric-body">
-                            <span class="metric-value">${App.formatCurrency(stats.revenue_this_month || 0)}</span>
-                        </div>
-                        <div class="metric-title">Cobrado Este Mes</div>
-                        <div class="metric-card-icon green">
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
-                        </div>
-                    </div>
-                    <div class="metric-card dashboard-card-hover">
-                        <div class="metric-body">
-                            <span class="metric-value">${stats.invoiced_this_month || 0}</span>
-                        </div>
-                        <div class="metric-title">Facturas Este Mes</div>
-                        <div class="metric-card-icon purple">
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
-                        </div>
-                    </div>
-                    <div class="metric-card dashboard-card-hover">
-                        <div class="metric-body">
-                            <span class="metric-value">${App.formatCurrency(stats.pending_amount || 0)}</span>
-                        </div>
-                        <div class="metric-title">Pendiente de Cobro</div>
-                        <div class="metric-card-icon amber">
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
-                        </div>
-                    </div>
-                    <div class="metric-card dashboard-card-hover">
-                        <div class="metric-body">
-                            <span class="metric-value">${stats.overdue_count || 0}</span>
-                            ${stats.overdue_count > 0 ? '<span class="metric-trend down">Vencidas</span>' : '<span class="metric-trend up">Al día</span>'}
-                        </div>
-                        <div class="metric-title">Facturas Vencidas</div>
-                        <div class="metric-card-icon red">
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Monthly Revenue Chart Section -->
-                <div class="table-outer dashboard-card-hover" style="margin-top:24px; padding: 24px;">
-                    <div style="display:flex; justify-content:space-between; align-items:start; margin-bottom: 16px;">
+                <div class="dashboard-wrapper">
+                    <div class="page-header">
                         <div>
-                            <span style="font-size:12px; color:var(--color-text-muted); display:block; text-transform:uppercase; font-weight:600; letter-spacing:0.05em; margin-bottom:4px;">Análisis de Facturación</span>
-                            <h5 style="font-size:24px; font-weight:700; color:var(--color-text-primary); margin:0;">${App.formatCurrency(stats.revenue_this_month || 0)}</h5>
-                            <p style="font-size:12px; color:var(--color-text-muted); margin:4px 0 0 0;">Cobrado Este Mes</p>
+                            <h1 class="page-title">Hola, ${firstName}</h1>
+                            <p class="page-subtitle">Resumen general de tu negocio</p>
                         </div>
-                        ${trendBadge}
                     </div>
-                    <div id="area-chart" style="width:100%; min-height:220px; margin: 12px 0;"></div>
-                    <div style="display:flex; justify-content:space-between; align-items:center; border-top:1px solid var(--color-border); padding-top:16px; margin-top:8px;">
-                        <button id="dropdownDefaultButton" class="btn-ghost" style="font-size:13px; font-weight:600; color:var(--color-text-muted); display:inline-flex; align-items:center; gap:6px; border:none; background:none; cursor:pointer;" type="button">
-                            Este Año
-                            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="color:var(--color-text-muted);"><polyline points="6 9 12 15 18 9"></polyline></svg>
-                        </button>
-                        <a href="#reportes" style="font-size:13px; font-weight:600; color:var(--color-primary); text-decoration:none; display:inline-flex; align-items:center; gap:4px;">
-                            Ver Reportes
-                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
-                        </a>
-                    </div>
-                </div>
 
-                <!-- Recent and Overdue Grid -->
-                <div class="dashboard-grid" style="margin-top:24px;">
-                    <!-- Left Column: Recent Invoices -->
-                    <div>
-                        <div class="table-outer dashboard-card-hover">
-                            <div class="table-toolbar">
-                                <span style="font-size:14px;font-weight:600;">Facturas Recientes</span>
-                                <a href="#facturas" class="btn btn-ghost btn-sm btn-view-all">Ver todas <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="btn-arrow-icon"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg></a>
+                    <!-- Metric Cards -->
+                    <div class="grid-metrics">
+                        <div class="metric-card dashboard-card-hover">
+                            <div class="metric-body">
+                                <span class="metric-value">${App.formatCurrency(stats.revenue_this_month || 0)}</span>
                             </div>
-                            <div class="table-wrapper">
-                                <table class="data-table">
-                                    <thead><tr>
-                                        <th>Número</th><th>Cliente</th><th>Fecha</th><th>Monto</th><th>Estado</th>
-                                    </tr></thead>
-                                    <tbody>
-                                        ${recent.length > 0 ? recent.map(i => `
-                                            <tr>
-                                                <td><a href="#facturas/${i.id}" class="link-id">${i.invoice_number}</a></td>
-                                                <td>
-                                                    <div class="user-cell">
-                                                        <div class="user-avatar-sm">${(i.company_name || i.contact_name || '?').charAt(0).toUpperCase()}</div>
-                                                        <div class="user-details">
-                                                            <span class="user-name">${i.company_name || i.contact_name}</span>
+                            <div class="metric-title">Cobrado Este Mes</div>
+                            <div class="metric-card-icon green">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
+                            </div>
+                        </div>
+                        <div class="metric-card dashboard-card-hover">
+                            <div class="metric-body">
+                                <span class="metric-value">${stats.invoiced_this_month || 0}</span>
+                            </div>
+                            <div class="metric-title">Facturas Este Mes</div>
+                            <div class="metric-card-icon purple">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
+                            </div>
+                        </div>
+                        <div class="metric-card dashboard-card-hover">
+                            <div class="metric-body">
+                                <span class="metric-value">${App.formatCurrency(stats.pending_amount || 0)}</span>
+                            </div>
+                            <div class="metric-title">Pendiente de Cobro</div>
+                            <div class="metric-card-icon amber">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                            </div>
+                        </div>
+                        <div class="metric-card dashboard-card-hover">
+                            <div class="metric-body">
+                                <span class="metric-value">${stats.overdue_count || 0}</span>
+                                ${stats.overdue_count > 0 ? '<span class="metric-trend down">Vencidas</span>' : '<span class="metric-trend up">Al día</span>'}
+                            </div>
+                            <div class="metric-title">Facturas Vencidas</div>
+                            <div class="metric-card-icon red">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Monthly Revenue Chart Section -->
+                    <div class="table-outer dashboard-card-hover chart-card" style="margin-top:24px;">
+                        <div style="display:flex; justify-content:space-between; align-items:start; margin-bottom: 16px;">
+                            <div>
+                                <span style="font-size:12px; color:var(--color-text-muted); display:block; text-transform:uppercase; font-weight:600; letter-spacing:0.05em; margin-bottom:4px;">Análisis de Facturación</span>
+                                <h5 style="font-size:24px; font-weight:700; color:var(--color-text-primary); margin:0;">${App.formatCurrency(stats.revenue_this_month || 0)}</h5>
+                                <p style="font-size:12px; color:var(--color-text-muted); margin:4px 0 0 0;">Cobrado Este Mes</p>
+                            </div>
+                            ${trendBadge}
+                        </div>
+                        <div id="area-chart" style="width:100%; min-height:220px; margin: 12px 0;"></div>
+                        <div style="display:flex; justify-content:space-between; align-items:center; border-top:1px solid var(--color-border); padding-top:16px; margin-top:8px;">
+                            <button id="dropdownDefaultButton" class="btn-ghost" style="font-size:13px; font-weight:600; color:var(--color-text-muted); display:inline-flex; align-items:center; gap:6px; border:none; background:none; cursor:pointer;" type="button">
+                                Este Año
+                                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="color:var(--color-text-muted);"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                            </button>
+                            <a href="#reportes" style="font-size:13px; font-weight:600; color:var(--color-primary); text-decoration:none; display:inline-flex; align-items:center; gap:4px;">
+                                Ver Reportes
+                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- Recent and Overdue Grid -->
+                    <div class="dashboard-grid" style="margin-top:24px;">
+                        <!-- Left Column: Recent Invoices -->
+                        <div>
+                            <div class="table-outer dashboard-card-hover">
+                                <div class="table-toolbar">
+                                    <span style="font-size:14px;font-weight:600;">Facturas Recientes</span>
+                                    <a href="#facturas" class="btn btn-ghost btn-sm btn-view-all">Ver todas <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="btn-arrow-icon"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg></a>
+                                </div>
+                                <div class="table-wrapper">
+                                    <table class="data-table">
+                                        <thead><tr>
+                                            <th>Número</th><th>Cliente</th><th>Fecha</th><th>Monto</th><th>Estado</th>
+                                        </tr></thead>
+                                        <tbody>
+                                            ${recent.length > 0 ? recent.map(i => `
+                                                <tr>
+                                                    <td><a href="#facturas/${i.id}" class="link-id">${i.invoice_number}</a></td>
+                                                    <td>
+                                                        <div class="user-cell">
+                                                            <div class="user-avatar-sm">${(i.company_name || i.contact_name || '?').charAt(0).toUpperCase()}</div>
+                                                            <div class="user-details">
+                                                                <span class="user-name">${i.company_name || i.contact_name}</span>
+                                                            </div>
                                                         </div>
-                                                    </div>
-                                                </td>
-                                                <td>${App.formatDate(i.issue_date)}</td>
-                                                <td style="font-weight:600;color:var(--color-text-primary)">${App.formatCurrency(i.total, i.currency)}</td>
-                                                <td><span class="badge badge-${i.status}">${i.status}</span></td>
-                                            </tr>
-                                        `).join('') : '<tr><td colspan="5" class="text-center text-muted" style="padding:32px;">No hay facturas recientes</td></tr>'}
-                                    </tbody>
-                                </table>
+                                                    </td>
+                                                    <td>${App.formatDate(i.issue_date)}</td>
+                                                    <td style="font-weight:600;color:var(--color-text-primary)">${App.formatCurrency(i.total, i.currency)}</td>
+                                                    <td><span class="badge badge-${i.status}">${i.status}</span></td>
+                                                </tr>
+                                            `).join('') : '<tr><td colspan="5" class="text-center text-muted" style="padding:32px;">No hay facturas recientes</td></tr>'}
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <div class="mobile-card-list">
+                                    ${recent.length > 0 ? recent.map(i => `
+                                        <a href="#facturas/${i.id}" class="mobile-card">
+                                            <div class="mobile-card-middle">
+                                                <div class="mobile-card-avatar">${(i.company_name || i.contact_name || '?').charAt(0).toUpperCase()}</div>
+                                                <div class="mobile-card-info">
+                                                    <div class="mobile-card-name">${i.invoice_number}</div>
+                                                    <div class="mobile-card-sub">${i.company_name || i.contact_name}</div>
+                                                </div>
+                                                <div style="text-align:right">
+                                                    <div class="mobile-card-amount" style="font-size:15px">${App.formatCurrency(i.total, i.currency)}</div>
+                                                    <span class="badge badge-${i.status}" style="margin-top:4px">${i.status}</span>
+                                                </div>
+                                            </div>
+                                        </a>
+                                    `).join('') : '<div class="text-center text-muted" style="padding:32px;">No hay facturas recientes</div>'}
+                                </div>
                             </div>
-                            <div class="mobile-card-list">
-                                ${recent.length > 0 ? recent.map(i => `
-                                    <a href="#facturas/${i.id}" class="mobile-card">
-                                        <div class="mobile-card-middle">
-                                            <div class="mobile-card-avatar">${(i.company_name || i.contact_name || '?').charAt(0).toUpperCase()}</div>
-                                            <div class="mobile-card-info">
-                                                <div class="mobile-card-name">${i.invoice_number}</div>
-                                                <div class="mobile-card-sub">${i.company_name || i.contact_name}</div>
+                        </div>
+
+                        <!-- Right Column: Overdue -->
+                        <div>
+                            <div class="table-outer dashboard-card-hover">
+                                <div class="table-toolbar">
+                                    <div style="display:flex;align-items:center;">
+                                        ${overdue.length > 0 ? '<span class="pulse-dot"></span>' : ''}
+                                        <span style="font-size:14px;font-weight:600;">Vencidas</span>
+                                    </div>
+                                    <span class="badge badge-overdue">${overdue.length}</span>
+                                </div>
+                                <div style="padding: 0; display: flex; flex-direction: column;">
+                                    ${overdue.length > 0 ? overdue.map(o => `
+                                        <a href="#facturas/${o.id}" class="overdue-item">
+                                            <div>
+                                                <div style="font-weight:600;font-size:13px;color:var(--color-text-primary)">${o.invoice_number}</div>
+                                                <div style="font-size:12px;color:var(--color-text-muted);margin-top:2px">${o.company_name || o.contact_name}</div>
                                             </div>
                                             <div style="text-align:right">
-                                                <div class="mobile-card-amount" style="font-size:15px">${App.formatCurrency(i.total, i.currency)}</div>
-                                                <span class="badge badge-${i.status}" style="margin-top:4px">${i.status}</span>
+                                                <div style="font-weight:700;font-size:14px;color:var(--color-danger-icon)">${App.formatCurrency(o.total, o.currency)}</div>
+                                                <div style="font-size:11px;color:var(--color-text-muted);margin-top:2px">${App.formatDate(o.due_date)}</div>
                                             </div>
-                                        </div>
-                                    </a>
-                                `).join('') : '<div class="text-center text-muted" style="padding:32px;">No hay facturas recientes</div>'}
+                                        </a>
+                                    `).join('') : '<div style="padding:32px;text-align:center;color:var(--color-text-muted);font-size:13px;">No hay facturas vencidas</div>'}
+                                </div>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Right Column: Overdue -->
-                    <div>
-                        <div class="table-outer dashboard-card-hover">
-                            <div class="table-toolbar">
-                                <div style="display:flex;align-items:center;">
-                                    ${overdue.length > 0 ? '<span class="pulse-dot"></span>' : ''}
-                                    <span style="font-size:14px;font-weight:600;">Vencidas</span>
-                                </div>
-                                <span class="badge badge-overdue">${overdue.length}</span>
-                            </div>
-                            <div style="padding: 0;">
-                                ${overdue.length > 0 ? overdue.map(o => `
-                                    <a href="#facturas/${o.id}" style="display:flex;align-items:center;justify-content:space-between;padding:14px var(--spacing-xl);border-bottom:1px solid var(--color-border);text-decoration:none;color:inherit;transition:background var(--transition-fast);" onmouseover="this.style.background='var(--bg-hover)'" onmouseout="this.style.background=''">
-                                        <div>
-                                            <div style="font-weight:600;font-size:13px;color:var(--color-text-primary)">${o.invoice_number}</div>
-                                            <div style="font-size:12px;color:var(--color-text-muted);margin-top:2px">${o.company_name || o.contact_name}</div>
-                                        </div>
-                                        <div style="text-align:right">
-                                            <div style="font-weight:700;font-size:14px;color:var(--color-danger-icon)">${App.formatCurrency(o.total, o.currency)}</div>
-                                            <div style="font-size:11px;color:var(--color-text-muted);margin-top:2px">${App.formatDate(o.due_date)}</div>
-                                        </div>
-                                    </a>
-                                `).join('') : '<div style="padding:32px;text-align:center;color:var(--color-text-muted);font-size:13px;">No hay facturas vencidas</div>'}
-                            </div>
-                        </div>
-                    </div>
+                    <!-- Clean Brand Footer -->
+                    <footer style="margin-top: 32px; padding: 24px 0 16px 0; border-top: 1px solid var(--color-border); text-align: center;">
+                        <a href="https://gridbase.com.do" target="_blank" style="font-size: 12px; color: var(--color-text-muted); text-decoration: none; font-weight: 500; transition: color 0.2s ease;" onmouseover="this.style.color='var(--color-primary)'" onmouseout="this.style.color='var(--color-text-muted)'">
+                            Bills by <span style="font-weight: 600; color: var(--color-primary);">GridBase Digital Solutions</span>
+                        </a>
+                    </footer>
                 </div>
             `;
 

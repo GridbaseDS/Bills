@@ -50,46 +50,46 @@ const DashboardModule = {
                         </div>
                         <div class="metric-title">Facturas Vencidas</div>
                         <div class="metric-card-icon red">
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
                         </div>
                     </div>
                 </div>
 
-                <!-- Charts & Tables Grid -->
-                <div class="dashboard-grid">
-                    <div>
-                        <!-- Revenue Chart -->
-                        <div class="table-outer" style="margin-bottom: var(--spacing-xl);">
-                            <div class="table-toolbar" style="display: flex; align-items: center; justify-content: space-between; padding: 16px 24px; border-bottom: 1px solid var(--color-border);">
-                                <div>
-                                    <span style="font-size:15px; font-weight:700; color:var(--color-text-primary);">Análisis de Facturación</span>
-                                    <div style="display: flex; align-items: center; gap: 16px; margin-top: 6px;">
-                                        <span style="display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--color-text-secondary); font-weight: 500;">
-                                            <span style="width: 8px; height: 8px; border-radius: 50%; background: #10B981; display: inline-block;"></span>
-                                            Ingresos
-                                        </span>
-                                        <span style="display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--color-text-secondary); font-weight: 500;">
-                                            <span style="width: 8px; height: 8px; border-radius: 50%; background: #3B82F6; display: inline-block;"></span>
-                                            Gastos
-                                        </span>
-                                    </div>
-                                </div>
-                                <div style="display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border: 1px solid var(--color-border); border-radius: 8px; background: var(--bg-surface); font-size: 12px; font-weight: 600; color: var(--color-text-primary); cursor: pointer; box-shadow: var(--shadow-sm);">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--color-text-muted);"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
-                                    Este Año
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="color:var(--color-text-muted); margin-left: 2px;"><polyline points="6 9 12 15 18 9"></polyline></svg>
-                                </div>
-                            </div>
-                            <div style="padding: var(--spacing-xl);">
-                                <div id="revenue-chart-container" style="position:relative; width:100%; height:220px; user-select:none;"></div>
+                <!-- Monthly Revenue Chart Section -->
+                <div class="table-outer" style="margin-top:24px; padding: 24px;">
+                    <div style="display:flex; justify-content:space-between; align-items:start; margin-bottom: 24px;">
+                        <div>
+                            <span style="font-size:16px; font-weight:700; color:var(--color-text-primary); display:block; margin-bottom:8px;">Análisis de Facturación</span>
+                            <div style="display:flex; align-items:center; gap:16px;">
+                                <span style="font-size:12px; color:var(--color-text-muted); display:inline-flex; align-items:center; gap:6px;">
+                                    <span style="width:8px; height:8px; border-radius:50%; background:#10B981; display:inline-block;"></span>
+                                    Ingresos
+                                </span>
+                                <span style="font-size:12px; color:var(--color-text-muted); display:inline-flex; align-items:center; gap:6px;">
+                                    <span style="width:8px; height:8px; border-radius:50%; background:#3B82F6; display:inline-block;"></span>
+                                    Gastos
+                                </span>
                             </div>
                         </div>
+                        <div style="display:inline-flex; align-items:center; gap:8px; padding: 8px 14px; border: 1px solid var(--color-border); border-radius: 8px; font-size: 12px; color: var(--color-text-primary); font-weight: 500; background: var(--color-bg-card);">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--color-text-muted);"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                            <span>Este Año</span>
+                            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--color-text-muted); margin-left: 4px;"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                        </div>
+                    </div>
+                    <div style="width:100%; position:relative; min-height:280px;" id="revenue-chart-container">
+                        <!-- SVG Chart will be rendered here -->
+                    </div>
+                </div>
 
-                        <!-- Recent Invoices Table -->
+                <!-- Recent and Overdue Grid -->
+                <div class="grid-2-1" style="margin-top:24px;">
+                    <!-- Left Column: Recent Invoices -->
+                    <div>
                         <div class="table-outer">
                             <div class="table-toolbar">
                                 <span style="font-size:14px;font-weight:600;">Facturas Recientes</span>
-                                <a href="/facturas" class="btn btn-ghost btn-sm btn-view-all">Ver todas <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="btn-arrow-icon"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg></a>
+                                <a href="#facturas" class="btn btn-ghost btn-sm btn-view-all">Ver todas <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="btn-arrow-icon"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg></a>
                             </div>
                             <div class="table-wrapper">
                                 <table class="data-table">
@@ -178,8 +178,8 @@ const DashboardModule = {
 
         // Standard dimensions
         const W = 700;
-        const H = 220;
-        const pad = { top: 15, right: 30, bottom: 30, left: 65 };
+        const H = 280;
+        const pad = { top: 20, right: 30, bottom: 35, left: 65 };
         const chartW = W - pad.left - pad.right;
         const chartH = H - pad.top - pad.bottom;
 

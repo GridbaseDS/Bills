@@ -3,10 +3,11 @@
 # Apache Configuration for cPanel
 # ============================================================
 
-# Force HTTPS
+# Force HTTPS (compatible with cPanel reverse proxy)
 RewriteEngine On
 RewriteBase /
 RewriteCond %{HTTPS} off
+RewriteCond %{HTTP:X-Forwarded-Proto} !https
 RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
 
 # API Routing - route all api/* requests to api/index.php

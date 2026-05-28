@@ -152,12 +152,9 @@ class CertificationController extends Controller
             $token = $authService->getValidToken($settings);
             $env = $settings['dgii_env'] ?? 'testing';
 
-            // 4. Determine if RFCE (FC<250k) or regular
-            $isFcLessThan250k = (int)$tipoECF === 32 && ($testCase['MontoTotal'] ?? 0) < 250000;
-
-            // 5. Submit to DGII
+            // 4. Submit to DGII (all ECF test cases go to ecf endpoint, RFCE tests are separate)
             Log::info("[Certification] Submitting {$encf} to DGII ({$env})");
-            $result = $apiService->submitInvoice($signedXml, $token, $env, $isFcLessThan250k);
+            $result = $apiService->submitInvoice($signedXml, $token, $env, false);
 
             Log::info("[Certification] Result for {$encf}: " . json_encode($result));
 
@@ -193,10 +190,28 @@ class CertificationController extends Controller
             throw new \RuntimeException("Test cases file not found: dgii_test_ecf.json");
         }
 
-        $data = json_decode(file_get_contents($path), true);
+        $raw = file_get_contents($path);
+
+        // CRITICAL: Preserve exact numeric formatting from JSON.
+        // json_decode converts 900.0000 → 900.0 (float) → "900" (string).
+        // DGII requires EXACT decimal formatting from their test data.
+        // Solution: Quote all unquoted numeric values before decoding.
+        $raw = preg_replace('/:\s*(-?\d+\.?\d*)\s*([,}\]])/', ': "$1"$2', $raw);
+
+        $data = json_decode($raw, true);
         if (json_last_error() !== JSON_ERROR_NONE) {
             throw new \RuntimeException("Invalid JSON in test cases: " . json_last_error_msg());
         }
+
+        // Sort: base types first (31,32,41,43,44,45,46,47), then 33/34 last
+        // Types 33/34 reference other eNCFs which must exist first
+        usort($data, function ($a, $b) {
+            $aIsNote = in_array($a['TipoeCF'], ['33', '34', 33, 34]);
+            $bIsNote = in_array($b['TipoeCF'], ['33', '34', 33, 34]);
+            if ($aIsNote && !$bIsNote) return 1;
+            if (!$aIsNote && $bIsNote) return -1;
+            return 0;
+        });
 
         return $data;
     }

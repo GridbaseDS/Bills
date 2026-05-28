@@ -494,13 +494,13 @@ class CertificationXmlBuilder
             if ($desc !== null) $item->appendChild($this->el('DescripcionItem', $this->xmlSafe($desc)));
 
             $cantidad = $this->v("CantidadItem[$n]");
-            if ($cantidad !== null) $item->appendChild($this->el('CantidadItem', $this->fmtDecimal($cantidad)));
+            if ($cantidad !== null) $item->appendChild($this->el('CantidadItem', $this->fmtQty($cantidad)));
 
             $unidad = $this->v("UnidadMedida[$n]");
             if ($unidad !== null) $item->appendChild($this->el('UnidadMedida', $unidad));
 
             $cantRef = $this->v("CantidadReferencia[$n]");
-            if ($cantRef !== null) $item->appendChild($this->el('CantidadReferencia', $this->fmtDecimal($cantRef)));
+            if ($cantRef !== null) $item->appendChild($this->el('CantidadReferencia', $this->fmtQty($cantRef)));
 
             $unidRef = $this->v("UnidadReferencia[$n]");
             if ($unidRef !== null) $item->appendChild($this->el('UnidadReferencia', $unidRef));
@@ -512,7 +512,7 @@ class CertificationXmlBuilder
                 $codSub = $this->v("CodigoSubcantidad[$n][$s]");
                 if ($sub !== null || $codSub !== null) {
                     $si = $this->el('SubcantidadItem');
-                    if ($sub !== null) $si->appendChild($this->el('Subcantidad', $this->fmtDecimal($sub)));
+                    if ($sub !== null) $si->appendChild($this->el('Subcantidad', $this->fmtQty($sub)));
                     if ($codSub !== null) $si->appendChild($this->el('CodigoSubcantidad', $codSub));
                     $subcantidades[] = $si;
                 }
@@ -533,14 +533,15 @@ class CertificationXmlBuilder
             foreach ($optionalFields as $f) {
                 $val = $this->v("{$f}[$n]");
                 if ($val !== null) {
-                    $formatted = in_array($f, ['GradosAlcohol', 'PrecioUnitarioReferencia', 'PesoNetoKilogramo', 'PesoNetoMineria']) ? $this->fmtDecimal($val) : $val;
+                    $formatted = in_array($f, ['PrecioUnitarioReferencia']) ? $this->fmtPrice($val) :
+                        (in_array($f, ['GradosAlcohol', 'PesoNetoKilogramo', 'PesoNetoMineria']) ? $this->fmtDecimal($val) : $val);
                     $item->appendChild($this->el($f, $formatted));
                 }
             }
 
             // PrecioUnitarioItem (required)
             $precio = $this->v("PrecioUnitarioItem[$n]");
-            if ($precio !== null) $item->appendChild($this->el('PrecioUnitarioItem', $this->fmtDecimal($precio)));
+            if ($precio !== null) $item->appendChild($this->el('PrecioUnitarioItem', $this->fmtPrice($precio)));
 
             // DescuentoMonto
             $descuento = $this->v("DescuentoMonto[$n]");
@@ -619,7 +620,7 @@ class CertificationXmlBuilder
 
             // MontoItem (required)
             $montoItem = $this->v("MontoItem[$n]");
-            if ($montoItem !== null) $item->appendChild($this->el('MontoItem', $this->fmtDecimal($montoItem)));
+            if ($montoItem !== null) $item->appendChild($this->el('MontoItem', $this->fmtMoney($montoItem)));
 
             $detalles->appendChild($item);
         }
@@ -754,16 +755,42 @@ class CertificationXmlBuilder
         return htmlspecialchars($value, ENT_XML1 | ENT_QUOTES, 'UTF-8');
     }
 
+    /**
+     * Format monetary amounts — always 2 decimal places.
+     * DGII requires: MontoTotal, MontoItem, MontoGravado*, etc.
+     */
+    private function fmtMoney($value): string
+    {
+        return number_format((float)$value, 2, '.', '');
+    }
+
+    /**
+     * Format unit prices — always 4 decimal places.
+     * DGII requires: PrecioUnitarioItem, PrecioUnitarioReferencia, etc.
+     */
+    private function fmtPrice($value): string
+    {
+        return number_format((float)$value, 4, '.', '');
+    }
+
+    /**
+     * Format quantities — integer if whole, otherwise preserve decimals.
+     * DGII requires: CantidadItem "1" not "1.00", but "1.5" stays "1.5".
+     */
+    private function fmtQty($value): string
+    {
+        $float = (float)$value;
+        if (floor($float) == $float) {
+            return (string)(int)$float;
+        }
+        return (string)$float;
+    }
+
+    /**
+     * Format decimal values — 2 decimal places by default (backward compat).
+     */
     private function fmtDecimal($value): string
     {
-        if (is_numeric($value)) {
-            // Preserve decimal places as given
-            $str = (string)$value;
-            if (strpos($str, '.') === false) {
-                return number_format((float)$value, 2, '.', '');
-            }
-            return $str;
-        }
-        return (string)$value;
+        return number_format((float)$value, 2, '.', '');
     }
 }

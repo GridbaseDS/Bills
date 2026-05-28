@@ -330,10 +330,12 @@ class ExternalQuoteController extends Controller
         }
 
         if ($quote->status === 'converted') {
+            $invoiceNumber = \App\Models\Invoice::where('id', $quote->converted_invoice_id)->value('invoice_number');
             return response()->json([
                 'success' => false,
                 'error' => 'Esta cotización ya fue convertida a factura.',
                 'invoice_id' => $quote->converted_invoice_id,
+                'invoice_number' => $invoiceNumber,
             ], 409);
         }
 

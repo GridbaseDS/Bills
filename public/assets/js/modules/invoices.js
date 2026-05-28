@@ -144,7 +144,14 @@ const InvoicesModule = {
                         </div>
                     </div>
                     <div class="mobile-card-bottom">
-                        <div class="mobile-card-amount">${App.formatCurrency(i.total, i.currency)}</div>
+                        <div class="mobile-card-amount">
+                            <div>${App.formatCurrency(i.total, i.currency)}</div>
+                            ${i.currency !== 'DOP' && i.exchange_rate && i.exchange_rate != 1 ? `
+                                <div style="font-size:10px;color:var(--color-text-muted);font-weight:400;margin-top:2px;text-align:right;">
+                                    ≈ ${App.formatCurrency(i.total * i.exchange_rate, 'DOP')}
+                                </div>
+                            ` : ''}
+                        </div>
                         <svg class="mobile-card-chevron" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
                     </div>
                 </a>
@@ -174,7 +181,14 @@ const InvoicesModule = {
                 </td>
                 <td>${App.formatDate(i.issue_date)}</td>
                 <td style="${i.status === 'overdue' ? 'color:var(--color-danger-icon)' : ''}">${App.formatDate(i.due_date)}</td>
-                <td style="font-weight:600;color:var(--color-text-primary)">${App.formatCurrency(i.total, i.currency)}</td>
+                <td style="font-weight:600;color:var(--color-text-primary)">
+                    <div>${App.formatCurrency(i.total, i.currency)}</div>
+                    ${i.currency !== 'DOP' && i.exchange_rate && i.exchange_rate != 1 ? `
+                        <div style="font-size:11px;color:var(--color-text-muted);font-weight:400;margin-top:2px;">
+                            ≈ DOP ${App.formatCurrency(i.total * i.exchange_rate, 'DOP')}
+                        </div>
+                    ` : ''}
+                </td>
                 <td><span class="badge badge-${i.status}">${this.statusLabel(i.status)}</span></td>
                 <td>${i.is_ecf ? `<span class="badge ${this.dgiiBadgeClass(i.dgii_status)}" style="font-size:9px;">${this.dgiiLabel(i.dgii_status)}</span>` : '<span style="color:var(--color-text-tertiary)">—</span>'}</td>
                 <td>
@@ -360,6 +374,12 @@ const InvoicesModule = {
         let clients = [];
         try { const res = await App.api('clients'); clients = res.data || []; } catch(e) {}
         
+        let rates = {};
+        try {
+            const ratesRes = await App.api('currency/rates');
+            if (ratesRes.success) { rates = ratesRes.rates || {}; InvoicesModule.rates = rates; }
+        } catch(e) {}
+        
         try { this.availableItems = await App.api('items'); } catch(e) { this.availableItems = []; }
 
         const today = new Date().toISOString().split('T')[0];
@@ -447,6 +467,15 @@ const InvoicesModule = {
                                 <option value="EUR" ${invoice?.currency === 'EUR' ? 'selected' : ''}>EUR - Euros</option>
                             </select>
                         </div>
+                        <div class="form-group" id="exchange-rate-wrapper" style="display: ${invoice?.currency && invoice?.currency !== 'DOP' ? 'block' : 'none'};">
+                            <label class="form-label">Tasa de Cambio</label>
+                            <div style="display:flex;gap:12px;align-items:center;">
+                                <input type="number" id="i_exchange_rate" class="form-control" step="0.0001" min="0.0001" value="${invoice?.exchange_rate || '1.0'}" style="flex:1;">
+                                <span style="font-size:12px;color:var(--color-text-muted);white-space:nowrap;" id="live-rate-hint">
+                                    ${invoice?.exchange_rate ? `Tasa: ${invoice.exchange_rate}` : ''}
+                                </span>
+                            </div>
+                        </div>
                         <div class="form-group">
                             <label class="form-label">Fecha de Emisión *</label>
                             <input type="date" id="i_issue_date" class="form-control" required value="${invoice?.issue_date?.split('T')[0] || today}">
@@ -496,6 +525,34 @@ const InvoicesModule = {
             </form>
         `;
 
+        // Initialize currency selector live rates logic
+        const currencySelect = document.getElementById('i_currency');
+        const rateWrapper = document.getElementById('exchange-rate-wrapper');
+        const rateInput = document.getElementById('i_exchange_rate');
+        const rateHint = document.getElementById('live-rate-hint');
+        
+        if (currencySelect) {
+            currencySelect.addEventListener('change', () => {
+                const currency = currencySelect.value;
+                if (currency === 'DOP') {
+                    if (rateWrapper) rateWrapper.style.display = 'none';
+                    if (rateInput) rateInput.value = '1.000000';
+                    if (rateHint) rateHint.textContent = '';
+                } else {
+                    if (rateWrapper) rateWrapper.style.display = 'block';
+                    const activeRates = InvoicesModule.rates || {};
+                    let rate = 1.0;
+                    if (currency === 'USD' && activeRates.USD_TO_DOP) {
+                        rate = activeRates.USD_TO_DOP;
+                    } else if (currency === 'EUR' && activeRates.EUR_TO_DOP) {
+                        rate = activeRates.EUR_TO_DOP;
+                    }
+                    if (rateInput) rateInput.value = rate;
+                    if (rateHint) rateHint.textContent = `Tasa sugerida: ${rate}`;
+                }
+            });
+        }
+
         // Initialize items
         this.items = [];
         if (invoice && invoice.items) {
@@ -539,6 +596,7 @@ const InvoicesModule = {
             const payload = {
                 client_id: document.getElementById('i_client_id').value,
                 currency: document.getElementById('i_currency').value,
+                exchange_rate: parseFloat(document.getElementById('i_exchange_rate')?.value) || 1.0,
                 issue_date: document.getElementById('i_issue_date').value,
                 due_date: document.getElementById('i_due_date').value,
                 discount_type: 'percentage',

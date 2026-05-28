@@ -21,6 +21,9 @@ class QuoteController extends Controller
     public function store(Request $request)
     {
         $data = $request->all();
+        if (empty($data['exchange_rate'])) {
+            $data['exchange_rate'] = \App\Services\CurrencyConverter::getConversionRate($data['currency'] ?? 'DOP', 'DOP');
+        }
         $prefix = Setting::where('setting_key', 'quote_prefix')->value('setting_value') ?? 'COT-';
         $nextNum = (int)(Setting::where('setting_key', 'quote_next_number')->value('setting_value') ?? 1);
         $quoteNumber = $prefix . str_pad((string)$nextNum, 4, '0', STR_PAD_LEFT);
@@ -75,6 +78,10 @@ class QuoteController extends Controller
         $data['tax_amount'] = $taxAmount;
         $data['total'] = $total;
 
+        if (empty($data['exchange_rate'])) {
+            $data['exchange_rate'] = \App\Services\CurrencyConverter::getConversionRate($data['currency'] ?? 'DOP', 'DOP');
+        }
+
         $quote->update($data);
 
         if (isset($data['items'])) {
@@ -126,6 +133,7 @@ class QuoteController extends Controller
             'discount_amount' => $quote->discount_amount,
             'total' => $quote->total,
             'currency' => $quote->currency,
+            'exchange_rate' => $quote->exchange_rate,
             'notes' => $quote->notes,
             'terms' => $quote->terms,
         ]);

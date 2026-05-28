@@ -86,6 +86,9 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/info', [PaymentLinkController::class, 'getPaymentInfo']);
     });
 
+    // Currency Exchange
+    Route::get('/currency/rates', [\App\Http\Controllers\Api\CurrencyController::class, 'getRates']);
+
     // Settings
     Route::get('/settings', [SettingController::class, 'index']); // Read allowed for all (e.g. for general UI details)
     Route::post('/settings', [SettingController::class, 'updateMultiple'])->middleware('role:admin');

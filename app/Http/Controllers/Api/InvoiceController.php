@@ -22,6 +22,9 @@ class InvoiceController extends Controller
     public function store(Request $request, EcfManagerService $ecfManager)
     {
         $data = $request->all();
+        if (empty($data['exchange_rate'])) {
+            $data['exchange_rate'] = \App\Services\CurrencyConverter::getConversionRate($data['currency'] ?? 'DOP', 'DOP');
+        }
         $prefix = Setting::where('setting_key', 'invoice_prefix')->value('setting_value') ?? 'FAC-';
         $nextNum = (int)(Setting::where('setting_key', 'invoice_next_number')->value('setting_value') ?? 1);
         $invoiceNumber = $prefix . str_pad((string)$nextNum, 4, '0', STR_PAD_LEFT);
@@ -220,8 +223,14 @@ class InvoiceController extends Controller
         $taxAmount = ($subtotal - $discountAmount) * ($taxRate/100);
         $total = $subtotal - $discountAmount + $taxAmount;
 
+        $exchangeRate = $data['exchange_rate'] ?? null;
+        if (empty($exchangeRate)) {
+            $exchangeRate = \App\Services\CurrencyConverter::getConversionRate($data['currency'] ?? 'DOP', 'DOP');
+        }
+
         $invoice->update([
             'client_id' => $data['client_id'], 'currency' => $data['currency'],
+            'exchange_rate' => $exchangeRate,
             'issue_date' => $data['issue_date'], 'due_date' => $data['due_date'],
             'discount_type' => $data['discount_type'] ?? 'percentage',
             'discount_value' => $discountValue, 'discount_amount' => $discountAmount,

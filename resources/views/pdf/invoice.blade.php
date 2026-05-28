@@ -378,8 +378,8 @@ if (!empty($invoice['status'])) {
             <tr>
                 <td class="item-desc"><?= htmlspecialchars($item['description']) ?></td>
                 <td class="text-center"><?= number_format($item['quantity'], 0) ?></td>
-                <td class="text-right">$<?= number_format($item['unit_price'], 2) ?></td>
-                <td class="text-right item-total">$<?= number_format($item['amount'] ?? ($item['quantity'] * $item['unit_price']), 2) ?></td>
+                <td class="text-right"><?= htmlspecialchars($invoice['currency'] ?? 'DOP') ?> <?= number_format($item['unit_price'], 2) ?></td>
+                <td class="text-right item-total"><?= htmlspecialchars($invoice['currency'] ?? 'DOP') ?> <?= number_format($item['amount'] ?? ($item['quantity'] * $item['unit_price']), 2) ?></td>
             </tr>
             <?php endforeach; ?>
         </tbody>
@@ -485,32 +485,40 @@ if (!empty($invoice['status'])) {
             <table class="totals-mini">
                 <tr>
                     <td class="tl">SUBTOTAL</td>
-                    <td class="tv">$<?= number_format($invoice['subtotal'] ?? 0, 2) ?></td>
+                    <td class="tv"><?= htmlspecialchars($invoice['currency'] ?? 'DOP') ?> <?= number_format($invoice['subtotal'] ?? 0, 2) ?></td>
                 </tr>
                 <?php if (($invoice['discount_amount'] ?? 0) > 0): ?>
                 <tr>
                     <td class="tl">DESCUENTO</td>
-                    <td class="tv" style="color:#00DF83;">-$<?= number_format($invoice['discount_amount'], 2) ?></td>
+                    <td class="tv" style="color:#00DF83;">-<?= htmlspecialchars($invoice['currency'] ?? 'DOP') ?> <?= number_format($invoice['discount_amount'], 2) ?></td>
                 </tr>
                 <?php endif; ?>
                 <?php if (($invoice['tax_amount'] ?? 0) > 0): ?>
                 <tr>
                     <td class="tl">ITBIS (<?= number_format($invoice['tax_rate'] ?? 0, 0) ?>%)</td>
-                    <td class="tv">$<?= number_format($invoice['tax_amount'], 2) ?></td>
+                    <td class="tv"><?= htmlspecialchars($invoice['currency'] ?? 'DOP') ?> <?= number_format($invoice['tax_amount'], 2) ?></td>
                 </tr>
                 <?php endif; ?>
                 <tr class="grand">
                     <td class="tl">TOTAL</td>
-                    <td class="tv">$<?= number_format($invoice['total'] ?? 0, 2) ?></td>
+                    <td class="tv"><?= htmlspecialchars($invoice['currency'] ?? 'DOP') ?> <?= number_format($invoice['total'] ?? 0, 2) ?></td>
                 </tr>
                 <?php if (!$isQuote && ($invoice['amount_paid'] ?? 0) > 0): ?>
                 <tr class="paid-row">
                     <td class="tl">PAGADO</td>
-                    <td class="tv" style="color:#059669;">-$<?= number_format($invoice['amount_paid'], 2) ?></td>
+                    <td class="tv" style="color:#059669;">-<?= htmlspecialchars($invoice['currency'] ?? 'DOP') ?> <?= number_format($invoice['amount_paid'], 2) ?></td>
                 </tr>
                 <tr class="balance-row">
                     <td class="tl">SALDO</td>
-                    <td class="tv">$<?= number_format($invoice['total'] - $invoice['amount_paid'], 2) ?></td>
+                    <td class="tv"><?= htmlspecialchars($invoice['currency'] ?? 'DOP') ?> <?= number_format($invoice['total'] - $invoice['amount_paid'], 2) ?></td>
+                </tr>
+                <?php endif; ?>
+                <?php if (!empty($invoice['currency']) && $invoice['currency'] !== 'DOP' && !empty($invoice['exchange_rate']) && $invoice['exchange_rate'] != 1): ?>
+                <tr>
+                    <td colspan="2" style="text-align:right; font-size:10px; color:#666; padding-top:10px; border-top: 1px dashed #E0E0E0;">
+                        Tasa de Cambio: <?= number_format($invoice['exchange_rate'], 4) ?><br>
+                        <strong>Equivalente: DOP <?= number_format($invoice['total'] * $invoice['exchange_rate'], 2) ?></strong>
+                    </td>
                 </tr>
                 <?php endif; ?>
             </table>

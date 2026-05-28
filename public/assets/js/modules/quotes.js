@@ -98,7 +98,14 @@ const QuotesModule = {
                         </div>
                     </div>
                     <div class="mobile-card-bottom">
-                        <div class="mobile-card-amount">${window.App.formatCurrency(q.total, q.currency)}</div>
+                        <div class="mobile-card-amount">
+                            <div>${window.App.formatCurrency(q.total, q.currency)}</div>
+                            ${q.currency !== 'DOP' && q.exchange_rate && q.exchange_rate != 1 ? `
+                                <div style="font-size:10px;color:var(--color-text-muted);font-weight:400;margin-top:2px;text-align:right;">
+                                    ≈ ${window.App.formatCurrency(q.total * q.exchange_rate, 'DOP')}
+                                </div>
+                            ` : ''}
+                        </div>
                         <svg class="mobile-card-chevron" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
                     </div>
                 </a>
@@ -119,7 +126,14 @@ const QuotesModule = {
                 </td>
                 <td>${window.App.formatDate(q.issue_date)}</td>
                 <td>${window.App.formatDate(q.expiry_date)}</td>
-                <td style="font-weight:600">${window.App.formatCurrency(q.total, q.currency)}</td>
+                <td style="font-weight:600">
+                    <div>${window.App.formatCurrency(q.total, q.currency)}</div>
+                    ${q.currency !== 'DOP' && q.exchange_rate && q.exchange_rate != 1 ? `
+                        <div style="font-size:11px;color:var(--color-text-muted);font-weight:400;margin-top:2px;">
+                            ≈ DOP ${window.App.formatCurrency(q.total * q.exchange_rate, 'DOP')}
+                        </div>
+                    ` : ''}
+                </td>
                 <td><span class="badge badge-${q.status}">${this.statusLabel(q.status)}</span></td>
                 <td>
                     <div class="row-actions">
@@ -184,6 +198,13 @@ const QuotesModule = {
                                     ${quote.discount_amount > 0 ? `<tr><td style="padding:8px 0;text-align:right;color:var(--color-text-muted);font-size:13px;">Descuento</td><td style="padding:8px 0;text-align:right;font-weight:500;font-size:13px;">-${window.App.formatCurrency(quote.discount_amount, quote.currency)}</td></tr>` : ''}
                                     ${quote.tax_amount > 0 ? `<tr><td style="padding:8px 0;text-align:right;color:var(--color-text-muted);font-size:13px;">ITBIS (${quote.tax_rate}%)</td><td style="padding:8px 0;text-align:right;font-weight:500;font-size:13px;">${window.App.formatCurrency(quote.tax_amount, quote.currency)}</td></tr>` : ''}
                                     <tr style="border-top:2px solid var(--color-border);"><td style="padding:12px 0;text-align:right;font-size:18px;font-weight:600;">Total</td><td style="padding:12px 0;text-align:right;font-size:18px;font-weight:700;color:var(--color-primary);">${window.App.formatCurrency(quote.total, quote.currency)}</td></tr>
+                                    ${quote.currency !== 'DOP' && quote.exchange_rate && quote.exchange_rate != 1 ? `
+                                        <tr>
+                                            <td colspan="2" style="padding:4px 0;text-align:right;font-size:12px;color:var(--color-text-muted);">
+                                                Equivalente a tasa ${quote.exchange_rate}: <strong>DOP ${window.App.formatCurrency(quote.total * quote.exchange_rate, 'DOP')}</strong>
+                                            </td>
+                                        </tr>
+                                    ` : ''}
                                 </table>
                             </div>
                         </div>
@@ -198,6 +219,13 @@ const QuotesModule = {
     async renderForm(container, editId = null) {
         let clients = [];
         try { const res = await window.App.api('clients'); clients = res.data || []; } catch(e) {}
+        
+        let rates = {};
+        try {
+            const ratesRes = await window.App.api('currency/rates');
+            if (ratesRes.success) { rates = ratesRes.rates || {}; QuotesModule.rates = rates; }
+        } catch(e) {}
+        
         try { this.availableItems = await window.App.api('items'); } catch(e) { this.availableItems = []; }
         let quote = null;
         if (editId) { try { quote = await window.App.api(`quotes/${editId}`); } catch(e) { container.innerHTML = `<div class="text-red">Error</div>`; return; } }
@@ -228,6 +256,15 @@ const QuotesModule = {
                                 <option value="DOP" ${quote?.currency==='DOP'?'selected':''}>DOP</option>
                                 <option value="EUR" ${quote?.currency==='EUR'?'selected':''}>EUR</option>
                             </select>
+                        </div>
+                        <div class="form-group" id="q-exchange-rate-wrapper" style="display: ${quote?.currency && quote?.currency !== 'DOP' ? 'block' : 'none'};">
+                            <label class="form-label">Tasa de Cambio</label>
+                            <div style="display:flex;gap:12px;align-items:center;">
+                                <input type="number" id="q_exchange_rate" class="form-control" step="0.0001" min="0.0001" value="${quote?.exchange_rate || '1.0'}" style="flex:1;">
+                                <span style="font-size:12px;color:var(--color-text-muted);white-space:nowrap;" id="q-live-rate-hint">
+                                    ${quote?.exchange_rate ? `Tasa: ${quote.exchange_rate}` : ''}
+                                </span>
+                            </div>
                         </div>
                         <div class="form-group"><label class="form-label">Emisión *</label><input type="date" id="q_issue_date" class="form-control" required value="${quote?.issue_date?.split('T')[0]||today}"></div>
                         <div class="form-group"><label class="form-label">Válida Hasta *</label><input type="date" id="q_expiry_date" class="form-control" required value="${quote?.expiry_date?.split('T')[0]||nextMonth}"></div>
@@ -269,6 +306,34 @@ const QuotesModule = {
             }, 50);
         } else { this.addItem(); }
 
+        // Initialize currency selector live rates logic
+        const currencySelect = document.getElementById('q_currency');
+        const rateWrapper = document.getElementById('q-exchange-rate-wrapper');
+        const rateInput = document.getElementById('q_exchange_rate');
+        const rateHint = document.getElementById('q-live-rate-hint');
+        
+        if (currencySelect) {
+            currencySelect.addEventListener('change', () => {
+                const currency = currencySelect.value;
+                if (currency === 'DOP') {
+                    if (rateWrapper) rateWrapper.style.display = 'none';
+                    if (rateInput) rateInput.value = '1.000000';
+                    if (rateHint) rateHint.textContent = '';
+                } else {
+                    if (rateWrapper) rateWrapper.style.display = 'block';
+                    const activeRates = QuotesModule.rates || {};
+                    let rate = 1.0;
+                    if (currency === 'USD' && activeRates.USD_TO_DOP) {
+                        rate = activeRates.USD_TO_DOP;
+                    } else if (currency === 'EUR' && activeRates.EUR_TO_DOP) {
+                        rate = activeRates.EUR_TO_DOP;
+                    }
+                    if (rateInput) rateInput.value = rate;
+                    if (rateHint) rateHint.textContent = `Tasa sugerida: ${rate}`;
+                }
+            });
+        }
+
         // Add datalist to document body if not exists
         if (!document.getElementById('catalog_items_list')) {
             const datalist = document.createElement('datalist');
@@ -289,6 +354,7 @@ const QuotesModule = {
             const payload = {
                 client_id: document.getElementById('q_client_id').value,
                 currency: document.getElementById('q_currency').value,
+                exchange_rate: parseFloat(document.getElementById('q_exchange_rate')?.value) || 1.0,
                 issue_date: document.getElementById('q_issue_date').value,
                 expiry_date: document.getElementById('q_expiry_date').value,
                 discount_type: 'percentage', discount_value: document.getElementById('q_discount').value,

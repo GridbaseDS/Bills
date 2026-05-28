@@ -31,25 +31,86 @@ class CurrencyConverter
     {
         return in_array(strtoupper($currency), self::PAYPAL_SUPPORTED_CURRENCIES);
     }
-    
+
     /**
-     * Get the conversion rate from settings or default
+     * Fetch live exchange rates with 12 hours caching
+     */
+    public static function fetchLiveRates(): array
+    {
+        return \Illuminate\Support\Facades\Cache::remember('exchange_rates_usd', 43200, function () {
+            try {
+                $response = \Illuminate\Support\Facades\Http::timeout(5)->get('https://open.er-api.com/v6/latest/USD');
+                if ($response->successful()) {
+                    $data = $response->json();
+                    if (isset($data['rates'])) {
+                        return $data['rates'];
+                    }
+                }
+            } catch (\Exception $e) {
+                Log::error('Error fetching live currency rates: ' . $e->getMessage());
+            }
+            return [];
+        });
+    }
+
+    /**
+     * Get the conversion rate from live API (cached), database settings, or hardcoded default
      */
     public static function getConversionRate(string $fromCurrency, string $toCurrency): float
     {
-        $key = strtoupper($fromCurrency) . '_TO_' . strtoupper($toCurrency);
+        $fromCurrency = strtoupper($fromCurrency);
+        $toCurrency = strtoupper($toCurrency);
         
-        // Try to get from settings first
+        if ($fromCurrency === $toCurrency) {
+            return 1.0;
+        }
+        
+        // Attempt to fetch from dynamic live rates first
+        $liveRates = self::fetchLiveRates();
+        
+        if (!empty($liveRates)) {
+            // Case 1: Convert USD to anything
+            if ($fromCurrency === 'USD' && isset($liveRates[$toCurrency])) {
+                return (float) $liveRates[$toCurrency];
+            }
+            // Case 2: Convert anything to USD
+            if ($toCurrency === 'USD' && isset($liveRates[$fromCurrency])) {
+                return 1.0 / (float) $liveRates[$fromCurrency];
+            }
+            // Case 3: Convert anything to anything (e.g. DOP to EUR, or EUR to DOP)
+            if (isset($liveRates[$fromCurrency]) && isset($liveRates[$toCurrency])) {
+                return (float) $liveRates[$toCurrency] / (float) $liveRates[$fromCurrency];
+            }
+        }
+        
+        // Fall back to old static database settings / fallbacks
+        $key = $fromCurrency . '_TO_' . $toCurrency;
         $rate = Setting::get('currency_rate_' . strtolower($key));
         
         if ($rate && is_numeric($rate)) {
             return (float) $rate;
         }
         
-        // Fall back to default rates
+        // If converting DOP to USD (or vice-versa)
+        if ($key === 'DOP_TO_USD') {
+            return self::DEFAULT_RATES['DOP_TO_USD'] ?? 0.017;
+        }
+        if ($key === 'USD_TO_DOP') {
+            $dopToUsd = Setting::get('currency_rate_dop_to_usd') ?: 0.017;
+            return 1.0 / (float)$dopToUsd;
+        }
+        
+        // If converting EUR to DOP (fallback rate ~ 63.50)
+        if ($key === 'EUR_TO_DOP') {
+            return 63.50;
+        }
+        if ($key === 'DOP_TO_EUR') {
+            return 1.0 / 63.50;
+        }
+        
         return self::DEFAULT_RATES[$key] ?? 0.0;
     }
-    
+
     /**
      * Convert amount from one currency to another
      */

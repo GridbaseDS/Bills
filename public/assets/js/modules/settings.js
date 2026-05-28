@@ -62,6 +62,28 @@ export default {
                                     </div>
                                 </div>
                             </div>
+
+                            <h3 style="font-size:15px;font-weight:600;margin:24px 0 16px;border-top:1px solid var(--color-border);padding-top:24px;">Branding</h3>
+                            <div class="grid-2">
+                                <div class="form-group">
+                                    <label class="form-label">Logo de Interfaz (URL)</label>
+                                    <input type="url" id="s_company_logo" class="form-control" placeholder="https://miempresa.com/logo.png" value="${s.company_logo || ''}">
+                                    <div style="font-size:11px;color:var(--color-text-muted);margin-top:4px;">Logo que aparece en el menú lateral y pantalla de login. Recomendado: fondo transparente (PNG/SVG).</div>
+                                    <div id="logo-preview" style="margin-top:10px;display:${s.company_logo ? 'block' : 'none'};">
+                                        <img id="logo-preview-img" src="${s.company_logo || ''}" style="max-height:40px;max-width:180px;border:1px solid var(--color-border);border-radius:var(--radius-md);padding:6px;background:var(--bg-hover);" onerror="this.style.display='none'" onload="this.style.display='inline-block'">
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Favicon (URL)</label>
+                                    <input type="url" id="s_company_favicon" class="form-control" placeholder="https://miempresa.com/favicon.png" value="${s.company_favicon || ''}">
+                                    <div style="font-size:11px;color:var(--color-text-muted);margin-top:4px;">Ícono de la pestaña del navegador. Recomendado: imagen cuadrada de 180x180px.</div>
+                                    <div id="favicon-preview" style="margin-top:10px;display:${s.company_favicon ? 'flex' : 'none'};align-items:center;gap:8px;">
+                                        <img id="favicon-preview-img" src="${s.company_favicon || ''}" style="width:32px;height:32px;border:1px solid var(--color-border);border-radius:var(--radius-sm);object-fit:contain;" onerror="this.parentElement.style.display='none'" onload="this.parentElement.style.display='flex'">
+                                        <span style="font-size:11px;color:var(--color-text-muted);">Vista previa del favicon</span>
+                                    </div>
+                                </div>
+                            </div>
+
                             <h3 style="font-size:15px;font-weight:600;margin:24px 0 16px;border-top:1px solid var(--color-border);padding-top:24px;">Ajustes de Facturación</h3>
                             <div class="grid-2">
                                 <div class="form-group"><label class="form-label">Moneda por Defecto</label>
@@ -341,6 +363,24 @@ export default {
             // Init preview
             updateSidebarPreview();
 
+            // Logo URL live preview
+            document.getElementById('s_company_logo')?.addEventListener('input', (e) => {
+                const url = e.target.value.trim();
+                const preview = document.getElementById('logo-preview');
+                const img = document.getElementById('logo-preview-img');
+                if (url && img) { img.src = url; preview.style.display = 'block'; }
+                else if (preview) { preview.style.display = 'none'; }
+            });
+
+            // Favicon URL live preview
+            document.getElementById('s_company_favicon')?.addEventListener('input', (e) => {
+                const url = e.target.value.trim();
+                const preview = document.getElementById('favicon-preview');
+                const img = document.getElementById('favicon-preview-img');
+                if (url && img) { img.src = url; preview.style.display = 'flex'; }
+                else if (preview) { preview.style.display = 'none'; }
+            });
+
             // Save all settings
             document.getElementById('settings-form').addEventListener('submit', async (e) => {
                 e.preventDefault();
@@ -355,6 +395,8 @@ export default {
                     logo_capsule_theme: 'custom',
                     sidebar_bg_color: document.getElementById('s_sidebar_bg_color').value,
                     sidebar_text_color: document.getElementById('s_sidebar_text_color').value,
+                    company_logo: document.getElementById('s_company_logo').value,
+                    company_favicon: document.getElementById('s_company_favicon').value,
                     default_currency: document.getElementById('s_default_currency').value,
                     default_tax_rate: document.getElementById('s_default_tax_rate').value,
                     smtp_host: document.getElementById('s_smtp_host').value,
@@ -407,6 +449,18 @@ export default {
                     }
                     
                     window.App.showToast('Configuraciones guardadas');
+                    
+                    // Update logo + favicon immediately
+                    if (settingsToUpdate.company_logo) {
+                        localStorage.setItem('company_logo', settingsToUpdate.company_logo);
+                        const sidebarImg = document.querySelector('.sidebar-logo img');
+                        if (sidebarImg) sidebarImg.src = settingsToUpdate.company_logo;
+                    }
+                    if (settingsToUpdate.company_favicon) {
+                        localStorage.setItem('company_favicon', settingsToUpdate.company_favicon);
+                        window.App.updateFavicon();
+                    }
+                    window.App.updateTitle();
                 } catch(err) {}
             });
 

@@ -20,6 +20,7 @@ export default {
                     <button class="segment-item" data-tab="automation">Recordatorios</button>
                     <button class="segment-item" data-tab="integrations">Integraciones</button>
                     <button class="segment-item" data-tab="dgii">e-CF / DGII</button>
+                    <button class="segment-item" data-tab="apikeys">🔑 API Keys</button>
                     <button class="segment-item" data-tab="support" style="color:var(--color-danger);">Soporte</button>
                 </div>
 
@@ -255,6 +256,16 @@ export default {
                                 <div class="form-group"><label class="form-label">Contraseña del Certificado</label><input type="password" id="s_dgii_certificate_password" class="form-control" value="${s.dgii_certificate_password || ''}"></div>
                                 <div class="form-group"><label class="form-label">Próximo e-NCF Tipo 31</label><input type="number" id="s_dgii_next_e_ncf_31" class="form-control" value="${s.dgii_next_e_ncf_31 || '1'}"><div style="font-size:11px;color:var(--color-text-muted);margin-top:4px;">Ej: 1 → <code>E310000000001</code></div></div>
                                 <div class="form-group"><label class="form-label">Próximo e-NCF Tipo 32</label><input type="number" id="s_dgii_next_e_ncf_32" class="form-control" value="${s.dgii_next_e_ncf_32 || '1'}"><div style="font-size:11px;color:var(--color-text-muted);margin-top:4px;">Ej: 1 → <code>E320000000001</code></div></div>
+                            </div>
+                        </div>
+
+                        <!-- TAB: API KEYS -->
+                        <div class="tab-content" id="tab-apikeys" style="display:none;">
+                            <div id="api-keys-container">
+                                <div style="text-align:center;padding:40px 0;color:var(--color-text-muted);">
+                                    <span class="spinner"></span>
+                                    <p style="margin-top:12px;">Cargando API Keys...</p>
+                                </div>
                             </div>
                         </div>
 
@@ -637,12 +648,25 @@ export default {
                 }
             });
 
-            // Hide/Show Save button based on active tab
+            // Hide/Show Save button based on active tab + load API Keys tab lazily
+            let apiKeysLoaded = false;
             tabs.forEach(tab => {
-                tab.addEventListener('click', () => {
+                tab.addEventListener('click', async () => {
                     const saveActions = container.querySelector('#settings-save-actions');
+                    const hideSaveTabs = ['support', 'apikeys'];
                     if (saveActions) {
-                        saveActions.style.display = tab.dataset.tab === 'support' ? 'none' : 'block';
+                        saveActions.style.display = hideSaveTabs.includes(tab.dataset.tab) ? 'none' : 'block';
+                    }
+                    // Lazy-load API Keys module
+                    if (tab.dataset.tab === 'apikeys' && !apiKeysLoaded) {
+                        apiKeysLoaded = true;
+                        try {
+                            const mod = await import('./api-keys.js');
+                            mod.default.render(document.getElementById('api-keys-container'));
+                        } catch (e) {
+                            document.getElementById('api-keys-container').innerHTML = '<div class="text-red">Error al cargar módulo de API Keys</div>';
+                            apiKeysLoaded = false;
+                        }
                     }
                 });
             });

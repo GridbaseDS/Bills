@@ -154,6 +154,9 @@ class SettingController extends Controller
             \Illuminate\Support\Facades\DB::table('items')->truncate();
             \Illuminate\Support\Facades\DB::table('received_invoices')->truncate();
             \Illuminate\Support\Facades\DB::table('activity_log')->truncate();
+            if (\Illuminate\Support\Facades\Schema::hasTable('api_keys')) {
+                \Illuminate\Support\Facades\DB::table('api_keys')->truncate();
+            }
             
             // Clear sessions except current session
             \Illuminate\Support\Facades\DB::table('sessions')

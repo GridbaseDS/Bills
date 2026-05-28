@@ -17,6 +17,9 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
         $middleware->alias([
             'role' => \App\Http\Middleware\CheckRole::class,
+            'api.key' => \App\Http\Middleware\AuthenticateApiKey::class,
+            'api.permission' => \App\Http\Middleware\CheckApiPermission::class,
+            'api.throttle' => \App\Http\Middleware\ThrottleApiKey::class,
         ]);
         $middleware->validateCsrfTokens(except: [
             'api/*',

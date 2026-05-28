@@ -18,6 +18,10 @@ use App\Http\Controllers\Api\DgiiReportController;
 use App\Http\Controllers\Api\ExpenseController;
 use App\Http\Controllers\WhatsAppWebhookController;
 use App\Http\Controllers\Api\UserController;
+use App\Http\Controllers\Api\ApiKeyController;
+use App\Http\Controllers\Api\External\ExternalInvoiceController;
+use App\Http\Controllers\Api\External\ExternalQuoteController;
+use App\Http\Controllers\Api\External\ExternalClientController;
 
 // Public Auth
 Route::post('/auth/login', [AuthController::class, 'login']);
@@ -105,6 +109,10 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/dgii/diagnose', [DgiiTestUIController::class, 'diagnose']);
         Route::post('/dgii/run-aprobaciones', [DgiiTestUIController::class, 'runAprobaciones']);
         Route::get('/dgii/status', [DgiiTestUIController::class, 'connectionStatus']);
+
+        // API Key Management
+        Route::apiResource('api-keys', ApiKeyController::class);
+        Route::post('/api-keys/{id}/regenerate', [ApiKeyController::class, 'regenerate']);
     });
 
     // DGII Reports (Admin and Contador only)
@@ -124,3 +132,38 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/received-invoices/{id}/reject', [ReceivedInvoiceController::class, 'reject']);
     });
 });
+
+// ═══════════════════════════════════════════════════════════════════════
+// External API v1 — Authenticated via API Key (Bearer Token)
+// ═══════════════════════════════════════════════════════════════════════
+Route::prefix('v1')->middleware(['api.key', 'api.throttle'])->group(function () {
+
+    // Invoices
+    Route::get('/invoices', [ExternalInvoiceController::class, 'index'])
+        ->middleware('api.permission:invoices.read');
+    Route::post('/invoices', [ExternalInvoiceController::class, 'store'])
+        ->middleware('api.permission:invoices.create');
+    Route::get('/invoices/{id}', [ExternalInvoiceController::class, 'show'])
+        ->middleware('api.permission:invoices.read');
+    Route::get('/invoices/{id}/pdf', [ExternalInvoiceController::class, 'pdf'])
+        ->middleware('api.permission:invoices.read');
+
+    // Quotes
+    Route::get('/quotes', [ExternalQuoteController::class, 'index'])
+        ->middleware('api.permission:quotes.read');
+    Route::post('/quotes', [ExternalQuoteController::class, 'store'])
+        ->middleware('api.permission:quotes.create');
+    Route::get('/quotes/{id}', [ExternalQuoteController::class, 'show'])
+        ->middleware('api.permission:quotes.read');
+    Route::post('/quotes/{id}/convert', [ExternalQuoteController::class, 'convertToInvoice'])
+        ->middleware('api.permission:quotes.convert');
+
+    // Clients
+    Route::get('/clients', [ExternalClientController::class, 'index'])
+        ->middleware('api.permission:clients.read');
+    Route::post('/clients', [ExternalClientController::class, 'store'])
+        ->middleware('api.permission:clients.create');
+    Route::get('/clients/{id}', [ExternalClientController::class, 'show'])
+        ->middleware('api.permission:clients.read');
+});
+

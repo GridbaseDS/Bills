@@ -75,6 +75,11 @@ Route::get('/dgii-fc250k/{filename}', function ($filename) {
     return response()->download($path);
 });
 
+// API Documentation (public)
+Route::get('/api-docs', function () {
+    return view('api-docs');
+})->name('api.docs');
+
 Route::get('/{any}', function () {
     return view('welcome');
 })->where('any', '.*');

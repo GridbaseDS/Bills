@@ -768,31 +768,31 @@ class CertificationXmlBuilder
 
     /**
      * Format unit prices — type-dependent decimal places.
-     * T41/T43 (Compras/Gastos Menores): 2 decimal places
-     * T31-34, T44-47: 4 decimal places
+     * T31/T32 (Facturas), T44-47 (Especiales): 4 decimal places
+     * T33/T34 (Notas), T41/T43 (Compras/Gastos): 2 decimal places
      */
     private function fmtPrice($value): string
     {
-        $decimals = in_array($this->tipoECF, [41, 43]) ? 2 : 4;
+        $decimals = in_array($this->tipoECF, [33, 34, 41, 43]) ? 2 : 4;
         return number_format((float)$value, $decimals, '.', '');
     }
 
     /**
      * Format quantities — type-dependent.
-     * T31-34: integer (no decimals) — e.g. "1", "23"
-     * T41-47: 2 decimal places — e.g. "1.00", "20.00"
+     * T31/T32: integer (no decimals) — e.g. "1", "23"
+     * Everything else: 2 decimal places — e.g. "1.00", "20.00"
      */
     private function fmtQty($value): string
     {
-        if (in_array($this->tipoECF, [31, 32, 33, 34])) {
-            // Integer format for standard invoice types
+        if (in_array($this->tipoECF, [31, 32])) {
+            // Integer format for standard invoice/consumo types only
             $float = (float)$value;
             if (floor($float) == $float) {
                 return (string)(int)$float;
             }
             return (string)$float;
         }
-        // 2 decimal places for compras, gastos, special types
+        // 2 decimal places for notes, compras, gastos, special types
         return number_format((float)$value, 2, '.', '');
     }
 

@@ -14,6 +14,7 @@ export default {
 
                 <div class="segmented-control mb-24" id="settings-tabs">
                     <button class="segment-item active" data-tab="general">General</button>
+                    <button class="segment-item" data-tab="apariencia">Apariencia PDF</button>
                     <button class="segment-item" data-tab="email">Email / SMTP</button>
                     <button class="segment-item" data-tab="whatsapp">WhatsApp</button>
                     <button class="segment-item" data-tab="automation">Recordatorios</button>
@@ -54,6 +55,71 @@ export default {
                                     </select>
                                 </div>
                                 <div class="form-group"><label class="form-label">Impuesto por Defecto (%)</label><input type="number" id="s_default_tax_rate" class="form-control" value="${s.default_tax_rate || '18.00'}" step="0.01"></div>
+                            </div>
+                        </div>
+
+                        <!-- TAB: APARIENCIA PDF -->
+                        <div class="tab-content" id="tab-apariencia" style="display:none;">
+                            <h3 style="font-size:15px;font-weight:600;margin:0 0 8px;">Línea Gráfica del PDF</h3>
+                            <p style="color:var(--color-text-muted);font-size:13px;margin:0 0 24px;">Personaliza los colores, logo y estilo de tus facturas y cotizaciones en PDF.</p>
+                            
+                            <div class="grid-2">
+                                <div class="form-group">
+                                    <label class="form-label">Color Primario</label>
+                                    <div style="display:flex;gap:10px;align-items:center;">
+                                        <input type="color" id="s_pdf_primary_color" value="${s.pdf_primary_color || '#0B484C'}" style="width:48px;height:38px;border:1px solid var(--color-border);border-radius:var(--radius-md);cursor:pointer;padding:2px;">
+                                        <input type="text" id="s_pdf_primary_color_hex" class="form-control" value="${s.pdf_primary_color || '#0B484C'}" style="width:120px;font-family:monospace;" maxlength="7">
+                                    </div>
+                                    <div style="font-size:11px;color:var(--color-text-muted);margin-top:4px;">Header, footer, títulos y encabezados de sección</div>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Color de Acento</label>
+                                    <div style="display:flex;gap:10px;align-items:center;">
+                                        <input type="color" id="s_pdf_accent_color" value="${s.pdf_accent_color || '#00DF83'}" style="width:48px;height:38px;border:1px solid var(--color-border);border-radius:var(--radius-md);cursor:pointer;padding:2px;">
+                                        <input type="text" id="s_pdf_accent_color_hex" class="form-control" value="${s.pdf_accent_color || '#00DF83'}" style="width:120px;font-family:monospace;" maxlength="7">
+                                    </div>
+                                    <div style="font-size:11px;color:var(--color-text-muted);margin-top:4px;">Encabezado de tabla de ítems, etiquetas y acentos</div>
+                                </div>
+                                <div class="form-group" style="grid-column: span 2;">
+                                    <label class="form-label">URL del Logo</label>
+                                    <input type="url" id="s_pdf_logo_url" class="form-control" placeholder="https://miempresa.com/logo.png" value="${s.pdf_logo_url || ''}">
+                                    <div style="font-size:11px;color:var(--color-text-muted);margin-top:4px;">Imagen que aparece en la esquina superior izquierda del PDF. Dejar vacío para usar el logo por defecto.</div>
+                                    <div id="pdf-logo-preview" style="margin-top:10px;display:${s.pdf_logo_url ? 'block' : 'none'};">
+                                        <img id="pdf-logo-preview-img" src="${s.pdf_logo_url || ''}" style="max-height:50px;max-width:200px;border:1px solid var(--color-border);border-radius:var(--radius-md);padding:6px;background:#f9f9f9;" onerror="this.style.display='none'" onload="this.style.display='inline-block'">
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Mostrar Footer</label>
+                                    <select id="s_pdf_show_footer" class="form-control" style="width:200px;">
+                                        <option value="1" ${s.pdf_show_footer === '0' ? '' : 'selected'}>Sí — Mostrar</option>
+                                        <option value="0" ${s.pdf_show_footer === '0' ? 'selected' : ''}>No — Ocultar</option>
+                                    </select>
+                                    <div style="font-size:11px;color:var(--color-text-muted);margin-top:4px;">Barra con datos de contacto al pie del PDF</div>
+                                </div>
+                            </div>
+
+                            <!-- Live Preview -->
+                            <div style="margin-top:28px;border-top:1px solid var(--color-border);padding-top:24px;">
+                                <h4 style="font-size:13px;font-weight:600;margin:0 0 14px;">Vista Previa</h4>
+                                <div id="pdf-preview-card" style="border-radius:var(--radius-lg);overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,0.10);max-width:520px;">
+                                    <div id="pdf-preview-header" style="background:${s.pdf_primary_color || '#0B484C'};padding:20px 24px;display:flex;align-items:center;justify-content:space-between;">
+                                        <div>
+                                            <img id="pdf-preview-logo" src="${s.pdf_logo_url || 'https://gridbase.com.do/wp-content/uploads/2025/02/imagen_2026-03-16_154236217-1024x228.png'}" style="height:32px;" onerror="this.style.display='none'">
+                                        </div>
+                                        <div style="text-align:right;">
+                                            <div style="font-size:9px;letter-spacing:0.5px;"><span id="pdf-preview-label" style="color:${s.pdf_accent_color || '#00DF83'};font-weight:700;">E-NCF/</span> <span style="color:#fff;font-weight:700;">E310000000001</span></div>
+                                            <div style="font-size:9px;margin-top:3px;"><span style="color:${s.pdf_accent_color || '#00DF83'};font-weight:700;">FECHA/</span> <span style="color:#fff;font-weight:700;">27/05/2026</span></div>
+                                        </div>
+                                    </div>
+                                    <div style="padding:16px 24px;background:#fff;">
+                                        <div id="pdf-preview-title" style="font-size:14px;font-weight:700;color:${s.pdf_primary_color || '#0B484C'};text-transform:uppercase;border-bottom:2px solid ${s.pdf_primary_color || '#0B484C'};display:inline-block;padding-bottom:3px;margin-bottom:12px;">FACTURA</div>
+                                        <table style="width:100%;border-collapse:collapse;">
+                                            <thead><tr style="background:${s.pdf_accent_color || '#00DF83'};"><th style="color:${s.pdf_primary_color || '#0B484C'};font-size:8px;text-transform:uppercase;padding:6px 8px;text-align:left;font-weight:700;">Descripción</th><th style="color:${s.pdf_primary_color || '#0B484C'};font-size:8px;text-transform:uppercase;padding:6px 8px;text-align:right;font-weight:700;">Total</th></tr></thead>
+                                            <tbody><tr style="border-bottom:1px solid #E8E8E8;"><td style="padding:6px 8px;font-size:10px;color:#444;">Servicio ejemplo</td><td style="padding:6px 8px;font-size:10px;text-align:right;font-weight:600;">DOP 5,000.00</td></tr></tbody>
+                                        </table>
+                                    </div>
+                                    <div id="pdf-preview-footer" style="background:${s.pdf_primary_color || '#0B484C'};padding:8px 24px;text-align:center;font-size:9px;color:rgba(255,255,255,0.85);${s.pdf_show_footer === '0' ? 'display:none;' : ''}">gridbase.com.do <span style="color:${s.pdf_accent_color || '#00DF83'};margin:0 6px;">•</span> info@gridbase.com.do</div>
+                                </div>
                             </div>
                         </div>
 
@@ -223,6 +289,10 @@ export default {
                     dgii_certificate_password: document.getElementById('s_dgii_certificate_password').value,
                     dgii_next_e_ncf_31: document.getElementById('s_dgii_next_e_ncf_31').value,
                     dgii_next_e_ncf_32: document.getElementById('s_dgii_next_e_ncf_32').value,
+                    pdf_primary_color: document.getElementById('s_pdf_primary_color').value,
+                    pdf_accent_color: document.getElementById('s_pdf_accent_color').value,
+                    pdf_logo_url: document.getElementById('s_pdf_logo_url').value,
+                    pdf_show_footer: document.getElementById('s_pdf_show_footer').value,
                 };
                 try {
                     await window.App.api('settings', { method: 'POST', body: settingsToUpdate });
@@ -268,6 +338,106 @@ export default {
                 catch(err) {}
                 finally { btn.innerHTML = originalText; btn.disabled = false; }
             });
+
+            // ── PDF Appearance: Color sync + Live Preview ──
+            const updatePdfPreview = () => {
+                const primary = document.getElementById('s_pdf_primary_color').value;
+                const accent = document.getElementById('s_pdf_accent_color').value;
+                const footerVisible = document.getElementById('s_pdf_show_footer').value === '1';
+
+                // Header & footer backgrounds
+                const header = document.getElementById('pdf-preview-header');
+                const footer = document.getElementById('pdf-preview-footer');
+                if (header) header.style.background = primary;
+                if (footer) {
+                    footer.style.background = primary;
+                    footer.style.display = footerVisible ? '' : 'none';
+                    // Update footer accent dot
+                    const footerSpan = footer.querySelector('span');
+                    if (footerSpan) footerSpan.style.color = accent;
+                }
+
+                // Title
+                const title = document.getElementById('pdf-preview-title');
+                if (title) {
+                    title.style.color = primary;
+                    title.style.borderBottomColor = primary;
+                }
+
+                // Meta labels (accent)
+                document.querySelectorAll('#pdf-preview-header span[style*="font-weight:700"]').forEach(el => {
+                    // Only update the label spans (E-NCF/, FECHA/), not the value spans
+                    if (el.textContent.includes('/')) el.style.color = accent;
+                });
+
+                // Table header
+                const thead = document.querySelector('#pdf-preview-card thead tr');
+                if (thead) thead.style.background = accent;
+                document.querySelectorAll('#pdf-preview-card thead th').forEach(th => {
+                    th.style.color = primary;
+                });
+            };
+
+            // Sync color picker <-> hex input (Primary)
+            const primaryPicker = document.getElementById('s_pdf_primary_color');
+            const primaryHex = document.getElementById('s_pdf_primary_color_hex');
+            if (primaryPicker && primaryHex) {
+                primaryPicker.addEventListener('input', () => {
+                    primaryHex.value = primaryPicker.value;
+                    updatePdfPreview();
+                });
+                primaryHex.addEventListener('input', () => {
+                    if (/^#[0-9A-Fa-f]{6}$/.test(primaryHex.value)) {
+                        primaryPicker.value = primaryHex.value;
+                        updatePdfPreview();
+                    }
+                });
+            }
+
+            // Sync color picker <-> hex input (Accent)
+            const accentPicker = document.getElementById('s_pdf_accent_color');
+            const accentHex = document.getElementById('s_pdf_accent_color_hex');
+            if (accentPicker && accentHex) {
+                accentPicker.addEventListener('input', () => {
+                    accentHex.value = accentPicker.value;
+                    updatePdfPreview();
+                });
+                accentHex.addEventListener('input', () => {
+                    if (/^#[0-9A-Fa-f]{6}$/.test(accentHex.value)) {
+                        accentPicker.value = accentHex.value;
+                        updatePdfPreview();
+                    }
+                });
+            }
+
+            // Logo URL preview
+            const logoInput = document.getElementById('s_pdf_logo_url');
+            if (logoInput) {
+                logoInput.addEventListener('input', () => {
+                    const url = logoInput.value.trim();
+                    const previewDiv = document.getElementById('pdf-logo-preview');
+                    const previewImg = document.getElementById('pdf-logo-preview-img');
+                    const headerLogo = document.getElementById('pdf-preview-logo');
+                    if (url) {
+                        previewDiv.style.display = 'block';
+                        previewImg.src = url;
+                        previewImg.style.display = 'inline-block';
+                        if (headerLogo) { headerLogo.src = url; headerLogo.style.display = ''; }
+                    } else {
+                        previewDiv.style.display = 'none';
+                        if (headerLogo) {
+                            headerLogo.src = 'https://gridbase.com.do/wp-content/uploads/2025/02/imagen_2026-03-16_154236217-1024x228.png';
+                            headerLogo.style.display = '';
+                        }
+                    }
+                });
+            }
+
+            // Footer toggle
+            const footerToggle = document.getElementById('s_pdf_show_footer');
+            if (footerToggle) {
+                footerToggle.addEventListener('change', updatePdfPreview);
+            }
 
         } catch (e) {
             container.innerHTML = `<div class="text-red">Error al cargar configuraciones</div>`;

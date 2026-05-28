@@ -3,6 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <title>{{ $isQuote ?? false ? 'Cotización' : 'Factura' }}</title>
+    <?php
+    $primaryColor = $settings['pdf_primary_color'] ?? '#0B484C';
+    $accentColor  = $settings['pdf_accent_color'] ?? '#00DF83';
+    $pdfLogoUrl   = $settings['pdf_logo_url'] ?? 'https://gridbase.com.do/wp-content/uploads/2025/02/imagen_2026-03-16_154236217-1024x228.png';
+    $showFooter   = ($settings['pdf_show_footer'] ?? '1') === '1';
+    ?>
     <style>
         @page {
             size: A4 portrait;
@@ -23,7 +29,7 @@
 
         /* ── HEADER BLOCK ── */
         .header-block {
-            background: #0B484C;
+            background: <?= $primaryColor ?>;
             padding: 35px 45px 30px 45px;
             color: #FFFFFF;
         }
@@ -35,7 +41,7 @@
             font-weight: 700;
             color: #FFFFFF;
         }
-        .logo-fallback span { color: #00DF83; }
+        .logo-fallback span { color: <?= $accentColor ?>; }
         .company-label {
             font-size: 14px;
             color: #FFFFFF;
@@ -63,7 +69,7 @@
             font-weight: 700;
         }
         .meta-label {
-            color: #00DF83;
+            color: <?= $accentColor ?>;
             font-weight: 700;
             text-transform: uppercase;
             letter-spacing: 0.5px;
@@ -79,9 +85,9 @@
         .doc-title {
             font-size: 28px;
             font-weight: 700;
-            color: #0B484C;
+            color: <?= $primaryColor ?>;
             text-transform: uppercase;
-            border-bottom: 3px solid #0B484C;
+            border-bottom: 3px solid <?= $primaryColor ?>;
             display: inline-block;
             padding-bottom: 4px;
             margin-bottom: 25px;
@@ -94,7 +100,7 @@
         .info-col-title {
             font-size: 12px;
             font-weight: 700;
-            color: #0B484C;
+            color: <?= $primaryColor ?>;
             text-transform: uppercase;
             letter-spacing: 0.5px;
             margin-bottom: 6px;
@@ -113,9 +119,9 @@
 
         /* ── ITEMS TABLE ── */
         .items-table { margin-bottom: 25px; }
-        .items-table thead tr { background: #00DF83; }
+        .items-table thead tr { background: <?= $accentColor ?>; }
         .items-table th {
-            color: #0B484C;
+            color: <?= $primaryColor ?>;
             font-size: 9px;
             font-weight: 700;
             text-transform: uppercase;
@@ -149,7 +155,7 @@
         .payment-title {
             font-size: 11px;
             font-weight: 700;
-            color: #0B484C;
+            color: <?= $primaryColor ?>;
             text-transform: uppercase;
             letter-spacing: 0.5px;
             margin-bottom: 6px;
@@ -187,7 +193,7 @@
             font-size: 12px;
         }
         .totals-mini .grand .tl { color: #2D2D2D; font-size: 11px; }
-        .totals-mini .grand .tv { color: #0B484C; font-size: 12px; }
+        .totals-mini .grand .tv { color: <?= $primaryColor ?>; font-size: 12px; }
 
         .totals-mini .paid-row td { padding-top: 10px; }
         .totals-mini .balance-row td {
@@ -203,7 +209,7 @@
         .terms-title {
             font-size: 11px;
             font-weight: 700;
-            color: #0B484C;
+            color: <?= $primaryColor ?>;
             text-transform: uppercase;
             letter-spacing: 0.5px;
             margin-bottom: 4px;
@@ -240,7 +246,7 @@
             bottom: 0;
             left: 0;
             width: 100%;
-            background: #0B484C;
+            background: <?= $primaryColor ?>;
             padding: 12px 45px;
             text-align: center;
         }
@@ -249,7 +255,7 @@
             color: rgba(255,255,255,0.85);
         }
         .footer-contact span {
-            color: #00DF83;
+            color: <?= $accentColor ?>;
             margin: 0 8px;
         }
     </style>
@@ -263,7 +269,7 @@ $docName   = $isQuote ? 'Cotización' : ($isEcf ? 'e-CF' : 'Factura');
 $docNum    = $isQuote ? ($invoice['quote_number'] ?? '') : ($isEcf ? ($invoice['encf'] ?? '') : ($invoice['invoice_number'] ?? ''));
 $dateLabel = $isQuote ? 'Válida Hasta' : 'Vencimiento';
 $dateField = $isQuote ? ($invoice['expiry_date'] ?? $invoice['due_date'] ?? '') : ($invoice['due_date'] ?? '');
-$logoUrl   = 'https://gridbase.com.do/wp-content/uploads/2025/02/imagen_2026-03-16_154236217-1024x228.png';
+$logoUrl   = $pdfLogoUrl;
 
 // Fecha vencimiento secuencia: NO aplica para E32 y E34
 $showFechaVencimiento = $isEcf && !in_array($ecfType, [32, 34]);
@@ -490,7 +496,7 @@ if (!empty($invoice['status'])) {
                 <?php if (($invoice['discount_amount'] ?? 0) > 0): ?>
                 <tr>
                     <td class="tl">DESCUENTO</td>
-                    <td class="tv" style="color:#00DF83;">-<?= htmlspecialchars($invoice['currency'] ?? 'DOP') ?> <?= number_format($invoice['discount_amount'], 2) ?></td>
+                    <td class="tv" style="color:<?= $accentColor ?>;">-<?= htmlspecialchars($invoice['currency'] ?? 'DOP') ?> <?= number_format($invoice['discount_amount'], 2) ?></td>
                 </tr>
                 <?php endif; ?>
                 <?php if (($invoice['tax_amount'] ?? 0) > 0): ?>
@@ -537,6 +543,7 @@ if (!empty($invoice['status'])) {
 </div>
 
 <!-- FOOTER -->
+<?php if ($showFooter): ?>
 <div class="footer">
     <div class="footer-contact">
         <?php if (!empty($company['website'])): ?>
@@ -550,6 +557,7 @@ if (!empty($invoice['status'])) {
         <?php endif; ?>
     </div>
 </div>
+<?php endif; ?>
 
 </body>
 </html>

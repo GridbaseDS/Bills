@@ -55,9 +55,13 @@ class AppServiceProvider extends ServiceProvider
                 }
             }
             
+            \Illuminate\Support\Facades\Log::info("DYNAMIC DB SWITCHER: host = " . ($host ?? 'none') . ", subdomain = " . ($subdomain ?? 'none'));
+
             if (!empty($subdomain) && preg_match('/^[a-z0-9\-]+$/i', $subdomain)) {
                 $dbName = 'grupaqgl_' . strtolower($subdomain);
                 
+                \Illuminate\Support\Facades\Log::info("DYNAMIC DB SWITCHER: Switching database to " . $dbName);
+
                 // Switch the active database name in the configuration
                 config(['database.connections.mysql.database' => $dbName]);
                 

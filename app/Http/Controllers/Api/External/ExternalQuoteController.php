@@ -67,8 +67,8 @@ class ExternalQuoteController extends Controller
             'tax_rate' => 'sometimes|numeric|min:0|max:100',
             'discount_type' => 'sometimes|string|in:percentage,fixed',
             'discount_value' => 'sometimes|numeric|min:0',
-            'notes' => 'sometimes|string|max:2000',
-            'terms' => 'sometimes|string|max:2000',
+            'notes' => 'sometimes|nullable|string|max:2000',
+            'terms' => 'sometimes|nullable|string|max:2000',
             'issue_date' => 'sometimes|date',
             'expiry_date' => 'sometimes|date',
             'client_id' => 'sometimes|integer|exists:clients,id',
@@ -76,10 +76,10 @@ class ExternalQuoteController extends Controller
             'client.tax_id' => 'sometimes|string|max:20',
             'client.company_name' => 'sometimes|string|max:255',
             'client.contact_name' => 'sometimes|string|max:255',
-            'client.email' => 'sometimes|email|max:255',
-            'client.phone' => 'sometimes|string|max:30',
-            'client.whatsapp' => 'sometimes|string|max:30',
-            'client.address_line1' => 'sometimes|string|max:255',
+            'client.email' => 'sometimes|nullable|email|max:255',
+            'client.phone' => 'sometimes|nullable|string|max:30',
+            'client.whatsapp' => 'sometimes|nullable|string|max:30',
+            'client.address_line1' => 'sometimes|nullable|string|max:255',
         ]);
 
         if ($validator->fails()) {

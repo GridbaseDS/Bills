@@ -226,6 +226,28 @@
             box-shadow: 0 4px 8px rgba(0, 223, 131, 0.2);
         }
 
+        .download-md-btn {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            color: rgba(255, 255, 255, 0.85);
+            font-size: 13px;
+            font-weight: 600;
+            padding: 8px 14px;
+            border-radius: var(--radius-md);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            text-decoration: none;
+            transition: all var(--transition-fast);
+        }
+        
+        .download-md-btn:hover {
+            background: rgba(255, 255, 255, 0.15);
+            color: #FFFFFF;
+            border-color: rgba(255, 255, 255, 0.25);
+            transform: translateY(-1px);
+        }
+
         /* Layout */
         .layout {
             display: flex;
@@ -662,6 +684,12 @@
             .topbar-divider {
                 display: none;
             }
+            .download-md-btn span {
+                display: none;
+            }
+            .download-md-btn {
+                padding: 8px;
+            }
         }
     </style>
 </head>
@@ -683,12 +711,21 @@
         <span class="topbar-badge">Documentación API <span class="version-label">v1.0</span></span>
     </div>
     <div class="topbar-right">
+        <!-- Botón de Descarga Markdown -->
+        <a href="/docs/api-docs.md" download class="download-md-btn" title="Descargar documentación en Markdown">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" width="18" height="18">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+            </svg>
+            <span>Descargar MD</span>
+        </a>
+        
         <!-- Alternador de Tema -->
         <button onclick="toggleTheme()" class="theme-toggle-btn" title="Cambiar tema" aria-label="Cambiar tema">
             <svg id="theme-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" width="20" height="20">
                 <!-- SVG Dinámico -->
             </svg>
         </button>
+        
         <a href="/" class="back-dashboard-btn">
             <span>Ir al Panel</span>
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" width="16" height="16">

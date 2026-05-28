@@ -196,32 +196,22 @@ class EcfManagerService
             ];
         }
 
-        // If already signed, just re-send
+        // Clear cached signed XML so processInvoice regenerates from scratch
+        // This ensures any XML structure fixes are picked up on retry
         if ($invoice->signed_xml_path && Storage::exists($invoice->signed_xml_path)) {
-            $settings = Setting::getAll();
-            $signedXml = Storage::get($invoice->signed_xml_path);
-            $token = $this->authService->getValidToken($settings);
-            $env = $settings['dgii_env'] ?? 'testing';
-            
-            $result = $this->apiService->submitInvoice($signedXml, $token, $env, false);
-
-            $invoice->update([
-                'dgii_status' => $result['status'],
-                'dgii_track_id' => $result['track_id'],
-                'dgii_error_messages' => $result['errors'] 
-                    ? (is_array($result['errors']) ? json_encode($result['errors'], JSON_UNESCAPED_UNICODE) : $result['errors'])
-                    : null
-            ]);
-
-            return [
-                'success' => $result['success'],
-                'status' => $result['status'],
-                'track_id' => $result['track_id'],
-                'error' => $result['errors']
-            ];
+            Storage::delete($invoice->signed_xml_path);
         }
 
-        // Re-process from scratch
+        // Reset state so processInvoice can re-assign and re-sign
+        $invoice->update([
+            'dgii_status' => null,
+            'signed_xml_path' => null,
+            'security_code' => null,
+            'dgii_track_id' => null,
+            'dgii_error_messages' => null,
+        ]);
+
+        // Re-process from scratch (regenerate XML, re-sign, re-send)
         return $this->processInvoice($invoice);
     }
 

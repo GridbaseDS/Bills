@@ -27,7 +27,7 @@
 <body>
     <div id="app"></div>
     <div class="toast-container" id="toast-container"></div>
-    <script type="module" src="/assets/js/app.js?v=49"></script>
+    <script type="module" src="/assets/js/app.js?v=50"></script>
     <script>
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {

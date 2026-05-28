@@ -54,6 +54,13 @@ export default {
                                                 <input type="text" id="s_sidebar_text_color_hex" class="form-control" value="${s.sidebar_text_color || '#374151'}" style="width:100px;font-family:monospace;font-size:12px;" maxlength="7">
                                             </div>
                                         </div>
+                                        <div>
+                                            <div style="font-size:12px;font-weight:500;color:var(--color-text-secondary);margin-bottom:6px;">Color de Hover</div>
+                                            <div style="display:flex;gap:8px;align-items:center;">
+                                                <input type="color" id="s_sidebar_hover_color" value="${s.sidebar_hover_color || '#F3F4F6'}" style="width:42px;height:34px;border:1px solid var(--color-border);border-radius:var(--radius-md);cursor:pointer;padding:2px;">
+                                                <input type="text" id="s_sidebar_hover_color_hex" class="form-control" value="${s.sidebar_hover_color || '#F3F4F6'}" style="width:100px;font-family:monospace;font-size:12px;" maxlength="7">
+                                            </div>
+                                        </div>
                                     </div>
                                     <div style="font-size:11px;color:var(--color-text-muted);margin-top:6px;">Personaliza el fondo y color de texto del menú lateral. Úsalo para adaptar el menú a tu marca.</div>
                                     <div id="sidebar-preview" style="margin-top:12px;width:180px;height:60px;border-radius:var(--radius-md);border:1px solid var(--color-border);display:flex;align-items:center;padding:0 16px;gap:10px;transition:all .2s ease;">
@@ -363,6 +370,16 @@ export default {
             // Init preview
             updateSidebarPreview();
 
+            // Hover color sync
+            document.getElementById('s_sidebar_hover_color')?.addEventListener('input', (e) => {
+                document.getElementById('s_sidebar_hover_color_hex').value = e.target.value;
+            });
+            document.getElementById('s_sidebar_hover_color_hex')?.addEventListener('input', (e) => {
+                if (/^#[0-9A-Fa-f]{6}$/.test(e.target.value)) {
+                    document.getElementById('s_sidebar_hover_color').value = e.target.value;
+                }
+            });
+
             // Logo URL live preview
             document.getElementById('s_company_logo')?.addEventListener('input', (e) => {
                 const url = e.target.value.trim();
@@ -395,6 +412,7 @@ export default {
                     logo_capsule_theme: 'custom',
                     sidebar_bg_color: document.getElementById('s_sidebar_bg_color').value,
                     sidebar_text_color: document.getElementById('s_sidebar_text_color').value,
+                    sidebar_hover_color: document.getElementById('s_sidebar_hover_color').value,
                     company_logo: document.getElementById('s_company_logo').value,
                     company_favicon: document.getElementById('s_company_favicon').value,
                     default_currency: document.getElementById('s_default_currency').value,
@@ -435,18 +453,10 @@ export default {
                     // Cache branding elements in localStorage
                     if (settingsToUpdate.sidebar_bg_color) localStorage.setItem('sidebar_bg_color', settingsToUpdate.sidebar_bg_color);
                     if (settingsToUpdate.sidebar_text_color) localStorage.setItem('sidebar_text_color', settingsToUpdate.sidebar_text_color);
+                    if (settingsToUpdate.sidebar_hover_color) localStorage.setItem('sidebar_hover_color', settingsToUpdate.sidebar_hover_color);
                     
-                    // Apply sidebar colors immediately
-                    const sidebar = document.querySelector('.sidebar');
-                    if (sidebar) {
-                        sidebar.style.setProperty('--sb-bg', settingsToUpdate.sidebar_bg_color);
-                        sidebar.style.setProperty('--sb-text', settingsToUpdate.sidebar_text_color);
-                        sidebar.style.backgroundColor = settingsToUpdate.sidebar_bg_color;
-                        sidebar.style.borderRightColor = 'transparent';
-                        sidebar.querySelectorAll('.sidebar-link, .sidebar-section-title, .sidebar-link svg, .profile-name').forEach(el => {
-                            el.style.color = settingsToUpdate.sidebar_text_color;
-                        });
-                    }
+                    // Apply sidebar colors immediately via centralized method
+                    window.App.applySidebarColors();
                     
                     window.App.showToast('Configuraciones guardadas');
                     

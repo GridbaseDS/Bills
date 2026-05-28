@@ -184,6 +184,7 @@ window.App = {
     applySidebarColors() {
         const bgColor = this.state.settings?.sidebar_bg_color || localStorage.getItem('sidebar_bg_color');
         const textColor = this.state.settings?.sidebar_text_color || localStorage.getItem('sidebar_text_color');
+        const hoverColor = this.state.settings?.sidebar_hover_color || localStorage.getItem('sidebar_hover_color');
         const sidebar = document.querySelector('.sidebar');
         if (!sidebar) return;
         if (bgColor) {
@@ -195,6 +196,21 @@ window.App = {
                 el.style.color = textColor;
             });
         }
+        // Hover + active styles via injected <style> (can't do :hover inline)
+        let styleTag = document.getElementById('sidebar-custom-colors');
+        if (!styleTag) {
+            styleTag = document.createElement('style');
+            styleTag.id = 'sidebar-custom-colors';
+            document.head.appendChild(styleTag);
+        }
+        const hv = hoverColor || 'rgba(0,0,0,0.08)';
+        const tc = textColor || '';
+        styleTag.textContent = `
+            .sidebar-link:hover { background-color: ${hv} !important; }
+            .sidebar-link.active { background-color: ${hv} !important; }
+            ${tc ? `.sidebar-link:hover, .sidebar-link:hover svg { color: ${tc} !important; }` : ''}
+            ${tc ? `.sidebar-footer { border-top-color: ${hv} !important; }` : ''}
+        `;
     },
 
     async logout(callApi = true) {

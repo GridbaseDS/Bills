@@ -190,4 +190,76 @@ class DgiiApiService
             ];
         }
     }
+
+    /**
+     * Submits a signed ACECF (Aprobacion Comercial) XML to the DGII.
+     * Endpoint: /AprobacionComercial
+     *
+     * @param string $signedXml Signed ACECF XML content.
+     * @param string $token Valid DGII JWT Bearer Token.
+     * @param string $env Environment: 'testing' or 'production'.
+     * @return array
+     */
+    public function submitAprobacionComercial(string $signedXml, string $token, string $env): array
+    {
+        $baseUrl = $env === 'production'
+            ? 'https://ecf.dgii.gov.do/ecf'
+            : 'https://ecf.dgii.gov.do/certecf';
+
+        $endpoint = "{$baseUrl}/aprobacioncomercial/api/ecf";
+
+        // Extract RNC and eNCF from XML for filename
+        preg_match('/<RNCComprador>(\d+)<\/RNCComprador>/', $signedXml, $rncMatch);
+        preg_match('/<eNCF>([^<]+)<\/eNCF>/', $signedXml, $encfMatch);
+        $rnc = $rncMatch[1] ?? '000000000';
+        $encf = $encfMatch[1] ?? 'E000000000000';
+        $sendFilename = "{$rnc}{$encf}.xml";
+
+        Log::info("[DgiiApiService] Enviando Aprobación Comercial a {$endpoint} como {$sendFilename}");
+
+        try {
+            $response = Http::withoutVerifying()
+                ->timeout(30)
+                ->withHeaders([
+                    'Authorization' => 'Bearer ' . $token,
+                    'Accept' => 'application/json',
+                ])
+                ->attach('xml', $signedXml, $sendFilename, ['Content-Type' => 'text/xml'])
+                ->post($endpoint);
+
+            $body = $response->body();
+            $json = $response->json();
+
+            Log::info("[DgiiApiService] ACECF Response: HTTP {$response->status()} - {$body}");
+
+            if (!$response->successful()) {
+                return [
+                    'success' => false,
+                    'errors' => "HTTP {$response->status()}: {$body}",
+                ];
+            }
+
+            // Success: trackId or aceptado
+            if (isset($json['trackId'])) {
+                return ['success' => true, 'track_id' => $json['trackId'], 'errors' => null];
+            }
+            if (isset($json['estado']) && strtolower($json['estado']) === 'aceptado') {
+                return ['success' => true, 'track_id' => 'ACECF_ACCEPTED', 'errors' => null];
+            }
+            if (isset($json['codigo']) && $json['codigo'] == 1) {
+                return ['success' => true, 'track_id' => 'ACECF_ACCEPTED', 'errors' => null];
+            }
+
+            // Rejection
+            if (isset($json['estado']) && strtolower($json['estado']) === 'rechazado') {
+                return ['success' => false, 'track_id' => null, 'errors' => $json['mensajes'] ?? 'Rechazado'];
+            }
+
+            return ['success' => false, 'errors' => "Respuesta no reconocida: {$body}"];
+
+        } catch (Exception $e) {
+            Log::error("[DgiiApiService] ACECF Exception: " . $e->getMessage());
+            return ['success' => false, 'errors' => $e->getMessage()];
+        }
+    }
 }

@@ -117,6 +117,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/dgii/certification/run-single', [CertificationController::class, 'runSingle']);
         Route::post('/dgii/certification/run-all', [CertificationController::class, 'runAll']);
         Route::get('/dgii/certification/download-fc250k/{encf}', [CertificationController::class, 'downloadFc250k']);
+        Route::post('/dgii/run-aprobaciones', [CertificationController::class, 'runAprobaciones']);
 
         // API Key Management
         Route::apiResource('api-keys', ApiKeyController::class);

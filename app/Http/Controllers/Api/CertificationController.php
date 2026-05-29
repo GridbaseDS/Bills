@@ -234,6 +234,122 @@ class CertificationController extends Controller
         return response()->json(['cases' => array_values($cases)]);
     }
 
+    // ─── Aprobaciones Comerciales (ACECF) ──────────────
+
+    /**
+     * Run all 11 Aprobaciones Comerciales test cases.
+     * POST /api/dgii/run-aprobaciones
+     */
+    public function runAprobaciones()
+    {
+        $acecfCases = $this->loadAcecfTestCases();
+
+        if (empty($acecfCases)) {
+            return response()->json([
+                'success' => false,
+                'output' => 'No se encontraron casos de prueba ACECF. Verifica que dgii_test_acecf.json exista.',
+            ]);
+        }
+
+        $settings = Setting::getAll();
+        $signatureService = app(XmlSignatureService::class);
+        $authService = app(DgiiAuthService::class);
+        $apiService = app(DgiiApiService::class);
+
+        $p12Path = storage_path('app/secure/' . ($settings['dgii_certificate_path'] ?? ''));
+        $p12Password = $settings['dgii_certificate_password'] ?? '';
+        $token = $authService->getValidToken($settings);
+        $env = $settings['dgii_env'] ?? 'testing';
+
+        $output = "";
+        $passed = 0;
+        $failed = 0;
+
+        foreach ($acecfCases as $tc) {
+            $encf = $tc['eNCF'] ?? 'UNKNOWN';
+
+            try {
+                // Build ACECF XML per ACECF v.1.0.xsd
+                $xml = $this->buildAcecfXml($tc);
+
+                // Sign it
+                $signedXml = $signatureService->signXml($xml, $p12Path, $p12Password);
+
+                // Save for archiving
+                $fileName = "certification_acecf/{$encf}_acecf.xml";
+                Storage::put($fileName, $signedXml);
+
+                // Submit to DGII
+                $result = $apiService->submitAprobacionComercial($signedXml, $token, $env);
+
+                if ($result['success']) {
+                    $passed++;
+                    $output .= "<span style=\"color:#22c55e;\">✅ {$encf}</span> — Aceptado ({$result['track_id']})\n";
+                } else {
+                    $failed++;
+                    $errMsg = is_array($result['errors']) ? json_encode($result['errors']) : $result['errors'];
+                    $output .= "<span style=\"color:#ef4444;\">❌ {$encf}</span> — {$errMsg}\n";
+                }
+            } catch (\Exception $e) {
+                $failed++;
+                $output .= "<span style=\"color:#ef4444;\">❌ {$encf}</span> — Excepción: {$e->getMessage()}\n";
+            }
+        }
+
+        $output .= "\n<span style=\"font-weight:bold;\">Resultado: {$passed} aprobados, {$failed} fallidos de " . count($acecfCases) . " total</span>\n";
+
+        return response()->json([
+            'success' => $failed === 0,
+            'output' => $output,
+            'passed' => $passed,
+            'failed' => $failed,
+            'total' => count($acecfCases),
+        ]);
+    }
+
+    /**
+     * Build ACECF XML from test case data per ACECF v.1.0.xsd.
+     * Structure: <ACECF> > <DetalleAprobacionComercial> > fields + <Signature>
+     */
+    private function buildAcecfXml(array $tc): string
+    {
+        $dom = new \DOMDocument('1.0', 'UTF-8');
+        $dom->formatOutput = true;
+
+        $root = $dom->createElement('ACECF');
+        $dom->appendChild($root);
+
+        $detalle = $dom->createElement('DetalleAprobacionComercial');
+        $root->appendChild($detalle);
+
+        // Required fields per XSD sequence
+        $detalle->appendChild($dom->createElement('Version', $tc['Version'] ?? '1.0'));
+        $detalle->appendChild($dom->createElement('RNCEmisor', $tc['RNCEmisor']));
+        $detalle->appendChild($dom->createElement('eNCF', $tc['eNCF']));
+        $detalle->appendChild($dom->createElement('FechaEmision', $tc['FechaEmision']));
+
+        // MontoTotal: format as decimal with 2 decimals
+        $monto = $tc['MontoTotal'] ?? '0';
+        $detalle->appendChild($dom->createElement('MontoTotal', number_format((float)$monto, 2, '.', '')));
+
+        $detalle->appendChild($dom->createElement('RNCComprador', $tc['RNCComprador']));
+
+        // Estado: 1=Aceptado, 2=Rechazado
+        $detalle->appendChild($dom->createElement('Estado', $tc['Estado'] ?? '1'));
+
+        // DetalleMotivoRechazo: optional, only when Estado=2
+        $motivo = $tc['DetalleMotivoRechazo'] ?? null;
+        if ($motivo !== null && $motivo !== '' && $motivo !== 'None') {
+            $detalle->appendChild($dom->createElement('DetalleMotivoRechazo', htmlspecialchars($motivo, ENT_XML1 | ENT_QUOTES, 'UTF-8')));
+        }
+
+        // FechaHoraAprobacionComercial: DD-MM-YYYY HH:MM:SS
+        $fechaHora = $tc['FechaHoraAprobacionComercial'] ?? date('d-m-Y H:i:s');
+        $detalle->appendChild($dom->createElement('FechaHoraAprobacionComercial', $fechaHora));
+
+        return $dom->saveXML();
+    }
+
     // ─── ECF Execution ────────────────────────────────
 
     private function executeEcfTestCase(array $testCase, bool $isRfce = false): array
@@ -654,6 +770,22 @@ class CertificationController extends Controller
         $data = json_decode(file_get_contents($path), true);
         if (json_last_error() !== JSON_ERROR_NONE) {
             throw new \RuntimeException("Invalid JSON in RFCE test cases: " . json_last_error_msg());
+        }
+
+        return $data;
+    }
+
+    private function loadAcecfTestCases(): array
+    {
+        $path = storage_path('app/dgii_tests/dgii_test_acecf.json');
+        if (!file_exists($path)) {
+            Log::warning("[Certification] ACECF test data not found: {$path}");
+            return [];
+        }
+
+        $data = json_decode(file_get_contents($path), true);
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            throw new \RuntimeException("Invalid JSON in ACECF test cases: " . json_last_error_msg());
         }
 
         return $data;

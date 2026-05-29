@@ -41,25 +41,32 @@ class CertificationController extends Controller
             ], 404);
         }
 
-        $testCases = $this->loadEcfTestCases();
-        $testCase = collect($testCases)->firstWhere('ENCF', $cleanEncf);
-
-        if (!$testCase) {
+        // Check for Phase 4 FC<250k — these need file upload, not API
+        $ecfCases = $this->loadEcfTestCases();
+        $testCase = collect($ecfCases)->firstWhere('ENCF', $cleanEncf);
+        if ($testCase) {
+            $tipo = (int)$testCase['TipoeCF'];
+            $monto = (float)($testCase['MontoTotal'] ?? 0);
+            if ($tipo === 32 && $monto < 250000) {
+                // Phase 4: Generate file for download, don't send via API
+                $result = $this->generateFc250kFile($testCase);
+                return response()->json($result);
+            }
+            $result = $this->executeEcfTestCase($testCase);
+        } else {
             // Fallback: check RFCE cases
             $rfceCases = $this->loadRfceTestCases();
             $testCase = collect($rfceCases)->firstWhere('ENCF', $cleanEncf);
             if ($testCase) {
                 $result = $this->executeRfceTestCase($testCase);
-                return response()->json($result);
+            } else {
+                return response()->json([
+                    'success' => false,
+                    'error' => "Test case with eNCF {$cleanEncf} not found.",
+                ], 404);
             }
-
-            return response()->json([
-                'success' => false,
-                'error' => "Test case with eNCF {$cleanEncf} not found in test data.",
-            ], 404);
         }
-
-        $result = $this->executeEcfTestCase($testCase);
+        
         return response()->json($result);
     }
 
@@ -184,9 +191,10 @@ class CertificationController extends Controller
                 $base['type_order'] = $tipo === 33 ? 1 : 2;
                 $phase2[] = $base;
             } elseif ($tipo === 32 && $monto < 250000) {
-                $base['phase'] = 'Fase 4 — FC<250k Individual';
+                $base['phase'] = 'Fase 4 — FC<250k (Subir archivo al portal)';
                 $base['phase_order'] = 4;
                 $base['type_order'] = 0;
+                $base['upload_required'] = true;
                 $phase4[] = $base;
             } else {
                 $base['phase'] = 'Fase 1 — Base';
@@ -533,6 +541,82 @@ class CertificationController extends Controller
         // NOTE: No FechaHoraFirma in RFCE — XSD only allows Encabezado + Signature (xs:any)
 
         return $dom->saveXML();
+    }
+
+    // ─── Phase 4: FC<250k File Generation ─────────────
+
+    /**
+     * Generate signed FC<250k XML for file upload to DGII portal.
+     * These are NOT sent via API — they must be uploaded manually.
+     */
+    private function generateFc250kFile(array $testCase): array
+    {
+        $encf = $testCase['ENCF'];
+
+        try {
+            $settings = Setting::getAll();
+            $builder = new CertificationXmlBuilder();
+            $signatureService = app(XmlSignatureService::class);
+
+            // Build and sign the FC<250k XML
+            Log::info("[Certification] Building FC<250k file for {$encf} (for portal upload)");
+            $rawXml = $builder->buildFromTestCase($testCase);
+
+            $p12Path = storage_path('app/secure/' . ($settings['dgii_certificate_path'] ?? ''));
+            $p12Password = $settings['dgii_certificate_password'] ?? '';
+            $signedXml = $signatureService->signXml($rawXml, $p12Path, $p12Password);
+
+            // Save the signed XML
+            $fileName = "certification_fc250k/{$encf}_fc.xml";
+            Storage::put($fileName, $signedXml);
+
+            Log::info("[Certification] FC<250k file generated: {$fileName}");
+
+            return [
+                'encf' => $encf,
+                'tipo' => '32',
+                'success' => true,
+                'status' => 'file_ready',
+                'track_id' => null,
+                'errors' => null,
+                'xml_path' => $fileName,
+                'format' => 'ECF',
+                'upload_required' => true,
+                'download_url' => "/api/dgii/certification/download-fc250k/{$encf}",
+                'message' => "XML firmado generado. Descargar y subir al portal DGII en la sección 'Facturas de consumo < 250Mil'.",
+            ];
+
+        } catch (\Exception $e) {
+            Log::error("[Certification] FC<250k Error for {$encf}: " . $e->getMessage());
+            return [
+                'encf' => $encf,
+                'tipo' => '32',
+                'success' => false,
+                'status' => 'error',
+                'track_id' => null,
+                'errors' => $e->getMessage(),
+                'xml_path' => null,
+                'format' => 'ECF',
+                'upload_required' => true,
+            ];
+        }
+    }
+
+    /**
+     * Download a signed FC<250k XML file for manual upload to DGII portal.
+     * GET /api/dgii/certification/download-fc250k/{encf}
+     */
+    public function downloadFc250k(string $encf)
+    {
+        $fileName = "certification_fc250k/{$encf}_fc.xml";
+
+        if (!Storage::exists($fileName)) {
+            return response()->json(['error' => "File not found: {$fileName}"], 404);
+        }
+
+        return Storage::download($fileName, "{$encf}_fc.xml", [
+            'Content-Type' => 'application/xml',
+        ]);
     }
 
     // ─── Data Loaders ─────────────────────────────────

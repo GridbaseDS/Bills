@@ -180,6 +180,9 @@ export default {
                 let passed = 0, failed = 0;
                 let runPhase = '';
                 for (const tc of this._certCases) {
+                    // Skip Phase 4 upload-required cases in run-all
+                    if (tc.upload_required) continue;
+                    
                     // Log phase transitions
                     if (tc.phase && tc.phase !== runPhase) {
                         runPhase = tc.phase;
@@ -347,7 +350,10 @@ export default {
                         <span style="color:var(--color-text-muted);font-size:12px;">⏳ Pendiente</span>
                     </td>
                     <td style="padding:10px 16px;text-align:center;">
-                        <button class="btn-run-single" data-encf="${tc.encf}" data-tipo="${tc.tipo}" style="padding:4px 12px;font-size:11px;font-weight:600;border:1px solid var(--color-border);border-radius:var(--radius-sm);background:var(--color-bg-primary);color:var(--color-text-primary);cursor:pointer;transition:all 0.15s;" onmouseover="this.style.background='var(--color-primary)';this.style.color='white';this.style.borderColor='var(--color-primary)'" onmouseout="this.style.background='var(--color-bg-primary)';this.style.color='var(--color-text-primary)';this.style.borderColor='var(--color-border)'">▶ Ejecutar</button>
+                        ${tc.upload_required
+                            ? `<button class="btn-run-single" data-encf="${tc.encf}" data-tipo="${tc.tipo}" data-upload="1" style="padding:4px 12px;font-size:11px;font-weight:600;border:1px solid #f59e0b;border-radius:var(--radius-sm);background:rgba(245,158,11,0.08);color:#f59e0b;cursor:pointer;transition:all 0.15s;" onmouseover="this.style.background='#f59e0b';this.style.color='white'" onmouseout="this.style.background='rgba(245,158,11,0.08)';this.style.color='#f59e0b'">📥 Generar XML</button>`
+                            : `<button class="btn-run-single" data-encf="${tc.encf}" data-tipo="${tc.tipo}" style="padding:4px 12px;font-size:11px;font-weight:600;border:1px solid var(--color-border);border-radius:var(--radius-sm);background:var(--color-bg-primary);color:var(--color-text-primary);cursor:pointer;transition:all 0.15s;" onmouseover="this.style.background='var(--color-primary)';this.style.color='white';this.style.borderColor='var(--color-primary)'" onmouseout="this.style.background='var(--color-bg-primary)';this.style.color='var(--color-text-primary)';this.style.borderColor='var(--color-border)'">▶ Ejecutar</button>`
+                        }
                     </td>
                 </tr>`;
         });
@@ -388,7 +394,12 @@ export default {
                 headers: { 'Content-Type': 'application/json' }
             });
 
-            if (res.success) {
+            if (res.upload_required) {
+                // Phase 4: file generated, show download link
+                if (statusCell) statusCell.innerHTML = `<a href="${res.download_url}" target="_blank" style="color:#f59e0b;font-weight:600;text-decoration:none;">📥 Descargar XML</a>`;
+                consoleOutput.innerHTML += `<span style="color:#f59e0b;">📥 ${encf} (Tipo ${tipo})</span> — XML generado. <a href="${res.download_url}" target="_blank" style="color:#38bdf8;text-decoration:underline;">Descargar</a> y subir al portal DGII.\n`;
+                consoleStatus.innerHTML = `<span style="color:#f59e0b;">ARCHIVO LISTO</span>`;
+            } else if (res.success) {
                 if (statusCell) statusCell.innerHTML = `<span style="color:#22c55e;font-weight:600;">✅ ${res.status || 'Aceptado'}</span>`;
                 consoleOutput.innerHTML += `<span style="color:#22c55e;">✅ ${encf} (Tipo ${tipo})</span> — ${res.track_id || 'OK'}\n`;
                 consoleStatus.innerHTML = `<span style="color:#22c55e;">COMPLETADO</span>`;

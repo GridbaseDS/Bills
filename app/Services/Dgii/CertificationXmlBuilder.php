@@ -660,19 +660,46 @@ class CertificationXmlBuilder
 
     private function buildDescuentosORecargos(): ?DOMElement
     {
-        // Check if any global discount/surcharge fields exist
-        $tipoAjuste = $this->v('TipoAjusteGlobal');
-        if ($tipoAjuste === null) return null;
+        $items = [];
+        for ($n = 1; $n <= 10; $n++) {
+            $tipoAjuste = $this->v("TipoAjuste[$n]");
+            if ($tipoAjuste === null) break;
 
-        $desc = $this->el('DescuentosORecargos');
-        $desc->appendChild($this->el('TipoAjuste', $tipoAjuste));
-        $this->appendIfPresent($desc, 'IndicadorNorma', 'IndicadorNorma');
-        $this->appendIfPresent($desc, 'DescripcionAjuste', 'DescripcionAjuste');
-        $val = $this->v('ValorAjusteGlobal');
-        if ($val !== null) $desc->appendChild($this->el('ValorAjuste', $this->fmtDecimal($val)));
-        $monto = $this->v('MontoAjusteGlobal');
-        if ($monto !== null) $desc->appendChild($this->el('MontoAjuste', $this->fmtDecimal($monto)));
-        return $desc;
+            $desc = $this->el('DescuentoORecargo');
+
+            $numLinea = $this->v("NumeroLineaDoR[$n]");
+            if ($numLinea !== null) $desc->appendChild($this->el('NumeroLinea', $numLinea));
+
+            $desc->appendChild($this->el('TipoAjuste', $tipoAjuste));
+
+            $indicadorNorma = $this->v("IndicadorNorma[$n]");
+            if ($indicadorNorma !== null) $desc->appendChild($this->el('IndicadorNorma', $indicadorNorma));
+
+            $descripcion = $this->v("DescripcionDescuentooRecargo[$n]");
+            if ($descripcion !== null) $desc->appendChild($this->el('DescripcionDescuentooRecargo', $this->xmlSafe($descripcion)));
+
+            $tipoValor = $this->v("TipoValor[$n]");
+            if ($tipoValor !== null) $desc->appendChild($this->el('TipoValor', $tipoValor));
+
+            $valor = $this->v("ValorDescuentooRecargo[$n]");
+            if ($valor !== null) $desc->appendChild($this->el('ValorDescuentooRecargo', $this->fmtDecimal($valor)));
+
+            $monto = $this->v("MontoDescuentooRecargo[$n]");
+            if ($monto !== null) $desc->appendChild($this->el('MontoDescuentooRecargo', $this->fmtDecimal($monto)));
+
+            $indicadorFact = $this->v("IndicadorFacturacionDescuentooRecargo[$n]");
+            if ($indicadorFact !== null) $desc->appendChild($this->el('IndicadorFacturacionDescuentooRecargo', $indicadorFact));
+
+            $items[] = $desc;
+        }
+
+        if (empty($items)) return null;
+
+        $wrapper = $this->el('DescuentosORecargos');
+        foreach ($items as $item) {
+            $wrapper->appendChild($item);
+        }
+        return $wrapper;
     }
 
     // ─── Paginacion ───────────────────────────────────

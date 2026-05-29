@@ -203,10 +203,11 @@ class DgiiApiService
     public function submitAprobacionComercial(string $signedXml, string $token, string $env): array
     {
         $baseUrl = $env === 'production'
-            ? 'https://ecf.dgii.gov.do/ecf'
-            : 'https://ecf.dgii.gov.do/certecf';
+            ? 'https://ecf.dgii.gov.do'
+            : 'https://ecf.dgii.gov.do';
 
-        $endpoint = "{$baseUrl}/aprobacioncomercial/api/ecf";
+        $envPath = $env === 'production' ? 'ecf' : 'CerteCF';
+        $endpoint = "{$baseUrl}/{$envPath}/AprobacionComercial/api/ecf";
 
         // Extract RNC and eNCF from XML for filename
         preg_match('/<RNCComprador>(\d+)<\/RNCComprador>/', $signedXml, $rncMatch);

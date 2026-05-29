@@ -344,8 +344,9 @@ class CertificationController extends Controller
         }
 
         // FechaHoraAprobacionComercial: DD-MM-YYYY HH:MM:SS
-        $fechaHora = $tc['FechaHoraAprobacionComercial'] ?? date('d-m-Y H:i:s');
-        $detalle->appendChild($dom->createElement('FechaHoraAprobacionComercial', $fechaHora));
+        // DGII validates against current test data timestamp, not the XLSX download date
+        // Always use current datetime to match the regenerated test data
+        $detalle->appendChild($dom->createElement('FechaHoraAprobacionComercial', date('d-m-Y H:i:s')));
 
         return $dom->saveXML();
     }

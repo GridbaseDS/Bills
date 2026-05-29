@@ -148,28 +148,26 @@ class CertificationController extends Controller
     {
         $ecfCases = $this->loadEcfTestCases();
         $rfceCases = $this->loadRfceTestCases();
-        $cases = [];
+
+        // Classify ECF cases into phases
+        $phase1 = []; // Base: 31, 32≥250k, 41, 43, 44, 45, 46, 47
+        $phase2 = []; // Notes: 33, 34
+        $phase4 = []; // FC<250k individual ECF
+
+        // Type ordering within Phase 1
+        $typeOrder = [31 => 1, 32 => 2, 41 => 3, 43 => 4, 44 => 5, 45 => 6, 46 => 7, 47 => 8];
 
         foreach ($ecfCases as $tc) {
+            $tipo = (int)$tc['TipoeCF'];
+            $monto = (float)($tc['MontoTotal'] ?? 0);
+
             $items = [];
             for ($i = 1; $i <= 20; $i++) {
                 $name = $tc["NombreItem[$i]"] ?? '#e';
                 if ($name !== '#e') $items[] = $name;
             }
 
-            $tipo = (int)$tc['TipoeCF'];
-            $monto = (float)($tc['MontoTotal'] ?? 0);
-
-            // Determine phase
-            if (in_array($tipo, [33, 34])) {
-                $phase = 'Phase 2 - Notas';
-            } elseif ($tipo === 32 && $monto < 250000) {
-                $phase = 'Phase 4 - FC<250k';
-            } else {
-                $phase = 'Phase 1 - Base';
-            }
-
-            $cases[] = [
+            $base = [
                 'encf' => $tc['ENCF'],
                 'tipo' => $tc['TipoeCF'],
                 'razon_social_comprador' => $tc['RazonSocialComprador'] ?? null,
@@ -177,14 +175,37 @@ class CertificationController extends Controller
                 'fecha_emision' => $tc['FechaEmision'] ?? null,
                 'items_count' => count($items),
                 'items' => $items,
-                'phase' => $phase,
                 'format' => 'ECF',
             ];
+
+            if (in_array($tipo, [33, 34])) {
+                $base['phase'] = 'Fase 2 — Notas (33/34)';
+                $base['phase_order'] = 2;
+                $base['type_order'] = $tipo === 33 ? 1 : 2;
+                $phase2[] = $base;
+            } elseif ($tipo === 32 && $monto < 250000) {
+                $base['phase'] = 'Fase 4 — FC<250k Individual';
+                $base['phase_order'] = 4;
+                $base['type_order'] = 0;
+                $phase4[] = $base;
+            } else {
+                $base['phase'] = 'Fase 1 — Base';
+                $base['phase_order'] = 1;
+                $base['type_order'] = $typeOrder[$tipo] ?? 99;
+                $phase1[] = $base;
+            }
         }
 
-        // Add RFCE cases
+        // Sort Phase 1 by type order (31→32→41→43→44→45→46→47)
+        usort($phase1, fn($a, $b) => $a['type_order'] <=> $b['type_order']);
+
+        // Sort Phase 2 by type (33 then 34)
+        usort($phase2, fn($a, $b) => $a['type_order'] <=> $b['type_order']);
+
+        // Phase 3: RFCE summaries
+        $phase3 = [];
         foreach ($rfceCases as $tc) {
-            $cases[] = [
+            $phase3[] = [
                 'encf' => $tc['ENCF'] . ' (RFCE)',
                 'tipo' => '32-RFCE',
                 'razon_social_comprador' => $tc['RazonSocialComprador'] ?? null,
@@ -192,12 +213,17 @@ class CertificationController extends Controller
                 'fecha_emision' => $tc['FechaEmision'] ?? null,
                 'items_count' => 0,
                 'items' => [],
-                'phase' => 'Phase 3 - RFCE',
+                'phase' => 'Fase 3 — RFCE Resumen',
+                'phase_order' => 3,
+                'type_order' => 0,
                 'format' => 'RFCE',
             ];
         }
 
-        return response()->json(['cases' => $cases]);
+        // Merge in strict order: Phase 1 → Phase 2 → Phase 3 → Phase 4
+        $cases = array_merge($phase1, $phase2, $phase3, $phase4);
+
+        return response()->json(['cases' => array_values($cases)]);
     }
 
     // ─── ECF Execution ────────────────────────────────

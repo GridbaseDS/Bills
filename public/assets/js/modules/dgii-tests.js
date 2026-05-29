@@ -178,7 +178,13 @@ export default {
                 consoleStatus.innerHTML = `<span class="spinner" style="width:12px;height:12px;border-width:2px;"></span> <span style="color:#fbbf24;">Ejecutando</span>`;
 
                 let passed = 0, failed = 0;
+                let runPhase = '';
                 for (const tc of this._certCases) {
+                    // Log phase transitions
+                    if (tc.phase && tc.phase !== runPhase) {
+                        runPhase = tc.phase;
+                        consoleOutput.innerHTML += `\n<span style="color:#6366f1;font-weight:700;">━━━ ${tc.phase} ━━━</span>\n`;
+                    }
                     const row = document.getElementById(`cert-row-${tc.encf}`);
                     const statusCell = document.getElementById(`cert-status-${tc.encf}`);
                     if (statusCell) statusCell.innerHTML = `<span class="spinner" style="width:14px;height:14px;border-width:2px;"></span>`;
@@ -281,7 +287,14 @@ export default {
     },
 
     renderCertTable(container, cases) {
-        const typeNames = {31:'Factura Crédito Fiscal',32:'Factura Consumo',33:'Nota Débito',34:'Nota Crédito',41:'Compras',43:'Gastos Menores',44:'Pagos Exterior',45:'Gubernamental',46:'Exportación',47:'Venta Zona Franca'};
+        const typeNames = {31:'Factura Crédito Fiscal',32:'Factura Consumo',33:'Nota Débito',34:'Nota Crédito',41:'Compras',43:'Gastos Menores',44:'Regímenes Especiales',45:'Gubernamental',46:'Exportación',47:'Pagos al Exterior','32-RFCE':'RFCE Resumen'};
+        const phaseColors = {
+            'Fase 1': { bg: 'rgba(59,130,246,0.08)', color: '#3b82f6', icon: '1️⃣' },
+            'Fase 2': { bg: 'rgba(168,85,247,0.08)', color: '#a855f7', icon: '2️⃣' },
+            'Fase 3': { bg: 'rgba(245,158,11,0.08)', color: '#f59e0b', icon: '3️⃣' },
+            'Fase 4': { bg: 'rgba(16,185,129,0.08)', color: '#10b981', icon: '4️⃣' },
+        };
+
         let html = `
             <div style="overflow-x:auto;">
                 <table style="width:100%;border-collapse:collapse;font-size:13px;">
@@ -299,7 +312,22 @@ export default {
                     </thead>
                     <tbody>`;
 
+        let currentPhase = '';
         cases.forEach((tc, i) => {
+            // Phase separator row
+            const phaseKey = (tc.phase || '').substring(0, 6); // "Fase X"
+            if (tc.phase && tc.phase !== currentPhase) {
+                currentPhase = tc.phase;
+                const phaseCasesCount = cases.filter(c => c.phase === tc.phase).length;
+                const pc = phaseColors[phaseKey] || { bg: 'rgba(100,100,100,0.08)', color: '#64748b', icon: '▶' };
+                html += `
+                <tr style="background:${pc.bg};">
+                    <td colspan="8" style="padding:10px 16px;font-weight:700;font-size:12px;color:${pc.color};letter-spacing:0.3px;">
+                        ${pc.icon} ${tc.phase} <span style="font-weight:400;opacity:0.7;">(${phaseCasesCount} casos)</span>
+                    </td>
+                </tr>`;
+            }
+
             const typeBadge = `<span style="display:inline-block;padding:2px 8px;border-radius:var(--radius-sm);font-size:11px;font-weight:600;background:rgba(99,102,241,0.08);color:#6366f1;">${tc.tipo}</span>`;
             const typeName = typeNames[tc.tipo] || 'Otro';
             const monto = tc.monto_total ? parseFloat(tc.monto_total).toLocaleString('es-DO', {minimumFractionDigits:2}) : '—';
@@ -309,7 +337,7 @@ export default {
                 <tr id="cert-row-${tc.encf}" style="border-bottom:1px solid var(--color-border);transition:background 0.15s;" onmouseover="this.style.background='var(--bg-hover)'" onmouseout="this.style.background='transparent'">
                     <td style="padding:10px 16px;color:var(--color-text-muted);font-size:12px;">${i+1}</td>
                     <td style="padding:10px 16px;font-weight:600;font-family:'JetBrains Mono',monospace;font-size:12px;">${tc.encf}</td>
-                    <td style="padding:10px 16px;">${typeBadge} <span style="color:var(--color-text-muted);font-size:11px;">${typeName}</span>${tc.phase ? `<br><span style="font-size:10px;color:var(--color-text-muted);">${tc.phase}</span>` : ''}</td>
+                    <td style="padding:10px 16px;">${typeBadge} <span style="color:var(--color-text-muted);font-size:11px;">${typeName}</span></td>
                     <td style="padding:10px 16px;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${tc.razon_social_comprador || ''}">${tc.razon_social_comprador || '<span style="color:var(--color-text-muted);">—</span>'}</td>
                     <td style="padding:10px 16px;text-align:right;font-family:'JetBrains Mono',monospace;font-size:12px;">$${monto}</td>
                     <td style="padding:10px 16px;text-align:center;">

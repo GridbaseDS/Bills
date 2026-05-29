@@ -153,6 +153,13 @@ class CertificationXmlBuilder
             $idDoc->appendChild($formasPago);
         }
 
+        // Per XSD: TipoCuentaPago, NumeroCuentaPago, BancoPago are IdDoc children
+        $this->appendIfPresent($idDoc, 'TipoCuentaPago');
+        $this->appendIfPresent($idDoc, 'NumeroCuentaPago');
+        $this->appendIfPresent($idDoc, 'BancoPago');
+        $this->appendIfPresent($idDoc, 'FechaDesde');
+        $this->appendIfPresent($idDoc, 'FechaHasta');
+
         $this->appendIfPresent($idDoc, 'TotalPaginas');
 
         return $idDoc;
@@ -164,15 +171,11 @@ class CertificationXmlBuilder
         for ($i = 1; $i <= 7; $i++) {
             $fp = $this->v("FormaPago[$i]");
             $mp = $this->v("MontoPago[$i]");
-            if ($fp === null && $mp === null) continue;
+            if ($fp === null && $mp === null) break;
 
             $forma = $this->el('FormaDePago');
             if ($fp !== null) $forma->appendChild($this->el('FormaPago', $fp));
             if ($mp !== null) $forma->appendChild($this->el('MontoPago', $this->fmtDecimal($mp)));
-
-            $this->appendIfPresent($forma, "TipoCuentaPago", "TipoCuentaPago");
-            $this->appendIfPresent($forma, "NumeroCuentaPago", "NumeroCuentaPago");
-            $this->appendIfPresent($forma, "BancoPago", "BancoPago");
 
             $formas[] = $forma;
         }

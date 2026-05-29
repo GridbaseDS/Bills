@@ -325,20 +325,46 @@ class CertificationController extends Controller
             $authService = app(DgiiAuthService::class);
             $apiService = app(DgiiApiService::class);
 
-            // 1. Build RFCE XML
-            Log::info("[Certification] Building RFCE XML for {$encf}");
-            $rawXml = $this->buildRfceXml($testCase);
-
-            // 2. Sign the XML
             $p12Path = storage_path('app/secure/' . ($settings['dgii_certificate_path'] ?? ''));
             $p12Password = $settings['dgii_certificate_password'] ?? '';
+
+            // Step 1: Build the corresponding FC<250k e-CF, sign it, and extract CodigoSeguridadeCF
+            // The security code = first 6 chars of the signature DigestValue
+            Log::info("[Certification] Building FC<250k e-CF for {$encf} to extract CodigoSeguridadeCF");
+            $ecfCases = $this->loadEcfTestCases();
+            $ecfCase = collect($ecfCases)->firstWhere('ENCF', $encf);
+            $codigoSeguridad = '000000'; // fallback
+
+            if ($ecfCase) {
+                $builder = new CertificationXmlBuilder();
+                $ecfXml = $builder->buildFromTestCase($ecfCase);
+                $signedEcf = $signatureService->signXml($ecfXml, $p12Path, $p12Password);
+
+                // Extract first 6 chars from the DigestValue in the signature
+                if (preg_match('/<DigestValue>([^<]+)<\/DigestValue>/', $signedEcf, $m)) {
+                    $codigoSeguridad = substr($m[1], 0, 6);
+                }
+                Log::info("[Certification] CodigoSeguridadeCF for {$encf}: {$codigoSeguridad}");
+
+                // Save the signed FC<250k for file upload later
+                $ecfFileName = "certification_fc250k/{$encf}_fc.xml";
+                Storage::put($ecfFileName, $signedEcf);
+            } else {
+                Log::warning("[Certification] No ECF test case found for {$encf}, using fallback security code");
+            }
+
+            // Step 2: Build RFCE XML with the security code
+            Log::info("[Certification] Building RFCE XML for {$encf}");
+            $rawXml = $this->buildRfceXml($testCase, $codigoSeguridad);
+
+            // Step 3: Sign the RFCE XML
             $signedXml = $signatureService->signXml($rawXml, $p12Path, $p12Password);
 
-            // Save signed XML
+            // Save signed RFCE XML
             $fileName = "certification_rfce/{$encf}_rfce.xml";
             Storage::put($fileName, $signedXml);
 
-            // 3. Submit to fc.dgii.gov.do (RFCE endpoint)
+            // Step 4: Submit RFCE to fc.dgii.gov.do
             $token = $authService->getValidToken($settings);
             $env = $settings['dgii_env'] ?? 'testing';
 
@@ -377,7 +403,7 @@ class CertificationController extends Controller
      * Build RFCE XML from test case data.
      * RFCE is a simpler format: <RFCE> with Encabezado only (no DetallesItems).
      */
-    private function buildRfceXml(array $tc): string
+    private function buildRfceXml(array $tc, string $codigoSeguridad = '000000'): string
     {
         $v = function (string $key) use ($tc): ?string {
             $val = $tc[$key] ?? null;
@@ -386,12 +412,16 @@ class CertificationController extends Controller
         };
 
         $fmt = function ($val): string {
+            // Use exact string from XLSX if it already has correct format
+            $str = (string)$val;
+            if (preg_match('/^-?\d+\.\d{2}$/', $str)) return $str;
             return number_format((float)$val, 2, '.', '');
         };
 
         $dom = new \DOMDocument('1.0', 'UTF-8');
         $dom->formatOutput = true;
 
+        // Root: <RFCE> — per RFCE 32 v.1.0.xsd
         $rfce = $dom->createElement('RFCE');
         $dom->appendChild($rfce);
 
@@ -417,7 +447,7 @@ class CertificationController extends Controller
         for ($i = 1; $i <= 7; $i++) {
             $fp = $v("FormaPago[$i]");
             $mp = $v("MontoPago[$i]");
-            if ($fp === null && $mp === null) continue;
+            if ($fp === null && $mp === null) break;
             $forma = $dom->createElement('FormaDePago');
             if ($fp !== null) $forma->appendChild($dom->createElement('FormaPago', $fp));
             if ($mp !== null) $forma->appendChild($dom->createElement('MontoPago', $fmt($mp)));
@@ -447,7 +477,10 @@ class CertificationController extends Controller
         } elseif ($idExt !== null) {
             $comp->appendChild($dom->createElement('IdentificadorExtranjero', $idExt));
         }
-        $comp->appendChild($dom->createElement('RazonSocialComprador', htmlspecialchars($v('RazonSocialComprador'), ENT_XML1 | ENT_QUOTES, 'UTF-8')));
+        $razSocComp = $v('RazonSocialComprador');
+        if ($razSocComp !== null) {
+            $comp->appendChild($dom->createElement('RazonSocialComprador', htmlspecialchars($razSocComp, ENT_XML1 | ENT_QUOTES, 'UTF-8')));
+        }
 
         // Totales
         $totales = $dom->createElement('Totales');
@@ -493,8 +526,11 @@ class CertificationController extends Controller
         $montoPeriodo = $v('MontoPeriodo');
         if ($montoPeriodo !== null) $totales->appendChild($dom->createElement('MontoPeriodo', $fmt($montoPeriodo)));
 
-        // FechaHoraFirma
-        $rfce->appendChild($dom->createElement('FechaHoraFirma', date('d-m-Y H:i:s')));
+        // CodigoSeguridadeCF — REQUIRED per XSD, inside Encabezado after Totales
+        // First 6 chars of the DigestValue from the signed FC<250k e-CF
+        $enc->appendChild($dom->createElement('CodigoSeguridadeCF', $codigoSeguridad));
+
+        // NOTE: No FechaHoraFirma in RFCE — XSD only allows Encabezado + Signature (xs:any)
 
         return $dom->saveXML();
     }

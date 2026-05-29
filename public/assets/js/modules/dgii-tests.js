@@ -126,7 +126,10 @@ export default {
                 consoleStatus.innerHTML = `<span class="spinner" style="width:12px;height:12px;border-width:2px;"></span> <span style="color:#fbbf24;">Ejecutando</span>`;
 
                 try {
-                    const res = await App.api('dgii/run-aprobaciones', { method: 'POST' });
+                    // Skip eNCFs that DGII reports as "no existe en nuestra colección de datos"
+                    // to avoid triggering a counter reset
+                    const skipList = 'E310000000004,E310000000034,E340000000002,E340000000018,E440000000008,E450000000009,E450000000010';
+                    const res = await App.api(`dgii/run-aprobaciones?skip_encf=${skipList}`, { method: 'POST' });
                     let coloredOutput = res.output;
                     consoleOutput.innerHTML += `\n${coloredOutput}`;
                     consoleStatus.innerHTML = res.success

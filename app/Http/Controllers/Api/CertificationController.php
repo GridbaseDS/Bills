@@ -264,9 +264,24 @@ class CertificationController extends Controller
         $output = "";
         $passed = 0;
         $failed = 0;
+        $skipped = 0;
+
+        // Allow filtering out specific eNCFs that are known to fail
+        // This avoids DGII resetting the counter when "no existe" errors occur
+        $skipEncfs = request()->input('skip_encf', []);
+        if (is_string($skipEncfs)) {
+            $skipEncfs = explode(',', $skipEncfs);
+        }
 
         foreach ($acecfCases as $tc) {
             $encf = $tc['eNCF'] ?? 'UNKNOWN';
+
+            // Skip known-bad eNCFs
+            if (in_array($encf, $skipEncfs)) {
+                $skipped++;
+                $output .= "<span style=\"color:#f59e0b;\">⏭️ {$encf}</span> — Omitido (no existe en DGII)\n";
+                continue;
+            }
 
             try {
                 // Build ACECF XML per ACECF v.1.0.xsd
@@ -296,13 +311,14 @@ class CertificationController extends Controller
             }
         }
 
-        $output .= "\n<span style=\"font-weight:bold;\">Resultado: {$passed} aprobados, {$failed} fallidos de " . count($acecfCases) . " total</span>\n";
+        $output .= "\n<span style=\"font-weight:bold;\">Resultado: {$passed} aprobados, {$failed} fallidos, {$skipped} omitidos de " . count($acecfCases) . " total</span>\n";
 
         return response()->json([
             'success' => $failed === 0,
             'output' => $output,
             'passed' => $passed,
             'failed' => $failed,
+            'skipped' => $skipped,
             'total' => count($acecfCases),
         ]);
     }

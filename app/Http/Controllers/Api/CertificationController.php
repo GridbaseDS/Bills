@@ -348,8 +348,9 @@ class CertificationController extends Controller
                 $ecfXml = $builder->buildFromTestCase($ecfCase);
                 $signedEcf = $signatureService->signXml($ecfXml, $p12Path, $p12Password);
 
-                // Extract first 6 chars from the DigestValue in the signature
-                if (preg_match('/<DigestValue>([^<]+)<\/DigestValue>/', $signedEcf, $m)) {
+                // Extract first 6 chars from the SignatureValue in the signature
+                // DGII validates: "6 primeros dígitos de signature value de la firma"
+                if (preg_match('/<SignatureValue>([^<]+)<\/SignatureValue>/', $signedEcf, $m)) {
                     $codigoSeguridad = substr($m[1], 0, 6);
                 }
                 Log::info("[Certification] CodigoSeguridadeCF for {$encf}: {$codigoSeguridad}");
@@ -554,23 +555,27 @@ class CertificationController extends Controller
         $encf = $testCase['ENCF'];
 
         try {
-            $settings = Setting::getAll();
-            $builder = new CertificationXmlBuilder();
-            $signatureService = app(XmlSignatureService::class);
-
-            // Build and sign the FC<250k XML
-            Log::info("[Certification] Building FC<250k file for {$encf} (for portal upload)");
-            $rawXml = $builder->buildFromTestCase($testCase);
-
-            $p12Path = storage_path('app/secure/' . ($settings['dgii_certificate_path'] ?? ''));
-            $p12Password = $settings['dgii_certificate_password'] ?? '';
-            $signedXml = $signatureService->signXml($rawXml, $p12Path, $p12Password);
-
-            // Save the signed XML
+            // CRITICAL: Use the SAME signed FC<250k that was generated during Phase 3 (RFCE).
+            // If we re-sign, the SignatureValue changes and CodigoSeguridadeCF won't match.
             $fileName = "certification_fc250k/{$encf}_fc.xml";
-            Storage::put($fileName, $signedXml);
 
-            Log::info("[Certification] FC<250k file generated: {$fileName}");
+            if (Storage::exists($fileName)) {
+                Log::info("[Certification] FC<250k file already exists from Phase 3: {$fileName}");
+            } else {
+                // File doesn't exist yet — build and sign it
+                Log::info("[Certification] Building FC<250k file for {$encf} (no Phase 3 file found)");
+                $settings = Setting::getAll();
+                $builder = new CertificationXmlBuilder();
+                $signatureService = app(XmlSignatureService::class);
+
+                $rawXml = $builder->buildFromTestCase($testCase);
+                $p12Path = storage_path('app/secure/' . ($settings['dgii_certificate_path'] ?? ''));
+                $p12Password = $settings['dgii_certificate_password'] ?? '';
+                $signedXml = $signatureService->signXml($rawXml, $p12Path, $p12Password);
+
+                Storage::put($fileName, $signedXml);
+                Log::warning("[Certification] FC<250k generated WITHOUT Phase 3 — CodigoSeguridadeCF may not match RFCE!");
+            }
 
             return [
                 'encf' => $encf,

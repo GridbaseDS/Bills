@@ -24,13 +24,30 @@ class CertificationController extends Controller
         $request->validate(['encf' => 'required|string']);
         $encf = $request->input('encf');
 
+        // Check if this is an RFCE request (suffix added by frontend)
+        $isRfce = str_contains($encf, '(RFCE)');
+        $cleanEncf = trim(str_replace('(RFCE)', '', $encf));
+
+        if ($isRfce) {
+            $rfceCases = $this->loadRfceTestCases();
+            $testCase = collect($rfceCases)->firstWhere('ENCF', $cleanEncf);
+            if ($testCase) {
+                $result = $this->executeRfceTestCase($testCase);
+                return response()->json($result);
+            }
+            return response()->json([
+                'success' => false,
+                'error' => "RFCE test case with eNCF {$cleanEncf} not found.",
+            ], 404);
+        }
+
         $testCases = $this->loadEcfTestCases();
-        $testCase = collect($testCases)->firstWhere('ENCF', $encf);
+        $testCase = collect($testCases)->firstWhere('ENCF', $cleanEncf);
 
         if (!$testCase) {
-            // Check RFCE cases
+            // Fallback: check RFCE cases
             $rfceCases = $this->loadRfceTestCases();
-            $testCase = collect($rfceCases)->firstWhere('ENCF', $encf);
+            $testCase = collect($rfceCases)->firstWhere('ENCF', $cleanEncf);
             if ($testCase) {
                 $result = $this->executeRfceTestCase($testCase);
                 return response()->json($result);
@@ -38,7 +55,7 @@ class CertificationController extends Controller
 
             return response()->json([
                 'success' => false,
-                'error' => "Test case with eNCF {$encf} not found in test data.",
+                'error' => "Test case with eNCF {$cleanEncf} not found in test data.",
             ], 404);
         }
 

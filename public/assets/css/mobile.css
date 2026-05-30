@@ -546,21 +546,7 @@ select.form-control {
   gap: 12px !important;
 }
 
-/* ═══════════════════════════════════════════════════════════
-   LOGIN — Mobile Friendly
-   ═══════════════════════════════════════════════════════════ */
-.login-page {
-  padding: 24px 16px;
-  min-height: 100vh;
-  min-height: -webkit-fill-available;
-}
-.login-card {
-  margin: 0;
-  padding: 28px 24px;
-  width: 100%;
-  max-width: 100%;
-  border-radius: var(--radius-xl);
-}
+
 
 /* ═══════════════════════════════════════════════════════════
    DETAIL VIEW — Mobile Adaptations

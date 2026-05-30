@@ -403,12 +403,11 @@ if (!empty($invoice['status'])) {
                 $fechaEmision = date('d-m-Y', strtotime($invoice['issue_date']));
                 $codSeguridad = $invoice['security_code'] ?? '';
 
-                // FechaFirma: read from signed XML if signed_at is empty
+                // FechaFirma: ALWAYS read from signed XML first (authoritative source).
+                // The DB signed_at can drift by 1+ second vs the XML's FechaHoraFirma,
+                // causing DGII ConsultaTimbre to fail with "valores suministrados" mismatch.
                 $fechaFirma = '';
-                if (!empty($invoice['signed_at'])) {
-                    $fechaFirma = date('d-m-Y H:i:s', strtotime($invoice['signed_at']));
-                } elseif (!empty($invoice['signed_xml_path'])) {
-                    // Read FechaHoraFirma from the actual signed XML
+                if (!empty($invoice['signed_xml_path'])) {
                     $xmlPath = storage_path('app/private/' . $invoice['signed_xml_path']);
                     if (!file_exists($xmlPath)) {
                         $xmlPath = storage_path('app/' . $invoice['signed_xml_path']);
@@ -419,6 +418,10 @@ if (!empty($invoice['status'])) {
                             $fechaFirma = $m[1];
                         }
                     }
+                }
+                // Fallback to DB signed_at only if XML is unavailable
+                if (empty($fechaFirma) && !empty($invoice['signed_at'])) {
+                    $fechaFirma = date('d-m-Y H:i:s', strtotime($invoice['signed_at']));
                 }
                 if (empty($fechaFirma)) {
                     $fechaFirma = date('d-m-Y H:i:s');

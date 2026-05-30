@@ -106,7 +106,13 @@ window.App = {
                 }
             }
         } catch (error) {
-            this.renderLogin();
+            const deviceToken = localStorage.getItem('device_token');
+            const savedEmail = localStorage.getItem('saved_email');
+            if (deviceToken && savedEmail) {
+                this.renderPinLogin(savedEmail);
+            } else {
+                this.renderLogin();
+            }
         }
     },
 
@@ -122,6 +128,7 @@ window.App = {
             }
             if (res.success) {
                 this.state.user = res.user;
+                localStorage.setItem('saved_email', res.user.email);
                 
                 // Fetch settings to check if installed
                 const settings = await this.api('settings');
@@ -133,8 +140,12 @@ window.App = {
                 this.updateFavicon();
                 this.updateTitle();
                 
+                const hasDeviceToken = localStorage.getItem('device_token');
+                
                 if (settings.is_installed !== '1') {
                     this.renderSetupWizard();
+                } else if (!hasDeviceToken) {
+                    this.renderPinSetup();
                 } else {
                     this.renderAppShell();
                     this.navigate('inicio');
@@ -529,12 +540,16 @@ window.App = {
                 
                 if (res.success) {
                     this.state.user = res.user;
+                    localStorage.setItem('saved_email', res.user.email);
                     
                     const settings = await this.api('settings');
                     this.state.settings = settings;
                     
+                    const hasDeviceToken = localStorage.getItem('device_token');
                     if (settings.is_installed !== '1') {
                         this.renderSetupWizard();
+                    } else if (!hasDeviceToken) {
+                        this.renderPinSetup();
                     } else {
                         this.renderAppShell();
                         this.navigate('inicio');
@@ -548,6 +563,151 @@ window.App = {
                     errorEl.textContent = error.message;
                     errorEl.style.display = 'block';
                 }
+            }
+        });
+    },
+
+    renderPinSetup() {
+        const cachedLogo = localStorage.getItem('company_logo') || 'https://gridbase.com.do/wp-content/uploads/2025/02/cropped-imagen_2026-03-16_154126791.png';
+        const app = document.getElementById('app');
+        
+        app.innerHTML = `
+            <div class="login-page">
+                <div class="login-left">
+                    <div class="login-brand">
+                        <img src="${cachedLogo}" alt="Logo">
+                    </div>
+                    <div class="login-form-wrap">
+                        <h1 class="login-title">Acceso Rápido</h1>
+                        <p class="login-subtitle">Crea un PIN de 6 dígitos para ingresar más rápido desde este dispositivo en el futuro.</p>
+                        <div id="login-error" class="login-error"></div>
+                        <form id="pin-setup-form">
+                            <div class="login-field">
+                                <label>Ingresa un PIN de 6 dígitos</label>
+                                <input type="password" id="setup-pin-code" placeholder="••••••" pattern="[0-9]*" inputmode="numeric" maxlength="6" required autofocus style="text-align:center; font-size:24px; letter-spacing:0.15em; font-weight:700;">
+                            </div>
+                            <div style="display:flex; gap:12px; margin-top:8px;">
+                                <button type="button" id="btn-skip-pin" style="flex:1; padding:13px 24px; border:1.5px solid #E5E7EB; border-radius:10px; font-size:14px; font-weight:600; color:#374151; background:#fff; cursor:pointer; transition:all .15s;">Saltar por ahora</button>
+                                <button type="submit" class="login-submit" style="flex:1;">Guardar PIN</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+                <div class="login-right">
+                    <div class="login-hero-text">
+                        <h2>Seguro y<br><span>rápido</span></h2>
+                        <p class="login-hero-sub">No vuelvas a teclear tu contraseña completa si estás en tu propio dispositivo.</p>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        document.getElementById('btn-skip-pin').addEventListener('click', () => {
+            this.renderAppShell();
+            this.navigate('inicio');
+        });
+        
+        document.getElementById('pin-setup-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const pin = document.getElementById('setup-pin-code').value;
+            if (pin.length !== 6) {
+                document.getElementById('login-error').textContent = 'El PIN debe tener exactamente 6 dígitos';
+                document.getElementById('login-error').style.display = 'block';
+                return;
+            }
+            const btn = e.target.querySelector('button[type="submit"]');
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner"></span>';
+            
+            try {
+                const res = await this.api('auth/setup-pin', { method: 'POST', body: { pin } });
+                if (res.success) {
+                    localStorage.setItem('device_token', res.device_token);
+                    this.renderAppShell();
+                    this.navigate('inicio');
+                }
+            } catch (error) {
+                btn.disabled = false;
+                btn.innerHTML = 'Guardar PIN';
+                document.getElementById('login-error').textContent = error.message;
+                document.getElementById('login-error').style.display = 'block';
+            }
+        });
+    },
+
+    renderPinLogin(email) {
+        const cachedLogo = localStorage.getItem('company_logo') || 'https://gridbase.com.do/wp-content/uploads/2025/02/cropped-imagen_2026-03-16_154126791.png';
+        const app = document.getElementById('app');
+        
+        app.innerHTML = `
+            <div class="login-page">
+                <div class="login-left">
+                    <div class="login-brand">
+                        <img src="${cachedLogo}" alt="Logo">
+                    </div>
+                    <div class="login-form-wrap">
+                        <div style="display:flex; align-items:center; gap:16px; margin-bottom:24px;">
+                            <div style="width:48px;height:48px;border-radius:50%;background:var(--color-primary);color:#fff;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:700;">
+                                ${email.charAt(0).toUpperCase()}
+                            </div>
+                            <div>
+                                <h1 class="login-title" style="margin-bottom:0;">Hola de nuevo</h1>
+                                <p class="login-subtitle" style="margin-bottom:0;">${email}</p>
+                            </div>
+                        </div>
+                        <div id="login-error" class="login-error"></div>
+                        <form id="pin-login-form">
+                            <div class="login-field">
+                                <label>Ingresa tu PIN</label>
+                                <input type="password" id="login-pin-code" placeholder="••••••" pattern="[0-9]*" inputmode="numeric" maxlength="6" required autofocus autocomplete="off" style="text-align:center; font-size:24px; letter-spacing:0.15em; font-weight:700;">
+                            </div>
+                            <button type="submit" class="login-submit">Ingresar</button>
+                        </form>
+                        <div style="margin-top:24px; text-align:center;">
+                            <button type="button" id="btn-fallback-login" style="background:none; border:none; color:var(--color-primary); font-size:14px; font-weight:600; cursor:pointer; text-decoration:underline;">Ingresar con contraseña u otra cuenta</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="login-right">
+                    <div class="login-hero-text">
+                        <h2>Acceso<br><span>rápido</span></h2>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        document.getElementById('btn-fallback-login').addEventListener('click', () => {
+            localStorage.removeItem('device_token');
+            this.renderLogin();
+        });
+        
+        document.getElementById('pin-login-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const pin = document.getElementById('login-pin-code').value;
+            const btn = e.target.querySelector('button[type="submit"]');
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner"></span>';
+            
+            try {
+                const res = await this.api('auth/pin-login', { 
+                    method: 'POST', 
+                    body: { email, pin, device_token: localStorage.getItem('device_token') } 
+                });
+                
+                if (res.success) {
+                    this.state.user = res.user;
+                    const settings = await this.api('settings');
+                    this.state.settings = settings;
+                    this.renderAppShell();
+                    this.navigate('inicio');
+                }
+            } catch (error) {
+                btn.disabled = false;
+                btn.innerHTML = 'Ingresar';
+                document.getElementById('login-error').textContent = error.message;
+                document.getElementById('login-error').style.display = 'block';
+                document.getElementById('login-pin-code').value = '';
+                document.getElementById('login-pin-code').focus();
             }
         });
     },

@@ -174,4 +174,59 @@ class AuthController extends Controller
         
         return response()->json(['success' => true]);
     }
+
+    public function setupPin(Request $request)
+    {
+        $request->validate([
+            'pin' => 'required|string|size:6'
+        ]);
+
+        $user = $request->user();
+        $user->quick_pin = Hash::make($request->pin);
+        
+        // Generate a new secure device token
+        $deviceToken = bin2hex(random_bytes(32));
+        $user->device_token = $deviceToken;
+        $user->save();
+
+        return response()->json([
+            'success' => true,
+            'device_token' => $deviceToken
+        ]);
+    }
+
+    public function pinLogin(Request $request)
+    {
+        $request->validate([
+            'email' => 'required|email',
+            'pin' => 'required|string|size:6',
+            'device_token' => 'required|string'
+        ]);
+
+        $user = User::where('email', $request->email)
+                    ->where('device_token', $request->device_token)
+                    ->first();
+
+        if (!$user || empty($user->quick_pin) || !Hash::check($request->pin, $user->quick_pin)) {
+            // Invalid email, token, or PIN
+            return response()->json(['error' => 'PIN incorrecto o dispositivo no autorizado'], 401);
+        }
+
+        // Complete authentication
+        $user->last_login = now();
+        $user->save();
+        
+        Auth::login($user, true); // Login with "remember me" to persist longer if possible, though session works
+        $request->session()->regenerate();
+
+        return response()->json([
+            'success' => true,
+            'user' => [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'role' => $user->role,
+            ]
+        ]);
+    }
 }

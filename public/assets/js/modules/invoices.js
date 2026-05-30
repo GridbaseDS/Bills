@@ -192,11 +192,11 @@ const InvoicesModule = {
                 <td><span class="badge badge-${i.status}">${this.statusLabel(i.status)}</span></td>
                 <td>${i.is_ecf ? `<span class="badge ${this.dgiiBadgeClass(i.dgii_status)}" style="font-size:9px;">${this.dgiiLabel(i.dgii_status)}</span>` : '<span style="color:var(--color-text-tertiary)">—</span>'}</td>
                 <td>
-                    <div class="row-actions">
-                        <a href="#facturas/${i.id}" class="btn-icon" style="width:28px;height:28px;" title="Ver"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg></a>
-                        <a href="/api/invoices/${i.id}/pdf?download=1" target="_blank" class="btn-icon" style="width:28px;height:28px;" title="PDF"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg></a>
-                        <button class="btn-icon" style="width:28px;height:28px;" onclick="InvoicesModule.deleteInvoice(${i.id})" title="Eliminar"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--color-danger-icon)" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg></button>
-                    </div>
+                        <div class="row-actions" style="gap: 6px;">
+                            <a href="#facturas/${i.id}" class="btn-icon" style="width:28px;height:28px;" title="Ver"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg></a>
+                            <a href="/api/invoices/${i.id}/pdf?download=1" target="_blank" class="btn btn-secondary" style="padding:4px 8px; font-size:11px; height:auto; display:inline-flex; align-items:center; gap:4px; text-decoration:none;" title="Descargar PDF"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg> Descargar PDF</a>
+                            <button class="btn-icon" style="width:28px;height:28px;" onclick="InvoicesModule.deleteInvoice(${i.id})" title="Eliminar"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--color-danger-icon)" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg></button>
+                        </div>
                 </td>
             </tr>
         `).join('') : '<tr><td colspan="9" class="text-center text-muted" style="padding:48px;">No hay facturas que coincidan</td></tr>';

@@ -293,6 +293,21 @@ if (!empty($invoice['status'])) {
     elseif ($invoice['status'] === 'sent' || $invoice['status'] === 'pending') { $badgeClass = 'badge-sent'; $badgeText = 'PENDIENTE DE PAGO'; }
     elseif ($invoice['status'] === 'partial') { $badgeClass = 'badge-sent'; $badgeText = 'PAGO PARCIAL'; }
 }
+
+// ECF type names
+$ecfTypeNames = [
+    31 => 'Factura de Credito Fiscal Electronica',
+    32 => 'Factura de Consumo Electronica',
+    33 => 'Nota de Debito Electronica',
+    34 => 'Nota de Credito Electronica',
+    41 => 'Comprobante de Compras Electronico',
+    43 => 'Comprobante de Gastos Menores Electronico',
+    44 => 'Comprobante de Regimenes Especiales Electronico',
+    45 => 'Comprobante Gubernamental Electronico',
+    46 => 'Comprobante de Exportaciones Electronico',
+    47 => 'Comprobante de Pagos al Exterior Electronico',
+];
+$ecfTypeName = $isEcf ? ($ecfTypeNames[$ecfType] ?? 'Comprobante Fiscal Electronico') : $docName;
 ?>
 
 <!-- ══════════════════════════ HEADER — DGII Layout ══════════════════════════ -->

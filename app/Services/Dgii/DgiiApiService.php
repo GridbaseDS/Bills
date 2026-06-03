@@ -15,13 +15,14 @@ class DgiiApiService
      */
     public function submitInvoice(string $signedXml, string $token, string $env, bool $isRfce = false, ?int $invoiceId = null, ?string $encf = null, ?string $ecfType = null): array
     {
-        // Endpoints verified during DGII certification (May 2025)
-        $ecfBaseUrl = $env === 'production'
-            ? 'https://ecf.dgii.gov.do/ecf'
-            : 'https://ecf.dgii.gov.do/certecf';
-        $fcBaseUrl = $env === 'production'
-            ? 'https://fc.dgii.gov.do/ecf'
-            : 'https://fc.dgii.gov.do/certecf';
+        // DGII Environments: testecf=pre-certification (free testing), certecf=formal certification, ecf=production
+        $envPath = match($env) {
+            'production' => 'ecf',
+            'certification' => 'certecf',
+            default => 'testecf',  // testing/pre-certification
+        };
+        $ecfBaseUrl = "https://ecf.dgii.gov.do/{$envPath}";
+        $fcBaseUrl = "https://fc.dgii.gov.do/{$envPath}";
 
         $endpoint = $isRfce 
             ? "$fcBaseUrl/recepcionfc/api/recepcion/ecf" 
@@ -238,9 +239,12 @@ class DgiiApiService
             ];
         }
 
-        $baseUrl = $env === 'production'
-            ? 'https://ecf.dgii.gov.do/ecf'
-            : 'https://ecf.dgii.gov.do/certecf';
+        $envPath = match($env) {
+            'production' => 'ecf',
+            'certification' => 'certecf',
+            default => 'testecf',
+        };
+        $baseUrl = "https://ecf.dgii.gov.do/{$envPath}";
 
         try {
             $startTime = microtime(true);
@@ -334,9 +338,12 @@ class DgiiApiService
      */
     public function submitAprobacionComercial(string $signedXml, string $token, string $env): array
     {
-        $baseUrl = $env === 'production'
-            ? 'https://ecf.dgii.gov.do'
-            : 'https://ecf.dgii.gov.do/certecf';
+        $envPath = match($env) {
+            'production' => 'ecf',
+            'certification' => 'certecf',
+            default => 'testecf',
+        };
+        $baseUrl = "https://ecf.dgii.gov.do/{$envPath}";
 
         $endpoint = "{$baseUrl}/AprobacionComercial/api/AprobacionComercial";
 

@@ -70,10 +70,13 @@ class DgiiAuthService
             throw new Exception("Certificado digital (.p12) no cargado o no encontrado en la ruta segura.");
         }
 
-        // 1. Determine Endpoints
-        $baseUrl = $env === 'production' 
-            ? 'https://ecf.dgii.gov.do' 
-            : 'https://ecf.dgii.gov.do/certecf';
+        // DGII Environments: testecf=pre-certification, certecf=formal certification, ecf=production
+        $envPath = match($env) {
+            'production' => 'ecf',
+            'certification' => 'certecf',
+            default => 'testecf',
+        };
+        $baseUrl = "https://ecf.dgii.gov.do/{$envPath}";
 
         Log::info("[DgiiAuthService] Obteniendo Semilla de la DGII en entorno: {$env}");
 

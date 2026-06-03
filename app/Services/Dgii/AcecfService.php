@@ -139,9 +139,12 @@ XML;
      */
     private function sendToDgii(string $signedXml, string $token, string $rncComprador, string $encf, string $env): array
     {
-        $baseUrl = $env === 'production'
-            ? 'https://ecf.dgii.gov.do/ecf'
-            : 'https://ecf.dgii.gov.do/certecf';
+        $envPath = match($env) {
+            'production' => 'ecf',
+            'certification' => 'certecf',
+            default => 'testecf',
+        };
+        $baseUrl = "https://ecf.dgii.gov.do/{$envPath}";
         $endpoint = "{$baseUrl}/aprobacioncomercial/api/aprobacioncomercial";
         $filename = "{$rncComprador}{$encf}.xml";
 
@@ -181,9 +184,12 @@ XML;
 
         try {
             // Query DGII directory for the emisor's service URLs
-            $directoryUrl = $env === 'production'
-                ? "https://ecf.dgii.gov.do/ecf/consultadirectorio/api/consultadirectorio?rnc={$rncEmisor}"
-                : "https://ecf.dgii.gov.do/certecf/consultadirectorio/api/consultadirectorio?rnc={$rncEmisor}";
+            $envPath = match($env) {
+                'production' => 'ecf',
+                'certification' => 'certecf',
+                default => 'testecf',
+            };
+            $directoryUrl = "https://ecf.dgii.gov.do/{$envPath}/consultadirectorio/api/consultadirectorio?rnc={$rncEmisor}";
 
             $dirResponse = Http::withoutVerifying()
                 ->timeout(10)

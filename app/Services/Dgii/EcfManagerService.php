@@ -346,7 +346,11 @@ class EcfManagerService
             $fechaFirma = $firmaMatch[1] ?? '';
             $securityCode = $invoice->security_code;
 
-            $ecfQrPath = $env === 'production' ? 'ecf' : 'certecf';
+            $ecfQrPath = match($env) {
+                'production' => 'ecf',
+                'certification' => 'certecf',
+                default => 'testecf',
+            };
             $qrUrl = "https://ecf.dgii.gov.do/{$ecfQrPath}/ConsultaTimbre?"
                 . "RncEmisor={$rncEmisor}";
             if ($hasComprador) {

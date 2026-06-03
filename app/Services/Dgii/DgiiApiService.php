@@ -244,7 +244,7 @@ class DgiiApiService
 
         try {
             $startTime = microtime(true);
-            $url = "{$baseUrl}/recepcion/api/consultaresultado/{$trackId}";
+            $url = "{$baseUrl}/consultaresultado/api/consultas/estado?trackid={$trackId}";
 
             $response = Http::withoutVerifying()
                 ->timeout(10)
@@ -275,19 +275,46 @@ class DgiiApiService
             }
 
             $data = $response->json();
-            $estado = strtolower($data['estado'] ?? $data['Estado'] ?? 'proceso');
+            $codigo = $data['codigo'] ?? null;
+            $estado = strtolower($data['estado'] ?? $data['Estado'] ?? '');
 
-            if ($estado === 'aceptado') {
+            // DGII codes: 0=Not found, 1=Accepted, 2=Rejected, 3=In Process, 4=Accepted Conditional
+            if ($codigo === 1 || $estado === 'aceptado') {
                 return ['status' => 'accepted', 'errors' => null];
             }
 
-            if ($estado === 'rechazado') {
+            if ($codigo === 4 || $estado === 'aceptado condicional') {
+                return ['status' => 'accepted', 'errors' => 'Aceptado condicional'];
+            }
+
+            if ($codigo === 2 || $estado === 'rechazado') {
                 $mensajes = $data['mensajes'] ?? $data['Mensajes'] ?? [];
-                $errorStr = is_array($mensajes) ? implode(' | ', $mensajes) : (string)$mensajes;
+                // mensajes can be array of {codigo, valor} objects
+                if (is_array($mensajes)) {
+                    $errorParts = [];
+                    foreach ($mensajes as $msg) {
+                        if (is_array($msg) && isset($msg['valor'])) {
+                            $errorParts[] = ($msg['codigo'] ?? '') . ': ' . $msg['valor'];
+                        } elseif (is_string($msg)) {
+                            $errorParts[] = $msg;
+                        }
+                    }
+                    $errorStr = implode(' | ', $errorParts);
+                } else {
+                    $errorStr = (string)$mensajes;
+                }
                 return [
                     'status' => 'rejected',
                     'errors' => $errorStr ?: 'Rechazado por la DGII.'
                 ];
+            }
+
+            if ($codigo === 3 || $estado === 'en proceso') {
+                return ['status' => 'pending', 'errors' => null];
+            }
+
+            if ($codigo === 0 || $estado === 'no encontrado') {
+                return ['status' => 'not_found', 'errors' => 'e-CF no encontrado en registros DGII'];
             }
 
             return ['status' => 'pending', 'errors' => null];

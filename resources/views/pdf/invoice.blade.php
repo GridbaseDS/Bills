@@ -428,9 +428,9 @@ if (!empty($invoice['status'])) {
                 }
 
                 // Determine QR URL based on type — per Informe Técnico DGII pág. 36
-                // Environment: testing → certecf, production → ecf (must match API submission path)
+                // Environment must match API submission path: testing→testecf, certification→certecf, production→ecf
                 $dgiiEnv = $settings['dgii_env'] ?? 'testing';
-                $ecfQrPath = $dgiiEnv === 'production' ? 'ecf' : 'certecf';
+                $ecfQrPath = match($dgiiEnv) { 'production' => 'ecf', 'certification' => 'certecf', default => 'testecf' };
                 $isRfce = $ecfType === 32 && (float)$invoice['total'] < 250000;
                 // Types 43 (Gastos Menores) and 47 (Pagos al Exterior) have no RNCComprador
                 $hasComprador = !in_array($ecfType, [43, 47]);

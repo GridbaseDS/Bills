@@ -479,7 +479,7 @@ if (!empty($invoice['status'])) {
                     <img src="<?= $qrImgSrc ?>" style="width:105px; height:105px; display:inline-block;" alt="QR DGII">
                 </div>
                 <!-- Código de Seguridad y Fecha Firma — DEBAJO del QR -->
-                <div style="font-size:10px; color:#000000; line-height:1.4; text-align:left; padding-left:20px;">
+                <div style="font-size:10px; color:#000000; line-height:1.4; text-align:left;">
                     Código de Seguridad: <?= htmlspecialchars($codSeguridad) ?><br>
                     Fecha Firma: <?= htmlspecialchars($fechaFirma) ?>
                 </div>

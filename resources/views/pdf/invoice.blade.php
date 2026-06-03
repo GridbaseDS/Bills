@@ -474,12 +474,12 @@ if (!empty($invoice['status'])) {
                     $qrImgSrc = "https://quickchart.io/qr?text=" . urlencode($qrUrl) . "&size=150&margin=1&format=png";
                 }
                 ?>
-                <!-- QR Code — lado inferior izquierdo, mínimo 22x22mm -->
-                <div style="margin-bottom:2px; text-align:left;">
+                <!-- QR Code — per DGII reference model -->
+                <div style="margin-bottom:2px; text-align:left; padding-left:20px;">
                     <img src="<?= $qrImgSrc ?>" style="width:105px; height:105px; display:inline-block;" alt="QR DGII">
                 </div>
                 <!-- Código de Seguridad y Fecha Firma — DEBAJO del QR -->
-                <div style="font-size:10px; color:#000000; line-height:1.4; text-align:left;">
+                <div style="font-size:10px; color:#000000; line-height:1.4; text-align:left; padding-left:20px;">
                     Código de Seguridad: <?= htmlspecialchars($codSeguridad) ?><br>
                     Fecha Firma: <?= htmlspecialchars($fechaFirma) ?>
                 </div>

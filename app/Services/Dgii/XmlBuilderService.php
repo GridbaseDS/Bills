@@ -349,7 +349,8 @@ class XmlBuilderService
         }
 
         // FechaHoraFirma: DD-MM-YYYY HH:MM:SS per XSD DateTimeValidationType
-        $fechaHoraFirma = $dom->createElement('FechaHoraFirma', date('d-m-Y H:i:s'));
+        // Must be in Dominican local time (America/Santo_Domingo) for DGII
+        $fechaHoraFirma = $dom->createElement('FechaHoraFirma', now('America/Santo_Domingo')->format('d-m-Y H:i:s'));
         $root->appendChild($fechaHoraFirma);
 
         return $dom->saveXML();

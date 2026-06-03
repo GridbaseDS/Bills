@@ -98,7 +98,8 @@ class CertificationXmlBuilder
         }
 
         // FechaHoraFirma (required at root level, must be last before signature)
-        $ecf->appendChild($this->el('FechaHoraFirma', date('d-m-Y H:i:s')));
+        // Must be in Dominican local time (America/Santo_Domingo) for DGII
+        $ecf->appendChild($this->el('FechaHoraFirma', now('America/Santo_Domingo')->format('d-m-Y H:i:s')));
 
         return $this->dom->saveXML();
     }

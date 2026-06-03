@@ -1,3 +1,4 @@
+
 <?php
 
 namespace App\Services\Dgii;
@@ -111,7 +112,7 @@ class AcecfService
         int $estado,
         ?string $rejectionReason = null
     ): string {
-        $fechaAprobacion = date('d-m-Y H:i:s');
+        $fechaAprobacion = now('America/Santo_Domingo')->format('d-m-Y H:i:s');
         $detalleTag = '';
         if ($estado === 2 && !empty($rejectionReason)) {
             $detalleTag = "\n    <DetalleMotivoRechazo>" . htmlspecialchars($rejectionReason) . "</DetalleMotivoRechazo>";

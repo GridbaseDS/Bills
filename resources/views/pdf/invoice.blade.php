@@ -295,97 +295,100 @@ if (!empty($invoice['status'])) {
 }
 ?>
 
-<!-- ══════════════════════════ HEADER ══════════════════════════ -->
-<div class="header-block">
+<!-- ══════════════════════════ HEADER — DGII Layout ══════════════════════════ -->
+<div style="padding: 30px 45px 0 45px;">
     <table><tr>
-        <td style="width:55%;">
+        <td style="width:55%; vertical-align:top;">
             <div class="logo-area">
-                <img src="<?= $logoUrl ?>" alt="GridBase">
+                <img src="<?= $logoUrl ?>" alt="<?= htmlspecialchars($company['name'] ?? '') ?>" style="height:50px;">
+            </div>
+            <div style="margin-top:8px;">
+                <div style="font-size:14px; font-weight:700; color:<?= $primaryColor ?>;"><?= htmlspecialchars($company['name'] ?? '') ?></div>
+                <?php if (!empty($settings['dgii_razon_social']) && $settings['dgii_razon_social'] !== ($company['name'] ?? '')): ?>
+                <div style="font-size:11px; color:#444;"><?= htmlspecialchars($settings['dgii_razon_social']) ?></div>
+                <?php endif; ?>
+                <?php if (!empty($company['tax_id'])): ?>
+                <div style="font-size:11px; color:#444;">RNC <?= htmlspecialchars($company['tax_id']) ?></div>
+                <?php endif; ?>
+                <?php if (!empty($company['address'])): ?>
+                <div style="font-size:10px; color:#666;">Dirección: <?= htmlspecialchars($company['address']) ?><?= !empty($company['city']) ? ', ' . htmlspecialchars($company['city']) : '' ?></div>
+                <?php endif; ?>
+                <div style="font-size:10px; color:#666;">Fecha Emisión: <?= !empty($invoice['issue_date']) ? date('d-m-Y', strtotime($invoice['issue_date'])) : '' ?></div>
             </div>
         </td>
-        <td style="width:45%; text-align:right;">
-            <div class="header-meta-box">
-                <div class="meta-row-item"><span class="meta-label"><?= $isEcf ? 'E-NCF/' : 'NÚMERO/' ?></span> <strong><?= htmlspecialchars($docNum) ?></strong></div>
-                <div class="meta-row-item"><span class="meta-label">FECHA/</span> <strong><?= !empty($invoice['issue_date']) ? date('d/ m/ Y', strtotime($invoice['issue_date'])) : '' ?></strong></div>
+        <td style="width:45%; text-align:right; vertical-align:top;">
+            <div style="font-size:14px; font-weight:700; color:<?= $primaryColor ?>; margin-bottom:6px;"><?= $ecfTypeName ?></div>
+            <div style="font-size:11px; color:#444; line-height:1.6;">
+                <div>e-NCF: <strong><?= htmlspecialchars($docNum) ?></strong></div>
                 <?php if ($showFechaVencimiento): ?>
-                <div class="meta-row-item"><span class="meta-label">VENCE/</span> <strong><?= htmlspecialchars($fechaVencimientoSeq) ?></strong></div>
+                <div>Vence: <?= htmlspecialchars($fechaVencimientoSeq) ?></div>
                 <?php endif; ?>
                 <?php if ($isEcf && in_array($ecfType, [33, 34]) && !empty($invoice['modified_ncf'])): ?>
-                <div class="meta-row-item"><span class="meta-label">E-NCF MOD./</span> <strong><?= htmlspecialchars($invoice['modified_ncf']) ?></strong></div>
-                <div class="meta-row-item"><span class="meta-label">CÓD. MOD./</span> <strong style="font-size:8px;"><?= htmlspecialchars($modCodeDescriptions[(int)($invoice['modification_code'] ?? 1)] ?? '') ?></strong></div>
-                <?php endif; ?>
-                <?php if (!$isQuote && !empty($invoice['status'])): ?>
-                <div style="margin-top:5px;"><span class="badge <?= $badgeClass ?>"><?= $badgeText ?></span></div>
+                <div>NCF Modificado: <strong><?= htmlspecialchars($invoice['modified_ncf']) ?></strong></div>
+                <div style="font-size:10px;"><?= htmlspecialchars($modCodeDescriptions[(int)($invoice['modification_code'] ?? 1)] ?? '') ?></div>
                 <?php endif; ?>
             </div>
+            <?php if (!$isQuote && !empty($invoice['status'])): ?>
+            <div style="margin-top:5px;"><span class="badge <?= $badgeClass ?>"><?= $badgeText ?></span></div>
+            <?php endif; ?>
         </td>
     </tr></table>
 </div>
 
+<!-- ══════════════════════════ SEPARATOR + CLIENT ══════════════════════════ -->
+<div style="padding: 10px 45px 0 45px;">
+    <div style="border-top: 1.5px solid <?= $primaryColor ?>; padding-top:10px;">
+        <?php
+        $clientName = trim($client['company_name'] ?? '') ?: trim($client['contact_name'] ?? '');
+        $clientRnc = trim($client['tax_id'] ?? '');
+        $hasComprador = !in_array($ecfType, [43, 47]);
+        ?>
+        <?php if ($hasComprador): ?>
+        <div style="font-size:12px; color:#2D2D2D; margin-bottom:2px;">
+            <strong>Razón Social Cliente:</strong> <?= htmlspecialchars($clientName) ?>
+        </div>
+        <?php if (!empty($clientRnc)): ?>
+        <div style="font-size:12px; color:#2D2D2D; margin-bottom:8px;">
+            <strong>RNC Cliente:</strong> <?= htmlspecialchars($clientRnc) ?>
+        </div>
+        <?php endif; ?>
+        <?php endif; ?>
+    </div>
+</div>
+
 <!-- ══════════════════════════ BODY ══════════════════════════ -->
-<div class="body-content">
+<div class="body-content" style="padding-top:10px;">
 
-    <!-- Title -->
+    <!-- Items Table — DGII layout with ITBIS column -->
     <?php
-    $ecfTypeNames = [
-        31 => 'Factura de Credito Fiscal Electronica',
-        32 => (float)($invoice['total'] ?? 0) < 250000 ? 'Factura de Consumo Electronica' : 'Factura de Consumo Electronica',
-        33 => 'Nota de Debito Electronica',
-        34 => 'Nota de Credito Electronica',
-        41 => 'Comprobante de Compras Electronico',
-        43 => 'Comprobante de Gastos Menores Electronico',
-        44 => 'Comprobante de Regimenes Especiales Electronico',
-        45 => 'Comprobante Gubernamental Electronico',
-        46 => 'Comprobante de Exportaciones Electronico',
-        47 => 'Comprobante de Pagos al Exterior Electronico',
-    ];
-    $ecfTypeName = $isEcf ? ($ecfTypeNames[(int)($invoice['ecf_type'] ?? 0)] ?? 'Comprobante Fiscal Electronico') : $docName;
+    $taxRate = (float)($invoice['tax_rate'] ?? 0);
     ?>
-    <div class="doc-title" style="<?= $isEcf ? 'font-size: 15px;' : '' ?>"><?= $ecfTypeName ?></div>
-
-    <!-- Info Columns -->
-    <table class="info-cols"><tr>
-        <td style="width:50%;">
-            <div class="info-col-title">Facturar A</div>
-            <div class="info-col-name"><?= htmlspecialchars($client['company_name'] ?: $client['contact_name']) ?></div>
-            <div class="info-col-text">
-                <?php if (!empty($client['company_name']) && !empty($client['contact_name'])): ?>
-                    <?= htmlspecialchars($client['contact_name']) ?><br>
-                <?php endif; ?>
-                <?php if (!empty($client['address_line1'])): ?><?= htmlspecialchars($client['address_line1']) ?><br><?php endif; ?>
-                <?php if (!empty($client['city'])): ?><?= htmlspecialchars($client['city']) ?><?= !empty($client['country']) ? ', ' . htmlspecialchars($client['country']) : '' ?><br><?php endif; ?>
-                <?php if (!empty($client['email'])): ?><?= htmlspecialchars($client['email']) ?><br><?php endif; ?>
-                <?php if (!empty($client['tax_id'])): ?>RNC: <?= htmlspecialchars($client['tax_id']) ?><?php endif; ?>
-            </div>
-        </td>
-        <td style="width:50%;">
-            <div class="info-col-title">Emisor</div>
-            <div class="info-col-name"><?= htmlspecialchars($company['name'] ?? '') ?></div>
-            <div class="info-col-text">
-                <?php if (!empty($company['address'])): ?><?= htmlspecialchars($company['address']) ?><br><?php endif; ?>
-                <?php if (!empty($company['city'])): ?><?= htmlspecialchars($company['city']) ?><?= !empty($company['country']) ? ', ' . htmlspecialchars($company['country']) : '' ?><br><?php endif; ?>
-                <?php if (!empty($company['email'])): ?><?= htmlspecialchars($company['email']) ?><br><?php endif; ?>
-                <?php if (!empty($company['phone'])): ?><?= htmlspecialchars($company['phone']) ?><br><?php endif; ?>
-                <?php if (!empty($company['tax_id'])): ?>RNC: <?= htmlspecialchars($company['tax_id']) ?><?php endif; ?>
-            </div>
-        </td>
-    </tr></table>
-
-    <!-- Items Table -->
     <table class="items-table">
         <thead><tr>
-            <th style="width:45%;">DESCRIPCIÓN</th>
-            <th class="text-center" style="width:15%;">CANT.</th>
-            <th class="text-right" style="width:20%;">PRECIO</th>
-            <th class="text-right" style="width:20%;">TOTAL</th>
+            <th class="text-center" style="width:10%;">CANT.</th>
+            <th style="width:<?= $taxRate > 0 ? '30%' : '40%' ?>;">DESCRIPCIÓN</th>
+            <th class="text-center" style="width:12%;">U/M</th>
+            <th class="text-right" style="width:15%;">PRECIO</th>
+            <?php if ($taxRate > 0): ?>
+            <th class="text-right" style="width:15%;">ITBIS</th>
+            <?php endif; ?>
+            <th class="text-right" style="width:18%;">VALOR</th>
         </tr></thead>
         <tbody>
             <?php foreach (($invoice['items'] ?? $items ?? []) as $index => $item): ?>
+            <?php
+                $itemAmount = (float)($item['amount'] ?? ($item['quantity'] * $item['unit_price']));
+                $itemItbis = $taxRate > 0 ? round($itemAmount * ($taxRate / 100), 2) : 0;
+            ?>
             <tr>
+                <td class="text-center"><?= number_format($item['quantity'], 2) ?></td>
                 <td class="item-desc"><?= htmlspecialchars($item['description']) ?></td>
-                <td class="text-center"><?= number_format($item['quantity'], 0) ?></td>
-                <td class="text-right"><?= htmlspecialchars($invoice['currency'] ?? 'DOP') ?> <?= number_format($item['unit_price'], 2) ?></td>
-                <td class="text-right item-total"><?= htmlspecialchars($invoice['currency'] ?? 'DOP') ?> <?= number_format($item['amount'] ?? ($item['quantity'] * $item['unit_price']), 2) ?></td>
+                <td class="text-center" style="font-size:10px;">UND</td>
+                <td class="text-right"><?= number_format($item['unit_price'], 2) ?></td>
+                <?php if ($taxRate > 0): ?>
+                <td class="text-right"><?= number_format($itemItbis, 2) ?></td>
+                <?php endif; ?>
+                <td class="text-right item-total"><?= number_format($itemAmount, 2) ?></td>
             </tr>
             <?php endforeach; ?>
         </tbody>
@@ -493,24 +496,24 @@ if (!empty($invoice['status'])) {
         <td style="width:45%;">
             <table class="totals-mini">
                 <tr>
-                    <td class="tl">SUBTOTAL</td>
-                    <td class="tv"><?= htmlspecialchars($invoice['currency'] ?? 'DOP') ?> <?= number_format($invoice['subtotal'] ?? 0, 2) ?></td>
+                    <td class="tl">SUBTOTAL GRAVADO</td>
+                    <td class="tv"><?= number_format($invoice['subtotal'] ?? 0, 2) ?></td>
                 </tr>
                 <?php if (($invoice['discount_amount'] ?? 0) > 0): ?>
                 <tr>
                     <td class="tl">DESCUENTO</td>
-                    <td class="tv" style="color:<?= $accentColor ?>;">-<?= htmlspecialchars($invoice['currency'] ?? 'DOP') ?> <?= number_format($invoice['discount_amount'], 2) ?></td>
+                    <td class="tv" style="color:<?= $accentColor ?>;">-<?= number_format($invoice['discount_amount'], 2) ?></td>
                 </tr>
                 <?php endif; ?>
                 <?php if (($invoice['tax_amount'] ?? 0) > 0): ?>
                 <tr>
-                    <td class="tl">ITBIS (<?= number_format($invoice['tax_rate'] ?? 0, 0) ?>%)</td>
-                    <td class="tv"><?= htmlspecialchars($invoice['currency'] ?? 'DOP') ?> <?= number_format($invoice['tax_amount'], 2) ?></td>
+                    <td class="tl">TOTAL ITBIS</td>
+                    <td class="tv"><?= number_format($invoice['tax_amount'], 2) ?></td>
                 </tr>
                 <?php endif; ?>
                 <tr class="grand">
                     <td class="tl">TOTAL</td>
-                    <td class="tv"><?= htmlspecialchars($invoice['currency'] ?? 'DOP') ?> <?= number_format($invoice['total'] ?? 0, 2) ?></td>
+                    <td class="tv"><?= number_format($invoice['total'] ?? 0, 2) ?></td>
                 </tr>
                 <?php if (!$isQuote && ($invoice['amount_paid'] ?? 0) > 0): ?>
                 <tr class="paid-row">

@@ -475,7 +475,7 @@ if (!empty($invoice['status'])) {
                 }
                 ?>
                 <!-- QR Code — per DGII reference model -->
-                <div style="margin-bottom:2px; text-align:left; padding-left:20px;">
+                <div style="margin-bottom:2px; text-align:left; padding-left:5px;">
                     <img src="<?= $qrImgSrc ?>" style="width:105px; height:105px; display:inline-block;" alt="QR DGII">
                 </div>
                 <!-- Código de Seguridad y Fecha Firma — DEBAJO del QR -->

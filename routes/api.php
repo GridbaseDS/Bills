@@ -23,6 +23,7 @@ use App\Http\Controllers\Api\External\ExternalInvoiceController;
 use App\Http\Controllers\Api\External\ExternalQuoteController;
 use App\Http\Controllers\Api\External\ExternalClientController;
 use App\Http\Controllers\Api\CertificationController;
+use App\Http\Controllers\Api\DgiiLogController;
 
 // Public Auth
 Route::post('/auth/login', [AuthController::class, 'login']);
@@ -120,6 +121,13 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/dgii/certification/run-all', [CertificationController::class, 'runAll']);
         Route::get('/dgii/certification/download-fc250k/{encf}', [CertificationController::class, 'downloadFc250k']);
         Route::post('/dgii/run-aprobaciones', [CertificationController::class, 'runAprobaciones']);
+
+        // DGII Audit Logs
+        Route::get('/dgii/logs', [DgiiLogController::class, 'index']);
+        Route::get('/dgii/logs/stats', [DgiiLogController::class, 'stats']);
+        Route::get('/dgii/logs/{id}', [DgiiLogController::class, 'show']);
+        Route::get('/dgii/logs/invoice/{invoiceId}', [DgiiLogController::class, 'invoiceTimeline']);
+        Route::post('/dgii/logs/purge', [DgiiLogController::class, 'purge']);
 
         // API Key Management
         Route::apiResource('api-keys', ApiKeyController::class);

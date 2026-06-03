@@ -318,34 +318,34 @@ $ecfTypeName = $isEcf ? ($ecfTypeNames[$ecfType] ?? 'Comprobante Fiscal Electron
                 <img src="<?= $logoUrl ?>" alt="<?= htmlspecialchars($company['name'] ?? '') ?>" style="height:50px;">
             </div>
             <div style="margin-top:8px;">
-                <div style="font-size:14px; font-weight:700; color:<?= $primaryColor ?>;"><?= htmlspecialchars($company['name'] ?? '') ?></div>
-                <?php if (!empty($settings['dgii_razon_social']) && $settings['dgii_razon_social'] !== ($company['name'] ?? '')): ?>
-                <div style="font-size:11px; color:#444;"><?= htmlspecialchars($settings['dgii_razon_social']) ?></div>
+                <div style="font-size:14px; font-weight:700; color:<?= $primaryColor ?>;"><?= $ecfTypeName ?></div>
+                <div style="font-size:11px; color:#444; line-height:1.6; margin-top:4px;">
+                    <div>e-NCF: <strong><?= htmlspecialchars($docNum) ?></strong></div>
+                    <?php if ($showFechaVencimiento): ?>
+                    <div>Vence: <?= htmlspecialchars($fechaVencimientoSeq) ?></div>
+                    <?php endif; ?>
+                    <?php if ($isEcf && in_array($ecfType, [33, 34]) && !empty($invoice['modified_ncf'])): ?>
+                    <div>NCF Modificado: <strong><?= htmlspecialchars($invoice['modified_ncf']) ?></strong></div>
+                    <div style="font-size:10px;"><?= htmlspecialchars($modCodeDescriptions[(int)($invoice['modification_code'] ?? 1)] ?? '') ?></div>
+                    <?php endif; ?>
+                </div>
+                <?php if (!$isQuote && !empty($invoice['status'])): ?>
+                <div style="margin-top:5px;"><span class="badge <?= $badgeClass ?>"><?= $badgeText ?></span></div>
                 <?php endif; ?>
-                <?php if (!empty($company['tax_id'])): ?>
-                <div style="font-size:11px; color:#444;">RNC <?= htmlspecialchars($company['tax_id']) ?></div>
-                <?php endif; ?>
-                <?php if (!empty($company['address'])): ?>
-                <div style="font-size:10px; color:#666;">Dirección: <?= htmlspecialchars($company['address']) ?><?= !empty($company['city']) ? ', ' . htmlspecialchars($company['city']) : '' ?></div>
-                <?php endif; ?>
-                <div style="font-size:10px; color:#666;">Fecha Emisión: <?= !empty($invoice['issue_date']) ? date('d-m-Y', strtotime($invoice['issue_date'])) : '' ?></div>
             </div>
         </td>
         <td style="width:45%; text-align:right; vertical-align:top;">
-            <div style="font-size:14px; font-weight:700; color:<?= $primaryColor ?>; margin-bottom:6px;"><?= $ecfTypeName ?></div>
-            <div style="font-size:11px; color:#444; line-height:1.6;">
-                <div>e-NCF: <strong><?= htmlspecialchars($docNum) ?></strong></div>
-                <?php if ($showFechaVencimiento): ?>
-                <div>Vence: <?= htmlspecialchars($fechaVencimientoSeq) ?></div>
-                <?php endif; ?>
-                <?php if ($isEcf && in_array($ecfType, [33, 34]) && !empty($invoice['modified_ncf'])): ?>
-                <div>NCF Modificado: <strong><?= htmlspecialchars($invoice['modified_ncf']) ?></strong></div>
-                <div style="font-size:10px;"><?= htmlspecialchars($modCodeDescriptions[(int)($invoice['modification_code'] ?? 1)] ?? '') ?></div>
-                <?php endif; ?>
-            </div>
-            <?php if (!$isQuote && !empty($invoice['status'])): ?>
-            <div style="margin-top:5px;"><span class="badge <?= $badgeClass ?>"><?= $badgeText ?></span></div>
+            <div style="font-size:14px; font-weight:700; color:<?= $primaryColor ?>;"><?= htmlspecialchars($company['name'] ?? '') ?></div>
+            <?php if (!empty($settings['dgii_razon_social']) && $settings['dgii_razon_social'] !== ($company['name'] ?? '')): ?>
+            <div style="font-size:11px; color:#444;"><?= htmlspecialchars($settings['dgii_razon_social']) ?></div>
             <?php endif; ?>
+            <?php if (!empty($company['tax_id'])): ?>
+            <div style="font-size:11px; color:#444;">RNC <?= htmlspecialchars($company['tax_id']) ?></div>
+            <?php endif; ?>
+            <?php if (!empty($company['address'])): ?>
+            <div style="font-size:10px; color:#666;">Dirección: <?= htmlspecialchars($company['address']) ?><?= !empty($company['city']) ? ', ' . htmlspecialchars($company['city']) : '' ?></div>
+            <?php endif; ?>
+            <div style="font-size:10px; color:#666;">Fecha Emisión: <?= !empty($invoice['issue_date']) ? date('d-m-Y', strtotime($invoice['issue_date'])) : '' ?></div>
         </td>
     </tr></table>
 </div>

@@ -2,6 +2,7 @@
 
 namespace App\Services\Dgii;
 
+use App\Models\DgiiLog;
 use Exception;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
@@ -11,14 +12,8 @@ class DgiiApiService
     /**
      * Submits a signed e-CF XML document to the DGII reception endpoint.
      * Uses multipart/form-data with the filename format: {RNCEmisor}{eNCF}.xml
-     *
-     * @param string $signedXml Signed e-CF XML content.
-     * @param string $token Valid DGII JWT Bearer Token.
-     * @param string $env Environment: 'testing' or 'production'.
-     * @param bool $isRfce Whether this is an RFCE (Resumen Factura Consumo Electrónico).
-     * @return array Standardized response metadata (success, track_id, status, errors).
      */
-    public function submitInvoice(string $signedXml, string $token, string $env, bool $isRfce = false): array
+    public function submitInvoice(string $signedXml, string $token, string $env, bool $isRfce = false, ?int $invoiceId = null, ?string $encf = null, ?string $ecfType = null): array
     {
         // Endpoints verified during DGII certification (May 2025)
         $ecfBaseUrl = $env === 'production'
@@ -36,12 +31,27 @@ class DgiiApiService
         preg_match('/<RNCEmisor>(\d+)<\/RNCEmisor>/', $signedXml, $rncMatch);
         preg_match('/<eNCF>([^<]+)<\/eNCF>/', $signedXml, $encfMatch);
         $rncEmisor = $rncMatch[1] ?? '000000000';
-        $encf = $encfMatch[1] ?? 'E000000000000';
-        $sendFilename = "{$rncEmisor}{$encf}.xml";
+        $xmlEncf = $encfMatch[1] ?? 'E000000000000';
+        $sendFilename = "{$rncEmisor}{$xmlEncf}.xml";
+
+        DgiiLog::logStep('submit_prepare', "Preparando envío " . ($isRfce ? 'RFCE' : 'e-CF') . " a DGII", $invoiceId, $encf, $ecfType, [
+            'context' => [
+                'endpoint' => $endpoint,
+                'filename' => $sendFilename,
+                'is_rfce' => $isRfce,
+                'env' => $env,
+                'xml_length' => strlen($signedXml),
+                'token_length' => strlen($token),
+                'token_prefix' => substr($token, 0, 20) . '...',
+                'has_signature' => strpos($signedXml, '<SignatureValue>') !== false,
+            ],
+        ]);
 
         Log::info("[DgiiApiService] Transmitiendo " . ($isRfce ? 'RFCE' : 'e-CF') . " a {$endpoint} como {$sendFilename}");
 
         try {
+            $startTime = microtime(true);
+
             // DGII requires multipart/form-data with 'xml' field (NOT raw body)
             $response = Http::withoutVerifying()
                 ->timeout(30)
@@ -52,22 +62,66 @@ class DgiiApiService
                 ->attach('xml', $signedXml, $sendFilename, ['Content-Type' => 'text/xml'])
                 ->post($endpoint);
 
+            $durationMs = round((microtime(true) - $startTime) * 1000, 1);
             $responseBody = $response->json();
+            $rawBody = $response->body();
+
+            // Log the raw HTTP exchange
+            DgiiLog::logHttp(
+                'submit_response',
+                "DGII respondió HTTP {$response->status()} en {$durationMs}ms",
+                'POST',
+                $endpoint,
+                $response->status(),
+                "Filename: {$sendFilename}, XML length: " . strlen($signedXml),
+                $rawBody,
+                $durationMs,
+                $invoiceId,
+                $encf,
+                $ecfType,
+                $response->successful() ? 'info' : 'error',
+                [
+                    'context' => [
+                        'response_json' => $responseBody,
+                        'response_headers' => $response->headers() ?? [],
+                    ],
+                ]
+            );
 
             if (!$response->successful()) {
-                Log::error("[DgiiApiService] Error DGII. Status: {$response->status()}, Body: {$response->body()}");
+                Log::error("[DgiiApiService] Error DGII. Status: {$response->status()}, Body: {$rawBody}");
                 
+                DgiiLog::logStep('submit_http_error', "DGII devolvió HTTP {$response->status()}", $invoiceId, $encf, $ecfType, [
+                    'level' => 'error',
+                    'dgii_status' => 'contingency',
+                    'context' => [
+                        'http_status' => $response->status(),
+                        'body' => $rawBody,
+                        'parsed' => $responseBody,
+                    ],
+                ]);
+
                 return [
                     'success' => false,
                     'status' => 'contingency',
                     'track_id' => null,
-                    'errors' => "HTTP {$response->status()}: " . $response->body()
+                    'errors' => "HTTP {$response->status()}: " . $rawBody
                 ];
             }
 
             // e-CF response: {"trackId": "uuid"} — trackId means DGII accepted the document
             if (isset($responseBody['trackId'])) {
                 Log::info("[DgiiApiService] e-CF aceptado. TrackId: {$responseBody['trackId']}");
+                
+                DgiiLog::logStep('submit_accepted', "✓ e-CF ACEPTADO por DGII. TrackId: {$responseBody['trackId']}", $invoiceId, $encf, $ecfType, [
+                    'dgii_status' => 'accepted',
+                    'dgii_track_id' => $responseBody['trackId'],
+                    'context' => [
+                        'full_response' => $responseBody,
+                        'duration_ms' => $durationMs,
+                    ],
+                ]);
+
                 return [
                     'success' => true,
                     'status' => 'accepted',
@@ -79,6 +133,13 @@ class DgiiApiService
             // RFCE response: {"codigo": 1, "estado": "Aceptado", "encf": "E32..."}
             if (isset($responseBody['codigo']) && $responseBody['codigo'] == 1) {
                 Log::info("[DgiiApiService] RFCE aceptado. Estado: " . ($responseBody['estado'] ?? 'OK'));
+
+                DgiiLog::logStep('submit_rfce_accepted', "✓ RFCE ACEPTADO. Código: {$responseBody['codigo']}", $invoiceId, $encf, $ecfType, [
+                    'dgii_status' => 'accepted',
+                    'dgii_track_id' => $responseBody['encf'] ?? 'RFCE_ACCEPTED',
+                    'context' => ['full_response' => $responseBody],
+                ]);
+
                 return [
                     'success' => true,
                     'status' => 'accepted',
@@ -89,6 +150,12 @@ class DgiiApiService
 
             // Synchronous acceptance
             if (isset($responseBody['estado']) && strtolower($responseBody['estado']) === 'aceptado') {
+                DgiiLog::logStep('submit_sync_accepted', "✓ Aceptado sincrónicamente", $invoiceId, $encf, $ecfType, [
+                    'dgii_status' => 'accepted',
+                    'dgii_track_id' => 'SYNC_APPROVED',
+                    'context' => ['full_response' => $responseBody],
+                ]);
+
                 return [
                     'success' => true,
                     'status' => 'accepted',
@@ -99,25 +166,57 @@ class DgiiApiService
 
             // Rejection
             if (isset($responseBody['estado']) && strtolower($responseBody['estado']) === 'rechazado') {
+                $errMessages = $responseBody['mensajes'] ?? 'Rechazado por la DGII.';
+                $errStr = is_array($errMessages) ? json_encode($errMessages, JSON_UNESCAPED_UNICODE) : $errMessages;
+
+                DgiiLog::logStep('submit_rejected', "✗ RECHAZADO por DGII: {$errStr}", $invoiceId, $encf, $ecfType, [
+                    'level' => 'error',
+                    'dgii_status' => 'rejected',
+                    'dgii_error_messages' => $errStr,
+                    'context' => ['full_response' => $responseBody],
+                ]);
+
                 return [
                     'success' => false,
                     'status' => 'rejected',
                     'track_id' => null,
-                    'errors' => $responseBody['mensajes'] ?? 'Rechazado por la DGII.'
+                    'errors' => $errMessages
                 ];
             }
 
             // Unknown response format
-            Log::warning("[DgiiApiService] Respuesta no reconocida: " . $response->body());
+            Log::warning("[DgiiApiService] Respuesta no reconocida: " . $rawBody);
+
+            DgiiLog::logStep('submit_unknown', "⚠ Respuesta DGII no reconocida", $invoiceId, $encf, $ecfType, [
+                'level' => 'warning',
+                'dgii_status' => 'contingency',
+                'context' => [
+                    'raw_body' => $rawBody,
+                    'parsed' => $responseBody,
+                ],
+            ]);
+
             return [
                 'success' => false,
                 'status' => 'contingency',
                 'track_id' => null,
-                'errors' => 'Respuesta no reconocida de la DGII: ' . $response->body()
+                'errors' => 'Respuesta no reconocida de la DGII: ' . $rawBody
             ];
 
         } catch (Exception $e) {
+            $durationMs = round((microtime(true) - $startTime) * 1000, 1);
+
             Log::error("[DgiiApiService] Excepción: " . $e->getMessage());
+
+            DgiiLog::logStep('submit_exception', "EXCEPCIÓN al enviar a DGII: {$e->getMessage()}", $invoiceId, $encf, $ecfType, [
+                'level' => 'critical',
+                'context' => [
+                    'exception' => $e->getMessage(),
+                    'duration_ms' => $durationMs,
+                    'endpoint' => $endpoint,
+                ],
+            ]);
+
             return [
                 'success' => false,
                 'status' => 'contingency',
@@ -129,11 +228,6 @@ class DgiiApiService
 
     /**
      * Polls the validation status of a previously submitted e-CF.
-     *
-     * @param string $trackId The reception identifier (trackId).
-     * @param string $token Valid DGII JWT Bearer Token.
-     * @param string $env Environment: 'testing' or 'production'.
-     * @return array Standardized status metadata (status, errors).
      */
     public function queryInvoiceStatus(string $trackId, string $token, string $env): array
     {
@@ -149,13 +243,29 @@ class DgiiApiService
             : 'https://ecf.dgii.gov.do/certecf';
 
         try {
+            $startTime = microtime(true);
+            $url = "{$baseUrl}/recepcion/api/consultaresultado/{$trackId}";
+
             $response = Http::withoutVerifying()
                 ->timeout(10)
                 ->withHeaders([
                     'Authorization' => 'Bearer ' . $token,
                     'Accept' => 'application/json',
                 ])
-                ->get("{$baseUrl}/recepcion/api/consultaresultado/{$trackId}");
+                ->get($url);
+
+            $durationMs = round((microtime(true) - $startTime) * 1000, 1);
+
+            DgiiLog::logHttp(
+                'status_check',
+                "Consulta estado trackId: {$trackId} → HTTP {$response->status()}",
+                'GET',
+                $url,
+                $response->status(),
+                null,
+                $response->body(),
+                $durationMs
+            );
 
             if (!$response->successful()) {
                 return [
@@ -194,16 +304,9 @@ class DgiiApiService
     /**
      * Submits a signed ACECF (Aprobacion Comercial) XML to the DGII.
      * Endpoint: /AprobacionComercial
-     *
-     * @param string $signedXml Signed ACECF XML content.
-     * @param string $token Valid DGII JWT Bearer Token.
-     * @param string $env Environment: 'testing' or 'production'.
-     * @return array
      */
     public function submitAprobacionComercial(string $signedXml, string $token, string $env): array
     {
-        // DGII URL pattern: {base}/{Service}/api/{Service}
-        // Same as Auth: /Autenticacion/api/Autenticacion/Semilla
         $baseUrl = $env === 'production'
             ? 'https://ecf.dgii.gov.do'
             : 'https://ecf.dgii.gov.do/certecf';
@@ -220,6 +323,8 @@ class DgiiApiService
         Log::info("[DgiiApiService] Enviando Aprobación Comercial a {$endpoint} como {$sendFilename}");
 
         try {
+            $startTime = microtime(true);
+
             $response = Http::withoutVerifying()
                 ->timeout(30)
                 ->withHeaders([
@@ -229,8 +334,20 @@ class DgiiApiService
                 ->attach('xml', $signedXml, $sendFilename, ['Content-Type' => 'text/xml'])
                 ->post($endpoint);
 
+            $durationMs = round((microtime(true) - $startTime) * 1000, 1);
             $body = $response->body();
             $json = $response->json();
+
+            DgiiLog::logHttp(
+                'acecf_response',
+                "ACECF Response: HTTP {$response->status()}",
+                'POST',
+                $endpoint,
+                $response->status(),
+                "Filename: {$sendFilename}",
+                $body,
+                $durationMs
+            );
 
             Log::info("[DgiiApiService] ACECF Response: HTTP {$response->status()} - {$body}");
 

@@ -410,7 +410,7 @@ class DgiiTestUIController extends Controller
 
             if (in_array($ecfType, [33, 34]) && $referenceEncf) {
                 $inv->modified_ncf = $referenceEncf;
-                $inv->modification_code = $ecfType === 33 ? 3 : 4;
+                $inv->modification_code = $ecfType === 33 ? 3 : 1;
             }
 
             $inv->save();

@@ -89,6 +89,34 @@ export default {
                 </div>
             </div>
 
+            <!-- Paso 4: Simulación e-CF -->
+            <div class="table-outer" style="margin-bottom:var(--spacing-xl);">
+                <div style="padding:24px var(--spacing-xl);border-bottom:1px solid var(--color-border);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
+                    <div style="display:flex;align-items:center;gap:16px;">
+                        <div style="width:48px;height:48px;border-radius:var(--radius-xl);background:linear-gradient(135deg,#f59e0b20,#f9731620);display:flex;align-items:center;justify-content:center;">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                <polyline points="14 2 14 8 20 8"></polyline>
+                                <line x1="16" y1="13" x2="8" y2="13"></line>
+                                <line x1="16" y1="17" x2="8" y2="17"></line>
+                                <polyline points="10 9 9 9 8 9"></polyline>
+                            </svg>
+                        </div>
+                        <div>
+                            <h2 style="font-size:18px;font-weight:700;color:var(--color-text-primary);margin:0;">Paso 4: Simulación e-CF</h2>
+                            <p style="margin:4px 0 0 0;color:var(--color-text-secondary);font-size:12px;">Genera y envía facturas de simulación por tipo a la DGII en el entorno de certificación</p>
+                        </div>
+                    </div>
+                    <button id="btn-sim-generate-all" class="btn btn-primary" style="padding:8px 20px;font-size:13px;">
+                        🚀 Generar Todos
+                    </button>
+                </div>
+                <div style="padding:24px var(--spacing-xl);">
+                    <div id="sim-cards" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;"></div>
+                </div>
+                <div id="sim-summary" style="display:none;padding:16px var(--spacing-xl);border-top:1px solid var(--color-border);"></div>
+            </div>
+
             <!-- Console -->
             <div class="table-outer" style="background:#0f172a;color:#38bdf8;border-color:#1e293b;display:none;" id="console-container">
                 <div style="padding:12px var(--spacing-xl);background:#1e293b;border-bottom:1px solid #334155;display:flex;align-items:center;justify-content:space-between;">
@@ -102,6 +130,57 @@ export default {
         `;
 
         this.bindEvents();
+        this.renderSimCards();
+    },
+
+    // Simulation type definitions matching DGII Paso 4 requirements
+    SIM_TYPES: [
+        { type: 31, name: 'Crédito Fiscal', qty: 4, color: '#3b82f6', icon: '🧾' },
+        { type: 32, name: 'Consumo ≥250Mil', qty: 2, color: '#10b981', icon: '🛒', isRfce: false },
+        { type: 33, name: 'Nota Débito', qty: 1, color: '#ef4444', icon: '📝' },
+        { type: 34, name: 'Nota Crédito', qty: 2, color: '#f59e0b', icon: '📋' },
+        { type: 41, name: 'Compras', qty: 2, color: '#8b5cf6', icon: '📦' },
+        { type: 43, name: 'Gastos Menores', qty: 2, color: '#06b6d4', icon: '💳' },
+        { type: 44, name: 'Reg. Especiales', qty: 2, color: '#ec4899', icon: '⚡' },
+        { type: 45, name: 'Gubernamental', qty: 2, color: '#14b8a6', icon: '🏛️' },
+        { type: 46, name: 'Exportación', qty: 2, color: '#6366f1', icon: '🌍' },
+        { type: 47, name: 'Pagos al Exterior', qty: 2, color: '#a855f7', icon: '💱' },
+        { type: 32, name: 'RFCE (<250Mil)', qty: 4, color: '#22c55e', icon: '📃', isRfce: true },
+    ],
+
+    renderSimCards() {
+        const container = document.getElementById('sim-cards');
+        if (!container) return;
+
+        // Client ID 1 = Grupo Tecnomeca (hardcoded for certification)
+        const clientId = 1;
+
+        container.innerHTML = this.SIM_TYPES.map((t, idx) => {
+            const key = t.isRfce ? `${t.type}-rfce` : `${t.type}`;
+            return `
+                <div class="sim-card" id="sim-card-${key}" style="border:1px solid var(--color-border);border-radius:var(--radius-lg);padding:20px;transition:all 0.2s;position:relative;overflow:hidden;">
+                    <div style="position:absolute;top:0;left:0;right:0;height:3px;background:${t.color};opacity:0.6;"></div>
+                    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+                        <div style="display:flex;align-items:center;gap:10px;">
+                            <span style="font-size:24px;">${t.icon}</span>
+                            <div>
+                                <div style="font-weight:700;font-size:14px;color:var(--color-text-primary);">E${t.type}</div>
+                                <div style="font-size:11px;color:var(--color-text-muted);">${t.name}</div>
+                            </div>
+                        </div>
+                        <span style="display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:var(--radius-sm);font-size:12px;font-weight:700;background:${t.color}15;color:${t.color};">
+                            <span id="sim-count-${key}">0</span>/${t.qty}
+                        </span>
+                    </div>
+                    <div id="sim-results-${key}" style="font-size:11px;color:var(--color-text-muted);margin-bottom:12px;min-height:20px;">
+                        Pendiente de generación
+                    </div>
+                    <button class="btn-sim-gen btn btn-secondary" data-type="${t.type}" data-qty="${t.qty}" data-rfce="${t.isRfce ? '1' : '0'}" data-key="${key}" data-client="${clientId}"
+                        style="width:100%;padding:8px;font-size:12px;font-weight:600;border-radius:var(--radius-md);transition:all 0.15s;">
+                        Generar ${t.qty}x E${t.type}${t.isRfce ? ' RFCE' : ''}
+                    </button>
+                </div>`;
+        }).join('');
     },
 
     bindEvents() {
@@ -114,6 +193,46 @@ export default {
         // Diagnostic
         if (btnDiag) btnDiag.addEventListener('click', () => this.runDiagnose(false));
         if (btnDiagSend) btnDiagSend.addEventListener('click', () => this.runDiagnose(true));
+
+        // Simulation individual buttons
+        document.querySelectorAll('.btn-sim-gen').forEach(btn => {
+            btn.addEventListener('click', () => this.runSimGenerate(btn));
+        });
+
+        // Generate All simulation
+        const btnSimAll = document.getElementById('btn-sim-generate-all');
+        if (btnSimAll) {
+            btnSimAll.addEventListener('click', async () => {
+                btnSimAll.disabled = true;
+                btnSimAll.innerHTML = `<span class="spinner" style="width:14px;height:14px;border-width:2px;margin-right:6px;"></span> Generando...`;
+                consoleContainer.style.display = 'block';
+                consoleOutput.innerHTML = `<span style="color:#64748b;">[${new Date().toLocaleTimeString()}]</span> <span style="color:#f59e0b;font-weight:700;">━━━ PASO 4: Generando TODAS las facturas de simulación ━━━</span>\n`;
+                consoleStatus.innerHTML = `<span class="spinner" style="width:12px;height:12px;border-width:2px;"></span> <span style="color:#fbbf24;">Ejecutando</span>`;
+
+                const allBtns = document.querySelectorAll('.btn-sim-gen');
+                let totalOk = 0, totalFail = 0;
+                for (const b of allBtns) {
+                    await this.runSimGenerate(b);
+                    // Count results
+                    const key = b.dataset.key;
+                    const countEl = document.getElementById(`sim-count-${key}`);
+                    if (countEl && parseInt(countEl.textContent) > 0) totalOk++;
+                }
+
+                const simSummary = document.getElementById('sim-summary');
+                if (simSummary) {
+                    simSummary.style.display = 'block';
+                    simSummary.innerHTML = `
+                        <div style="display:flex;align-items:center;justify-content:center;gap:16px;padding:12px;border-radius:var(--radius-md);background:#f0fdf4;color:#16a34a;font-weight:700;font-size:14px;">
+                            ✅ Simulación completada — Revisa los resultados arriba y descarga los PDFs desde la lista de facturas
+                        </div>`;
+                }
+
+                consoleStatus.innerHTML = `<span style="color:#22c55e;">COMPLETADO</span>`;
+                btnSimAll.disabled = false;
+                btnSimAll.innerHTML = '🚀 Generar Todos';
+            });
+        }
 
         // Aprobaciones Comerciales
         const btnAprob = document.getElementById('btn-run-aprobaciones');
@@ -417,6 +536,87 @@ export default {
             btn.disabled = false;
             btn.innerHTML = '▶ Ejecutar';
             btn.style.pointerEvents = '';
+            consoleOutput.scrollTop = consoleOutput.scrollHeight;
+        }
+    },
+
+    async runSimGenerate(btn) {
+        const type = btn.dataset.type;
+        const qty = btn.dataset.qty;
+        const isRfce = btn.dataset.rfce === '1';
+        const key = btn.dataset.key;
+        const clientId = btn.dataset.client;
+        const consoleContainer = document.getElementById('console-container');
+        const consoleOutput = document.getElementById('console-output');
+        const consoleStatus = document.getElementById('console-status');
+        const resultsDiv = document.getElementById(`sim-results-${key}`);
+        const countEl = document.getElementById(`sim-count-${key}`);
+        const card = document.getElementById(`sim-card-${key}`);
+
+        // Show console
+        consoleContainer.style.display = 'block';
+
+        // Disable and show spinner
+        btn.disabled = true;
+        const origText = btn.textContent;
+        btn.innerHTML = `<span class="spinner" style="width:12px;height:12px;border-width:2px;margin-right:6px;"></span> Generando...`;
+        if (resultsDiv) resultsDiv.innerHTML = '<span class="spinner" style="width:12px;height:12px;border-width:2px;"></span> Procesando...';
+
+        consoleOutput.innerHTML += `<span style="color:#64748b;">[${new Date().toLocaleTimeString()}]</span> Generando ${qty}x E${type}${isRfce ? ' RFCE' : ''}...\n`;
+        consoleStatus.innerHTML = `<span class="spinner" style="width:12px;height:12px;border-width:2px;"></span> <span style="color:#fbbf24;">Ejecutando</span>`;
+
+        try {
+            const res = await App.api('dgii/simulation/generate', {
+                method: 'POST',
+                body: JSON.stringify({
+                    ecf_type: parseInt(type),
+                    quantity: parseInt(qty),
+                    client_id: parseInt(clientId),
+                    is_rfce: isRfce,
+                }),
+                headers: { 'Content-Type': 'application/json' }
+            });
+
+            if (res.results && res.results.length) {
+                const accepted = res.results.filter(r => r.success).length;
+                const failed = res.results.filter(r => !r.success).length;
+
+                if (countEl) countEl.textContent = accepted;
+
+                // Update card border color
+                if (card) {
+                    card.style.borderColor = accepted >= parseInt(qty) ? '#22c55e' : failed > 0 ? '#ef4444' : 'var(--color-border)';
+                }
+
+                // Show results in card
+                if (resultsDiv) {
+                    resultsDiv.innerHTML = res.results.map(r => {
+                        const icon = r.success ? '✅' : '❌';
+                        const status = r.dgii_status || 'error';
+                        return `<div style="margin-bottom:2px;">${icon} <code style="font-size:10px;background:var(--bg-hover);padding:1px 4px;border-radius:3px;">${r.encf}</code> <span style="color:${r.success ? '#22c55e' : '#ef4444'};">${status}</span></div>`;
+                    }).join('');
+                }
+
+                // Console log
+                res.results.forEach(r => {
+                    if (r.success) {
+                        consoleOutput.innerHTML += `<span style="color:#22c55e;">  ✅ ${r.encf}</span> → ${r.dgii_status} | $${parseFloat(r.total).toLocaleString('es-DO')}\n`;
+                    } else {
+                        consoleOutput.innerHTML += `<span style="color:#ef4444;">  ❌ ${r.encf}</span> → ${r.error || r.dgii_status}\n`;
+                    }
+                });
+
+                consoleOutput.innerHTML += `<span style="color:#64748b;">  ─ E${type}${isRfce ? ' RFCE' : ''}: ${accepted}/${qty} aceptadas</span>\n`;
+            } else {
+                if (resultsDiv) resultsDiv.innerHTML = `<span style="color:#ef4444;">Error: Sin resultados</span>`;
+                consoleOutput.innerHTML += `<span style="color:#ef4444;">  ❌ E${type}: Sin resultados</span>\n`;
+            }
+        } catch (e) {
+            if (resultsDiv) resultsDiv.innerHTML = `<span style="color:#ef4444;">${e.message}</span>`;
+            consoleOutput.innerHTML += `<span style="color:#ef4444;">  ❌ E${type}: ${e.message}</span>\n`;
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = origText;
             consoleOutput.scrollTop = consoleOutput.scrollHeight;
         }
     }

@@ -114,6 +114,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/dgii/diagnose', [DgiiTestUIController::class, 'diagnose']);
         Route::post('/dgii/run-aprobaciones', [DgiiTestUIController::class, 'runAprobaciones']);
         Route::get('/dgii/status', [DgiiTestUIController::class, 'connectionStatus']);
+        Route::post('/dgii/simulation/generate', [DgiiTestUIController::class, 'generateSimulation']);
 
         // DGII Certification Test Runner
         Route::get('/dgii/certification/list', [CertificationController::class, 'listCases']);

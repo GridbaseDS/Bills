@@ -4,7 +4,9 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Invoice;
+use App\Models\Client;
 use App\Models\Setting;
+use App\Services\Dgii\EcfManagerService;
 use App\Services\Dgii\XmlBuilderService;
 use App\Services\Dgii\XmlSignatureService;
 use App\Services\Dgii\DgiiAuthService;
@@ -337,5 +339,118 @@ class DgiiTestUIController extends Controller
                 'env' => $settings['dgii_env'] ?? 'testing'
             ]);
         }
+    /**
+     * Generate simulation invoices for DGII Step 4 certification.
+     * Creates real invoices, processes them through EcfManagerService, and returns results.
+     */
+    public function generateSimulation(Request $request)
+    {
+        $request->validate([
+            'ecf_type' => 'required|integer|in:31,32,33,34,41,43,44,45,46,47',
+            'quantity' => 'required|integer|min:1|max:10',
+            'client_id' => 'required|integer|exists:clients,id',
+            'is_rfce' => 'sometimes|boolean', // For E32 < 250k
+        ]);
+
+        $ecfType = (int) $request->input('ecf_type');
+        $qty = (int) $request->input('quantity');
+        $clientId = (int) $request->input('client_id');
+        $isRfce = $request->boolean('is_rfce', false);
+
+        $client = Client::findOrFail($clientId);
+        $svc = app(EcfManagerService::class);
+        $results = [];
+
+        // For E33/E34, find an existing E31 to reference
+        $referenceEncf = null;
+        if (in_array($ecfType, [33, 34])) {
+            $refInvoice = Invoice::where('ecf_type', 31)
+                ->where('dgii_status', 'accepted')
+                ->orderBy('id', 'desc')
+                ->first();
+            if ($refInvoice) {
+                $referenceEncf = $refInvoice->encf;
+            }
+        }
+
+        $typeDescriptions = [
+            31 => 'Servicio profesional de consultoría',
+            32 => $isRfce ? 'Producto de consumo menor' : 'Equipos de manufactura industrial',
+            33 => 'Ajuste por cargo adicional',
+            34 => 'Descuento por devolución',
+            41 => 'Compras de suministros',
+            43 => 'Gastos menores operativos',
+            44 => 'Servicio régimen especial',
+            45 => 'Servicio gubernamental',
+            46 => 'Servicio de exportación',
+            47 => 'Pago al exterior por servicios',
+        ];
+
+        for ($i = 1; $i <= $qty; $i++) {
+            $baseAmount = $isRfce ? (3000 * $i) : ($ecfType === 32 ? (260000 * $i) : (5000 * $i));
+            
+            $inv = new Invoice();
+            $inv->invoice_number = 'SIM-' . now()->format('ymd') . '-' . strtoupper(substr(uniqid(), -6));
+            $inv->client_id = $clientId;
+            $inv->issue_date = now()->format('Y-m-d');
+            $inv->due_date = now()->addDays(30)->format('Y-m-d');
+            $inv->currency = 'DOP';
+            $inv->is_ecf = true;
+            $inv->ecf_type = $ecfType;
+            $inv->status = 'sent';
+            $inv->subtotal = $baseAmount;
+            $inv->tax_rate = 18;
+            $inv->tax_amount = round($baseAmount * 0.18, 2);
+            $inv->total = round($baseAmount * 1.18, 2);
+            $inv->discount_amount = 0;
+            $inv->amount_paid = 0;
+            $inv->notes = "Simulación Paso 4 - E{$ecfType} #{$i}";
+
+            if (in_array($ecfType, [33, 34]) && $referenceEncf) {
+                $inv->modified_ncf = $referenceEncf;
+                $inv->modification_code = $ecfType === 33 ? 3 : 4;
+            }
+
+            $inv->save();
+            $inv->items()->create([
+                'description' => ($typeDescriptions[$ecfType] ?? 'Servicio') . " #{$i}",
+                'quantity' => $i,
+                'unit_price' => $baseAmount / $i,
+                'amount' => $baseAmount,
+            ]);
+
+            try {
+                $r = $svc->processInvoice($inv);
+                $inv->refresh();
+                $results[] = [
+                    'invoice_id' => $inv->id,
+                    'encf' => $inv->encf,
+                    'dgii_status' => $inv->dgii_status,
+                    'track_id' => $inv->dgii_track_id,
+                    'total' => $inv->total,
+                    'success' => in_array($inv->dgii_status, ['accepted', 'portal_pending']),
+                ];
+            } catch (\Throwable $e) {
+                $results[] = [
+                    'invoice_id' => $inv->id,
+                    'encf' => $inv->encf ?? 'ERROR',
+                    'dgii_status' => 'error',
+                    'track_id' => null,
+                    'total' => $inv->total,
+                    'success' => false,
+                    'error' => $e->getMessage(),
+                ];
+            }
+        }
+
+        $allSuccess = collect($results)->every(fn($r) => $r['success']);
+
+        return response()->json([
+            'success' => $allSuccess,
+            'results' => $results,
+            'type' => $ecfType,
+            'quantity' => $qty,
+            'client' => $client->company_name,
+        ]);
     }
 }

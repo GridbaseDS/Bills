@@ -282,8 +282,9 @@ export default {
                                 <div class="grid-2">
                                     <div class="form-group"><label class="form-label">Entorno DGII</label>
                                         <select id="s_dgii_env" class="form-control">
-                                            <option value="testing" ${s.dgii_env === 'testing' || !s.dgii_env ? 'selected' : ''}>Certificación / Pruebas</option>
-                                            <option value="production" ${s.dgii_env === 'production' ? 'selected' : ''}>Producción</option>
+                                            <option value="testing" ${s.dgii_env === 'testing' || !s.dgii_env ? 'selected' : ''}>Pre-Certificación (testecf)</option>
+                                            <option value="certification" ${s.dgii_env === 'certification' ? 'selected' : ''}>Certificación (certecf)</option>
+                                            <option value="production" ${s.dgii_env === 'production' ? 'selected' : ''}>Producción (ecf)</option>
                                         </select>
                                     </div>
                                     <div class="form-group"><label class="form-label">Vence Secuencia (e-NCF)</label><input type="date" id="s_dgii_ncf_expiry_date" class="form-control" value="${s.dgii_ncf_expiry_date || '2028-12-31'}"></div>

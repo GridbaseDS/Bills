@@ -129,8 +129,8 @@ export default {
             </div>
         `;
 
-        this.bindEvents();
         this.renderSimCards();
+        this.bindEvents();
     },
 
     // Simulation type definitions matching DGII Paso 4 requirements

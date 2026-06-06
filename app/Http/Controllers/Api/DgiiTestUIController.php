@@ -363,15 +363,22 @@ class DgiiTestUIController extends Controller
         $svc = app(EcfManagerService::class);
         $results = [];
 
-        // For E33/E34, find an existing E31 to reference
-        $referenceEncf = null;
+        // For E33/E34, find enough DIFFERENT accepted E31s to reference
+        $referenceEncfs = [];
         if (in_array($ecfType, [33, 34])) {
-            $refInvoice = Invoice::where('ecf_type', 31)
+            $referenceEncfs = Invoice::where('ecf_type', 31)
                 ->where('dgii_status', 'accepted')
+                ->where('client_id', $clientId)
                 ->orderBy('id', 'desc')
-                ->first();
-            if ($refInvoice) {
-                $referenceEncf = $refInvoice->encf;
+                ->take($qty)
+                ->pluck('encf')
+                ->toArray();
+            
+            if (count($referenceEncfs) < $qty) {
+                return response()->json([
+                    'success' => false,
+                    'error' => "Se necesitan {$qty} facturas E31 aceptadas para referenciar, pero solo hay " . count($referenceEncfs) . ". Genera primero las E31.",
+                ], 422);
             }
         }
 
@@ -408,8 +415,8 @@ class DgiiTestUIController extends Controller
             $inv->amount_paid = 0;
             $inv->notes = "Simulación Paso 4 - E{$ecfType} #{$i}";
 
-            if (in_array($ecfType, [33, 34]) && $referenceEncf) {
-                $inv->modified_ncf = $referenceEncf;
+            if (in_array($ecfType, [33, 34]) && !empty($referenceEncfs)) {
+                $inv->modified_ncf = $referenceEncfs[$i - 1];
                 $inv->modification_code = $ecfType === 33 ? 3 : 1;
             }
 

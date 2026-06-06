@@ -610,6 +610,19 @@ const InvoicesModule = {
                 modification_code: document.getElementById('i_codigo_modificacion')?.value || null
             };
 
+            // Disable all form buttons and show loading feedback
+            const submitBtn = e.target.querySelector('button[type="submit"]');
+            const cancelBtn = e.target.closest('.form-card')?.previousElementSibling?.querySelector('.btn-secondary');
+            const origBtnText = submitBtn ? submitBtn.innerHTML : '';
+            if (submitBtn) {
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = `<span class="spinner" style="width:14px;height:14px;border-width:2px;margin-right:8px;"></span> ${editId ? 'Actualizando...' : 'Guardando...'}`;
+            }
+            if (cancelBtn) cancelBtn.style.pointerEvents = 'none';
+            // Disable all other buttons in the form
+            const formBtns = e.target.querySelectorAll('button:not([type="submit"])');
+            formBtns.forEach(b => b.disabled = true);
+
             try {
                 if (editId) {
                     await App.api(`invoices/${editId}`, { method: 'PUT', body: payload });
@@ -619,7 +632,15 @@ const InvoicesModule = {
                     App.showToast(result.email_sent ? 'Factura creada y enviada al cliente ✓' : 'Factura creada correctamente');
                 }
                 window.App.navigate('facturas');
-            } catch (err) {}
+            } catch (err) {
+                // Re-enable buttons on error
+                if (submitBtn) {
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = origBtnText;
+                }
+                if (cancelBtn) cancelBtn.style.pointerEvents = '';
+                formBtns.forEach(b => b.disabled = false);
+            }
         });
     },
 

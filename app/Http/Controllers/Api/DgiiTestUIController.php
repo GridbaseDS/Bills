@@ -339,6 +339,8 @@ class DgiiTestUIController extends Controller
                 'env' => $settings['dgii_env'] ?? 'testing'
             ]);
         }
+    }
+
     /**
      * Generate simulation invoices for DGII Step 4 certification.
      * Creates real invoices, processes them through EcfManagerService, and returns results.

@@ -33,7 +33,8 @@ class XmlBuilderService
         $direccionEmisor = trim($settings['company_address'] ?? 'Santo Domingo, Rep. Dom.');
         $municipioEmisor = trim($settings['dgii_municipio'] ?? '');
         $provinciaEmisor = trim($settings['dgii_provincia'] ?? '');
-        $telefonoEmisor = preg_replace('/[^0-9]/', '', $settings['company_phone'] ?? '');
+        $rawPhone = preg_replace('/[^0-9]/', '', $settings['company_phone'] ?? '');
+        $telefonoEmisor = strlen($rawPhone) === 10 ? substr($rawPhone,0,3).'-'.substr($rawPhone,3,3).'-'.substr($rawPhone,6,4) : $rawPhone;
         $correoEmisor = trim($settings['company_email'] ?? '');
         $webSiteEmisor = trim($settings['company_website'] ?? '');
 

@@ -9,7 +9,9 @@ class SettingController extends Controller
 {
     public function index()
     {
-        return response()->json(Setting::getAll());
+        $settings = Setting::getAll();
+        $settings['server_date_dr'] = now('America/Santo_Domingo')->format('Y-m-d');
+        return response()->json($settings);
     }
 
     public function updateMultiple(Request $request)

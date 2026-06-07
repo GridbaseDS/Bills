@@ -339,7 +339,17 @@ class XmlBuilderService
             
             $ncfModificado = $invoice->modified_ncf ?? 'E310000000000';
             $infoReferencia->appendChild($dom->createElement('NCFModificado', $ncfModificado));
-            $infoReferencia->appendChild($dom->createElement('FechaNCFModificado', $invoice->issue_date->format('d-m-Y')));
+
+            // Look up the original invoice in the database to get its actual issue date
+            $referencedInvoice = \App\Models\Invoice::where('encf', $ncfModificado)
+                ->orWhere('invoice_number', $ncfModificado)
+                ->first();
+
+            $fechaNCFModificado = $referencedInvoice 
+                ? $referencedInvoice->issue_date->format('d-m-Y') 
+                : $invoice->issue_date->format('d-m-Y'); // Fallback to current invoice date if not found
+            
+            $infoReferencia->appendChild($dom->createElement('FechaNCFModificado', $fechaNCFModificado));
             
             // CodigoModificacion: 1 = Anula, 2 = Corrige Texto, 3 = Corrige Montos
             $infoReferencia->appendChild($dom->createElement('CodigoModificacion', $invoice->modification_code ?? 1));

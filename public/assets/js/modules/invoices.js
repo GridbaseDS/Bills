@@ -382,8 +382,12 @@ const InvoicesModule = {
         
         try { this.availableItems = await App.api('items'); } catch(e) { this.availableItems = []; }
 
-        const today = new Date().toISOString().split('T')[0];
-        const nextWeek = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+        const today = window.App.state.settings?.server_date_dr || new Date().toISOString().split('T')[0];
+        
+        // Calculate nextWeek properly by adding 7 days to today
+        const parsedToday = new Date(today + 'T00:00:00');
+        const dNextWeek = new Date(parsedToday.getTime() + 7 * 24 * 60 * 60 * 1000);
+        const nextWeek = dNextWeek.getFullYear() + '-' + String(dNextWeek.getMonth() + 1).padStart(2, '0') + '-' + String(dNextWeek.getDate()).padStart(2, '0');
 
         let invoice = null;
         if (editId) {

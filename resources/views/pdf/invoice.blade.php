@@ -417,14 +417,9 @@ $ecfTypeName = $isEcf ? ($ecfTypeNames[$ecfType] ?? 'Comprobante Fiscal Electron
                 $rncEmisor = preg_replace('/[^0-9]/', '', $settings['company_tax_id'] ?? '');
                 $rncComprador = preg_replace('/[^0-9]/', '', $client['tax_id'] ?? '');
                 $encf = $invoice['encf'] ?? '';
-                $monto = number_format((float)$invoice['total'], 2, '.', '');
-                $fechaEmision = date('d-m-Y', strtotime($invoice['issue_date']));
-                $codSeguridad = $invoice['security_code'] ?? '';
-
-                // FechaFirma: ALWAYS read from signed XML first (authoritative source).
-                // The DB signed_at can drift by 1+ second vs the XML's FechaHoraFirma,
-                // causing DGII ConsultaTimbre to fail with "valores suministrados" mismatch.
+                $monto = '';
                 $fechaFirma = '';
+                $xmlFechaEmision = '';
                 if (!empty($invoice['signed_xml_path'])) {
                     $xmlPath = storage_path('app/private/' . $invoice['signed_xml_path']);
                     if (!file_exists($xmlPath)) {
@@ -432,11 +427,25 @@ $ecfTypeName = $isEcf ? ($ecfTypeNames[$ecfType] ?? 'Comprobante Fiscal Electron
                     }
                     if (file_exists($xmlPath)) {
                         $xmlContent = file_get_contents($xmlPath);
-                        if (preg_match('/<FechaHoraFirma>([^<]+)<\/FechaHoraFirma>/', $xmlContent, $m)) {
-                            $fechaFirma = $m[1];
+                        if (preg_match('/<MontoTotal>([^<]+)<\/MontoTotal>/', $xmlContent, $mMonto)) {
+                            $monto = number_format((float)$mMonto[1], 2, '.', '');
+                        }
+                        if (preg_match('/<FechaHoraFirma>([^<]+)<\/FechaHoraFirma>/', $xmlContent, $mFirma)) {
+                            $fechaFirma = $mFirma[1];
+                        }
+                        if (preg_match('/<FechaEmision>([^<]+)<\/FechaEmision>/', $xmlContent, $mEmision)) {
+                            $xmlFechaEmision = $mEmision[1];
                         }
                     }
                 }
+
+                if (empty($monto)) {
+                    $monto = number_format((float)$invoice['total'], 2, '.', '');
+                }
+
+                $fechaEmision = $xmlFechaEmision ?: date('d-m-Y', strtotime($invoice['issue_date']));
+                $codSeguridad = $invoice['security_code'] ?? '';
+
                 // Fallback to DB signed_at only if XML is unavailable
                 if (empty($fechaFirma) && !empty($invoice['signed_at'])) {
                     $fechaFirma = date('d-m-Y H:i:s', strtotime($invoice['signed_at']));

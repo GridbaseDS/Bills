@@ -408,9 +408,11 @@ class DgiiTestUIController extends Controller
             $inv->ecf_type = $ecfType;
             $inv->status = 'sent';
             $inv->subtotal = $baseAmount;
-            $inv->tax_rate = 18;
-            $inv->tax_amount = round($baseAmount * 0.18, 2);
-            $inv->total = round($baseAmount * 1.18, 2);
+            
+            $isExempt = in_array($ecfType, [43, 44, 46, 47]);
+            $inv->tax_rate = $isExempt ? 0 : 18;
+            $inv->tax_amount = $isExempt ? 0 : round($baseAmount * 0.18, 2);
+            $inv->total = $isExempt ? $baseAmount : round($baseAmount * 1.18, 2);
             $inv->discount_amount = 0;
             $inv->amount_paid = 0;
             $inv->notes = "Simulación Paso 4 - E{$ecfType} #{$i}";

@@ -327,16 +327,16 @@ const InvoicesModule = {
                             </div>
                         </div>
 
-                        <div class="mt-24 table-responsive">
-                            <table class="data-table" style="border:1px solid var(--color-border);border-radius:var(--radius-lg);overflow:hidden;min-width:500px;">
+                        <div class="mt-24">
+                            <table class="data-table responsive-invoice-table" style="border:1px solid var(--color-border);border-radius:var(--radius-lg);overflow:hidden;width:100%;">
                                 <thead><tr><th>Descripción</th><th class="text-right">Cant.</th><th class="text-right">Precio</th><th class="text-right">Total</th></tr></thead>
                                 <tbody>
                                     ${inv.items.map(item => `
                                         <tr>
-                                            <td style="color:var(--color-text-primary);font-weight:500;white-space:normal;">${item.description}</td>
-                                            <td class="text-right">${item.quantity}</td>
-                                            <td class="text-right">${App.formatCurrency(item.unit_price, inv.currency)}</td>
-                                            <td class="text-right font-semibold">${App.formatCurrency(item.amount, inv.currency)}</td>
+                                            <td data-label="Descripción" style="color:var(--color-text-primary);font-weight:600;white-space:normal;font-size:14px;">${item.description}</td>
+                                            <td data-label="Cant." class="text-right">${item.quantity}</td>
+                                            <td data-label="Precio" class="text-right">${App.formatCurrency(item.unit_price, inv.currency)}</td>
+                                            <td data-label="Total" class="text-right font-bold" style="color:var(--color-primary);">${App.formatCurrency(item.amount, inv.currency)}</td>
                                         </tr>
                                     `).join('')}
                                 </tbody>

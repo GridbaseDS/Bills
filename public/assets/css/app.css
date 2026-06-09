@@ -1764,10 +1764,13 @@ textarea.form-control { resize: vertical; min-height: 80px; }
   /* Hero section on TOP — visible on mobile */
   .login-right {
     display: flex !important;
-    flex: none;
+    flex-direction: column !important;
+    flex: none !important;
     order: -1;
     width: 100%;
+    height: auto !important;
     min-height: auto;
+    overflow: visible !important;
     padding: 40px 24px 32px;
     border-radius: 0 0 32px 32px;
     align-items: flex-start;
@@ -1775,10 +1778,12 @@ textarea.form-control { resize: vertical; min-height: 80px; }
   }
   .login-right::before { border-radius: 0 0 32px 32px; }
   .login-hero-text {
-    max-width: 100%; text-align: left;
+    max-width: 100%; text-align: left; width: 100%;
+    display: block !important; position: relative; z-index: 2;
   }
   .login-hero-text h2 {
     font-size: 28px; line-height: 1.2; margin-bottom: 8px;
+    color: rgba(255,255,255,0.92) !important;
   }
   .login-hero-sub {
     font-size: 11px; max-width: 280px; margin-top: 6px;
@@ -1790,9 +1795,12 @@ textarea.form-control { resize: vertical; min-height: 80px; }
     margin-top: 24px;
     padding: 18px 20px;
     max-width: 100%;
+    width: 100%;
     border-radius: 14px;
-    animation: none;
+    animation: none !important;
     box-shadow: 0 8px 30px rgba(0,0,0,0.2);
+    position: relative; z-index: 2;
+    display: block !important;
   }
   .login-float-amount { font-size: 26px; }
   .login-float-label { font-size: 10px; }
@@ -1809,9 +1817,11 @@ textarea.form-control { resize: vertical; min-height: 80px; }
     padding: 12px 16px;
     max-width: 220px;
     border-radius: 10px;
-    animation: none;
+    animation: none !important;
     box-shadow: 0 6px 20px rgba(0,0,0,0.12);
     align-self: flex-start;
+    position: relative; z-index: 2;
+    display: flex !important;
   }
   .login-float-mini-icon { width: 28px; height: 28px; border-radius: 7px; }
   .login-float-mini-icon svg { width: 14px; height: 14px; }

@@ -1650,7 +1650,6 @@ textarea.form-control { resize: vertical; min-height: 80px; }
   position: absolute; top: 32px; left: 64px;
 }
 .login-brand img { height: 36px; object-fit: contain; }
-.login-brand-name { display: none; font-size: 18px; font-weight: 700; color: #111827; letter-spacing: -0.3px; }
 .login-form-wrap { width: 100%; max-width: 380px; }
 .login-title { font-size: 28px; font-weight: 700; margin: 0 0 6px; color: #111827; letter-spacing: -0.5px; }
 .login-subtitle { font-size: 14px; color: #6B7280; margin: 0 0 32px; line-height: 1.5; }
@@ -1752,128 +1751,49 @@ textarea.form-control { resize: vertical; min-height: 80px; }
 .login-float-mini-text { font-size: 12px; color: #374151; font-weight: 500; }
 .login-float-mini-val { font-size: 13px; font-weight: 700; color: #111827; }
 
-/* Mobile: full hero + form stacked layout */
+/* Mobile: compact login with mini hero banner */
 @media (max-width: 768px) {
-  .login-page {
-    flex-direction: column;
-    min-height: 100vh; min-height: 100dvh;
-    overflow-y: auto;
-    -webkit-overflow-scrolling: touch;
-  }
-
-  /* Hero section on TOP — visible on mobile */
-  .login-right {
-    display: flex !important;
-    flex-direction: column !important;
-    flex: none !important;
-    order: -1;
-    width: 100%;
-    height: auto !important;
-    min-height: auto;
-    overflow: visible !important;
-    padding: 40px 24px 32px;
-    border-radius: 0 0 32px 32px;
-    align-items: flex-start;
-    justify-content: flex-start;
-  }
-  .login-right::before { border-radius: 0 0 32px 32px; }
-  .login-hero-text {
-    max-width: 100%; text-align: left; width: 100%;
-    display: block !important; position: relative; z-index: 2;
-  }
-  .login-hero-text h2 {
-    font-size: 28px; line-height: 1.2; margin-bottom: 8px;
-    color: rgba(255,255,255,0.92) !important;
-  }
-  .login-hero-sub {
-    font-size: 11px; max-width: 280px; margin-top: 6px;
-    color: rgba(255,255,255,0.5); line-height: 1.4;
-  }
-
-  /* Floating card — compact */
-  .login-float-card {
-    margin-top: 24px;
-    padding: 18px 20px;
-    max-width: 100%;
-    width: 100%;
-    border-radius: 14px;
-    animation: none !important;
-    box-shadow: 0 8px 30px rgba(0,0,0,0.2);
-    position: relative; z-index: 2;
-    display: block !important;
-  }
-  .login-float-amount { font-size: 26px; }
-  .login-float-label { font-size: 10px; }
-  .login-float-sub { font-size: 11px; }
-  .login-float-row { margin-top: 12px; padding-top: 12px; }
-  .login-float-dot { width: 30px; height: 30px; border-radius: 8px; }
-  .login-float-dot svg { width: 15px; height: 15px; }
-  .login-float-row-label { font-size: 11px; }
-  .login-float-row-val { font-size: 13px; }
-
-  /* Mini floating card — compact */
-  .login-float-mini {
-    margin-top: 12px;
-    padding: 12px 16px;
-    max-width: 220px;
-    border-radius: 10px;
-    animation: none !important;
-    box-shadow: 0 6px 20px rgba(0,0,0,0.12);
-    align-self: flex-start;
-    position: relative; z-index: 2;
-    display: flex !important;
-  }
-  .login-float-mini-icon { width: 28px; height: 28px; border-radius: 7px; }
-  .login-float-mini-icon svg { width: 14px; height: 14px; }
-  .login-float-mini-text { font-size: 11px; }
-  .login-float-mini-val { font-size: 12px; }
-
-  /* Form section BELOW hero */
+  .login-page { flex-direction: column; }
+  .login-right { display: none; }
   .login-left {
-    max-width: 100%; min-width: 0;
-    padding: 0 0 32px 0;
-    min-height: auto;
+    max-width: 100%; min-width: 0; padding: 0; min-height: 100vh; min-height: 100dvh;
     justify-content: flex-start;
-    flex: none;
-    order: 1;
   }
-  .login-left::before { display: none; }
-
   .login-brand {
-    position: static;
-    display: flex; align-items: center; gap: 8px;
-    padding: 24px 24px 0;
+    position: static; display: flex; justify-content: center; align-items: center;
+    padding: 20px 24px 0; z-index: 2;
   }
-  .login-brand img { height: 28px; }
-  .login-brand-name { display: inline; }
-
+  .login-brand img { height: 30px; }
+  .login-left::before {
+    content: ''; display: block; width: 100%;
+    height: 140px; min-height: 140px;
+    background: linear-gradient(160deg, #0a3d3f 0%, #0B484C 40%, #0d5249 100%);
+    border-radius: 0 0 28px 28px;
+    margin-bottom: -60px;
+    position: relative; z-index: 0;
+  }
   .login-form-wrap {
     position: relative; z-index: 1;
     background: #fff;
-    margin: 0 20px; padding: 24px 20px 28px;
-    border-radius: 0;
-    box-shadow: none;
+    margin: 0 16px; padding: 28px 24px 32px;
+    border-radius: 20px;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.08);
     max-width: 100%;
   }
-  .login-title { font-size: 22px; text-align: left; }
-  .login-subtitle { font-size: 13px; text-align: left; margin-bottom: 24px; color: #6B7280; }
+  .login-title { font-size: 22px; text-align: center; }
+  .login-subtitle { font-size: 13px; text-align: center; margin-bottom: 24px; }
   .login-field { margin-bottom: 16px; }
-  .login-field label { font-size: 12px; }
-  .login-field input { padding: 14px 14px; font-size: 16px; border-radius: 10px; }
-  .login-submit { padding: 14px 24px; font-size: 16px; border-radius: 10px; }
-  .login-footer { text-align: center; margin-top: 20px; font-size: 11px; }
-
+  .login-field input { padding: 14px 14px; font-size: 16px; border-radius: 12px; }
+  .login-submit { padding: 14px 24px; font-size: 16px; border-radius: 12px; }
+  .login-footer { text-align: center; margin-top: 20px; }
   /* 2FA specific */
   #qr-canvas { max-width: 140px !important; max-height: 140px !important; }
 }
 
 /* iPhone SE / small phones */
 @media (max-width: 375px) {
-  .login-right { padding: 32px 20px 24px; }
-  .login-hero-text h2 { font-size: 24px; }
-  .login-float-card { padding: 14px 16px; }
-  .login-float-amount { font-size: 22px; }
-  .login-form-wrap { margin: 0 16px; padding: 20px 16px 24px; }
+  .login-left::before { height: 110px; min-height: 110px; margin-bottom: -50px; }
+  .login-form-wrap { margin: 0 12px; padding: 22px 18px 28px; }
   .login-title { font-size: 20px; }
 }
 

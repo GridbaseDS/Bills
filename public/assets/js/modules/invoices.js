@@ -222,25 +222,24 @@ const InvoicesModule = {
                         <h1 class="page-title">${inv.is_ecf ? `e-CF ${inv.encf || inv.invoice_number}` : `Factura ${inv.invoice_number}`}</h1>
                         <p class="page-subtitle">Emitida el ${App.formatDate(inv.issue_date)}</p>
                     </div>
-                    <div style="display:flex;gap:8px;flex-wrap:wrap;">
-                        <a href="/api/invoices/${id}/pdf" target="_blank" class="btn btn-secondary btn-sm">
+                    <div class="invoice-actions" style="display:flex;gap:8px;flex-wrap:wrap;width:100%;">
+                        <a href="/api/invoices/${id}/pdf" target="_blank" class="btn btn-secondary btn-sm" style="flex:1;justify-content:center;">
                             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
                             Ver PDF
                         </a>
-                        <button class="btn btn-secondary btn-sm" onclick="InvoicesModule.sendEmail(${id})">
+                        <button class="btn btn-secondary btn-sm" onclick="InvoicesModule.sendEmail(${id})" style="flex:1;justify-content:center;">
                             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
                             Enviar
-                            <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="currentColor" style="margin-left:-2px;opacity:0.5;"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/></svg>
                         </button>
-                        <button class="btn btn-secondary btn-sm" onclick="InvoicesModule.duplicateInvoice(${id})">Duplicar</button>
+                        <button class="btn btn-secondary btn-sm" onclick="InvoicesModule.duplicateInvoice(${id})" style="flex:1;justify-content:center;">Duplicar</button>
                         ${inv.is_ecf && inv.encf && inv.ecf_type != 34 && inv.ecf_type != 33 ? `
-                            <button class="btn btn-secondary btn-sm" style="color:var(--color-danger-icon);border-color:rgba(239,68,68,0.2);" onclick="InvoicesModule.issueCreditNote(${id})">
+                            <button class="btn btn-secondary btn-sm" style="color:var(--color-danger-icon);border-color:rgba(239,68,68,0.2);flex:1;justify-content:center;" onclick="InvoicesModule.issueCreditNote(${id})">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:middle;margin-right:4px;"><path d="M9 14L4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5v0a5.5 5.5 0 0 1-5.5 5.5H11"/></svg>
                                 Nota de Crédito
                             </button>
                         ` : ''}
-                        <a href="#facturas/edit/${id}" class="btn btn-secondary btn-sm">Editar</a>
-                        ${inv.status !== 'paid' ? `<button class="btn btn-primary btn-sm" onclick="InvoicesModule.showPaymentModal(${id}, ${(inv.total || 0) - (inv.amount_paid || 0)})">Registrar Pago</button>` : ''}
+                        <a href="#facturas/edit/${id}" class="btn btn-secondary btn-sm" style="flex:1;justify-content:center;">Editar</a>
+                        ${inv.status !== 'paid' ? `<button class="btn btn-primary btn-sm" style="width:100%;justify-content:center;margin-top:4px;" onclick="InvoicesModule.showPaymentModal(${id}, ${(inv.total || 0) - (inv.amount_paid || 0)})">Registrar Pago</button>` : ''}
                     </div>
                 </div>
 
@@ -315,12 +314,12 @@ const InvoicesModule = {
                 <div class="table-outer mb-24">
                     <div style="padding:var(--spacing-xl);">
                         <div class="grid-2">
-                            <div>
+                            <div class="invoice-meta-left">
                                 <div style="font-size:11px;font-weight:600;color:var(--color-text-muted);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:8px;">Facturado a</div>
                                 <p style="font-size:16px;font-weight:600;margin:0;">${inv.company_name || inv.contact_name}</p>
                                 <p style="margin:4px 0 0 0;color:var(--color-text-secondary);font-size:13px;">${inv.email || ''}</p>
                             </div>
-                            <div class="text-right">
+                            <div class="invoice-meta-right text-right">
                                 <div style="font-size:11px;font-weight:600;color:var(--color-text-muted);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:8px;">Detalles</div>
                                 <p style="margin:0;font-size:13px;"><strong>Vence:</strong> ${App.formatDate(inv.due_date)}</p>
                                 <p style="margin:4px 0 0 0;font-size:13px;"><strong>Estado:</strong> <span class="badge badge-${inv.status}">${this.statusLabel(inv.status)}</span></p>
@@ -328,13 +327,13 @@ const InvoicesModule = {
                             </div>
                         </div>
 
-                        <div class="mt-24">
-                            <table class="data-table" style="border:1px solid var(--color-border);border-radius:var(--radius-lg);overflow:hidden;">
+                        <div class="mt-24 table-responsive">
+                            <table class="data-table" style="border:1px solid var(--color-border);border-radius:var(--radius-lg);overflow:hidden;min-width:500px;">
                                 <thead><tr><th>Descripción</th><th class="text-right">Cant.</th><th class="text-right">Precio</th><th class="text-right">Total</th></tr></thead>
                                 <tbody>
                                     ${inv.items.map(item => `
                                         <tr>
-                                            <td style="color:var(--color-text-primary);font-weight:500">${item.description}</td>
+                                            <td style="color:var(--color-text-primary);font-weight:500;white-space:normal;">${item.description}</td>
                                             <td class="text-right">${item.quantity}</td>
                                             <td class="text-right">${App.formatCurrency(item.unit_price, inv.currency)}</td>
                                             <td class="text-right font-semibold">${App.formatCurrency(item.amount, inv.currency)}</td>
@@ -348,8 +347,8 @@ const InvoicesModule = {
                             <div>
                                 ${inv.notes ? `<div style="font-size:11px;font-weight:600;color:var(--color-text-muted);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:8px;">Notas</div><p style="white-space:pre-wrap;font-size:13px;color:var(--color-text-secondary);">${inv.notes}</p>` : ''}
                             </div>
-                            <div>
-                                <table style="width:100%;border-collapse:collapse;">
+                            <div class="invoice-totals-wrapper">
+                                <table class="invoice-totals-table" style="width:100%;border-collapse:collapse;">
                                     <tr><td style="padding:8px 0;text-align:right;color:var(--color-text-muted);font-size:13px;">Subtotal</td><td style="padding:8px 0;text-align:right;font-weight:500;font-size:13px;">${App.formatCurrency(inv.subtotal, inv.currency)}</td></tr>
                                     ${inv.discount_amount > 0 ? `<tr><td style="padding:8px 0;text-align:right;color:var(--color-text-muted);font-size:13px;">Descuento</td><td style="padding:8px 0;text-align:right;font-weight:500;font-size:13px;">-${App.formatCurrency(inv.discount_amount, inv.currency)}</td></tr>` : ''}
                                     ${inv.tax_amount > 0 ? `<tr><td style="padding:8px 0;text-align:right;color:var(--color-text-muted);font-size:13px;">ITBIS (${inv.tax_rate}%)</td><td style="padding:8px 0;text-align:right;font-weight:500;font-size:13px;">${App.formatCurrency(inv.tax_amount, inv.currency)}</td></tr>` : ''}

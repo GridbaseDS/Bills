@@ -1986,6 +1986,12 @@ textarea.form-control { resize: vertical; min-height: 80px; }
 
   .tab-link svg { width: 20px; height: 20px; margin-bottom: 3px; }
 
+  /* Invoice Mobile Fixes */
+  .invoice-meta-right.text-right { text-align: left !important; margin-top: 16px; }
+  .table-responsive { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .invoice-totals-wrapper { margin-top: 16px; border-top: 1px solid var(--color-border); padding-top: 16px; }
+  .invoice-totals-table td { font-size: 14px !important; }
+  .invoice-actions .btn { flex: 1 1 calc(50% - 4px) !important; margin-bottom: 0px; }
 }
 
 @media (min-width: 641px) { .mobile-tab-bar { display: none !important; } }

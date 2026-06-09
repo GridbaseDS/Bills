@@ -107,9 +107,12 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/settings/reset-database', [SettingController::class, 'resetDatabase'])->middleware('role:admin');
     Route::post('/settings/upload-certificate', [SettingController::class, 'uploadCertificate'])->middleware('role:admin');
 
-    // DGII Tests & User Management (Admin only)
+    // DGII Tests & User Management
     Route::middleware('role:admin')->group(function () {
         Route::apiResource('users', UserController::class);
+    });
+
+    Route::middleware('role:admin,contador')->group(function () {
         Route::post('/dgii/run-tests', [DgiiTestUIController::class, 'runTests']);
         Route::post('/dgii/diagnose', [DgiiTestUIController::class, 'diagnose']);
         Route::post('/dgii/run-aprobaciones', [DgiiTestUIController::class, 'runAprobaciones']);

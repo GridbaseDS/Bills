@@ -1,5 +1,5 @@
-// GridBase Bills — Service Worker v8
-const CACHE_NAME = 'gridbase-bills-v8';
+// GridBase Bills — Service Worker v9
+const CACHE_NAME = 'gridbase-bills-v9';
 const STATIC_ASSETS = [
   '/',
   '/assets/css/app.css?v=49',

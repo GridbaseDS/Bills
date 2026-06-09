@@ -54,6 +54,19 @@ class DgiiAuthService
     }
 
     /**
+     * Clears the cached DGII token (useful if we receive a 401 Unauthorized from DGII).
+     */
+    public function clearToken(array $settings): void
+    {
+        $env = $settings['dgii_env'] ?? 'testing';
+        $rncEmisor = preg_replace('/[^0-9]/', '', $settings['company_tax_id'] ?? '');
+        $cacheKey = "dgii_bearer_token_{$rncEmisor}_{$env}";
+        
+        Cache::forget($cacheKey);
+        Log::info("[DgiiAuthService] Caché de token DGII invalidado para el entorno {$env}.");
+    }
+
+    /**
      * Executes the seed fetch -> sign -> validate token flow.
      */
     protected function requestNewToken(array $settings, ?int $invoiceId = null, ?string $encf = null, ?string $ecfType = null): array

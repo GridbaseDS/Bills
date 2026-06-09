@@ -161,6 +161,15 @@ class EcfManagerService
             $env = $settings['dgii_env'] ?? 'testing';
             $result = $this->apiService->submitInvoice($signedXml, $token, $env, false, $invoice->id, $invoice->encf, $invoice->ecf_type);
 
+            // Retry once if DGII returns HTTP 401 Unauthorized (invalid/expired token on DGII's end despite cache)
+            if (!$result['success'] && strpos((string)$result['errors'], 'HTTP 401') !== false) {
+                Log::warning("[EcfManagerService] Recibido HTTP 401 de DGII. Invalidando token y reintentando...");
+                $this->authService->clearToken($settings);
+                
+                $token = $this->authService->getValidToken($settings, $invoice->id, $invoice->encf, $invoice->ecf_type);
+                $result = $this->apiService->submitInvoice($signedXml, $token, $env, false, $invoice->id, $invoice->encf, $invoice->ecf_type);
+            }
+
             // 7. Update database based on outcome
             $updateData = [
                 'dgii_status' => $result['status'],
@@ -258,6 +267,14 @@ class EcfManagerService
         $token = $this->authService->getValidToken($settings, $invoice->id, $invoice->encf, $invoice->ecf_type);
         $env = $settings['dgii_env'] ?? 'testing';
         $rfceResult = $this->apiService->submitInvoice($signedRfce, $token, $env, true, $invoice->id, $invoice->encf, $invoice->ecf_type);
+
+        if (!$rfceResult['success'] && strpos((string)$rfceResult['errors'], 'HTTP 401') !== false) {
+            Log::warning("[EcfManagerService] Recibido HTTP 401 de DGII en RFCE. Invalidando token y reintentando...");
+            $this->authService->clearToken($settings);
+            
+            $token = $this->authService->getValidToken($settings, $invoice->id, $invoice->encf, $invoice->ecf_type);
+            $rfceResult = $this->apiService->submitInvoice($signedRfce, $token, $env, true, $invoice->id, $invoice->encf, $invoice->ecf_type);
+        }
 
         Log::info("[EcfManagerService] RFCE result: " . json_encode($rfceResult));
 

@@ -216,7 +216,7 @@ class AuthController extends Controller
         $user->last_login = now();
         $user->save();
         
-        Auth::login($user, true); // Login with "remember me" to persist longer if possible, though session works
+        Auth::login($user); // Login without 'remember me' since we don't have remember_token column
         $request->session()->regenerate();
 
         return response()->json([

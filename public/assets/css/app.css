@@ -1837,16 +1837,15 @@ textarea.form-control { resize: vertical; min-height: 80px; }
 
   .login-brand {
     position: static;
-    display: flex; align-items: center; gap: 8px;
-    padding: 24px 24px 0;
+    display: flex; align-items: center; justify-content: flex-start;
+    padding: 24px 16px 0;
   }
   .login-brand img { height: 28px; }
-  .login-brand-name { display: inline; }
 
   .login-form-wrap {
     position: relative; z-index: 1;
     background: #fff;
-    margin: 0 20px; padding: 24px 20px 28px;
+    margin: 0 16px; padding: 24px 16px 28px;
     border-radius: 0;
     box-shadow: none;
     max-width: 100%;

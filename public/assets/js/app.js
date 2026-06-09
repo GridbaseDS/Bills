@@ -356,7 +356,6 @@ window.App = {
                 <div class="login-left">
                     <div class="login-brand">
                         <img src="${cachedLogo}" alt="Logo">
-                        <span class="login-brand-name">Grid</span>
                     </div>
                     <div class="login-form-wrap">
                         <h1 class="login-title">Bienvenido</h1>

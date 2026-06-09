@@ -124,6 +124,18 @@ const ClientsModule = {
             const s = data.stats;
 
             container.innerHTML = `
+                <style>
+                    .grid-metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 24px; }
+                    .metric-card { background: var(--bg-card); border: 1px solid var(--color-border); border-radius: var(--radius-xl); padding: 20px 24px; box-shadow: var(--shadow-sm); display: flex; flex-direction: column; }
+                    .metric-header { display: flex; align-items: center; margin-bottom: 16px; }
+                    .metric-icon-box { width: 44px; height: 44px; border-radius: var(--radius-lg); background: var(--bg-hover); display: flex; align-items: center; justify-content: center; color: var(--color-text-secondary); }
+                    .metric-icon-box svg { width: 22px; height: 22px; stroke-width: 2.5; }
+                    .metric-icon-box.green { background: var(--color-success-bg); color: var(--color-success-icon); }
+                    .metric-icon-box.red { background: var(--color-danger-bg); color: var(--color-danger-icon); }
+                    .metric-icon-box.purple { background: rgba(139, 92, 246, 0.15); color: #8B5CF6; }
+                    .metric-value { font-size: 28px; font-weight: 800; color: var(--color-text-primary); line-height: 1.1; letter-spacing: -0.02em; }
+                    .metric-title { font-size: 13px; font-weight: 500; color: var(--color-text-muted); margin-top: 6px; }
+                </style>
                 <div style="margin-bottom:12px;">
                     <a href="#clientes" style="color:var(--color-text-muted);text-decoration:none;font-size:13px;">← Clientes</a>
                     <span style="color:var(--color-text-muted);font-size:13px;"> / </span>

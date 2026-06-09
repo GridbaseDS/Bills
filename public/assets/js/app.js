@@ -94,6 +94,7 @@ window.App = {
                 
                 // Cache branding elements in localStorage
                 if (settings.company_logo) localStorage.setItem('company_logo', settings.company_logo);
+                if (settings.login_logo) localStorage.setItem('login_logo', settings.login_logo);
                 if (settings.company_favicon) localStorage.setItem('company_favicon', settings.company_favicon);
                 this.updateFavicon();
                 this.updateTitle();
@@ -137,6 +138,7 @@ window.App = {
                 
                 // Cache branding elements in localStorage
                 if (settings.company_logo) localStorage.setItem('company_logo', settings.company_logo);
+                if (settings.login_logo) localStorage.setItem('login_logo', settings.login_logo);
                 if (settings.company_favicon) localStorage.setItem('company_favicon', settings.company_favicon);
                 this.updateFavicon();
                 this.updateTitle();
@@ -348,7 +350,7 @@ window.App = {
        LOGIN — Gridbase Design Kit
        ═══════════════════════════════════════════════ */
     renderLogin() {
-        const cachedLogo = localStorage.getItem('company_logo') || 'https://gridbase.com.do/wp-content/uploads/2025/02/cropped-imagen_2026-03-16_154126791.png';
+        const cachedLogo = localStorage.getItem('login_logo') || localStorage.getItem('company_logo') || 'https://gridbase.com.do/wp-content/uploads/2025/02/cropped-imagen_2026-03-16_154126791.png';
         const companyName = localStorage.getItem('company_name') || this.state.settings?.company_name || 'Bills';
         const app = document.getElementById('app');
         app.innerHTML = `
@@ -418,7 +420,7 @@ window.App = {
     },
 
     render2FA(setupMode, tempSecret, qrUri) {
-        const cachedLogo = localStorage.getItem('company_logo') || 'https://gridbase.com.do/wp-content/uploads/2025/02/cropped-imagen_2026-03-16_154126791.png';
+        const cachedLogo = localStorage.getItem('login_logo') || localStorage.getItem('company_logo') || 'https://gridbase.com.do/wp-content/uploads/2025/02/cropped-imagen_2026-03-16_154126791.png';
         const app = document.getElementById('app');
         
         let formContent = '';
@@ -570,7 +572,7 @@ window.App = {
     },
 
     renderPinSetup() {
-        const cachedLogo = localStorage.getItem('company_logo') || 'https://gridbase.com.do/wp-content/uploads/2025/02/cropped-imagen_2026-03-16_154126791.png';
+        const cachedLogo = localStorage.getItem('login_logo') || localStorage.getItem('company_logo') || 'https://gridbase.com.do/wp-content/uploads/2025/02/cropped-imagen_2026-03-16_154126791.png';
         const app = document.getElementById('app');
         
         app.innerHTML = `
@@ -638,7 +640,7 @@ window.App = {
     },
 
     renderPinLogin(email) {
-        const cachedLogo = localStorage.getItem('company_logo') || 'https://gridbase.com.do/wp-content/uploads/2025/02/cropped-imagen_2026-03-16_154126791.png';
+        const cachedLogo = localStorage.getItem('login_logo') || localStorage.getItem('company_logo') || 'https://gridbase.com.do/wp-content/uploads/2025/02/cropped-imagen_2026-03-16_154126791.png';
         const app = document.getElementById('app');
         
         app.innerHTML = `

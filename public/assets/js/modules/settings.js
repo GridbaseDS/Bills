@@ -76,9 +76,17 @@ export default {
                                 <div class="form-group">
                                     <label class="form-label">Logo de Interfaz (URL)</label>
                                     <input type="url" id="s_company_logo" class="form-control" placeholder="https://miempresa.com/logo.png" value="${s.company_logo || ''}">
-                                    <div style="font-size:11px;color:var(--color-text-muted);margin-top:4px;">Logo que aparece en el menú lateral y pantalla de login. Recomendado: fondo transparente (PNG/SVG).</div>
+                                    <div style="font-size:11px;color:var(--color-text-muted);margin-top:4px;">Logo que aparece en el menú lateral. Recomendado: fondo transparente (PNG/SVG).</div>
                                     <div id="logo-preview" style="margin-top:10px;display:${s.company_logo ? 'block' : 'none'};">
                                         <img id="logo-preview-img" src="${s.company_logo || ''}" style="max-height:40px;max-width:180px;border:1px solid var(--color-border);border-radius:var(--radius-md);padding:6px;background:var(--bg-hover);" onerror="this.style.display='none'" onload="this.style.display='inline-block'">
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Logo de Login (URL)</label>
+                                    <input type="url" id="s_login_logo" class="form-control" placeholder="https://miempresa.com/login-logo.png" value="${s.login_logo || ''}">
+                                    <div style="font-size:11px;color:var(--color-text-muted);margin-top:4px;">Logo que aparece exclusivamente en la pantalla de inicio de sesión.</div>
+                                    <div id="login-logo-preview" style="margin-top:10px;display:${s.login_logo ? 'block' : 'none'};">
+                                        <img id="login-logo-preview-img" src="${s.login_logo || ''}" style="max-height:40px;max-width:180px;border:1px solid var(--color-border);border-radius:var(--radius-md);padding:6px;background:var(--bg-hover);" onerror="this.style.display='none'" onload="this.style.display='inline-block'">
                                     </div>
                                 </div>
                                 <div class="form-group">
@@ -599,6 +607,7 @@ export default {
                     sidebar_text_color: document.getElementById('s_sidebar_text_color').value,
                     sidebar_hover_color: document.getElementById('s_sidebar_hover_color').value,
                     company_logo: document.getElementById('s_company_logo').value,
+                    login_logo: document.getElementById('s_login_logo').value,
                     company_favicon: document.getElementById('s_company_favicon').value,
                     default_currency: document.getElementById('s_default_currency').value,
                     default_tax_rate: document.getElementById('s_default_tax_rate').value,
@@ -658,12 +667,15 @@ export default {
                     window.App.showToast('Configuraciones guardadas');
                     
                     // Update logo + favicon immediately
-                    if (settingsToUpdate.company_logo) {
+                    if (settingsToUpdate.company_logo !== undefined) {
                         localStorage.setItem('company_logo', settingsToUpdate.company_logo);
                         const sidebarImg = document.querySelector('.sidebar-logo img');
                         if (sidebarImg) sidebarImg.src = settingsToUpdate.company_logo;
                     }
-                    if (settingsToUpdate.company_favicon) {
+                    if (settingsToUpdate.login_logo !== undefined) {
+                        localStorage.setItem('login_logo', settingsToUpdate.login_logo);
+                    }
+                    if (settingsToUpdate.company_favicon !== undefined) {
                         localStorage.setItem('company_favicon', settingsToUpdate.company_favicon);
                         window.App.updateFavicon();
                     }

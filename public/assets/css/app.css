@@ -1752,7 +1752,7 @@ textarea.form-control { resize: vertical; min-height: 80px; }
 .login-float-mini-text { font-size: 12px; color: #374151; font-weight: 500; }
 .login-float-mini-val { font-size: 13px; font-weight: 700; color: #111827; }
 
-/* Mobile: full hero + form stacked layout */
+/* Mobile: hero on top + form below */
 @media (max-width: 768px) {
   .login-page {
     flex-direction: column;
@@ -1761,7 +1761,7 @@ textarea.form-control { resize: vertical; min-height: 80px; }
     -webkit-overflow-scrolling: touch;
   }
 
-  /* Hero section on TOP — visible on mobile */
+  /* Hero section — visible on mobile, reordered to top */
   .login-right {
     display: flex !important;
     flex-direction: column !important;
@@ -1769,7 +1769,6 @@ textarea.form-control { resize: vertical; min-height: 80px; }
     order: -1;
     width: 100%;
     height: auto !important;
-    min-height: auto;
     overflow: visible !important;
     padding: 40px 24px 32px;
     border-radius: 0 0 32px 32px;
@@ -1777,8 +1776,9 @@ textarea.form-control { resize: vertical; min-height: 80px; }
     justify-content: flex-start;
   }
   .login-right::before { border-radius: 0 0 32px 32px; }
+
   .login-hero-text {
-    max-width: 100%; text-align: left; width: 100%;
+    max-width: 100%; width: 100%; text-align: left;
     display: block !important; position: relative; z-index: 2;
   }
   .login-hero-text h2 {
@@ -1790,12 +1790,10 @@ textarea.form-control { resize: vertical; min-height: 80px; }
     color: rgba(255,255,255,0.5); line-height: 1.4;
   }
 
-  /* Floating card — compact */
+  /* Floating stat card — compact */
   .login-float-card {
-    margin-top: 24px;
-    padding: 18px 20px;
-    max-width: 100%;
-    width: 100%;
+    margin-top: 24px; padding: 18px 20px;
+    max-width: 100%; width: 100%;
     border-radius: 14px;
     animation: none !important;
     box-shadow: 0 8px 30px rgba(0,0,0,0.2);
@@ -1813,10 +1811,8 @@ textarea.form-control { resize: vertical; min-height: 80px; }
 
   /* Mini floating card — compact */
   .login-float-mini {
-    margin-top: 12px;
-    padding: 12px 16px;
-    max-width: 220px;
-    border-radius: 10px;
+    margin-top: 12px; padding: 12px 16px;
+    max-width: 220px; border-radius: 10px;
     animation: none !important;
     box-shadow: 0 6px 20px rgba(0,0,0,0.12);
     align-self: flex-start;
@@ -1828,7 +1824,7 @@ textarea.form-control { resize: vertical; min-height: 80px; }
   .login-float-mini-text { font-size: 11px; }
   .login-float-mini-val { font-size: 12px; }
 
-  /* Form section BELOW hero */
+  /* Form section — below hero */
   .login-left {
     max-width: 100%; min-width: 0;
     padding: 0 0 32px 0;

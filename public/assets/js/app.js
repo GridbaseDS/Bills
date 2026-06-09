@@ -356,6 +356,7 @@ window.App = {
                 <div class="login-left">
                     <div class="login-brand">
                         <img src="${cachedLogo}" alt="Logo">
+                        <span class="login-brand-name">Grid</span>
                     </div>
                     <div class="login-form-wrap">
                         <h1 class="login-title">Bienvenido</h1>
@@ -380,7 +381,7 @@ window.App = {
                 <div class="login-right">
                     <div class="login-hero-text">
                         <h2>Simplifica<br>tu Facturaci\u00f3n,<br><span>hoy</span></h2>
-                        <p class="login-hero-sub">Gestiona facturas, cotizaciones y clientes desde una plataforma dise\u00f1ada para tu negocio.</p>
+                        <p class="login-hero-sub">Simplifica tu facturaci\u00f3n, hoy. Gestiona facturas y clientes desde una sola plataforma.</p>
                     </div>
                     <div class="login-float-card">
                         <div class="login-float-label">Cobrado Este Mes</div>

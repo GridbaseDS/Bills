@@ -1,4 +1,61 @@
 <?php
+if (!function_exists('getMonochromeLogo')) {
+    function getMonochromeLogo($url) {
+        if (empty($url)) return '';
+        try {
+            $imageContent = @file_get_contents($url);
+            if (!$imageContent) return $url;
+            
+            $im = @imagecreatefromstring($imageContent);
+            if (!$im) return $url;
+            
+            $width = imagesx($im);
+            $height = imagesy($im);
+            
+            $isPng = (strpos($url, '.png') !== false || substr($imageContent, 1, 3) === 'PNG');
+            
+            if ($isPng) {
+                $newImg = imagecreatetruecolor($width, $height);
+                imagealphablending($newImg, false);
+                imagesavealpha($newImg, true);
+                $transparent = imagecolorallocatealpha($newImg, 0, 0, 0, 127);
+                imagefill($newImg, 0, 0, $transparent);
+                
+                for ($x = 0; $x < $width; $x++) {
+                    for ($y = 0; $y < $height; $y++) {
+                        $rgba = imagecolorat($im, $x, $y);
+                        $colors = imagecolorsforindex($im, $rgba);
+                        $alpha = $colors['alpha'];
+                        
+                        if ($alpha < 127) {
+                            $black = imagecolorallocatealpha($newImg, 0, 0, 0, $alpha);
+                            imagesetpixel($newImg, $x, $y, $black);
+                        }
+                    }
+                }
+                $renderImg = $newImg;
+            } else {
+                imagefilter($im, IMG_FILTER_GRAYSCALE);
+                imagefilter($im, IMG_FILTER_CONTRAST, -30);
+                $renderImg = $im;
+            }
+            
+            ob_start();
+            imagepng($renderImg);
+            $imageData = ob_get_clean();
+            
+            imagedestroy($im);
+            if ($isPng) {
+                imagedestroy($renderImg);
+            }
+            
+            return 'data:image/png;base64,' . base64_encode($imageData);
+        } catch (\Throwable $e) {
+            return $url;
+        }
+    }
+}
+
 $isQuote   = isset($is_quote) && $is_quote;
 $isEcf     = !$isQuote && ($invoice['is_ecf'] ?? false);
 $ecfType   = (int)($invoice['ecf_type'] ?? 32);
@@ -209,7 +266,7 @@ $pageHeight = max(120, $pageHeight + 10);
 <div class="text-center">
     @if(!empty($settings['company_logo']) || !empty($settings['pdf_logo_url']))
         <div style="margin-bottom: 4px;">
-            <img src="{{ $settings['company_logo'] ?: $settings['pdf_logo_url'] }}" style="max-width: 60mm; max-height: 18mm; display: inline-block; object-fit: contain;" alt="Logo">
+            <img src="{{ getMonochromeLogo($settings['company_logo'] ?: $settings['pdf_logo_url']) }}" style="max-width: 60mm; max-height: 18mm; display: inline-block; object-fit: contain;" alt="Logo">
         </div>
     @else
         <div class="company-name">{{ $company['name'] ?? 'GridBase' }}</div>

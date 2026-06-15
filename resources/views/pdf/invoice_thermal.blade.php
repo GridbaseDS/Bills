@@ -268,6 +268,7 @@ $pageHeight = max(120, $pageHeight + 10);
         <div style="margin-bottom: 4px;">
             <img src="{{ getMonochromeLogo($settings['company_logo'] ?: $settings['pdf_logo_url']) }}" style="max-width: 40mm; max-height: 12mm; display: inline-block; object-fit: contain;" alt="Logo">
         </div>
+        <div class="company-name">{{ $company['name'] ?? 'GridBase' }}</div>
     @else
         <div class="company-name">{{ $company['name'] ?? 'GridBase' }}</div>
     @endif

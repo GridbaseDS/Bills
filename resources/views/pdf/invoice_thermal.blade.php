@@ -6,7 +6,7 @@
     <style>
         @page {
             size: 80mm 230mm;
-            margin: 4mm 4mm 6mm 4mm;
+            margin: 0;
         }
         * {
             margin: 0;
@@ -19,7 +19,7 @@
             color: #000000;
             background: #FFFFFF;
             line-height: 1.3;
-            width: 100%;
+            margin: 4mm 4mm 6mm 4mm;
         }
         .text-center { text-align: center; }
         .text-right { text-align: right; }
@@ -131,6 +131,7 @@
     </style>
 </head>
 <body>
+<div style="height: 4mm; width: 100%;"></div>
 <?php
 $isQuote   = isset($is_quote) && $is_quote;
 $isEcf     = !$isQuote && ($invoice['is_ecf'] ?? false);
@@ -418,6 +419,7 @@ $hasComprador = !in_array($ecfType, [43, 47]);
     ¡Gracias por su compra!<br>
     <span style="font-size: 7px; font-weight: normal; text-transform: none;">GridBase Digital Solutions</span>
 </div>
+<div style="height: 6mm; width: 100%;"></div>
 
 </body>
 </html>

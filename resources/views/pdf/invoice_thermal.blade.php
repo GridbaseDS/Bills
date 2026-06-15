@@ -6,7 +6,7 @@
     <style>
         @page {
             size: 80mm 230mm;
-            margin: 0;
+            margin: 4mm 4mm 6mm 4mm;
         }
         * {
             margin: 0;
@@ -19,8 +19,7 @@
             color: #000000;
             background: #FFFFFF;
             line-height: 1.3;
-            width: 80mm;
-            padding: 4mm 4mm 6mm 4mm;
+            width: 100%;
         }
         .text-center { text-align: center; }
         .text-right { text-align: right; }
@@ -95,12 +94,12 @@
         }
         .totals-table .label {
             text-align: right;
-            padding-right: 10px;
+            padding-right: 8px;
         }
         .totals-table .val {
             text-align: right;
             font-weight: bold;
-            width: 25mm;
+            white-space: nowrap;
         }
         .balance-row td {
             border-top: 1px dashed #000000;
@@ -114,8 +113,8 @@
             text-align: center;
         }
         .qr-section img {
-            width: 42mm;
-            height: 42mm;
+            width: 30mm;
+            height: 30mm;
             display: inline-block;
         }
         .security-info {
@@ -241,10 +240,10 @@ $hasComprador = !in_array($ecfType, [43, 47]);
 <table class="items-table">
     <thead>
         <tr>
-            <th style="width: 15%;">CANT</th>
-            <th style="width: 45%;">DESC</th>
-            <th style="width: 20%; text-align: right;">PRECIO</th>
-            <th style="width: 20%; text-align: right;">TOTAL</th>
+            <th style="width: 10%;">CANT</th>
+            <th style="width: 44%;">DESC</th>
+            <th style="width: 23%; text-align: right;">PRECIO</th>
+            <th style="width: 23%; text-align: right;">TOTAL</th>
         </tr>
     </thead>
     <tbody>
@@ -253,10 +252,10 @@ $hasComprador = !in_array($ecfType, [43, 47]);
                 $itemAmount = (float)($item['amount'] ?? ($item['quantity'] * $item['unit_price']));
             ?>
             <tr>
-                <td>{{ number_format($item['quantity'], 1) }}</td>
+                <td style="white-space: nowrap;">{{ number_format($item['quantity'], 1) }}</td>
                 <td class="item-desc">{{ htmlspecialchars($item['description']) }}</td>
-                <td class="text-right">{{ number_format($item['unit_price'], 2) }}</td>
-                <td class="text-right bold">{{ number_format($itemAmount, 2) }}</td>
+                <td class="text-right" style="white-space: nowrap;">{{ number_format($item['unit_price'], 2) }}</td>
+                <td class="text-right bold" style="white-space: nowrap;">{{ number_format($itemAmount, 2) }}</td>
             </tr>
         @endforeach
     </tbody>

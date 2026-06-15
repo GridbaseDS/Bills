@@ -1,3 +1,74 @@
+<?php
+$isQuote   = isset($is_quote) && $is_quote;
+$isEcf     = !$isQuote && ($invoice['is_ecf'] ?? false);
+$ecfType   = (int)($invoice['ecf_type'] ?? 32);
+$docName   = $isQuote ? 'Cotización' : ($isEcf ? 'e-CF' : 'Factura');
+$docNum    = $isQuote ? ($invoice['quote_number'] ?? '') : ($isEcf ? ($invoice['encf'] ?? '') : ($invoice['invoice_number'] ?? ''));
+$dateLabel = $isQuote ? 'Validez' : 'Vence';
+$dateField = $isQuote ? ($invoice['expiry_date'] ?? $invoice['due_date'] ?? '') : ($invoice['due_date'] ?? '');
+
+$showFechaVencimiento = $isEcf && !in_array($ecfType, [32, 34]);
+$fechaVencimientoSeq  = $settings['dgii_ncf_expiry_date'] ?? '31/12/2028';
+if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $fechaVencimientoSeq)) {
+    $fechaVencimientoSeq = date('d/m/Y', strtotime($fechaVencimientoSeq));
+}
+
+// ECF type names
+$ecfTypeNames = [
+    31 => 'Factura Crédito Fiscal Electrónica',
+    32 => 'Factura Consumo Electrónica',
+    33 => 'Nota de Débito Electrónica',
+    34 => 'Nota de Crédito Electrónica',
+    41 => 'Comprobante de Compras Electrónico',
+    43 => 'Gastos Menores Electrónico',
+    44 => 'Regímenes Especiales Electrónico',
+    45 => 'Comprobante Gubernamental Electrónico',
+    46 => 'Comprobante de Exportaciones',
+    47 => 'Pagos al Exterior Electrónico',
+];
+$ecfTypeName = $isEcf ? ($ecfTypeNames[$ecfType] ?? 'Comprobante Electrónico') : $docName;
+
+$badgeText = 'BORRADOR';
+if (!empty($invoice['status'])) {
+    if ($invoice['status'] === 'paid')    { $badgeText = 'PAGADA'; }
+    elseif ($invoice['status'] === 'overdue') { $badgeText = 'VENCIDA'; }
+    elseif ($invoice['status'] === 'sent' || $invoice['status'] === 'pending') { $badgeText = 'PENDIENTE'; }
+    elseif ($invoice['status'] === 'partial') { $badgeText = 'PAGO PARCIAL'; }
+}
+
+// Calculate page height dynamically in mm
+$itemCount = count($invoice['items'] ?? $items ?? []);
+$baseHeight = 85;
+
+$itemsHeight = 0;
+foreach (($invoice['items'] ?? $items ?? []) as $item) {
+    $descLength = strlen($item['description'] ?? '');
+    $lines = max(1, ceil($descLength / 16));
+    $itemsHeight += $lines * 4.5 + 4;
+}
+
+$totalsHeight = 15;
+if (($invoice['discount_amount'] ?? 0) > 0) { $totalsHeight += 4; }
+if (($invoice['tax_amount'] ?? 0) > 0) { $totalsHeight += 4; }
+if (($invoice['amount_paid'] ?? 0) > 0) { $totalsHeight += 8; }
+if (!empty($invoice['currency']) && $invoice['currency'] !== 'DOP') { $totalsHeight += 8; }
+
+$notesHeight = 0;
+if (!empty($invoice['notes'])) {
+    $notesHeight += ceil(strlen($invoice['notes']) / 30) * 4 + 6;
+}
+if (!empty($invoice['terms'])) {
+    $notesHeight += ceil(strlen($invoice['terms']) / 30) * 4 + 6;
+}
+
+$dgiiHeight = 0;
+if (!$isQuote && $isEcf) {
+    $dgiiHeight = 55;
+}
+
+$pageHeight = $baseHeight + $itemsHeight + $totalsHeight + $notesHeight + $dgiiHeight;
+$pageHeight = max(120, $pageHeight + 10);
+?>
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -5,7 +76,7 @@
     <title>{{ $isQuote ?? false ? 'Cotización' : 'Factura' }}</title>
     <style>
         @page {
-            size: 80mm 230mm;
+            size: 80mm {{ $pageHeight }}mm;
             margin: 0;
         }
         * {
@@ -132,44 +203,7 @@
 </head>
 <body>
 <div style="height: 4mm; width: 100%;"></div>
-<?php
-$isQuote   = isset($is_quote) && $is_quote;
-$isEcf     = !$isQuote && ($invoice['is_ecf'] ?? false);
-$ecfType   = (int)($invoice['ecf_type'] ?? 32);
-$docName   = $isQuote ? 'Cotización' : ($isEcf ? 'e-CF' : 'Factura');
-$docNum    = $isQuote ? ($invoice['quote_number'] ?? '') : ($isEcf ? ($invoice['encf'] ?? '') : ($invoice['invoice_number'] ?? ''));
-$dateLabel = $isQuote ? 'Validez' : 'Vence';
-$dateField = $isQuote ? ($invoice['expiry_date'] ?? $invoice['due_date'] ?? '') : ($invoice['due_date'] ?? '');
 
-$showFechaVencimiento = $isEcf && !in_array($ecfType, [32, 34]);
-$fechaVencimientoSeq  = $settings['dgii_ncf_expiry_date'] ?? '31/12/2028';
-if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $fechaVencimientoSeq)) {
-    $fechaVencimientoSeq = date('d/m/Y', strtotime($fechaVencimientoSeq));
-}
-
-// ECF type names
-$ecfTypeNames = [
-    31 => 'Factura Crédito Fiscal Electrónica',
-    32 => 'Factura Consumo Electrónica',
-    33 => 'Nota de Débito Electrónica',
-    34 => 'Nota de Crédito Electrónica',
-    41 => 'Comprobante de Compras Electrónico',
-    43 => 'Gastos Menores Electrónico',
-    44 => 'Regímenes Especiales Electrónico',
-    45 => 'Comprobante Gubernamental Electrónico',
-    46 => 'Comprobante de Exportaciones',
-    47 => 'Pagos al Exterior Electrónico',
-];
-$ecfTypeName = $isEcf ? ($ecfTypeNames[$ecfType] ?? 'Comprobante Electrónico') : $docName;
-
-$badgeText = 'BORRADOR';
-if (!empty($invoice['status'])) {
-    if ($invoice['status'] === 'paid')    { $badgeText = 'PAGADA'; }
-    elseif ($invoice['status'] === 'overdue') { $badgeText = 'VENCIDA'; }
-    elseif ($invoice['status'] === 'sent' || $invoice['status'] === 'pending') { $badgeText = 'PENDIENTE'; }
-    elseif ($invoice['status'] === 'partial') { $badgeText = 'PAGO PARCIAL'; }
-}
-?>
 
 <!-- ── EMISOR (COMPANY) ── -->
 <div class="text-center">

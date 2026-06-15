@@ -48,6 +48,7 @@ class DatabaseSeeder extends Seeder
             ['setting_key' => 'company_website', 'setting_value' => 'https://gridbase.com.do', 'setting_group' => 'company'],
             ['setting_key' => 'default_currency', 'setting_value' => 'USD', 'setting_group' => 'invoice'],
             ['setting_key' => 'default_tax_rate', 'setting_value' => '0.00', 'setting_group' => 'invoice'],
+            ['setting_key' => 'invoice_pdf_template', 'setting_value' => 'normal', 'setting_group' => 'invoice'],
             ['setting_key' => 'tax_label', 'setting_value' => 'Tax', 'setting_group' => 'invoice'],
             ['setting_key' => 'invoice_prefix', 'setting_value' => 'GBS-', 'setting_group' => 'invoice'],
             ['setting_key' => 'invoice_next_number', 'setting_value' => '1001', 'setting_group' => 'invoice'],

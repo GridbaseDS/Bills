@@ -151,6 +151,14 @@ export default {
                                     </select>
                                     <div style="font-size:11px;color:var(--color-text-muted);margin-top:4px;">Barra con datos de contacto al pie del PDF</div>
                                 </div>
+                                <div class="form-group">
+                                    <label class="form-label">Plantilla de Factura por Defecto</label>
+                                    <select id="s_invoice_pdf_template" class="form-control" style="width:200px;">
+                                        <option value="normal" ${s.invoice_pdf_template === 'thermal' ? '' : 'selected'}>Normal (Carta/A4)</option>
+                                        <option value="thermal" ${s.invoice_pdf_template === 'thermal' ? 'selected' : ''}>Ticket Térmico (80mm)</option>
+                                    </select>
+                                    <div style="font-size:11px;color:var(--color-text-muted);margin-top:4px;">Define el formato de factura predeterminado en el sistema</div>
+                                </div>
                             </div>
 
                             <!-- Live Preview -->
@@ -649,6 +657,7 @@ export default {
                     pdf_accent_color: document.getElementById('s_pdf_accent_color').value,
                     pdf_logo_url: document.getElementById('s_pdf_logo_url').value,
                     pdf_show_footer: document.getElementById('s_pdf_show_footer').value,
+                    invoice_pdf_template: document.getElementById('s_invoice_pdf_template').value,
                 };
                 try {
                     await window.App.api('settings', { method: 'POST', body: settingsToUpdate });

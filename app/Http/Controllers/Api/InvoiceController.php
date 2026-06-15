@@ -99,7 +99,9 @@ class InvoiceController extends Controller
                         'items'   => $invoice->items->toArray(),
                         'settings' => $settings,
                     ];
-                    $pdfContent = \Barryvdh\DomPDF\Facade\Pdf::loadView('pdf.invoice', $pdfData)->output();
+                    $template = request()->query('template', $settings['invoice_pdf_template'] ?? 'normal');
+                    $view = ($template === 'thermal') ? 'pdf.invoice_thermal' : 'pdf.invoice';
+                    $pdfContent = \Barryvdh\DomPDF\Facade\Pdf::loadView($view, $pdfData)->output();
                     $pdfFilename = "Factura-{$invoice->invoice_number}.pdf";
 
                     $waResult = $whatsappService->sendInvoice($invoice, $invoice->client->whatsapp, $paymentLink, $pdfContent, $pdfFilename);
@@ -145,7 +147,9 @@ class InvoiceController extends Controller
             'client' => $invoice->client->toArray(), 'items' => $invoice->items->toArray(),
             'settings' => $settings,
         ];
-        $pdfContent = \Barryvdh\DomPDF\Facade\Pdf::loadView('pdf.invoice', $pdfData)->output();
+        $template = Setting::get('invoice_pdf_template', 'normal');
+        $view = ($template === 'thermal') ? 'pdf.invoice_thermal' : 'pdf.invoice';
+        $pdfContent = \Barryvdh\DomPDF\Facade\Pdf::loadView($view, $pdfData)->output();
 
         // Generate payment link
         if (!$invoice->isPaymentTokenValid()) {
@@ -317,7 +321,9 @@ class InvoiceController extends Controller
             'items'    => $invoice->items->toArray(),
             'settings' => $settings,
         ];
-        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('pdf.invoice', $pdfData);
+        $template = Setting::get('invoice_pdf_template', 'normal');
+        $view = ($template === 'thermal') ? 'pdf.invoice_thermal' : 'pdf.invoice';
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView($view, $pdfData);
         $pdfContent = $pdf->output();
 
         $statusStr = strtoupper($invoice->status);
@@ -398,7 +404,9 @@ class InvoiceController extends Controller
             'settings' => $settings
         ];
 
-        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('pdf.invoice', $data);
+        $template = request()->query('template', $settings['invoice_pdf_template'] ?? 'normal');
+        $view = ($template === 'thermal') ? 'pdf.invoice_thermal' : 'pdf.invoice';
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView($view, $data);
         
         if (request()->has('download')) {
             return $pdf->download('Factura-' . $invoice->invoice_number . '.pdf');
@@ -464,7 +472,9 @@ class InvoiceController extends Controller
                 'items' => $invoice->items->toArray(),
                 'settings' => $settings
             ];
-            $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('pdf.invoice', $pdfData);
+            $template = Setting::get('invoice_pdf_template', 'normal');
+            $view = ($template === 'thermal') ? 'pdf.invoice_thermal' : 'pdf.invoice';
+            $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView($view, $pdfData);
             $pdfContent = $pdf->output();
 
             // Build styled email data

@@ -554,7 +554,7 @@ const DashboardModule = {
                         <!-- Main Balance Card -->
                         <div class="db-kpi db-kpi-main">
                             <div class="db-kpi-top">
-                                <span class="db-kpi-label">Cobrado Este Mes</span>
+                                <span class="db-kpi-label">Ganancia Este Mes</span>
                             </div>
                             <div>
                                 <span class="db-kpi-amount">${App.formatCurrency(stats.revenue_this_month || 0)}</span>
@@ -567,7 +567,7 @@ const DashboardModule = {
                                     </span>
                                 ` : ''}
                             </div>
-                            <div class="db-kpi-meta">${stats.invoiced_this_month || 0} facturas emitidas</div>
+                            <div class="db-kpi-meta">${stats.invoices_this_month || 0} factura${(stats.invoices_this_month || 0) !== 1 ? 's' : ''} emitida${(stats.invoices_this_month || 0) !== 1 ? 's' : ''} este mes</div>
                             <div class="db-kpi-actions">
                                 <a href="#facturas" class="db-kpi-btn db-kpi-btn-primary">
                                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>

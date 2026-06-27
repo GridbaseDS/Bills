@@ -317,14 +317,14 @@ export default {
                                         }
                                     };
                                     const cfg = envConfig[env] || envConfig.production;
-                                    return \`<div style="background:\${cfg.bg};border:1.5px solid \${cfg.border};border-radius:var(--radius-md);padding:14px 16px;margin-bottom:18px;display:flex;align-items:flex-start;gap:12px;">
-                                        <div style="width:10px;height:10px;border-radius:50%;background:\${cfg.dot};margin-top:3px;flex-shrink:0;box-shadow:0 0 6px \${cfg.dot};"></div>
-                                        <div>
-                                            <div style="font-size:13px;font-weight:700;color:\${cfg.textColor};">\${cfg.label}</div>
-                                            <div style="font-size:12px;color:var(--color-text-muted);margin-top:3px;">\${cfg.sublabel}</div>
-                                        </div>
-                                    </div>\`;
+                                    return '<div style="background:'+cfg.bg+';border:1.5px solid '+cfg.border+';border-radius:var(--radius-md);padding:14px 16px;margin-bottom:18px;display:flex;align-items:flex-start;gap:12px;">'
+                                        + '<div style="width:10px;height:10px;border-radius:50%;background:'+cfg.dot+';margin-top:3px;flex-shrink:0;box-shadow:0 0 6px '+cfg.dot+';"></div>'
+                                        + '<div>'
+                                        + '<div style="font-size:13px;font-weight:700;color:'+cfg.textColor+';">'+cfg.label+'</div>'
+                                        + '<div style="font-size:12px;color:var(--color-text-muted);margin-top:3px;">'+cfg.sublabel+'</div>'
+                                        + '</div></div>';
                                 })()}
+
 
                                 <div class="grid-2">
                                     <div class="form-group">

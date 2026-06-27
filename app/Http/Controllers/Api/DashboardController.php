@@ -18,6 +18,11 @@ class DashboardController extends Controller
         $startOfLastMonth = $now->copy()->subMonth()->startOfMonth();
         $endOfLastMonth   = $now->copy()->subMonth()->endOfMonth();
 
+        // Plain date strings for DATE column comparisons (avoids Carbon object type issues)
+        $dateThisMonthStart  = $startOfMonth->toDateString();      // e.g. 2026-06-01
+        $dateLastMonthStart  = $startOfLastMonth->toDateString();  // e.g. 2026-05-01
+        $dateLastMonthEnd    = $endOfLastMonth->toDateString();     // e.g. 2026-05-31
+
         // ── Helper: revenue = amount collected MINUS the tax portion ──────────
         // tax_amount is ITBIS collected on behalf of the government — not profit.
         // We compute: net_paid = amount_paid * (subtotal / total)  when total > 0.
@@ -53,13 +58,22 @@ class DashboardController extends Controller
             ->selectRaw('SUM(amount_paid - IF(total > 0, tax_amount * amount_paid / total, 0)) as net')
             ->value('net') ?? 0;
 
-        // Count invoices issued this / last month using issue_date (local timezone)
-        $invoicesThisMonth = Invoice::whereDate('issue_date', '>=', $startOfMonth->toDateString())
-            ->count();
-        $invoicesLastMonth = Invoice::whereBetween('issue_date', [
-            $startOfLastMonth->toDateString(),
-            $endOfLastMonth->toDateString(),
-        ])->count();
+        // Count invoices issued this / last month using issue_date as plain date string
+        $invoicesThisMonth = Invoice::where('issue_date', '>=', $dateThisMonthStart)->count();
+        $invoicesLastMonth = Invoice::whereBetween('issue_date', [$dateLastMonthStart, $dateLastMonthEnd])->count();
+
+        // ── ITBIS / Tax summary ─────────────────────────────────────────────
+        // Tax collected this month (from issued invoices, regardless of payment)
+        $taxCollectedThisMonth = (float) Invoice::where('issue_date', '>=', $dateThisMonthStart)
+            ->sum('tax_amount');
+        // Tax collected last month
+        $taxCollectedLastMonth = (float) Invoice::whereBetween('issue_date', [$dateLastMonthStart, $dateLastMonthEnd])
+            ->sum('tax_amount');
+        // Total tax collected all time (pending to declare/pay to DGII)
+        $taxCollectedTotal = (float) Invoice::sum('tax_amount');
+        // Tax from unpaid invoices (not yet received by the business)
+        $taxPending = (float) Invoice::whereIn('status', ['sent', 'viewed', 'partial', 'overdue'])
+            ->sum('tax_amount');
 
         // Quotes stats
         $totalQuotes     = Quote::count();
@@ -126,19 +140,24 @@ class DashboardController extends Controller
 
         return response()->json([
             'stats' => [
-                'total_clients'       => $totalClients,
-                'total_revenue'       => round((float)$revenue, 2),
-                'pending_amount'      => $pending,
-                'overdue_amount'      => $overdue,
-                'overdue_count'       => $overdueCount,
-                'revenue_this_month'  => round((float)$revenueThisMonth, 2),
-                'revenue_last_month'  => round((float)$revenueLastMonth, 2),
-                'invoices_this_month' => $invoicesThisMonth,
-                'invoices_last_month' => $invoicesLastMonth,
-                'total_quotes'        => $totalQuotes,
-                'quotes_converted'    => $quotesConverted,
-                'conversion_rate'     => $conversionRate,
-                'quotes_pending'      => $quotesPending,
+                'total_clients'            => $totalClients,
+                'total_revenue'            => round((float)$revenue, 2),
+                'pending_amount'           => $pending,
+                'overdue_amount'           => $overdue,
+                'overdue_count'            => $overdueCount,
+                'revenue_this_month'       => round((float)$revenueThisMonth, 2),
+                'revenue_last_month'       => round((float)$revenueLastMonth, 2),
+                'invoices_this_month'      => $invoicesThisMonth,
+                'invoices_last_month'      => $invoicesLastMonth,
+                'total_quotes'             => $totalQuotes,
+                'quotes_converted'         => $quotesConverted,
+                'conversion_rate'          => $conversionRate,
+                'quotes_pending'           => $quotesPending,
+                // ITBIS / tax fields
+                'tax_collected_this_month' => round($taxCollectedThisMonth, 2),
+                'tax_collected_last_month' => round($taxCollectedLastMonth, 2),
+                'tax_collected_total'      => round($taxCollectedTotal, 2),
+                'tax_pending'              => round($taxPending, 2),
             ],
             'monthly_data'    => $monthlyData,
             'monthly_revenue' => $monthlyData,

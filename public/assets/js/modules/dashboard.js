@@ -537,6 +537,109 @@ const DashboardModule = {
                         .db-overdue-cell:first-child { border-right: none; }
                         .db-welcome { font-size: 17px; }
                     }
+                    /* ── Tax / ITBIS Widget ── */
+                    .db-tax-card {
+                        background: var(--bg-card);
+                        border: 1px solid var(--color-border);
+                        border-radius: var(--radius-xl);
+                        box-shadow: var(--shadow-sm);
+                        overflow: hidden;
+                    }
+                    .db-tax-head {
+                        display: flex;
+                        align-items: center;
+                        justify-content: space-between;
+                        padding: 18px 24px 14px;
+                        border-bottom: 1px solid var(--color-border);
+                    }
+                    .db-tax-title {
+                        display: flex;
+                        align-items: center;
+                        gap: 10px;
+                        font-size: 15px;
+                        font-weight: 700;
+                        color: var(--color-text-primary);
+                    }
+                    .db-tax-icon {
+                        width: 34px; height: 34px;
+                        border-radius: var(--radius-md);
+                        background: #FEF3C7;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        color: #B45309;
+                        flex-shrink: 0;
+                    }
+                    [data-theme="dark"] .db-tax-icon {
+                        background: rgba(251,191,36,0.12);
+                        color: #FCD34D;
+                    }
+                    .db-tax-icon svg { width: 17px; height: 17px; }
+                    .db-tax-badge {
+                        font-size: 11px;
+                        font-weight: 600;
+                        padding: 4px 10px;
+                        border-radius: var(--radius-full);
+                        background: #FEF3C7;
+                        color: #92400E;
+                        border: 1px solid #FDE68A;
+                    }
+                    [data-theme="dark"] .db-tax-badge {
+                        background: rgba(251,191,36,0.12);
+                        color: #FCD34D;
+                        border-color: rgba(251,191,36,0.2);
+                    }
+                    .db-tax-grid {
+                        display: grid;
+                        grid-template-columns: repeat(3, 1fr);
+                        gap: 0;
+                    }
+                    .db-tax-cell {
+                        padding: 20px 24px;
+                        border-right: 1px solid var(--color-border);
+                    }
+                    .db-tax-cell:last-child { border-right: none; }
+                    .db-tax-cell-label {
+                        font-size: 12px;
+                        font-weight: 500;
+                        color: var(--color-text-muted);
+                        text-transform: uppercase;
+                        letter-spacing: 0.04em;
+                        margin-bottom: 6px;
+                    }
+                    .db-tax-cell-amount {
+                        font-size: 22px;
+                        font-weight: 800;
+                        color: var(--color-text-primary);
+                        letter-spacing: -0.02em;
+                    }
+                    .db-tax-cell-amount.highlight {
+                        color: #D97706;
+                    }
+                    [data-theme="dark"] .db-tax-cell-amount.highlight {
+                        color: #FCD34D;
+                    }
+                    .db-tax-cell-sub {
+                        font-size: 11px;
+                        color: var(--color-text-muted);
+                        margin-top: 4px;
+                    }
+                    .db-tax-footer {
+                        padding: 12px 24px;
+                        background: var(--bg-hover);
+                        font-size: 12px;
+                        color: var(--color-text-muted);
+                        display: flex;
+                        align-items: center;
+                        gap: 6px;
+                        border-top: 1px solid var(--color-border);
+                    }
+                    .db-tax-footer svg { width: 13px; height: 13px; flex-shrink: 0; }
+                    @media (max-width: 640px) {
+                        .db-tax-grid { grid-template-columns: 1fr 1fr; }
+                        .db-tax-cell { padding: 16px; }
+                        .db-tax-cell-amount { font-size: 18px; }
+                    }
                 </style>
 
                 <div class="db">
@@ -607,8 +710,48 @@ const DashboardModule = {
                         </div>
                     </div>
 
+                    <!-- ITBIS / Tax Widget -->
+                    <div class="db-tax-card">
+                        <div class="db-tax-head">
+                            <div class="db-tax-title">
+                                <div class="db-tax-icon">
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/>
+                                        <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>
+                                    </svg>
+                                </div>
+                                ITBIS Recaudado
+                            </div>
+                            <span class="db-tax-badge">18% ITBIS</span>
+                        </div>
+                        <div class="db-tax-grid">
+                            <div class="db-tax-cell">
+                                <div class="db-tax-cell-label">Este Mes</div>
+                                <div class="db-tax-cell-amount highlight">${App.formatCurrency(stats.tax_collected_this_month || 0)}</div>
+                                <div class="db-tax-cell-sub">A declarar en 606</div>
+                            </div>
+                            <div class="db-tax-cell">
+                                <div class="db-tax-cell-label">Mes Pasado</div>
+                                <div class="db-tax-cell-amount">${App.formatCurrency(stats.tax_collected_last_month || 0)}</div>
+                                <div class="db-tax-cell-sub">Período anterior</div>
+                            </div>
+                            <div class="db-tax-cell">
+                                <div class="db-tax-cell-label">Total Acumulado</div>
+                                <div class="db-tax-cell-amount">${App.formatCurrency(stats.tax_collected_total || 0)}</div>
+                                <div class="db-tax-cell-sub">Historial completo</div>
+                            </div>
+                        </div>
+                        ${(stats.tax_pending || 0) > 0 ? `
+                        <div class="db-tax-footer">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                            ${App.formatCurrency(stats.tax_pending || 0)} en ITBIS de facturas aún no cobradas (pendientes de pago del cliente)
+                        </div>
+                        ` : ''}
+                    </div>
+
                     <!-- Two-Column Body -->
                     <div class="db-body">
+
                         <!-- LEFT: Recent Activity -->
                         <div class="db-col">
                             <div class="db-card">

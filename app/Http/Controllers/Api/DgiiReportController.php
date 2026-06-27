@@ -312,8 +312,8 @@ class DgiiReportController extends Controller
             $totalAmount += (float)($r['monto_facturado'] ?? 0);
         }
         
-        // Header line: RNC|PERIODO|CANTIDAD_REGISTROS|SUMA_MONTO_FACTURADO
-        $header = "{$companyTaxId}|{$period}|" . count($records) . "|" . number_format($totalAmount, 2, '.', '');
+        // Header: 607|RNC|PERIODO|CANTIDAD_REGISTROS|MONTO_TOTAL
+        $header = "607|{$companyTaxId}|{$period}|" . count($records) . "|" . number_format($totalAmount, 2, '.', '');
         
         $lines = [$header];
         
@@ -336,15 +336,17 @@ class DgiiReportController extends Controller
             $mOtros = number_format((float)($r['otros_impuestos'] ?? 0), 2, '.', '');
             $mProp = number_format((float)($r['propina_legal'] ?? 0), 2, '.', '');
             
-            $mCash = number_format((float)($r['efectivo'] ?? 0), 2, '.', '');
-            $mBank = number_format((float)($r['bancos'] ?? 0), 2, '.', '');
-            $mCard = number_format((float)($r['tarjeta'] ?? 0), 2, '.', '');
-            $mCredit = number_format((float)($r['credito'] ?? 0), 2, '.', '');
-            $mPermuta = number_format((float)($r['permuta'] ?? 0), 2, '.', '');
-            $mOtras = number_format((float)($r['otras_formas'] ?? 0), 2, '.', '');
+            // Formas de pago (7 campos)
+            $mCash   = number_format((float)($r['efectivo'] ?? 0), 2, '.', '');      // 17. Efectivo
+            $mBank   = number_format((float)($r['bancos'] ?? 0), 2, '.', '');        // 18. Cheque/Transferencia
+            $mCard   = number_format((float)($r['tarjeta'] ?? 0), 2, '.', '');       // 19. Tarjeta Débito/Crédito
+            $mCredit = number_format((float)($r['credito'] ?? 0), 2, '.', '');       // 20. Venta a Crédito
+            $mBonos  = number_format((float)($r['bonos'] ?? 0), 2, '.', '');         // 21. Bonos o Certificados de Regalo
+            $mPermuta = number_format((float)($r['permuta'] ?? 0), 2, '.', '');      // 22. Permuta
+            $mOtras  = number_format((float)($r['otras_formas'] ?? 0), 2, '.', ''); // 23. Otras Formas de Venta
             
-            // Build detail line (22 columns)
-            $detail = "{$rnc}|{$type}|{$ncf}|{$ncfMod}|{$incomeType}|{$dateComp}|{$datePay}|{$mFact}|{$mItbis}|{$mItbisRet}|{$mItbisPer}|{$mIsrRet}|{$mIsrPer}|{$mIsc}|{$mOtros}|{$mProp}|{$mCash}|{$mBank}|{$mCard}|{$mCredit}|{$mPermuta}|{$mOtras}";
+            // Build detail line (23 columns according to DGII 607 format)
+            $detail = "{$rnc}|{$type}|{$ncf}|{$ncfMod}|{$incomeType}|{$dateComp}|{$datePay}|{$mFact}|{$mItbis}|{$mItbisRet}|{$mItbisPer}|{$mIsrRet}|{$mIsrPer}|{$mIsc}|{$mOtros}|{$mProp}|{$mCash}|{$mBank}|{$mCard}|{$mCredit}|{$mBonos}|{$mPermuta}|{$mOtras}";
             $lines[] = $detail;
         }
         
@@ -371,8 +373,8 @@ class DgiiReportController extends Controller
         $companyTaxId = Setting::where('setting_key', 'company_tax_id')->value('setting_value') ?? '131000000';
         $companyTaxId = preg_replace('/[^0-9]/', '', $companyTaxId);
         
-        // Header line: RNC|PERIODO|CANTIDAD_REGISTROS
-        $header = "{$companyTaxId}|{$period}|" . count($records);
+        // Header: 606|RNC|PERIODO|CANTIDAD_REGISTROS
+        $header = "606|{$companyTaxId}|{$period}|" . count($records);
         
         $lines = [$header];
         

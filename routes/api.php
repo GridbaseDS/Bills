@@ -74,6 +74,7 @@ Route::middleware('auth:sanctum')->group(function () {
     // Recurring Invoices
     Route::apiResource('recurring', RecurringController::class);
     Route::post('/recurring/{id}/toggle', [RecurringController::class, 'toggleStatus']);
+    Route::post('/recurring/{id}/generate-now', [RecurringController::class, 'generateNow']);
 
     // Clients
     Route::apiResource('clients', ClientController::class);

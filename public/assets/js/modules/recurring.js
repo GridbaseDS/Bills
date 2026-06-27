@@ -106,7 +106,13 @@ const RecurringModule = {
                         <h1 class="page-title">Suscripción #${r.id}</h1>
                         <p class="page-subtitle">${r.company_name||r.contact_name||''}</p>
                     </div>
-                    <div style="display:flex;gap:8px">
+                    <div style="display:flex;gap:8px;flex-wrap:wrap">
+                        ${r.status !== 'cancelled' && r.status !== 'completed' ? `
+                        <button class="btn btn-primary" id="btn-generate-now" onclick="window.RecurringModule.generateNow(${id})">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
+                            Generar Factura
+                        </button>
+                        ` : ''}
                         <button class="btn btn-secondary" onclick="window.App.navigate('recurring/edit/${id}')">Editar</button>
                         <button class="btn btn-secondary" onclick="window.RecurringModule.toggleStatus(${id},'${r.status==='active'?'paused':'active'}')">
                             ${r.status==='active'?'Pausar':'Reactivar'}
@@ -121,6 +127,7 @@ const RecurringModule = {
                             <div>
                                 <div style="font-size:11px;font-weight:600;color:var(--color-text-muted);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:8px">Configuración</div>
                                 <p style="margin:0;font-size:13px;"><strong>Frecuencia:</strong> ${this.freqLabels[r.frequency]||r.frequency}</p>
+                                <p style="margin:4px 0 0;font-size:13px;"><strong>e-CF:</strong> ${r.ecf_type ? `Tipo ${r.ecf_type}` : 'Sin facturación electrónica'}</p>
                                 <p style="margin:4px 0 0;font-size:13px;"><strong>Auto-envío:</strong> ${r.auto_send?'Sí ('+r.send_via+')':'No (Borrador)'}</p>
                                 <p style="margin:4px 0 0;font-size:13px;"><strong>Estado:</strong> <span class="badge badge-${this.statusBadge[r.status]||'draft'}">${this.statusLabels[r.status]||r.status}</span></p>
                                 <p style="margin:4px 0 0;font-size:13px;"><strong>Moneda:</strong> ${r.currency||'USD'}</p>
@@ -204,6 +211,32 @@ const RecurringModule = {
                             <option value="both" ${autoVal==='both'?'selected':''}>Email + WhatsApp</option>
                         </select>
                     </div>
+                    <div class="form-group">
+                        <label class="form-label">Facturación Electrónica (e-CF)</label>
+                        <select id="r_ecf_type" class="form-control" onchange="window.RecurringModule.onEcfChange()">
+                            <option value="" ${!existing?.ecf_type?'selected':''}>Sin facturación electrónica</option>
+                            <option value="31" ${existing?.ecf_type==31?'selected':''}>31 – Factura de Crédito Fiscal</option>
+                            <option value="32" ${existing?.ecf_type==32?'selected':''}>32 – Factura de Consumidor Final</option>
+                            <option value="41" ${existing?.ecf_type==41?'selected':''}>41 – Compras (B/F Proveedor)</option>
+                            <option value="43" ${existing?.ecf_type==43?'selected':''}>43 – Gastos Menores</option>
+                            <option value="44" ${existing?.ecf_type==44?'selected':''}>44 – Regímenes Especiales</option>
+                            <option value="45" ${existing?.ecf_type==45?'selected':''}>45 – Gubernamentales</option>
+                            <option value="46" ${existing?.ecf_type==46?'selected':''}>46 – Exportaciones</option>
+                            <option value="47" ${existing?.ecf_type==47?'selected':''}>47 – Pagos al Exterior</option>
+                        </select>
+                        <div style="font-size:11px;color:var(--color-text-muted);margin-top:4px;">Si seleccionas un tipo, cada factura generada será enviada a la DGII automáticamente.</div>
+                    </div>
+                    <div class="form-group" id="r_tipo_ingresos_wrap" style="display:${existing?.ecf_type?'block':'none'}">
+                        <label class="form-label">Tipo de Ingresos (606)</label>
+                        <select id="r_tipo_ingresos" class="form-control">
+                            <option value="01" ${(existing?.tipo_ingresos??'01')==='01'?'selected':''}>01 – Ingresos por operaciones (no financieras)</option>
+                            <option value="02" ${existing?.tipo_ingresos==='02'?'selected':''}>02 – Ingresos financieros</option>
+                            <option value="03" ${existing?.tipo_ingresos==='03'?'selected':''}>03 – Ingresos extraordinarios</option>
+                            <option value="04" ${existing?.tipo_ingresos==='04'?'selected':''}>04 – Ingresos por arrendamientos</option>
+                            <option value="05" ${existing?.tipo_ingresos==='05'?'selected':''}>05 – Ingresos por servicios</option>
+                            <option value="06" ${existing?.tipo_ingresos==='06'?'selected':''}>06 – Otros ingresos</option>
+                        </select>
+                    </div>
                 </div>
                 <h3 class="mt-24 mb-16" style="font-size:15px;font-weight:600;border-bottom:1px solid var(--color-border);padding-bottom:8px">Conceptos</h3>
                 <div id="recurring-items-container"></div>
@@ -241,6 +274,7 @@ const RecurringModule = {
             if (itemsToSave.length === 0) { App.showToast('Agrega al menos un concepto','error'); return; }
 
             const action = document.getElementById('r_auto_action').value;
+            const ecfType = document.getElementById('r_ecf_type').value;
             const payload = {
                 client_id: document.getElementById('r_client_id').value,
                 currency: document.getElementById('r_currency').value,
@@ -249,6 +283,8 @@ const RecurringModule = {
                 next_issue_date: document.getElementById('r_start_date').value,
                 occurrences_limit: document.getElementById('r_limit').value || null,
                 tax_rate: document.getElementById('r_tax').value || 0,
+                ecf_type: ecfType ? parseInt(ecfType) : null,
+                tipo_ingresos: ecfType ? (document.getElementById('r_tipo_ingresos').value || '01') : null,
                 auto_send: action !== 'draft' ? 1 : 0,
                 send_via: action !== 'draft' ? action : 'email',
                 notes: document.getElementById('r_notes').value,
@@ -311,6 +347,43 @@ const RecurringModule = {
 
     async toggleStatus(id, status) {
         try { await App.api(`recurring/${id}/toggle`, { method: 'POST', body: { status } }); App.showToast('Estado actualizado'); App.navigate(`recurring/${id}`); } catch(e) {}
+    },
+
+    onEcfChange() {
+        const val = document.getElementById('r_ecf_type')?.value;
+        const wrap = document.getElementById('r_tipo_ingresos_wrap');
+        if (wrap) wrap.style.display = val ? 'block' : 'none';
+    },
+
+    async generateNow(id) {
+        const btn = document.getElementById('btn-generate-now');
+        if (btn) {
+            btn.disabled = true;
+            btn.innerHTML = `<span class="spinner" style="width:14px;height:14px;border-width:2px;"></span> Generando...`;
+        }
+        try {
+            const res = await App.api(`recurring/${id}/generate-now`, { method: 'POST' });
+            if (res.success) {
+                App.showToast(
+                    res.message || `Factura ${res.invoice_number} generada exitosamente.`,
+                    'success'
+                );
+                // Small delay so the user sees the toast, then go to the invoice
+                setTimeout(() => window.App.navigate(`facturas/${res.invoice_id}`), 1200);
+            } else {
+                App.showToast(res.error || 'Error al generar la factura', 'error');
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg> Generar Factura`;
+                }
+            }
+        } catch(e) {
+            App.showToast('Error al conectar con el servidor', 'error');
+            if (btn) {
+                btn.disabled = false;
+                btn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg> Generar Factura`;
+            }
+        }
     },
 
     async deleteRecurring(id) {

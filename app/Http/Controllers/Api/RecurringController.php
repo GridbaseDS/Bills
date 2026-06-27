@@ -53,6 +53,7 @@ class RecurringController extends Controller
         $data = $request->only([
             'client_id', 'frequency', 'start_date', 'end_date',
             'occurrences_limit', 'tax_rate', 'currency',
+            'ecf_type', 'tipo_ingresos',
             'auto_send', 'send_via', 'notes', 'terms'
         ]);
 
@@ -64,13 +65,15 @@ class RecurringController extends Controller
         $taxAmount = $subtotal * ($taxRate / 100);
         $total = $subtotal + $taxAmount;
 
-        $data['subtotal']        = $subtotal;
-        $data['next_issue_date'] = $request->start_date;
-        $data['status']          = 'active';
-        $data['tax_rate']        = $taxRate;
-        $data['currency']        = $request->currency ?? 'USD';
-        $data['auto_send']       = $request->auto_send ?? false;
-        $data['send_via']        = $request->send_via ?? 'email';
+        $data['subtotal']          = $subtotal;
+        $data['next_issue_date']   = $request->start_date;
+        $data['status']            = 'active';
+        $data['tax_rate']          = $taxRate;
+        $data['currency']          = $request->currency ?? 'USD';
+        $data['ecf_type']          = $request->ecf_type ? (int)$request->ecf_type : null;
+        $data['tipo_ingresos']     = $request->tipo_ingresos ?? '01';
+        $data['auto_send']         = $request->auto_send ?? false;
+        $data['send_via']          = $request->send_via ?? 'email';
         $data['occurrences_count'] = 0;
 
         if ($request->user()) {
@@ -148,6 +151,9 @@ class RecurringController extends Controller
             'terms'          => $recurring->terms,
             'recurring_id'   => $recurring->id,
             'created_by'     => $recurring->created_by,
+            // e-CF fields — propagate from the recurring template
+            'ecf_type'       => $recurring->ecf_type ?: null,
+            'tipo_ingresos'  => $recurring->tipo_ingresos ?? '01',
         ]);
 
         foreach ($recurring->items as $item) {
@@ -315,7 +321,8 @@ class RecurringController extends Controller
         $data = $request->only([
             'client_id', 'frequency', 'start_date', 'end_date',
             'next_issue_date', 'occurrences_limit', 'tax_rate',
-            'currency', 'auto_send', 'send_via', 'notes', 'terms', 'status'
+            'currency', 'ecf_type', 'tipo_ingresos',
+            'auto_send', 'send_via', 'notes', 'terms', 'status'
         ]);
 
         // Recalculate subtotal if items are provided
@@ -363,9 +370,61 @@ class RecurringController extends Controller
     }
 
     /**
+     * Manually generate the current period's invoice for a recurring subscription.
+     *
+     * After generation the next_issue_date is advanced exactly as the cron would do,
+     * so the scheduler will NOT create a duplicate for this cycle.
+     */
+    public function generateNow(Request $request, $id)
+    {
+        $recurring = RecurringInvoice::with(['client', 'items'])->findOrFail($id);
+
+        if ($recurring->status === 'cancelled') {
+            return response()->json([
+                'success' => false,
+                'error'   => 'No se puede generar una factura para una suscripción cancelada.',
+            ], 422);
+        }
+
+        if ($recurring->occurrences_limit && $recurring->occurrences_count >= $recurring->occurrences_limit) {
+            return response()->json([
+                'success' => false,
+                'error'   => 'Esta suscripción ya alcanzó el límite máximo de ocurrencias.',
+            ], 422);
+        }
+
+        try {
+            $invoice   = $this->generateInvoiceFromRecurring($recurring);
+            $emailSent = false;
+
+            if ($recurring->client && !empty($recurring->client->email)) {
+                $emailSent = $this->sendInvoiceEmail($invoice);
+            }
+
+            Log::info("[RecurringController] Factura {$invoice->invoice_number} generada manualmente para suscripción #{$recurring->id}");
+
+            return response()->json([
+                'success'    => true,
+                'invoice_id' => $invoice->id,
+                'invoice_number' => $invoice->invoice_number,
+                'email_sent' => $emailSent,
+                'message'    => "Factura {$invoice->invoice_number} generada exitosamente."
+                    . ($emailSent ? ' Enviada por email al cliente.' : ''),
+            ]);
+        } catch (\Exception $e) {
+            Log::error("[RecurringController] Error generando factura manual para suscripción #{$id}: " . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'error'   => 'Error al generar la factura: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
      * Toggle active/paused status.
      */
     public function toggleStatus(Request $request, $id)
+
     {
         $recurring = RecurringInvoice::findOrFail($id);
 

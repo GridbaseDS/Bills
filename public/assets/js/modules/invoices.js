@@ -894,15 +894,22 @@ const InvoicesModule = {
             } else if (res.status === 'pending') {
                 window.App.showToast('Enviado. Pendiente de aprobación DGII.', 'info');
             } else if (res.status === 'contingency') {
-                window.App.showToast('Guardado en contingencia.', 'warning');
+                const errMsg = res.error ? `: ${res.error}` : '';
+                window.App.showToast(`Error de conexión con DGII${errMsg}`, 'warning');
             } else if (res.status === 'rejected') {
-                window.App.showToast('Rechazado por la DGII.', 'error');
+                // Show the specific DGII rejection reason so the user knows what to fix
+                const dgiiError = res.error
+                    ? (typeof res.error === 'string' ? res.error : JSON.stringify(res.error))
+                    : 'Sin detalles del rechazo.';
+                window.App.showToast(`❌ Rechazado por DGII: ${dgiiError}`, 'error');
+                // Also log to console for developer reference
+                console.error('[DGII Rejection]', res);
             } else {
-                window.App.showToast('Procesamiento completado.');
+                window.App.showToast('Procesamiento completado.', 'info');
             }
             this.renderDetails(document.getElementById('app-content'), id);
         } catch(e) {
-            window.App.showToast('Error procesando e-CF', 'error');
+            window.App.showToast('Error procesando e-CF: ' + e.message, 'error');
         }
     },
 

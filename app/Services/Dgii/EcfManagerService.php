@@ -186,30 +186,61 @@ class EcfManagerService
 
             $invoice->update($updateData);
 
-            // 8. POST-SUBMIT VERIFICATION: Check if the QR/ConsultaTimbre will work
+            // 8. POST-SUBMIT VERIFICATION: Query consultaresultado to get the REAL DGII validation status.
+            // NOTE: A trackId only means DGII *received* the document. The real accept/reject
+            // comes from consultaresultado. We MUST update the DB with the real status.
             if ($result['success'] && $result['track_id']) {
-                $this->verifyPostSubmit($invoice, $signedXml, $settings, $result['track_id']);
+                $verifiedStatus = $this->verifyPostSubmit($invoice, $signedXml, $settings, $result['track_id']);
+
+                // If DGII's real status differs from the provisional 'accepted' (based on trackId alone),
+                // override the result so the user sees the truth.
+                if ($verifiedStatus !== null && $verifiedStatus['status'] !== $result['status']) {
+                    $result['status']  = $verifiedStatus['status'];
+                    $result['success'] = ($verifiedStatus['status'] === 'accepted');
+                    $result['errors']  = $verifiedStatus['errors'];
+
+                    // Persist the real status to the database
+                    $invoice->update([
+                        'dgii_status'         => $verifiedStatus['status'],
+                        'dgii_error_messages' => $verifiedStatus['errors']
+                            ? (is_array($verifiedStatus['errors'])
+                                ? json_encode($verifiedStatus['errors'], JSON_UNESCAPED_UNICODE)
+                                : $verifiedStatus['errors'])
+                            : null,
+                    ]);
+
+                    DgiiLog::logStep(
+                        'status_corrected',
+                        "⚠ Estado corregido tras consultaresultado: {$verifiedStatus['status']}. Errores DGII: " . ($verifiedStatus['errors'] ?? 'ninguno'),
+                        $invoice->id, $invoice->encf, $invoice->ecf_type,
+                        [
+                            'level'               => $verifiedStatus['status'] === 'rejected' ? 'error' : 'warning',
+                            'dgii_status'         => $verifiedStatus['status'],
+                            'dgii_error_messages' => $verifiedStatus['errors'],
+                        ]
+                    );
+                }
             }
 
             $elapsed = round((microtime(true) - $startTime) * 1000, 1);
             DgiiLog::logStep('process_complete', "Flujo completo en {$elapsed}ms. Estado final: {$result['status']}", $invoice->id, $invoice->encf, $invoice->ecf_type, [
-                'dgii_status' => $result['status'],
-                'dgii_track_id' => $result['track_id'],
+                'dgii_status'         => $result['status'],
+                'dgii_track_id'       => $result['track_id'],
                 'dgii_error_messages' => $result['errors'],
                 'context' => [
-                    'elapsed_ms' => $elapsed,
+                    'elapsed_ms'   => $elapsed,
                     'final_status' => $result['status'],
-                    'track_id' => $result['track_id'],
+                    'track_id'     => $result['track_id'],
                 ],
             ]);
 
             Log::info("[EcfManagerService] Flujo completado para Factura ID: {$invoice->id}. Estado: {$result['status']}");
 
             return [
-                'success' => $result['success'],
-                'status' => $result['status'],
+                'success'  => $result['success'],
+                'status'   => $result['status'],
                 'track_id' => $result['track_id'],
-                'error' => $result['errors']
+                'error'    => $result['errors'],
             ];
 
         } catch (Exception $e) {
@@ -325,9 +356,13 @@ class EcfManagerService
     }
 
     /**
-     * Post-submit verification: query the trackId status and test ConsultaTimbre QR URL.
+     * Post-submit verification: query the real DGII validation status via consultaresultado
+     * and optionally test the ConsultaTimbre QR URL.
+     *
+     * Returns the real status array from DGII: ['status' => ..., 'errors' => ...]
+     * Returns null if the verification itself fails (non-blocking).
      */
-    protected function verifyPostSubmit(Invoice $invoice, string $signedXml, array $settings, string $trackId): void
+    protected function verifyPostSubmit(Invoice $invoice, string $signedXml, array $settings, string $trackId): ?array
     {
         try {
             // 1. Query track ID status
@@ -428,10 +463,14 @@ class EcfManagerService
                 ],
             ]);
 
+            // Return the real DGII status so processInvoice can act on it
+            return $statusResult;
+
         } catch (\Throwable $e) {
             DgiiLog::logStep('post_verify_error', "Error en verificación post-envío: " . $e->getMessage(), $invoice->id, $invoice->encf, $invoice->ecf_type, [
                 'level' => 'warning',
             ]);
+            return null; // Non-blocking: return null so the caller can skip correction
         }
     }
 

@@ -180,12 +180,29 @@ export default {
 
                             <h4 style="font-size:14px;font-weight:600;margin:24px 0 12px;border-top:1px solid var(--color-border);padding-top:20px;color:var(--color-text-primary);">Firma Digital y Conectividad DGII (e-CF)</h4>
                             <div class="grid-2">
-                                <div class="form-group"><label class="form-label">Entorno DGII</label>
-                                    <select id="setup_dgii_env" class="form-control">
-                                        <option value="testing" ${s.dgii_env === 'testing' || !s.dgii_env ? 'selected' : ''}>Pre-Certificación (testecf)</option>
+                                <div class="form-group">
+                                    <label class="form-label" style="display:flex;align-items:center;gap:6px;">
+                                        Entorno DGII
+                                        <span style="font-size:10px;background:rgba(239,68,68,0.15);color:#dc2626;padding:2px 7px;border-radius:999px;font-weight:600;">⚠️ Importante</span>
+                                    </label>
+                                    <select id="setup_dgii_env" class="form-control" onchange="
+                                        const warn = document.getElementById('setup_dgii_env_warning');
+                                        if(this.value === 'testing') { warn.style.display='flex'; }
+                                        else if(this.value === 'production') { warn.style.display='none'; warn.nextElementSibling && (warn.nextElementSibling.style.display='flex'); }
+                                        else { warn.style.display='none'; }
+                                        document.getElementById('setup_dgii_env_status').textContent = {production:'🟢 Producción activa — facturas con validez fiscal real', certification:'🟠 Certificación — sin validez fiscal real', testing:'🔴 PRE-CERTIFICACIÓN — las facturas NO llegan a DGII real'}[this.value] || '';
+                                    ">
+                                        <option value="testing" ${s.dgii_env === 'testing' ? 'selected' : ''}>Pre-Certificación (testecf) — PRUEBAS</option>
                                         <option value="certification" ${s.dgii_env === 'certification' ? 'selected' : ''}>Certificación (certecf)</option>
-                                        <option value="production" ${s.dgii_env === 'production' ? 'selected' : ''}>Producción (ecf)</option>
+                                        <option value="production" ${s.dgii_env === 'production' || !s.dgii_env ? 'selected' : ''}>Producción (ecf) — FACTURAS REALES ✓</option>
                                     </select>
+                                    <div id="setup_dgii_env_status" style="font-size:11px;margin-top:5px;font-weight:600;color:${(s.dgii_env === 'testing') ? '#dc2626' : (s.dgii_env === 'certification') ? '#c2410c' : '#16a34a'};">
+                                        ${(s.dgii_env === 'testing') ? '🔴 PRE-CERTIFICACIÓN — las facturas NO llegan a DGII real' : (s.dgii_env === 'certification') ? '🟠 Certificación — sin validez fiscal real' : '🟢 Producción activa — facturas con validez fiscal real'}
+                                    </div>
+                                    <div id="setup_dgii_env_warning" style="display:${s.dgii_env === 'testing' ? 'flex' : 'none'};gap:8px;align-items:flex-start;background:rgba(239,68,68,0.1);border:1px solid #ef4444;border-radius:6px;padding:10px 12px;margin-top:8px;">
+                                        <span style="font-size:16px;">⚠️</span>
+                                        <span style="font-size:12px;color:#dc2626;font-weight:500;">En Pre-Certificación las facturas se envían a <strong>testecf</strong> y NO tienen validez fiscal. Selecciona <strong>Producción</strong> para facturar.</span>
+                                    </div>
                                 </div>
                                 <div class="form-group"><label class="form-label">Vence Secuencia (e-NCF)</label><input type="date" id="setup_dgii_ncf_expiry_date" class="form-control" value="${s.dgii_ncf_expiry_date || '2028-12-31'}"></div>
                                 <div class="form-group"><label class="form-label">Archivo Certificado (.p12 / .pfx)</label><input type="text" id="setup_dgii_certificate_path" class="form-control" placeholder="certificado.p12" value="${s.dgii_certificate_path || ''}"><div style="font-size:11px;color:var(--color-text-muted);margin-top:4px;">Nombre del certificado que subirás a <code>storage/app/secure/</code></div></div>

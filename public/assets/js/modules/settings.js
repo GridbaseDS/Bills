@@ -295,12 +295,62 @@ export default {
                                     Certificado Digital y Entorno
                                 </h4>
                                 <p style="color:var(--color-text-muted);font-size:12px;margin:0 0 16px;">Certificado de firma digital y entorno de la DGII.</p>
+
+                                <!-- DGII Environment Status Banner -->
+                                ${(() => {
+                                    const env = s.dgii_env || 'production';
+                                    const envConfig = {
+                                        production: {
+                                            bg: 'rgba(34,197,94,0.1)', border: '#22c55e', dot: '#22c55e',
+                                            label: '🟢 PRODUCCIÓN ACTIVA', sublabel: 'Las facturas se envían a ecf.dgii.gov.do — Ambiente oficial con validez fiscal.',
+                                            textColor: '#16a34a'
+                                        },
+                                        certification: {
+                                            bg: 'rgba(249,115,22,0.1)', border: '#f97316', dot: '#f97316',
+                                            label: '🟠 CERTIFICACIÓN', sublabel: 'Ambiente formal de certificación (certecf). Las facturas NO tienen validez fiscal real.',
+                                            textColor: '#c2410c'
+                                        },
+                                        testing: {
+                                            bg: 'rgba(239,68,68,0.1)', border: '#ef4444', dot: '#ef4444',
+                                            label: '🔴 PRE-CERTIFICACIÓN (PRUEBAS)', sublabel: '⚠️ ADVERTENCIA: Las facturas van a testecf — NO tienen validez fiscal. Cambia a Producción para facturar.',
+                                            textColor: '#dc2626'
+                                        }
+                                    };
+                                    const cfg = envConfig[env] || envConfig.production;
+                                    return \`<div style="background:\${cfg.bg};border:1.5px solid \${cfg.border};border-radius:var(--radius-md);padding:14px 16px;margin-bottom:18px;display:flex;align-items:flex-start;gap:12px;">
+                                        <div style="width:10px;height:10px;border-radius:50%;background:\${cfg.dot};margin-top:3px;flex-shrink:0;box-shadow:0 0 6px \${cfg.dot};"></div>
+                                        <div>
+                                            <div style="font-size:13px;font-weight:700;color:\${cfg.textColor};">\${cfg.label}</div>
+                                            <div style="font-size:12px;color:var(--color-text-muted);margin-top:3px;">\${cfg.sublabel}</div>
+                                        </div>
+                                    </div>\`;
+                                })()}
+
                                 <div class="grid-2">
-                                    <div class="form-group"><label class="form-label">Entorno DGII</label>
-                                        <select id="s_dgii_env" class="form-control">
-                                            <option value="testing" ${s.dgii_env === 'testing' || !s.dgii_env ? 'selected' : ''}>Pre-Certificación (testecf)</option>
+                                    <div class="form-group">
+                                        <label class="form-label" style="display:flex;align-items:center;gap:6px;">
+                                            Entorno DGII
+                                            <span style="font-size:10px;background:var(--color-border);color:var(--color-text-muted);padding:2px 6px;border-radius:999px;">Cambia dónde se envían las facturas</span>
+                                        </label>
+                                        <select id="s_dgii_env" class="form-control" onchange="
+                                            const bannerEl = this.closest('.form-group').closest('.grid-2').previousElementSibling;
+                                            const configs = {
+                                                production: { bg:'rgba(34,197,94,0.1)', border:'#22c55e', dot:'#22c55e', label:'🟢 PRODUCCIÓN ACTIVA', sub:'Las facturas se envían a ecf.dgii.gov.do — Ambiente oficial con validez fiscal.', tc:'#16a34a' },
+                                                certification: { bg:'rgba(249,115,22,0.1)', border:'#f97316', dot:'#f97316', label:'🟠 CERTIFICACIÓN', sub:'Ambiente formal de certificación (certecf). Las facturas NO tienen validez fiscal real.', tc:'#c2410c' },
+                                                testing: { bg:'rgba(239,68,68,0.1)', border:'#ef4444', dot:'#ef4444', label:'🔴 PRE-CERTIFICACIÓN (PRUEBAS)', sub:'⚠️ ADVERTENCIA: Las facturas van a testecf — NO tienen validez fiscal. Cambia a Producción.', tc:'#dc2626' }
+                                            };
+                                            const c = configs[this.value] || configs.production;
+                                            bannerEl.style.background = c.bg;
+                                            bannerEl.style.borderColor = c.border;
+                                            bannerEl.querySelector('div[style*=border-radius]').style.background = c.dot;
+                                            bannerEl.querySelector('div[style*=border-radius]').style.boxShadow = '0 0 6px ' + c.dot;
+                                            bannerEl.querySelector('div[style*=font-weight]').style.color = c.tc;
+                                            bannerEl.querySelector('div[style*=font-weight]').textContent = c.label;
+                                            bannerEl.querySelector('div[style*=text-muted]').textContent = c.sub;
+                                        ">
+                                            <option value="testing" ${s.dgii_env === 'testing' ? 'selected' : ''}>Pre-Certificación (testecf) — PRUEBAS</option>
                                             <option value="certification" ${s.dgii_env === 'certification' ? 'selected' : ''}>Certificación (certecf)</option>
-                                            <option value="production" ${s.dgii_env === 'production' ? 'selected' : ''}>Producción (ecf)</option>
+                                            <option value="production" ${s.dgii_env === 'production' || !s.dgii_env ? 'selected' : ''}>Producción (ecf) — FACTURAS REALES ✓</option>
                                         </select>
                                     </div>
                                     <div class="form-group"><label class="form-label">Vence Secuencia (e-NCF)</label><input type="date" id="s_dgii_ncf_expiry_date" class="form-control" value="${s.dgii_ncf_expiry_date || '2028-12-31'}"></div>
@@ -553,7 +603,7 @@ export default {
                     's_dgii_nombre_comercial': 'DOCUMENTOS ELECTRONICOS DE 02',
                     's_dgii_municipio': '010101',
                     's_dgii_provincia': '010000',
-                    's_dgii_env': 'testing',
+                    's_dgii_env': 'production',
                     's_dgii_ncf_expiry_date': '2028-12-31',
                 };
 

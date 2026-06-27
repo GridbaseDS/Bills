@@ -75,7 +75,7 @@ class DatabaseSeeder extends Seeder
             ['setting_key' => 'payment_link_general', 'setting_value' => '', 'setting_group' => 'integrations'],
             ['setting_key' => 'bank_instructions', 'setting_value' => '', 'setting_group' => 'integrations'],
             // DGII / e-CF settings
-            ['setting_key' => 'dgii_env', 'setting_value' => 'testing', 'setting_group' => 'dgii'],
+            ['setting_key' => 'dgii_env', 'setting_value' => 'production', 'setting_group' => 'dgii'],
             ['setting_key' => 'dgii_ncf_expiry_date', 'setting_value' => '2028-12-31', 'setting_group' => 'dgii'],
             ['setting_key' => 'dgii_certificate_path', 'setting_value' => '', 'setting_group' => 'dgii'],
             ['setting_key' => 'dgii_certificate_password', 'setting_value' => '', 'setting_group' => 'dgii'],

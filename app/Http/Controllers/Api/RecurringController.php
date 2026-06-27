@@ -136,6 +136,8 @@ class RecurringController extends Controller
         $taxAmount = $subtotal * ($taxRate / 100);
         $total = $subtotal + $taxAmount;
 
+        $hasEcf = !empty($recurring->ecf_type);
+
         $invoice = Invoice::create([
             'invoice_number' => $invoiceNumber,
             'client_id'      => $recurring->client_id,
@@ -152,6 +154,7 @@ class RecurringController extends Controller
             'recurring_id'   => $recurring->id,
             'created_by'     => $recurring->created_by,
             // e-CF fields — propagate from the recurring template
+            'is_ecf'         => $hasEcf,
             'ecf_type'       => $recurring->ecf_type ?: null,
             'tipo_ingresos'  => $recurring->tipo_ingresos ?? '01',
         ]);
@@ -183,6 +186,19 @@ class RecurringController extends Controller
         ]);
 
         $invoice->load(['client', 'items']);
+
+        // Auto-process e-CF if the recurring has ecf_type configured
+        if ($hasEcf) {
+            try {
+                $ecfManager = app(\App\Services\Dgii\EcfManagerService::class);
+                $result = $ecfManager->processInvoice($invoice);
+                Log::info("[Recurring→ECF] Factura {$invoice->invoice_number} procesada: " . json_encode($result));
+            } catch (\Exception $e) {
+                Log::error("[Recurring→ECF] Error procesando e-CF para factura {$invoice->invoice_number}: " . $e->getMessage());
+            }
+        }
+
+
         return $invoice;
     }
 

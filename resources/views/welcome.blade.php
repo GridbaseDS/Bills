@@ -28,6 +28,7 @@
     <div id="app"></div>
     <div class="toast-container" id="toast-container"></div>
     <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+    <script>window.APP_VERSION = '{{ filemtime(public_path('assets/js/app.js')) }}';</script>
     <script type="module" src="/assets/js/app.js?v={{ filemtime(public_path('assets/js/app.js')) }}"></script>
     <script>
         if ('serviceWorker' in navigator) {

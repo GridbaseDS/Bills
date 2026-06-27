@@ -1,22 +1,44 @@
 /**
  * GridBase Digital Solutions — Bills System
  * Main Frontend Application Logic — Gridbase Design Kit v3
+ *
+ * Modules are loaded dynamically using APP_VERSION (injected by Blade via filemtime)
+ * so the browser always fetches the latest file after any server deployment.
  */
 
-import DashboardModule from './modules/dashboard.js?v=60';
-import InvoicesModule from './modules/invoices.js?v=54';
-import QuotesModule from './modules/quotes.js?v=54';
-import ClientsModule from './modules/clients.js?v=55';
-import ItemsModule from './modules/items.js?v=54';
-import SettingsModule from './modules/settings.js?v=61';
-import RecurringModule from './modules/recurring.js?v=58';
-import DgiiTestsModule from './modules/dgii-tests.js?v=60';
-import DgiiLogsModule from './modules/dgii-logs.js?v=1';
-import ReceivedInvoicesModule from './modules/received-invoices.js?v=54';
-import ReportsModule from './modules/reports.js?v=54';
-import SetupModule from './modules/setup.js?v=54';
-import ExpensesModule from './modules/expenses.js?v=54';
-import UsersModule from './modules/users.js?v=54';
+const V = window.APP_VERSION || Date.now();
+
+const [
+    { default: DashboardModule },
+    { default: InvoicesModule },
+    { default: QuotesModule },
+    { default: ClientsModule },
+    { default: ItemsModule },
+    { default: SettingsModule },
+    { default: RecurringModule },
+    { default: DgiiTestsModule },
+    { default: DgiiLogsModule },
+    { default: ReceivedInvoicesModule },
+    { default: ReportsModule },
+    { default: SetupModule },
+    { default: ExpensesModule },
+    { default: UsersModule },
+] = await Promise.all([
+    import(`./modules/dashboard.js?v=${V}`),
+    import(`./modules/invoices.js?v=${V}`),
+    import(`./modules/quotes.js?v=${V}`),
+    import(`./modules/clients.js?v=${V}`),
+    import(`./modules/items.js?v=${V}`),
+    import(`./modules/settings.js?v=${V}`),
+    import(`./modules/recurring.js?v=${V}`),
+    import(`./modules/dgii-tests.js?v=${V}`),
+    import(`./modules/dgii-logs.js?v=${V}`),
+    import(`./modules/received-invoices.js?v=${V}`),
+    import(`./modules/reports.js?v=${V}`),
+    import(`./modules/setup.js?v=${V}`),
+    import(`./modules/expenses.js?v=${V}`),
+    import(`./modules/users.js?v=${V}`),
+]);
 
 
 

@@ -56,7 +56,15 @@ class XmlBuilderService
         // 3. Document identification
         $tipoECF = (int)$invoice->ecf_type;
         $eNCF = $invoice->encf;
-        $fechaVencimientoSecuencia = $settings['dgii_ncf_expiry_date'] ?? '2028-12-31';
+        // Auto-calculate expiry date: DGII always assigns Dec 31 of the following year.
+        // Use stored setting if present and not expired; otherwise auto-compute.
+        $storedExpiry = $settings['dgii_ncf_expiry_date'] ?? null;
+        if ($storedExpiry && strtotime($storedExpiry) >= strtotime('today')) {
+            $fechaVencimientoSecuencia = $storedExpiry;
+        } else {
+            // Default: Dec 31 of next year (DGII standard renewal pattern)
+            $fechaVencimientoSecuencia = (date('Y') + 1) . '-12-31';
+        }
         
         // TerminoPago: Contado (1), Crédito (2)
         $isCredito = $invoice->due_date && $invoice->due_date > $invoice->issue_date;

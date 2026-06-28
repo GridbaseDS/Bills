@@ -1,5 +1,5 @@
 const ReportsModule = {
-    _currentTab: '607',
+    _currentTab: '606',
     _year: new Date().getFullYear(),
     _month: new Date().getMonth() + 1,
     _records606: [],
@@ -127,6 +127,21 @@ const ReportsModule = {
         if (!headers || !tbody) return;
 
         if (this._currentTab === '607') {
+            // e-CF informational banner
+            const bannerHtml = `
+                <tr><td colspan="10" style="padding:0;border:none;">
+                    <div style="background:linear-gradient(135deg,#eff6ff,#dbeafe);border:1px solid #93c5fd;border-radius:8px;padding:16px 20px;margin:12px 0;display:flex;align-items:flex-start;gap:12px;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2" style="flex-shrink:0;margin-top:2px;"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+                        <div style="font-size:13px;color:#1e40af;line-height:1.5;">
+                            <strong>Emisor Electrónico (e-CF)</strong><br>
+                            Como emisor de Comprobantes Fiscales Electrónicos, <strong>no estás obligado a presentar el formato 607</strong> ante la DGII. 
+                            La información de tus ventas ya fue reportada automáticamente al emitir cada e-CF. 
+                            <span style="color:#6b7280;">(Ref: Norma General DGII sobre Facturación Electrónica)</span>
+                        </div>
+                    </div>
+                </td></tr>
+            `;
+
             // Render 607 Headers
             headers.innerHTML = `
                 <th>Comprobante (eNCF)</th>
@@ -142,14 +157,14 @@ const ReportsModule = {
             `;
 
             if (this._records607.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="10" class="text-center text-muted py-24">No hay facturas registradas en este período</td></tr>`;
+                tbody.innerHTML = bannerHtml + `<tr><td colspan="10" class="text-center text-muted py-24">No hay facturas registradas en este período</td></tr>`;
                 summary.innerHTML = `<span>Total Registros: 0</span><span>Suma Total: RD$ 0.00</span>`;
                 return;
             }
 
             // Render 607 Rows
             let sumTotal = 0;
-            tbody.innerHTML = this._records607.map(r => {
+            tbody.innerHTML = bannerHtml + this._records607.map(r => {
                 sumTotal += r.monto_facturado;
                 return `
                     <tr>

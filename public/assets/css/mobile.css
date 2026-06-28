@@ -862,4 +862,18 @@ select.form-control {
   justify-content: center !important;
 }
 
+/* Totals table formatting inside wrapper */
+.invoice-totals-wrapper table {
+  width: 100% !important;
+}
+
+.invoice-totals-wrapper table td:first-child {
+  text-align: left !important;
+}
+
+.invoice-totals-wrapper table td:last-child {
+  text-align: right !important;
+}
+
+
 

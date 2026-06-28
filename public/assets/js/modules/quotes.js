@@ -185,19 +185,19 @@ const QuotesModule = {
                             </div>
                         </div>
                         <div class="mt-24">
-                            <table class="data-table" style="border:1px solid var(--color-border);border-radius:var(--radius-lg);overflow:hidden;">
+                            <table class="data-table responsive-invoice-table" style="border:1px solid var(--color-border);border-radius:var(--radius-lg);overflow:hidden;width:100%;">
                                 <thead><tr><th>Descripción</th><th class="text-right">Cant.</th><th class="text-right">Precio</th><th class="text-right">Total</th></tr></thead>
-                                <tbody>${quote.items.map(item => `<tr><td style="color:var(--color-text-primary);font-weight:500">${item.description}</td><td class="text-right">${item.quantity}</td><td class="text-right">${window.App.formatCurrency(item.unit_price, quote.currency)}</td><td class="text-right font-semibold">${window.App.formatCurrency(item.amount, quote.currency)}</td></tr>`).join('')}</tbody>
+                                <tbody>${quote.items.map(item => `<tr><td data-label="Descripción" style="color:var(--color-text-primary);font-weight:500;white-space:normal;font-size:14px;">${item.description}</td><td data-label="Cant." class="text-right">${item.quantity}</td><td data-label="Precio" class="text-right">${window.App.formatCurrency(item.unit_price, quote.currency)}</td><td data-label="Total" class="text-right font-semibold">${window.App.formatCurrency(item.amount, quote.currency)}</td></tr>`).join('')}</tbody>
                             </table>
                         </div>
                         <div class="grid-2 mt-24">
                             <div>${quote.notes ? `<div style="font-size:11px;font-weight:600;color:var(--color-text-muted);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:8px;">Notas</div><p style="white-space:pre-wrap;font-size:13px;color:var(--color-text-secondary);">${quote.notes}</p>` : ''}</div>
-                            <div>
+                            <div class="invoice-totals-wrapper">
                                 <table style="width:100%;border-collapse:collapse;">
-                                    <tr><td style="padding:8px 0;text-align:right;color:var(--color-text-muted);font-size:13px;">Subtotal</td><td style="padding:8px 0;text-align:right;font-weight:500;font-size:13px;">${window.App.formatCurrency(quote.subtotal, quote.currency)}</td></tr>
-                                    ${quote.discount_amount > 0 ? `<tr><td style="padding:8px 0;text-align:right;color:var(--color-text-muted);font-size:13px;">Descuento</td><td style="padding:8px 0;text-align:right;font-weight:500;font-size:13px;">-${window.App.formatCurrency(quote.discount_amount, quote.currency)}</td></tr>` : ''}
-                                    ${quote.tax_amount > 0 ? `<tr><td style="padding:8px 0;text-align:right;color:var(--color-text-muted);font-size:13px;">ITBIS (${quote.tax_rate}%)</td><td style="padding:8px 0;text-align:right;font-weight:500;font-size:13px;">${window.App.formatCurrency(quote.tax_amount, quote.currency)}</td></tr>` : ''}
-                                    <tr style="border-top:2px solid var(--color-border);"><td style="padding:12px 0;text-align:right;font-size:18px;font-weight:600;">Total</td><td style="padding:12px 0;text-align:right;font-size:18px;font-weight:700;color:var(--color-primary);">${window.App.formatCurrency(quote.total, quote.currency)}</td></tr>
+                                    <tr><td style="padding:8px 0;text-align:left;color:var(--color-text-muted);font-size:13px;">Subtotal</td><td style="padding:8px 0;text-align:right;font-weight:500;font-size:13px;">${window.App.formatCurrency(quote.subtotal, quote.currency)}</td></tr>
+                                    ${quote.discount_amount > 0 ? `<tr><td style="padding:8px 0;text-align:left;color:var(--color-text-muted);font-size:13px;">Descuento</td><td style="padding:8px 0;text-align:right;font-weight:500;font-size:13px;">-${window.App.formatCurrency(quote.discount_amount, quote.currency)}</td></tr>` : ''}
+                                    ${quote.tax_amount > 0 ? `<tr><td style="padding:8px 0;text-align:left;color:var(--color-text-muted);font-size:13px;">ITBIS (${quote.tax_rate}%)</td><td style="padding:8px 0;text-align:right;font-weight:500;font-size:13px;">${window.App.formatCurrency(quote.tax_amount, quote.currency)}</td></tr>` : ''}
+                                    <tr style="border-top:2px solid var(--color-border);"><td style="padding:12px 0;text-align:left;font-size:18px;font-weight:600;">Total</td><td style="padding:12px 0;text-align:right;font-size:18px;font-weight:700;color:var(--color-primary);">${window.App.formatCurrency(quote.total, quote.currency)}</td></tr>
                                     ${quote.currency !== 'DOP' && quote.exchange_rate && quote.exchange_rate != 1 ? `
                                         <tr>
                                             <td colspan="2" style="padding:4px 0;text-align:right;font-size:12px;color:var(--color-text-muted);">

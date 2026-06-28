@@ -140,16 +140,16 @@ const RecurringModule = {
                             </div>
                         </div>
                         <div class="mt-24">
-                            <table class="data-table" style="border:1px solid var(--color-border);border-radius:var(--radius-lg);overflow:hidden;">
+                            <table class="data-table responsive-invoice-table" style="border:1px solid var(--color-border);border-radius:var(--radius-lg);overflow:hidden;width:100%;">
                                 <thead><tr><th>Descripción</th><th class="text-right">Cant.</th><th class="text-right">Precio</th><th class="text-right">Total</th></tr></thead>
-                                <tbody>${(r.items||[]).map(it=>`<tr><td style="color:var(--color-text-primary);font-weight:500">${it.description}</td><td class="text-right">${it.quantity}</td><td class="text-right">${App.formatCurrency(it.unit_price,r.currency)}</td><td class="text-right font-semibold">${App.formatCurrency(it.amount,r.currency)}</td></tr>`).join('')}</tbody>
+                                <tbody>${(r.items||[]).map(it=>`<tr><td data-label="Descripción" style="color:var(--color-text-primary);font-weight:500;white-space:normal;font-size:14px;">${it.description}</td><td data-label="Cant." class="text-right">${it.quantity}</td><td data-label="Precio" class="text-right">${App.formatCurrency(it.unit_price,r.currency)}</td><td data-label="Total" class="text-right font-semibold">${App.formatCurrency(it.amount,r.currency)}</td></tr>`).join('')}</tbody>
                             </table>
                         </div>
-                        <div style="text-align:right;margin-top:16px">
-                            <div style="display:inline-block;background:var(--bg-hover);padding:16px 24px;border-radius:var(--radius-lg);min-width:250px">
-                                <div style="display:flex;justify-content:space-between;margin-bottom:6px;font-size:13px"><span style="color:var(--color-text-muted)">Subtotal:</span><span class="font-semibold">${App.formatCurrency(r.calculated_subtotal||0,r.currency)}</span></div>
-                                <div style="display:flex;justify-content:space-between;margin-bottom:6px;font-size:13px"><span style="color:var(--color-text-muted)">ITBIS (${r.tax_rate||0}%):</span><span class="font-semibold">${App.formatCurrency(r.calculated_tax||0,r.currency)}</span></div>
-                                <div style="display:flex;justify-content:space-between;border-top:2px solid var(--color-border);padding-top:8px;margin-top:8px"><span style="font-weight:700;font-size:16px">Total:</span><span style="font-weight:700;font-size:16px;color:var(--color-primary)">${App.formatCurrency(r.calculated_total||0,r.currency)}</span></div>
+                        <div class="mt-16">
+                            <div class="invoice-totals-wrapper">
+                                <div style="display:flex;justify-content:space-between;margin-bottom:6px;font-size:13px"><span style="color:var(--color-text-muted)">Subtotal</span><span class="font-semibold">${App.formatCurrency(r.calculated_subtotal||0,r.currency)}</span></div>
+                                <div style="display:flex;justify-content:space-between;margin-bottom:6px;font-size:13px"><span style="color:var(--color-text-muted)">ITBIS (${r.tax_rate||0}%)</span><span class="font-semibold">${App.formatCurrency(r.calculated_tax||0,r.currency)}</span></div>
+                                <div style="display:flex;justify-content:space-between;border-top:2px solid var(--color-border);padding-top:8px;margin-top:8px"><span style="font-weight:700;font-size:16px">Total</span><span style="font-weight:700;font-size:16px;color:var(--color-primary)">${App.formatCurrency(r.calculated_total||0,r.currency)}</span></div>
                             </div>
                         </div>
                     </div>

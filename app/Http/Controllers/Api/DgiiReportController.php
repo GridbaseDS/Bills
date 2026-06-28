@@ -24,33 +24,29 @@ class DgiiReportController extends Controller
         $endDate = Carbon::parse($startDate)->endOfMonth()->toDateString();
         
         // Fetch all invoices issued during this period
-        // Exclude drafts as they are not legally issued
+        // Exclude drafts and e-CF tipo 32 (Consumo goes to RFCE, not 607)
+        // 607 only accepts e-NCF types: 31, 33, 44, 45
         $invoices = Invoice::with(['client', 'payments'])
             ->whereBetween('issue_date', [$startDate, $endDate])
             ->where('status', '!=', 'draft')
+            ->where(function ($q) {
+                $q->whereNull('ecf_type')
+                  ->orWhereNotIn('ecf_type', [32]);
+            })
             ->orderBy('issue_date', 'asc')
             ->get();
             
         $records = $invoices->map(function ($inv) {
             $taxId = $inv->client ? preg_replace('/[^0-9]/', '', $inv->client->tax_id) : '';
             
-            // Determine Identification Type
-            $typeId = '';
+            // Determine Identification Type (cannot be empty per DGII prevalidator)
+            $typeId = '3'; // Default: Pasaporte/Otro
             if (!empty($taxId)) {
                 $len = strlen($taxId);
                 if ($len === 9) {
                     $typeId = '1'; // RNC
                 } elseif ($len === 11) {
                     $typeId = '2'; // Cédula
-                } else {
-                    $typeId = '3'; // Pasaporte/Otro
-                }
-            } else {
-                // If it is Consumo (Tipo 32) we can leave it empty
-                if ($inv->ecf_type == 32) {
-                    $typeId = '';
-                } else {
-                    $typeId = '3';
                 }
             }
             
@@ -90,15 +86,15 @@ class DgiiReportController extends Controller
                 'tipo_identificacion' => $typeId,
                 'ncf' => $ncf,
                 'ncf_modificado' => $inv->modified_ncf ?? '',
-                'tipo_ingreso' => $inv->tipo_ingresos ?? '01', // 01 = Ingresos por operaciones
+                'tipo_ingreso' => $inv->tipo_ingresos ?? '01',
                 'fecha_comprobante' => Carbon::parse($inv->issue_date)->format('Ymd'),
                 'fecha_pago' => $inv->paid_at ? Carbon::parse($inv->paid_at)->format('Ymd') : '',
                 'monto_facturado' => round((float)$inv->subtotal, 2),
                 'itbis_facturado' => round((float)$inv->tax_amount, 2),
                 'itbis_retenido' => 0.00,
-                'itbis_percibido' => 0.00,
+                'itbis_percibido' => '',  // Must be EMPTY per DGII prevalidator (not 0.00)
                 'retencion_isr' => 0.00,
-                'isr_percibido' => 0.00,
+                'isr_percibido' => '',    // Must be EMPTY per DGII prevalidator (not 0.00)
                 'isc' => 0.00,
                 'otros_impuestos' => 0.00,
                 'propina_legal' => 0.00,
@@ -106,6 +102,7 @@ class DgiiReportController extends Controller
                 'bancos' => round($bank, 2),
                 'tarjeta' => round($card, 2),
                 'credito' => round($credit, 2),
+                'bonos' => 0.00,
                 'permuta' => 0.00,
                 'otras_formas' => round($other, 2),
                 'cliente_nombre' => $inv->client ? ($inv->client->company_name ?: $inv->client->contact_name) : 'Cliente General',
@@ -329,9 +326,13 @@ class DgiiReportController extends Controller
             $mFact = number_format((float)($r['monto_facturado'] ?? 0), 2, '.', '');
             $mItbis = number_format((float)($r['itbis_facturado'] ?? 0), 2, '.', '');
             $mItbisRet = number_format((float)($r['itbis_retenido'] ?? 0), 2, '.', '');
-            $mItbisPer = number_format((float)($r['itbis_percibido'] ?? 0), 2, '.', '');
+            // ITBIS percibido must be EMPTY when not applicable (DGII prevalidator rule)
+            $mItbisPer = (!empty($r['itbis_percibido']) && $r['itbis_percibido'] !== '' && (float)$r['itbis_percibido'] > 0) 
+                ? number_format((float)$r['itbis_percibido'], 2, '.', '') : '';
             $mIsrRet = number_format((float)($r['retencion_isr'] ?? 0), 2, '.', '');
-            $mIsrPer = number_format((float)($r['isr_percibido'] ?? 0), 2, '.', '');
+            // ISR percibido must be EMPTY when not applicable (DGII prevalidator rule)
+            $mIsrPer = (!empty($r['isr_percibido']) && $r['isr_percibido'] !== '' && (float)$r['isr_percibido'] > 0) 
+                ? number_format((float)$r['isr_percibido'], 2, '.', '') : '';
             $mIsc = number_format((float)($r['isc'] ?? 0), 2, '.', '');
             $mOtros = number_format((float)($r['otros_impuestos'] ?? 0), 2, '.', '');
             $mProp = number_format((float)($r['propina_legal'] ?? 0), 2, '.', '');

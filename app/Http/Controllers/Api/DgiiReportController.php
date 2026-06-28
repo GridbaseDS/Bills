@@ -312,8 +312,8 @@ class DgiiReportController extends Controller
             $totalAmount += (float)($r['monto_facturado'] ?? 0);
         }
         
-        // Header: 607|RNC|PERIODO|CANTIDAD_REGISTROS|MONTO_TOTAL
-        $header = "607|{$companyTaxId}|{$period}|" . count($records) . "|" . number_format($totalAmount, 2, '.', '');
+        // Header: 607|RNC|PERIODO|CANTIDAD_REGISTROS (4 campos exactos)
+        $header = "607|{$companyTaxId}|{$period}|" . count($records);
         
         $lines = [$header];
         

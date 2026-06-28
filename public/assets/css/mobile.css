@@ -29,7 +29,9 @@ input, select, textarea {
   flex-direction: column;
   width: 100%;
   max-width: 100vw;
-  overflow-x: hidden;
+  height: auto !important;
+  min-height: 100dvh !important;
+  overflow: visible !important;
 }
 
 .sidebar, .sidebar-overlay, .sidebar-toggle {
@@ -41,7 +43,9 @@ input, select, textarea {
   width: 100%;
   max-width: 100vw;
   padding: 0 0 140px 0 !important;
-  overflow-x: hidden;
+  overflow-x: hidden !important;
+  overflow-y: visible !important;
+  height: auto !important;
   background: var(--bg-app);
 }
 

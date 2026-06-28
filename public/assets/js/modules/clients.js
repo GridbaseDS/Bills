@@ -141,12 +141,12 @@ const ClientsModule = {
                     <span style="color:var(--color-text-muted);font-size:13px;"> / </span>
                     <span style="font-size:13px;">${c.company_name || c.contact_name}</span>
                 </div>
-                <div class="page-header">
+                <div class="page-header detail-header">
                     <div>
                         <h1 class="page-title">${c.company_name || c.contact_name}</h1>
                         <p class="page-subtitle">${c.email} ${c.phone ? '· '+c.phone : ''}</p>
                     </div>
-                    <div style="display:flex;gap:8px;">
+                    <div class="detail-actions">
                         <a href="#clientes/${id}" class="btn btn-secondary">Editar</a>
                         <button class="btn btn-primary" onclick="window.App.navigate('facturas/nueva')">+ Nueva Factura</button>
                     </div>

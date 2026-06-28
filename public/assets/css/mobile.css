@@ -795,3 +795,71 @@ select.form-control {
   font-size: 12px !important;
 }
 
+/* ═══════════════════════════════════════════════════════════
+   DETAIL VIEW PAGE HEADER & ACTIONS — Mobile Adaptations
+   ═══════════════════════════════════════════════════════════ */
+.detail-header {
+  flex-direction: column !important;
+  align-items: stretch !important;
+  gap: 16px !important;
+  margin-bottom: 24px !important;
+}
+
+.detail-actions {
+  display: grid !important;
+  grid-template-columns: repeat(2, 1fr) !important;
+  gap: 8px !important;
+  width: 100% !important;
+  margin-top: 8px !important;
+}
+
+.detail-actions .btn {
+  width: 100% !important;
+  margin: 0 !important;
+  justify-content: center !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  padding: 10px 14px !important;
+  font-size: 13px !important;
+}
+
+/* Primary actions like 'Registrar Pago' or 'Convertir a Factura' take full width */
+.detail-actions .btn-primary {
+  grid-column: span 2 !important;
+}
+
+/* Align meta info block consistently to the left */
+.invoice-meta-right.text-right {
+  text-align: left !important;
+  margin-top: 16px !important;
+  padding-top: 16px !important;
+  border-top: 1px dashed var(--color-border) !important;
+}
+
+/* ECF status card fixes for padding/wrapping on small devices */
+.ecf-status-card {
+  border-radius: var(--radius-lg) !important;
+  border-left-width: 4px !important;
+}
+
+.ecf-status-card-body {
+  padding: 16px !important;
+  flex-direction: column !important;
+  align-items: stretch !important;
+  gap: 16px !important;
+}
+
+.ecf-status-actions {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 8px !important;
+  width: 100% !important;
+}
+
+.ecf-status-actions .btn {
+  width: 100% !important;
+  justify-content: center !important;
+}
+
+

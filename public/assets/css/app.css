@@ -2372,5 +2372,19 @@ tr:hover .row-actions { opacity: 1; }
 /* ── Dynamic Logo Support ── */
 /* Custom logos are rendered within premium base color capsules directly in the HTML layout */
 
+.detail-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.detail-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+
 
 

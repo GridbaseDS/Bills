@@ -156,12 +156,12 @@ const QuotesModule = {
                     <span style="color:var(--color-text-muted);font-size:13px;"> / </span>
                     <span style="font-size:13px;">${quote.quote_number}</span>
                 </div>
-                <div class="page-header">
+                <div class="page-header detail-header">
                     <div>
                         <h1 class="page-title">Cotización ${quote.quote_number}</h1>
                         <p class="page-subtitle">Emitida el ${window.App.formatDate(quote.issue_date)}</p>
                     </div>
-                    <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                    <div class="detail-actions">
                         ${quote.status !== 'converted' ? `<button class="btn btn-primary" onclick="QuotesModule.convertToInvoice(${id})">Convertir a Factura</button>` : '<span class="badge badge-converted" style="padding:8px 16px;">Ya Facturada</span>'}
                         <a href="/api/quotes/${id}/pdf" target="_blank" class="btn btn-secondary btn-sm">Ver PDF</a>
                         <button class="btn btn-secondary btn-sm" onclick="QuotesModule.sendEmail(${id})">Enviar</button>

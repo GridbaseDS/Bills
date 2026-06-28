@@ -217,44 +217,44 @@ const InvoicesModule = {
                     <span style="color:var(--color-text-muted);font-size:13px;"> / </span>
                     <span style="font-size:13px;">${inv.invoice_number}</span>
                 </div>
-                <div class="page-header">
+                <div class="page-header detail-header">
                     <div>
                         <h1 class="page-title">${inv.is_ecf ? `e-CF ${inv.encf || inv.invoice_number}` : `Factura ${inv.invoice_number}`}</h1>
                         <p class="page-subtitle">Emitida el ${App.formatDate(inv.issue_date)}</p>
                     </div>
-                    <div class="invoice-actions" style="display:flex;gap:8px;flex-wrap:wrap;width:100%;">
-                        <a href="/api/invoices/${id}/pdf" target="_blank" class="btn btn-secondary btn-sm" style="flex:1;justify-content:center;">
+                    <div class="invoice-actions detail-actions">
+                        <a href="/api/invoices/${id}/pdf" target="_blank" class="btn btn-secondary btn-sm">
                             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
                             Ver PDF
                         </a>
-                        <a href="/api/invoices/${id}/pdf?template=thermal" target="_blank" class="btn btn-secondary btn-sm" style="flex:1;justify-content:center;">
+                        <a href="/api/invoices/${id}/pdf?template=thermal" target="_blank" class="btn btn-secondary btn-sm">
                             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
                             Ticket Térmico
                         </a>
-                        <button class="btn btn-secondary btn-sm" onclick="InvoicesModule.sendEmail(${id})" style="flex:1;justify-content:center;">
+                        <button class="btn btn-secondary btn-sm" onclick="InvoicesModule.sendEmail(${id})">
                             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
                             Enviar
                         </button>
-                        <button class="btn btn-secondary btn-sm" onclick="InvoicesModule.duplicateInvoice(${id})" style="flex:1;justify-content:center;">Duplicar</button>
+                        <button class="btn btn-secondary btn-sm" onclick="InvoicesModule.duplicateInvoice(${id})">Duplicar</button>
                         ${inv.is_ecf && inv.encf && inv.ecf_type != 34 && inv.ecf_type != 33 ? `
-                            <button class="btn btn-secondary btn-sm" style="color:var(--color-danger-icon);border-color:rgba(239,68,68,0.2);flex:1;justify-content:center;" onclick="InvoicesModule.issueCreditNote(${id})">
+                            <button class="btn btn-secondary btn-sm" style="color:var(--color-danger-icon);border-color:rgba(239,68,68,0.2);" onclick="InvoicesModule.issueCreditNote(${id})">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:middle;margin-right:4px;"><path d="M9 14L4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5v0a5.5 5.5 0 0 1-5.5 5.5H11"/></svg>
                                 Nota de Crédito
                             </button>
                         ` : ''}
-                        <a href="#facturas/edit/${id}" class="btn btn-secondary btn-sm" style="flex:1;justify-content:center;">Editar</a>
-                        ${inv.status !== 'paid' ? `<button class="btn btn-primary btn-sm" style="width:100%;justify-content:center;margin-top:4px;" onclick="InvoicesModule.showPaymentModal(${id}, ${(inv.total || 0) - (inv.amount_paid || 0)})">Registrar Pago</button>` : ''}
+                        <a href="#facturas/edit/${id}" class="btn btn-secondary btn-sm">Editar</a>
+                        ${inv.status !== 'paid' ? `<button class="btn btn-primary btn-sm" onclick="InvoicesModule.showPaymentModal(${id}, ${(inv.total || 0) - (inv.amount_paid || 0)})">Registrar Pago</button>` : ''}
                     </div>
                 </div>
 
                 ${inv.is_ecf ? `
-                <div class="table-outer mb-24" style="border-left: 3px solid ${
+                <div class="table-outer mb-24 ecf-status-card" style="border-left: 3px solid ${
                     inv.dgii_status === 'accepted' ? 'var(--color-success-icon)' :
                     inv.dgii_status === 'rejected' ? 'var(--color-danger-icon)' :
                     inv.dgii_status === 'contingency' ? 'var(--amber)' :
                     inv.dgii_status === 'portal_pending' ? '#8b5cf6' : 'var(--color-primary)'
                 };">
-                    <div style="padding:var(--spacing-xl);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px;">
+                    <div class="ecf-status-card-body" style="padding:var(--spacing-xl);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px;">
                         <div>
                             <div style="font-size:15px;font-weight:600;display:flex;align-items:center;gap:8px;margin-bottom:6px;">
                                 Factura Electrónica (e-CF)
@@ -287,7 +287,7 @@ const InvoicesModule = {
                                 </div>
                             ` : ''}
                         </div>
-                        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                        <div class="ecf-status-actions" style="display:flex;gap:8px;flex-wrap:wrap;">
                             ${inv.dgii_status === 'pending' ? `
                                 <button class="btn btn-secondary btn-sm" onclick="InvoicesModule.checkEcfStatus(${inv.id})">
                                     Verificar Estado

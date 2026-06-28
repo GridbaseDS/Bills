@@ -1933,7 +1933,7 @@ textarea.form-control { resize: vertical; min-height: 80px; }
     max-width: 100vw;
     height: auto !important;
     overflow-y: visible !important;
-    padding: 12px 12px 140px;
+    padding: 12px 12px 96px;
   }
 
   .workspace-panel { border-radius: var(--radius-lg); padding: var(--spacing-lg); }

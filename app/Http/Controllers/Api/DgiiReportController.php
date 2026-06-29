@@ -89,7 +89,7 @@ class DgiiReportController extends Controller
                 'tipo_ingreso' => $inv->tipo_ingresos ?? '01',
                 'fecha_comprobante' => Carbon::parse($inv->issue_date)->format('Ymd'),
                 'fecha_pago' => $inv->paid_at ? Carbon::parse($inv->paid_at)->format('Ymd') : '',
-                'monto_facturado' => round((float)$inv->subtotal, 2),
+                'monto_facturado' => round((float)($inv->subtotal - ($inv->discount_amount ?? 0)), 2),
                 'itbis_facturado' => round((float)$inv->tax_amount, 2),
                 'itbis_retenido' => 0.00,
                 'itbis_percibido' => '',  // Must be EMPTY per DGII prevalidator (not 0.00)

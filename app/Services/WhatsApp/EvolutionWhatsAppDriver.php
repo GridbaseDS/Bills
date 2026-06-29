@@ -173,7 +173,10 @@ class EvolutionWhatsAppDriver implements WhatsAppDriverInterface
         $payload = [
             'number'  => $number,
             'text'    => $message,
-            'delay'   => 500,
+            'options' => [
+                'delay' => 1200,
+                'presence' => 'composing'
+            ]
         ];
 
         return $this->apiRequest('POST', $url, $payload);

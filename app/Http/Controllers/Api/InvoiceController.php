@@ -550,7 +550,9 @@ class InvoiceController extends Controller
                 }
             }
 
-            $invoice->status = 'sent';
+            if (!in_array($invoice->status, ['paid', 'partial'])) {
+                $invoice->status = 'sent';
+            }
             $invoice->sent_at = now();
             $invoice->sent_via = $sentVia;
             $invoice->save();

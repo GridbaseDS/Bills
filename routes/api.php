@@ -107,6 +107,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/settings/diagnose-smtp', [SettingController::class, 'diagnoseSmtp'])->middleware('role:admin');
     Route::post('/settings/reset-database', [SettingController::class, 'resetDatabase'])->middleware('role:admin');
     Route::post('/settings/upload-certificate', [SettingController::class, 'uploadCertificate'])->middleware('role:admin');
+    Route::post('/settings/whatsapp-test', [SettingController::class, 'testWhatsapp'])->middleware('role:admin');
+    Route::get('/settings/evolution-status', [SettingController::class, 'getEvolutionStatus'])->middleware('role:admin');
+    Route::get('/settings/evolution-qr', [SettingController::class, 'getEvolutionQr'])->middleware('role:admin');
 
     // DGII Tests & User Management
     Route::middleware('role:admin')->group(function () {

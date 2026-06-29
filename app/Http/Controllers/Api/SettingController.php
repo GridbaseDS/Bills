@@ -4,6 +4,8 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Setting;
 use App\Services\EmailService;
+use App\Services\WhatsAppService;
+use App\Services\WhatsApp\EvolutionWhatsAppDriver;
 
 class SettingController extends Controller
 {
@@ -237,9 +239,109 @@ class SettingController extends Controller
             \Illuminate\Support\Facades\Log::error("[SettingController] Certificate upload failed: " . $e->getMessage());
             return response()->json([
                 'success' => false,
-                'error' => 'Error al subir el certificado: ' . $e->getMessage()
+                'error'   => 'Error al subir el certificado: ' . $e->getMessage()
             ], 500);
         }
     }
-}
 
+    // ─────────────────────────────────────────────────────────────
+    // WhatsApp Testing & Evolution API
+    // ─────────────────────────────────────────────────────────────
+
+    /**
+     * Test the active WhatsApp driver by sending a test message.
+     * POST /api/settings/whatsapp-test
+     */
+    public function testWhatsapp(Request $request)
+    {
+        $request->validate([
+            'phone' => 'required|string|min:7',
+        ]);
+
+        try {
+            $wa     = new WhatsAppService();
+            $driver = $wa->getDriverName();
+
+            if (!$wa->isEnabled()) {
+                return response()->json([
+                    'success' => false,
+                    'driver'  => $driver,
+                    'error'   => "El driver '{$driver}' no está habilitado o faltan credenciales.",
+                ], 422);
+            }
+
+            $result = $wa->sendTextMessage(
+                $request->input('phone'),
+                "Mensaje de prueba desde Gridbase Bills.\nDriver activo: *{$driver}*\n_Esta es una prueba de conexion._"
+            );
+
+            if ($result['success']) {
+                return response()->json([
+                    'success' => true,
+                    'driver'  => $driver,
+                    'message' => "Mensaje enviado correctamente via {$driver}.",
+                ]);
+            }
+
+            return response()->json([
+                'success' => false,
+                'driver'  => $driver,
+                'error'   => $result['message'] ?? 'Error desconocido',
+            ], 500);
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('WhatsApp test failed: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'error'   => 'Error: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Get Evolution API connection state.
+     * GET /api/settings/evolution-status
+     */
+    public function getEvolutionStatus()
+    {
+        try {
+            $settings = Setting::getAll();
+            $driver   = new EvolutionWhatsAppDriver($settings);
+
+            if (!$driver->isEnabled()) {
+                return response()->json([
+                    'success'   => false,
+                    'connected' => false,
+                    'state'     => 'not_configured',
+                    'message'   => 'Evolution API no está configurada. Ingresa la URL, API key e instancia.',
+                ]);
+            }
+
+            return response()->json($driver->getConnectionState());
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'error' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Get QR code for linking Evolution API WhatsApp session.
+     * GET /api/settings/evolution-qr
+     */
+    public function getEvolutionQr()
+    {
+        try {
+            $settings = Setting::getAll();
+            $driver   = new EvolutionWhatsAppDriver($settings);
+
+            if (!$driver->isEnabled()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Evolution API no está configurada.',
+                ], 422);
+            }
+
+            return response()->json($driver->getQrCode());
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'error' => $e->getMessage()], 500);
+        }
+    }
+}

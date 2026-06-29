@@ -217,18 +217,86 @@ export default {
 
                         <!-- TAB: WHATSAPP -->
                         <div class="tab-content" id="tab-whatsapp" style="display:none;">
-                            <h3 style="font-size:15px;font-weight:600;margin:0 0 8px;">API de WhatsApp Cloud</h3>
-                            <p style="color:var(--color-text-muted);font-size:13px;margin:0 0 24px;">Conecta con Meta para enviar notificaciones vía WhatsApp.</p>
-                            <div class="form-group mb-24"><label class="form-label">Habilitar Integración</label>
-                                <select id="s_whatsapp_enabled" class="form-control" style="width:200px;">
-                                    <option value="1" ${s.whatsapp_enabled == '1' ? 'selected' : ''}>Habilitado</option>
-                                    <option value="0" ${s.whatsapp_enabled == '0' || !s.whatsapp_enabled ? 'selected' : ''}>Deshabilitado</option>
-                                </select>
+                            <h3 style="font-size:15px;font-weight:600;margin:0 0 8px;">WhatsApp</h3>
+                            <p style="color:var(--color-text-muted);font-size:13px;margin:0 0 24px;">Selecciona el driver de envío y configura las credenciales correspondientes.</p>
+
+                            <!-- Driver Selector -->
+                            <div style="background:var(--color-bg-secondary);border:1px solid var(--color-border);border-radius:var(--radius-lg);padding:20px;margin-bottom:20px;">
+                                <h4 style="font-size:13px;font-weight:600;margin:0 0 12px;">Driver de Envío Activo</h4>
+                                <div class="grid-2">
+                                    <div class="form-group" style="margin:0;">
+                                        <label class="form-label">Driver</label>
+                                        <select id="s_whatsapp_driver" class="form-control" onchange="
+                                            const v = this.value;
+                                            document.getElementById('wa-panel-meta').style.display      = v === 'meta'      ? '' : 'none';
+                                            document.getElementById('wa-panel-evolution').style.display = v === 'evolution' ? '' : 'none';
+                                        ">
+                                            <option value="meta"      ${(s.whatsapp_driver || 'meta') === 'meta'      ? 'selected' : ''}>Meta Cloud API (oficial)</option>
+                                            <option value="evolution" ${(s.whatsapp_driver || 'meta') === 'evolution' ? 'selected' : ''}>Evolution API (self-hosted)</option>
+                                        </select>
+                                        <div style="font-size:11px;color:var(--color-text-muted);margin-top:4px;">
+                                            <strong>Meta:</strong> API oficial de WhatsApp Business (requiere aprobación de Meta).<br>
+                                            <strong>Evolution:</strong> Gateway open-source auto-hospedado (sin aprobación, escaneo de QR).
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
-                            <div class="grid-2">
-                                <div class="form-group"><label class="form-label">ID del Número de Teléfono</label><input type="text" id="s_whatsapp_phone_id" class="form-control" value="${s.whatsapp_phone_id || ''}"></div>
-                                <div class="form-group"><label class="form-label">ID de Cuenta Business</label><input type="text" id="s_whatsapp_business_id" class="form-control" value="${s.whatsapp_business_id || ''}"></div>
-                                <div class="form-group" style="grid-column: span 2"><label class="form-label">Token de Acceso</label><input type="password" id="s_whatsapp_access_token" class="form-control" value="${s.whatsapp_access_token || ''}"></div>
+
+                            <!-- Panel Meta -->
+                            <div id="wa-panel-meta" style="${(s.whatsapp_driver || 'meta') !== 'meta' ? 'display:none;' : ''}background:var(--color-bg-secondary);border:1px solid var(--color-border);border-radius:var(--radius-lg);padding:20px;margin-bottom:20px;">
+                                <h4 style="font-size:13px;font-weight:600;margin:0 0 16px;display:flex;align-items:center;gap:8px;">
+                                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.63a19.79 19.79 0 01-3.07-8.67A2 2 0 012 .84h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.09 8.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg>
+                                    Meta Cloud API — Configuración
+                                </h4>
+                                <div class="grid-2">
+                                    <div class="form-group"><label class="form-label">ID del Número de Teléfono</label><input type="text" id="s_whatsapp_phone_id" class="form-control" value="${s.whatsapp_phone_id || ''}"></div>
+                                    <div class="form-group"><label class="form-label">ID de Cuenta Business</label><input type="text" id="s_whatsapp_business_id" class="form-control" value="${s.whatsapp_business_id || ''}"></div>
+                                    <div class="form-group" style="grid-column: span 2"><label class="form-label">Token de Acceso</label><input type="password" id="s_whatsapp_access_token" class="form-control" value="${s.whatsapp_access_token || ''}"></div>
+                                </div>
+                            </div>
+
+                            <!-- Panel Evolution API -->
+                            <div id="wa-panel-evolution" style="${(s.whatsapp_driver || 'meta') !== 'evolution' ? 'display:none;' : ''}background:var(--color-bg-secondary);border:1px solid var(--color-border);border-radius:var(--radius-lg);padding:20px;margin-bottom:20px;">
+                                <h4 style="font-size:13px;font-weight:600;margin:0 0 6px;display:flex;align-items:center;gap:8px;">
+                                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
+                                    Evolution API — Configuración
+                                </h4>
+                                <p style="color:var(--color-text-muted);font-size:12px;margin:0 0 16px;">Gateway open-source auto-hospedado. Instala Evolution API en tu servidor y conéctala aquí.</p>
+                                <div class="grid-2">
+                                    <div class="form-group"><label class="form-label">URL de Evolution API</label><input type="url" id="s_evolution_api_url" class="form-control" placeholder="https://wa.gridbase.com.do" value="${s.evolution_api_url || ''}"><div style="font-size:11px;color:var(--color-text-muted);margin-top:4px;">URL base del servidor Evolution API (sin slash final)</div></div>
+                                    <div class="form-group"><label class="form-label">Nombre de Instancia</label><input type="text" id="s_evolution_instance" class="form-control" placeholder="gridbase-bills" value="${s.evolution_instance || 'gridbase-bills'}"><div style="font-size:11px;color:var(--color-text-muted);margin-top:4px;">Nombre de la instancia creada en Evolution API</div></div>
+                                    <div class="form-group" style="grid-column: span 2"><label class="form-label">API Key de Evolution</label><input type="password" id="s_evolution_api_key" class="form-control" placeholder="Tu API key del .env de Evolution" value="${s.evolution_api_key || ''}"></div>
+                                </div>
+
+                                <!-- Connection Status + QR -->
+                                <div style="margin-top:16px;display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
+                                    <button type="button" id="btn-evolution-status" class="btn btn-secondary" style="display:inline-flex;align-items:center;gap:6px;">
+                                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12.55a11 11 0 0114.08 0"/><path d="M1.42 9a16 16 0 0121.16 0"/><path d="M8.53 16.11a6 6 0 016.95 0"/><line x1="12" y1="20" x2="12.01" y2="20"/></svg>
+                                        Verificar Conexion
+                                    </button>
+                                    <button type="button" id="btn-evolution-qr" class="btn btn-secondary" style="display:inline-flex;align-items:center;gap:6px;">
+                                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="5" y="5" width="3" height="3"/><rect x="16" y="5" width="3" height="3"/><rect x="16" y="16" width="3" height="3"/><rect x="5" y="16" width="3" height="3"/></svg>
+                                        Ver QR de Conexion
+                                    </button>
+                                    <div id="evolution-status-badge" style="display:none;"></div>
+                                </div>
+                                <div id="evolution-qr-container" style="display:none;margin-top:16px;text-align:center;"></div>
+                            </div>
+
+                            <!-- Test WhatsApp -->
+                            <div style="background:var(--bg-hover);border:1px solid var(--color-border);border-radius:var(--radius-lg);padding:20px;">
+                                <h4 style="font-size:13px;font-weight:600;margin:0 0 12px;">Probar Envio de Mensaje</h4>
+                                <div style="display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap;">
+                                    <div class="form-group" style="margin:0;flex:1;min-width:200px;max-width:300px;">
+                                        <label class="form-label">Numero de WhatsApp</label>
+                                        <input type="tel" id="wa_test_phone" class="form-control" placeholder="8091234567">
+                                    </div>
+                                    <button type="button" id="btn-test-whatsapp" class="btn btn-secondary" style="display:inline-flex;align-items:center;gap:6px;">
+                                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.63a19.79 19.79 0 01-3.07-8.67A2 2 0 012 .84h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.09 8.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg>
+                                        Enviar Prueba
+                                    </button>
+                                </div>
+                                <div id="wa-test-result" style="display:none;margin-top:12px;padding:10px 14px;border-radius:var(--radius-md);font-size:13px;"></div>
                             </div>
                         </div>
 
@@ -676,10 +744,13 @@ export default {
                     smtp_encryption: document.getElementById('s_smtp_encryption').value,
                     smtp_from_name: document.getElementById('s_smtp_from_name').value,
                     smtp_from_email: document.getElementById('s_smtp_from_email').value,
-                    whatsapp_enabled: document.getElementById('s_whatsapp_enabled').value,
-                    whatsapp_phone_id: document.getElementById('s_whatsapp_phone_id').value,
-                    whatsapp_business_id: document.getElementById('s_whatsapp_business_id').value,
-                    whatsapp_access_token: document.getElementById('s_whatsapp_access_token').value,
+                    whatsapp_driver: document.getElementById('s_whatsapp_driver')?.value || 'meta',
+                    whatsapp_phone_id: document.getElementById('s_whatsapp_phone_id')?.value || '',
+                    whatsapp_business_id: document.getElementById('s_whatsapp_business_id')?.value || '',
+                    whatsapp_access_token: document.getElementById('s_whatsapp_access_token')?.value || '',
+                    evolution_api_url: document.getElementById('s_evolution_api_url')?.value || '',
+                    evolution_api_key: document.getElementById('s_evolution_api_key')?.value || '',
+                    evolution_instance: document.getElementById('s_evolution_instance')?.value || 'gridbase-bills',
                     reminders_enabled: document.getElementById('s_reminders_enabled').value,
                     reminders_days_before: document.getElementById('s_reminders_days_before').value,
                     reminders_overdue_interval: document.getElementById('s_reminders_overdue_interval').value,
@@ -764,6 +835,92 @@ export default {
                 try { const res = await window.App.api('settings/test-smtp', { method: 'POST', body: payload }); window.App.showToast(res.message, 'success'); }
                 catch(err) {}
                 finally { btn.innerHTML = originalText; btn.disabled = false; }
+            });
+
+            // ── WhatsApp Test ──
+            document.getElementById('btn-test-whatsapp')?.addEventListener('click', async () => {
+                const btn = document.getElementById('btn-test-whatsapp');
+                const phone = document.getElementById('wa_test_phone')?.value?.trim();
+                const result = document.getElementById('wa-test-result');
+                if (!phone) return window.App.showToast('Ingresa un número de WhatsApp', 'error');
+                const orig = btn.innerHTML;
+                btn.innerHTML = '<span class="spinner" style="width:14px;height:14px;border-width:2px;"></span> Enviando...';
+                btn.disabled = true;
+                result.style.display = 'none';
+                try {
+                    const res = await window.App.api('settings/whatsapp-test', { method: 'POST', body: { phone } });
+                    result.style.display = 'block';
+                    if (res.success) {
+                        result.style.background = 'rgba(34,197,94,0.08)';
+                        result.style.border = '1px solid rgba(34,197,94,0.3)';
+                        result.style.color = '#16a34a';
+                        result.innerHTML = `Mensaje enviado correctamente (driver: <strong>${res.driver}</strong>)`;
+                    } else {
+                        result.style.background = 'rgba(239,68,68,0.08)';
+                        result.style.border = '1px solid rgba(239,68,68,0.3)';
+                        result.style.color = '#dc2626';
+                        result.innerHTML = `Error: ${res.error || 'desconocido'}`;
+                    }
+                } catch(err) {
+                    result.style.display = 'block';
+                    result.style.background = 'rgba(239,68,68,0.08)';
+                    result.style.border = '1px solid rgba(239,68,68,0.3)';
+                    result.style.color = '#dc2626';
+                    result.textContent = 'Error al enviar el mensaje.';
+                } finally { btn.innerHTML = orig; btn.disabled = false; }
+            });
+
+            // ── Evolution API Status ──
+            document.getElementById('btn-evolution-status')?.addEventListener('click', async () => {
+                const badge = document.getElementById('evolution-status-badge');
+                badge.style.display = 'inline-flex';
+                badge.style.alignItems = 'center';
+                badge.style.gap = '6px';
+                badge.style.padding = '4px 10px';
+                badge.style.borderRadius = '999px';
+                badge.style.fontSize = '12px';
+                badge.style.fontWeight = '600';
+                badge.style.background = 'var(--color-border)';
+                badge.style.color = 'var(--color-text-muted)';
+                badge.textContent = 'Verificando...';
+                try {
+                    const res = await window.App.api('settings/evolution-status');
+                    if (res.connected) {
+                        badge.style.background = 'rgba(34,197,94,0.12)';
+                        badge.style.color = '#16a34a';
+                        badge.textContent = 'Conectado';
+                    } else {
+                        badge.style.background = 'rgba(239,68,68,0.12)';
+                        badge.style.color = '#dc2626';
+                        badge.textContent = res.message || res.state || 'Desconectado';
+                    }
+                } catch(err) {
+                    badge.style.background = 'rgba(239,68,68,0.12)';
+                    badge.style.color = '#dc2626';
+                    badge.textContent = 'Error de conexion';
+                }
+            });
+
+            // ── Evolution API QR Code ──
+            document.getElementById('btn-evolution-qr')?.addEventListener('click', async () => {
+                const qrContainer = document.getElementById('evolution-qr-container');
+                qrContainer.style.display = 'block';
+                qrContainer.innerHTML = '<div style="padding:20px;color:var(--color-text-muted);font-size:13px;">Obteniendo QR...</div>';
+                try {
+                    const res = await window.App.api('settings/evolution-qr');
+                    if (res.success && res.qr_code) {
+                        qrContainer.innerHTML = `<div style="padding:12px;background:#fff;border:1px solid var(--color-border);border-radius:var(--radius-lg);display:inline-block;">
+                            <img src="${res.qr_code}" style="width:220px;height:220px;display:block;" alt="QR WhatsApp">
+                            <div style="font-size:11px;color:var(--color-text-muted);margin-top:8px;text-align:center;">Escanea con WhatsApp → Dispositivos Vinculados → Vincular dispositivo</div>
+                        </div>`;
+                    } else if (res.success) {
+                        qrContainer.innerHTML = '<div style="padding:12px 16px;background:rgba(34,197,94,0.08);border:1px solid rgba(34,197,94,0.3);border-radius:var(--radius-md);color:#16a34a;font-size:13px;">Ya conectado — no se requiere escanear QR.</div>';
+                    } else {
+                        qrContainer.innerHTML = `<div style="padding:12px 16px;background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.3);border-radius:var(--radius-md);color:#dc2626;font-size:13px;">${res.message || 'Error al obtener QR'}</div>`;
+                    }
+                } catch(err) {
+                    qrContainer.innerHTML = '<div style="color:#dc2626;font-size:13px;">Error al obtener QR. Verifica la URL y API Key.</div>';
+                }
             });
 
             // ── PDF Appearance: Color sync + Live Preview ──

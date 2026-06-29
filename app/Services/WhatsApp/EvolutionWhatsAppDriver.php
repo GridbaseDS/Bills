@@ -22,12 +22,14 @@ class EvolutionWhatsAppDriver implements WhatsAppDriverInterface
     private string $instance;
     private bool $enabled;
     private string $defaultCountryCode = '1';
+    private string $phoneNumber = '';
 
     public function __construct(array $settings = [])
     {
         $this->baseUrl  = rtrim(env('EVOLUTION_API_URL')  ?: ($settings['evolution_api_url']  ?? ''), '/');
         $this->apiKey   = env('EVOLUTION_API_KEY')        ?: ($settings['evolution_api_key']   ?? '');
         $this->instance = env('EVOLUTION_INSTANCE')       ?: ($settings['evolution_instance']  ?? 'gridbase-bills');
+        $this->phoneNumber = $settings['evolution_phone_number'] ?? '';
 
         $this->enabled = !empty($this->baseUrl) && !empty($this->apiKey) && !empty($this->instance);
     }
@@ -241,16 +243,126 @@ class EvolutionWhatsAppDriver implements WhatsAppDriverInterface
         $url    = "{$this->baseUrl}/instance/connect/{$this->instance}";
         $result = $this->apiRequest('GET', $url);
 
+        // Auto-heal: If connect fails (due to conflict, corrupt state, or missing instance), reset it.
+        if (!$result['success']) {
+            Log::warning("La conexión de Evolution falló para {$this->instance}. Iniciando autorecuperación/recreación de la instancia...");
+            
+            // Delete instance (silently ignore failure if it doesn't exist)
+            $this->deleteInstance();
+            
+            // Recreate instance
+            $createResult = $this->createInstance();
+            if (!$createResult['success']) {
+                Log::error("Autorecuperación fallida: No se pudo recrear la instancia {$this->instance}");
+                return $result; // Return original error
+            }
+
+            Log::info("Autorecuperación exitosa: Instancia {$this->instance} recreada. Reintentando connect...");
+            
+            // Retry connect request
+            $result = $this->apiRequest('GET', $url);
+        }
+
         if ($result['success']) {
-            $qrCode = $result['data']['base64'] ?? $result['data']['qrcode']['base64'] ?? null;
+            $qrCode      = $result['data']['base64'] ?? $result['data']['qrcode']['base64'] ?? null;
+            $pairingCode = $result['data']['pairingCode'] ?? $result['data']['qrcode']['pairingCode'] ?? null;
             return [
-                'success' => true,
-                'qr_code' => $qrCode,
-                'message' => $qrCode ? 'QR generado' : 'Ya conectado (no necesita QR)',
+                'success'      => true,
+                'qr_code'      => $qrCode,
+                'pairing_code' => $pairingCode,
+                'message'      => $qrCode ? 'QR generado' : 'Ya conectado (no necesita QR)',
             ];
         }
 
         return $result;
+    }
+
+    /**
+     * Get a pairing code for connecting via phone number (more reliable than QR).
+     * Recreates the instance with the phone number to trigger pairing code generation.
+     */
+    public function getPairingCode(string $phoneNumber = ''): array
+    {
+        if (!$this->enabled) {
+            return ['success' => false, 'message' => 'Evolution API no está configurada'];
+        }
+
+        $phone = $this->formatPhone($phoneNumber ?: $this->phoneNumber);
+        if (empty($phone)) {
+            return ['success' => false, 'message' => 'Se requiere un número de teléfono para generar el código de vinculación'];
+        }
+
+        // Delete existing instance to start fresh
+        $this->deleteInstance();
+        usleep(500000); // 500ms
+
+        // Create instance with phone number and qrcode=true to trigger pairing code
+        $url = "{$this->baseUrl}/instance/create";
+        $payload = [
+            'instanceName' => $this->instance,
+            'token'        => 'E34467E0-7502-4173-A25E-F313497F7EA7',
+            'number'       => $phone,
+            'qrcode'       => true,
+            'integration'  => 'WHATSAPP-BAILEYS',
+        ];
+
+        $result = $this->apiRequest('POST', $url, $payload);
+
+        if (!$result['success']) {
+            return ['success' => false, 'message' => 'Error al crear instancia: ' . ($result['message'] ?? 'Unknown')];
+        }
+
+        $pairingCode = $result['data']['qrcode']['pairingCode'] ?? null;
+
+        if ($pairingCode) {
+            // Format as XXXX-XXXX for readability
+            $formatted = strlen($pairingCode) === 8
+                ? substr($pairingCode, 0, 4) . '-' . substr($pairingCode, 4)
+                : $pairingCode;
+
+            return [
+                'success'      => true,
+                'pairing_code' => $pairingCode,
+                'formatted'    => $formatted,
+                'phone'        => $phone,
+                'message'      => 'Código de vinculación generado. Introdúcelo en WhatsApp → Dispositivos vinculados → Vincular con número de teléfono.',
+            ];
+        }
+
+        return [
+            'success' => false,
+            'message' => 'No se pudo generar el código de vinculación. Intenta de nuevo.',
+        ];
+    }
+
+    /**
+     * Delete the instance from Evolution API.
+     * DELETE /instance/delete/{instance}
+     */
+    public function deleteInstance(): array
+    {
+        $url = "{$this->baseUrl}/instance/delete/{$this->instance}";
+        return $this->apiRequest('DELETE', $url);
+    }
+
+    /**
+     * Create the instance on Evolution API.
+     * POST /instance/create
+     */
+    public function createInstance(): array
+    {
+        $url = "{$this->baseUrl}/instance/create";
+        $phone = $this->formatPhone($this->phoneNumber);
+        $payload = [
+            'instanceName' => $this->instance,
+            'token'        => 'E34467E0-7502-4173-A25E-F313497F7EA7',
+            'qrcode'       => true,
+            'integration'  => 'WHATSAPP-BAILEYS',
+        ];
+        if (!empty($phone)) {
+            $payload['number'] = $phone;
+        }
+        return $this->apiRequest('POST', $url, $payload);
     }
 
     /**

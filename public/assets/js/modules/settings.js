@@ -265,21 +265,27 @@ export default {
                                 <div class="grid-2">
                                     <div class="form-group"><label class="form-label">URL de Evolution API</label><input type="url" id="s_evolution_api_url" class="form-control" placeholder="https://wa.gridbase.com.do" value="${s.evolution_api_url || ''}"><div style="font-size:11px;color:var(--color-text-muted);margin-top:4px;">URL base del servidor Evolution API (sin slash final)</div></div>
                                     <div class="form-group"><label class="form-label">Nombre de Instancia</label><input type="text" id="s_evolution_instance" class="form-control" placeholder="gridbase-bills" value="${s.evolution_instance || 'gridbase-bills'}"><div style="font-size:11px;color:var(--color-text-muted);margin-top:4px;">Nombre de la instancia creada en Evolution API</div></div>
-                                    <div class="form-group" style="grid-column: span 2"><label class="form-label">API Key de Evolution</label><input type="password" id="s_evolution_api_key" class="form-control" placeholder="Tu API key del .env de Evolution" value="${s.evolution_api_key || ''}"></div>
+                                    <div class="form-group"><label class="form-label">API Key de Evolution</label><input type="password" id="s_evolution_api_key" class="form-control" placeholder="Tu API key del .env de Evolution" value="${s.evolution_api_key || ''}"></div>
+                                    <div class="form-group"><label class="form-label">Número de WhatsApp</label><input type="tel" id="s_evolution_phone_number" class="form-control" placeholder="8495714181" value="${s.evolution_phone_number || ''}"><div style="font-size:11px;color:var(--color-text-muted);margin-top:4px;">Número asociado a la cuenta de WhatsApp (sin +, sin guiones)</div></div>
                                 </div>
 
-                                <!-- Connection Status + QR -->
+                                <!-- Connection Status + Pairing Code -->
                                 <div style="margin-top:16px;display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
                                     <button type="button" id="btn-evolution-status" class="btn btn-secondary" style="display:inline-flex;align-items:center;gap:6px;">
                                         <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12.55a11 11 0 0114.08 0"/><path d="M1.42 9a16 16 0 0121.16 0"/><path d="M8.53 16.11a6 6 0 016.95 0"/><line x1="12" y1="20" x2="12.01" y2="20"/></svg>
                                         Verificar Conexion
                                     </button>
-                                    <button type="button" id="btn-evolution-qr" class="btn btn-secondary" style="display:inline-flex;align-items:center;gap:6px;">
-                                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="5" y="5" width="3" height="3"/><rect x="16" y="5" width="3" height="3"/><rect x="16" y="16" width="3" height="3"/><rect x="5" y="16" width="3" height="3"/></svg>
-                                        Ver QR de Conexion
+                                    <button type="button" id="btn-evolution-pairing" class="btn btn-primary" style="display:inline-flex;align-items:center;gap:6px;">
+                                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 7h3a5 5 0 015 5 5 5 0 01-5 5h-3m-6 0H6a5 5 0 01-5-5 5 5 0 015-5h3"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+                                        Vincular con Codigo
+                                    </button>
+                                    <button type="button" id="btn-evolution-qr" class="btn btn-secondary" style="display:inline-flex;align-items:center;gap:6px;font-size:12px;">
+                                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+                                        QR (alternativo)
                                     </button>
                                     <div id="evolution-status-badge" style="display:none;"></div>
                                 </div>
+                                <div id="evolution-pairing-container" style="display:none;margin-top:16px;text-align:center;"></div>
                                 <div id="evolution-qr-container" style="display:none;margin-top:16px;text-align:center;"></div>
                             </div>
 
@@ -751,6 +757,7 @@ export default {
                     evolution_api_url: document.getElementById('s_evolution_api_url')?.value || '',
                     evolution_api_key: document.getElementById('s_evolution_api_key')?.value || '',
                     evolution_instance: document.getElementById('s_evolution_instance')?.value || 'gridbase-bills',
+                    evolution_phone_number: document.getElementById('s_evolution_phone_number')?.value || '',
                     reminders_enabled: document.getElementById('s_reminders_enabled').value,
                     reminders_days_before: document.getElementById('s_reminders_days_before').value,
                     reminders_overdue_interval: document.getElementById('s_reminders_overdue_interval').value,
@@ -905,6 +912,7 @@ export default {
             document.getElementById('btn-evolution-qr')?.addEventListener('click', async () => {
                 const qrContainer = document.getElementById('evolution-qr-container');
                 qrContainer.style.display = 'block';
+                document.getElementById('evolution-pairing-container').style.display = 'none';
                 qrContainer.innerHTML = '<div style="padding:20px;color:var(--color-text-muted);font-size:13px;">Obteniendo QR...</div>';
                 try {
                     const res = await window.App.api('settings/evolution-qr');
@@ -920,6 +928,57 @@ export default {
                     }
                 } catch(err) {
                     qrContainer.innerHTML = '<div style="color:#dc2626;font-size:13px;">Error al obtener QR. Verifica la URL y API Key.</div>';
+                }
+            });
+
+            // ── Evolution API Pairing Code ──
+            document.getElementById('btn-evolution-pairing')?.addEventListener('click', async () => {
+                const container = document.getElementById('evolution-pairing-container');
+                const phoneInput = document.getElementById('s_evolution_phone_number');
+                const phone = phoneInput?.value?.trim();
+
+                if (!phone) {
+                    window.App.toast('Ingresa el número de WhatsApp primero', 'error');
+                    phoneInput?.focus();
+                    return;
+                }
+
+                container.style.display = 'block';
+                document.getElementById('evolution-qr-container').style.display = 'none';
+                container.innerHTML = `<div style="padding:24px;background:var(--color-bg-secondary);border:1px solid var(--color-border);border-radius:var(--radius-lg);">
+                    <div style="display:flex;align-items:center;justify-content:center;gap:8px;color:var(--color-text-muted);font-size:14px;">
+                        <svg style="animation:spin 1s linear infinite;" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 11-6.219-8.56"/></svg>
+                        Generando código de vinculación...
+                    </div>
+                </div>`;
+
+                try {
+                    const res = await window.App.api('settings/evolution-pairing-code', {
+                        method: 'POST',
+                        body: JSON.stringify({ phone_number: phone }),
+                    });
+
+                    if (res.success && res.pairing_code) {
+                        const formatted = res.formatted || res.pairing_code;
+                        container.innerHTML = `<div style="padding:24px;background:var(--color-bg-secondary);border:1px solid var(--color-border);border-radius:var(--radius-lg);">
+                            <div style="font-size:13px;font-weight:600;margin-bottom:12px;color:var(--color-text);text-align:center;">Código de Vinculación</div>
+                            <div style="font-size:36px;font-weight:800;letter-spacing:6px;font-family:'JetBrains Mono',monospace;color:var(--color-primary);text-align:center;padding:16px 0;">${formatted}</div>
+                            <div style="font-size:12px;color:var(--color-text-muted);text-align:center;line-height:1.6;margin-top:8px;">
+                                <strong>Pasos:</strong><br>
+                                1. Abre WhatsApp → ⋮ → Dispositivos vinculados<br>
+                                2. Toca "Vincular un dispositivo"<br>
+                                3. Toca <strong>"Vincular con el número de teléfono"</strong> (link azul abajo)<br>
+                                4. Introduce tu número y luego este código<br>
+                                <div style="margin-top:8px;padding:6px 10px;background:rgba(234,179,8,0.1);border:1px solid rgba(234,179,8,0.3);border-radius:var(--radius-sm);color:#a16207;">
+                                    ⏱ El código expira en ~60 segundos. Si expira, presiona el botón de nuevo.
+                                </div>
+                            </div>
+                        </div>`;
+                    } else {
+                        container.innerHTML = `<div style="padding:16px;background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.3);border-radius:var(--radius-md);color:#dc2626;font-size:13px;text-align:center;">${res.message || 'Error al generar código'}</div>`;
+                    }
+                } catch(err) {
+                    container.innerHTML = '<div style="padding:16px;color:#dc2626;font-size:13px;text-align:center;">Error al generar código. Verifica la configuración.</div>';
                 }
             });
 

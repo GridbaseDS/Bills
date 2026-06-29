@@ -344,4 +344,37 @@ class SettingController extends Controller
             return response()->json(['success' => false, 'error' => $e->getMessage()], 500);
         }
     }
+
+    /**
+     * Generate a pairing code for linking WhatsApp via phone number.
+     * More reliable than QR scanning with Baileys.
+     * POST /api/settings/evolution-pairing-code
+     */
+    public function getEvolutionPairingCode(Request $request)
+    {
+        try {
+            $settings = Setting::getAll();
+            $driver   = new EvolutionWhatsAppDriver($settings);
+
+            if (!$driver->isEnabled()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Evolution API no está configurada.',
+                ], 422);
+            }
+
+            $phoneNumber = $request->input('phone_number', $settings['evolution_phone_number'] ?? '');
+
+            if (empty($phoneNumber)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Se requiere un número de teléfono. Configúralo en los ajustes de Evolution API.',
+                ], 422);
+            }
+
+            return response()->json($driver->getPairingCode($phoneNumber));
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'error' => $e->getMessage()], 500);
+        }
+    }
 }

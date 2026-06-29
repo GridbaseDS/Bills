@@ -110,6 +110,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/settings/whatsapp-test', [SettingController::class, 'testWhatsapp'])->middleware('role:admin');
     Route::get('/settings/evolution-status', [SettingController::class, 'getEvolutionStatus'])->middleware('role:admin');
     Route::get('/settings/evolution-qr', [SettingController::class, 'getEvolutionQr'])->middleware('role:admin');
+    Route::post('/settings/evolution-pairing-code', [SettingController::class, 'getEvolutionPairingCode'])->middleware('role:admin');
 
     // DGII Tests & User Management
     Route::middleware('role:admin')->group(function () {

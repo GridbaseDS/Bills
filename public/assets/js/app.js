@@ -790,9 +790,21 @@ window.App = {
                                 <span id="dgii-status-label">DGII...</span>
                             </div>
                             <button class="btn-icon" id="theme-toggle" onclick="App.toggleTheme()" title="Cambiar Tema" style="display:inline-flex;align-items:center;justify-content:center;"></button>
-                            <button class="btn-icon" title="Notificaciones">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
-                            </button>
+                            <div style="position:relative;">
+                                 <button class="btn-icon" id="notification-toggle" onclick="App.toggleNotifications(event)" title="Notificaciones" style="position:relative; display:inline-flex;align-items:center;justify-content:center;">
+                                     <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
+                                     <span id="notification-badge" style="display:none;position:absolute;top:2px;right:2px;width:7px;height:7px;border-radius:50%;background:#ef4444;border:1px solid var(--bg-card);"></span>
+                                 </button>
+                                 <div id="notification-dropdown" class="table-outer" style="display:none;position:absolute;top:calc(100% + 8px);right:0;width:320px;z-index:300;background:var(--bg-card);border:1px solid var(--color-border);border-radius:var(--radius-lg);box-shadow:var(--shadow-lg);padding:0;max-height:400px;overflow-y:auto;animation:fadeIn 0.15s ease;">
+                                     <div style="padding:12px 16px;border-bottom:1px solid var(--color-border);display:flex;justify-content:space-between;align-items:center;">
+                                         <span style="font-weight:700;font-size:13px;color:var(--color-text-primary);">Notificaciones</span>
+                                         <span id="notification-count" class="badge" style="background:var(--color-primary-light);color:var(--color-primary);font-size:10px;padding:2px 6px;font-weight:700;">0</span>
+                                     </div>
+                                     <div id="notification-list" style="padding:4px 0;">
+                                         <div class="text-center text-muted" style="padding:20px;font-size:12px;"><span class="spinner" style="width:14px;height:14px;margin:0 auto 8px;"></span>Cargando...</div>
+                                     </div>
+                                 </div>
+                             </div>
                             <div class="vertical-divider"></div>
                             <button class="btn btn-primary" onclick="App.navigate('invoices/new')">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
@@ -819,6 +831,7 @@ window.App = {
         this.loadDgiiStatus();
         this.bindSearch();
         this.updateThemeButton();
+        this.loadNotifications();
     },
 
     async loadOverdueBadge() {
@@ -858,6 +871,114 @@ window.App = {
             pill.style.background = 'rgba(107,114,128,0.12)';
             pill.style.color = '#6b7280';
             label.textContent = 'DGII N/D';
+        }
+    },
+
+    toggleNotifications(event) {
+        if (event) event.stopPropagation();
+        const dropdown = document.getElementById('notification-dropdown');
+        if (!dropdown) return;
+        const isOpen = dropdown.style.display === 'block';
+        
+        dropdown.style.display = isOpen ? 'none' : 'block';
+        
+        if (!isOpen) {
+            this.loadNotifications();
+            const closeHandler = () => {
+                dropdown.style.display = 'none';
+                document.removeEventListener('click', closeHandler);
+            };
+            setTimeout(() => document.addEventListener('click', closeHandler), 10);
+        }
+    },
+
+    async loadNotifications() {
+        const list = document.getElementById('notification-list');
+        const badge = document.getElementById('notification-badge');
+        const countBadge = document.getElementById('notification-count');
+        if (!list) return;
+
+        try {
+            const [dashboardData, receivedData, dgiiRes] = await Promise.all([
+                this.api('dashboard', { silent: true }).catch(() => null),
+                this.api('received-invoices/summary', { silent: true }).catch(() => null),
+                this.api('dgii/status', { silent: true }).catch(() => null)
+            ]);
+
+            const notifications = [];
+
+            if (receivedData && receivedData.pending > 0) {
+                notifications.push({
+                    type: 'approval',
+                    title: 'Aprobación de e-CF',
+                    description: `Tienes ${receivedData.pending} factura${receivedData.pending > 1 ? 's' : ''} de proveedor${receivedData.pending > 1 ? 'es' : ''} pendiente${receivedData.pending > 1 ? 's' : ''} de aprobación comercial.`,
+                    link: 'facturas-recibidas',
+                    icon: `<svg style="color:#f59e0b" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>`
+                });
+            }
+
+            if (dashboardData && dashboardData.stats && dashboardData.stats.overdue_count > 0) {
+                notifications.push({
+                    type: 'overdue',
+                    title: 'Facturas Vencidas',
+                    description: `Tienes ${dashboardData.stats.overdue_count} factura${dashboardData.stats.overdue_count > 1 ? 's' : ''} vencida${dashboardData.stats.overdue_count > 1 ? 's' : ''} pendiente${dashboardData.stats.overdue_count > 1 ? 's' : ''} de cobro.`,
+                    link: 'facturas',
+                    icon: `<svg style="color:#ef4444" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>`
+                });
+            }
+
+            if (dgiiRes && dgiiRes.status !== 'connected') {
+                const desc = dgiiRes.status === 'not_configured' 
+                    ? 'Facturación electrónica no configurada' 
+                    : 'Sin conexión con el servidor de la DGII';
+                notifications.push({
+                    type: 'dgii',
+                    title: 'Conexión DGII',
+                    description: desc,
+                    link: 'pruebas-dgii',
+                    icon: `<svg style="color:#ef4444" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>`
+                });
+            }
+
+            if (badge) {
+                badge.style.display = notifications.length > 0 ? 'block' : 'none';
+            }
+            if (countBadge) {
+                countBadge.textContent = notifications.length;
+            }
+
+            if (notifications.length === 0) {
+                list.innerHTML = `
+                    <div class="text-center" style="padding:32px 16px;">
+                        <svg viewBox="0 0 24 24" width="36" height="36" fill="none" stroke="currentColor" stroke-width="1.5" style="color:#10b981;margin-bottom:8px;opacity:0.8;">
+                            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>
+                        </svg>
+                        <div style="font-weight:600;font-size:12px;color:var(--color-text-primary);">¡Todo al día!</div>
+                        <div style="font-size:11px;color:var(--color-text-muted);margin-top:2px;">No tienes alertas ni notificaciones pendientes.</div>
+                    </div>
+                `;
+                return;
+            }
+
+            list.innerHTML = notifications.map(n => `
+                <a href="#${n.link}" onclick="App.toggleNotifications(event)" style="display:flex;gap:12px;padding:12px 16px;border-bottom:1.5px solid var(--color-border);text-decoration:none;color:inherit;transition:background 0.15s;" class="notification-item">
+                    <div style="width:32px;height:32px;border-radius:var(--radius-md);background:var(--bg-hover);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                        ${n.icon}
+                    </div>
+                    <div style="min-width:0;flex:1;">
+                        <div style="font-weight:700;font-size:12px;color:var(--color-text-primary);margin-bottom:2px;">${n.title}</div>
+                        <div style="font-size:11px;color:var(--color-text-secondary);line-height:1.4;">${n.description}</div>
+                    </div>
+                </a>
+            `).join('') + `
+                <style>
+                    .notification-item:hover { background: var(--bg-hover) !important; }
+                    .notification-item:last-child { border-bottom: none; }
+                </style>
+            `;
+
+        } catch (e) {
+            list.innerHTML = `<div class="text-center text-red" style="padding:20px;font-size:11px;">Error al cargar notificaciones</div>`;
         }
     },
 

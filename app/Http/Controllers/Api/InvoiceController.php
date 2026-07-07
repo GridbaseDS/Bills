@@ -23,20 +23,27 @@ class InvoiceController extends Controller
     {
         $data = $request->all();
         $clientId = $data['client_id'] ?? null;
+        $isEcf = (int)($data['is_ecf'] ?? 0) === 1;
+        $ecfType = (int)($data['ecf_type'] ?? 0);
+
         if (empty($clientId)) {
-            $defaultClient = \App\Models\Client::firstOrCreate(
-                ['email' => 'consumidorfinal@bills.gridbase.com.do'],
-                [
-                    'company_name' => 'Consumidor Final',
-                    'contact_name' => 'Consumidor Final',
-                    'phone' => '',
-                    'tax_id' => '',
-                    'address_line1' => 'Santo Domingo, Rep. Dom.',
-                    'country' => 'Republica Dominicana',
-                    'is_active' => true,
-                ]
-            );
-            $clientId = $defaultClient->id;
+            if ($isEcf && $ecfType === 32) {
+                $defaultClient = \App\Models\Client::firstOrCreate(
+                    ['email' => 'consumidorfinal@bills.gridbase.com.do'],
+                    [
+                        'company_name' => 'Consumidor Final',
+                        'contact_name' => 'Consumidor Final',
+                        'phone' => '',
+                        'tax_id' => '',
+                        'address_line1' => 'Santo Domingo, Rep. Dom.',
+                        'country' => 'Republica Dominicana',
+                        'is_active' => true,
+                    ]
+                );
+                $clientId = $defaultClient->id;
+            } else {
+                return response()->json(['success' => false, 'error' => 'El cliente es obligatorio para este tipo de factura.'], 400);
+            }
         }
         $data['client_id'] = $clientId;
 
@@ -237,20 +244,27 @@ class InvoiceController extends Controller
         $invoice = Invoice::findOrFail($id);
         $data = $request->all();
         $clientId = $data['client_id'] ?? null;
+        $isEcf = (int)($data['is_ecf'] ?? 0) === 1;
+        $ecfType = (int)($data['ecf_type'] ?? 0);
+
         if (empty($clientId)) {
-            $defaultClient = \App\Models\Client::firstOrCreate(
-                ['email' => 'consumidorfinal@bills.gridbase.com.do'],
-                [
-                    'company_name' => 'Consumidor Final',
-                    'contact_name' => 'Consumidor Final',
-                    'phone' => '',
-                    'tax_id' => '',
-                    'address_line1' => 'Santo Domingo, Rep. Dom.',
-                    'country' => 'Republica Dominicana',
-                    'is_active' => true,
-                ]
-            );
-            $clientId = $defaultClient->id;
+            if ($isEcf && $ecfType === 32) {
+                $defaultClient = \App\Models\Client::firstOrCreate(
+                    ['email' => 'consumidorfinal@bills.gridbase.com.do'],
+                    [
+                        'company_name' => 'Consumidor Final',
+                        'contact_name' => 'Consumidor Final',
+                        'phone' => '',
+                        'tax_id' => '',
+                        'address_line1' => 'Santo Domingo, Rep. Dom.',
+                        'country' => 'Republica Dominicana',
+                        'is_active' => true,
+                    ]
+                );
+                $clientId = $defaultClient->id;
+            } else {
+                return response()->json(['success' => false, 'error' => 'El cliente es obligatorio para este tipo de factura.'], 400);
+            }
         }
         $data['client_id'] = $clientId;
 

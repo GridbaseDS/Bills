@@ -593,6 +593,7 @@ const InvoicesModule = {
         } else {
             this.addItem();
         }
+        this.onEcfTypeChange();
 
         // Add datalist to document body if not exists
         if (!document.getElementById('catalog_items_list')) {
@@ -725,6 +726,20 @@ const InvoicesModule = {
         const taxInput = document.getElementById('i_tax');
         const hint = document.getElementById('itbis_hint');
         const modWrapper = document.getElementById('ecf-ncf-mod-wrapper');
+
+        // Dynamic client required state
+        const clientSelect = document.getElementById('i_client_id');
+        const clientLabel = clientSelect?.closest('.form-group')?.querySelector('.form-label');
+        if (clientSelect && clientLabel) {
+            const isConsumo = isEcf && type === '32';
+            if (isConsumo) {
+                clientSelect.required = false;
+                clientLabel.innerHTML = 'Cliente';
+            } else {
+                clientSelect.required = true;
+                clientLabel.innerHTML = 'Cliente *';
+            }
+        }
 
         // Show/hide NC/ND fields
         if (modWrapper) {

@@ -2399,6 +2399,22 @@ tr:hover .row-actions { opacity: 1; }
   align-items: center;
 }
 
+/* e-CF Badge Styles */
+.badge-ecf {
+  background-color: var(--color-primary);
+  color: #FFFFFF;
+  font-size: 8px;
+  padding: 2px 5px;
+  font-weight: 700;
+  border-radius: var(--radius-sm);
+  display: inline-block;
+  line-height: 1;
+}
+
+[data-theme="dark"] .badge-ecf {
+  color: #000000 !important;
+}
+
 
 
 

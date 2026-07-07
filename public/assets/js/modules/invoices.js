@@ -136,7 +136,7 @@ const InvoicesModule = {
                         <div class="mobile-card-id" style="display:flex;align-items:center;gap:10px;">
                             <input type="checkbox" class="bulk-select-item-mobile" data-id="${i.id}" onclick="event.stopPropagation(); InvoicesModule.toggleItemSelect(${i.id})" style="width: 18px; height: 18px; cursor: pointer; accent-color: #111827;" ${this.isSelected(i.id) ? 'checked' : ''}>
                             ${i.is_ecf ? (i.encf || i.invoice_number) : i.invoice_number}
-                            ${i.is_ecf ? '<span class="badge" style="background:var(--color-primary);color:#FFF;font-size:8px;padding:2px 5px;">e-CF</span>' : ''}
+                            ${i.is_ecf ? '<span class="badge badge-ecf">e-CF</span>' : ''}
                         </div>
                         <span class="badge badge-${i.status}">${this.statusLabel(i.status)}</span>
                     </div>
@@ -173,7 +173,7 @@ const InvoicesModule = {
                 </td>
                 <td>
                     <a href="#facturas/${i.id}" class="link-id">${i.is_ecf ? (i.encf || i.invoice_number) : i.invoice_number}</a>
-                    ${i.is_ecf ? `<span class="badge" style="background:var(--color-primary);color:#FFF;margin-left:6px;font-size:8px;padding:2px 5px;">e-CF</span>` : ''}
+                    ${i.is_ecf ? `<span class="badge badge-ecf" style="margin-left:6px;">e-CF</span>` : ''}
                 </td>
                 <td>
                     <div class="user-cell">

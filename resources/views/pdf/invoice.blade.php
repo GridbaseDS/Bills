@@ -6,6 +6,15 @@
     <?php
     $primaryColor = $settings['pdf_primary_color'] ?? '#0B484C';
     $accentColor  = $settings['pdf_accent_color'] ?? '#00DF83';
+    
+    // Custom Detailed Colors
+    $headerBgColor        = $settings['pdf_header_bg_color'] ?? $primaryColor;
+    $headerTextColor      = $settings['pdf_header_text_color'] ?? '#FFFFFF';
+    $tableHeaderBgColor   = $settings['pdf_table_header_bg_color'] ?? $accentColor;
+    $tableHeaderTextColor = $settings['pdf_table_header_text_color'] ?? $primaryColor;
+    $footerBgColor        = $settings['pdf_footer_bg_color'] ?? $primaryColor;
+    $footerTextColor      = $settings['pdf_footer_text_color'] ?? '#FFFFFF';
+    
     $pdfLogoUrl   = $settings['pdf_logo_url'] ?? 'https://gridbase.com.do/wp-content/uploads/2025/02/imagen_2026-03-16_154236217-1024x228.png';
     $showFooter   = ($settings['pdf_show_footer'] ?? '1') === '1';
     ?>
@@ -29,9 +38,9 @@
 
         /* ── HEADER BLOCK ── */
         .header-block {
-            background: <?= $primaryColor ?>;
+            background: <?= $headerBgColor ?>;
             padding: 35px 45px 30px 45px;
-            color: #FFFFFF;
+            color: <?= $headerTextColor ?>;
         }
         .header-block td { vertical-align: middle; }
 
@@ -39,12 +48,12 @@
         .logo-fallback {
             font-size: 22px;
             font-weight: 700;
-            color: #FFFFFF;
+            color: <?= $headerTextColor ?>;
         }
         .logo-fallback span { color: <?= $accentColor ?>; }
         .company-label {
             font-size: 14px;
-            color: #FFFFFF;
+            color: <?= $headerTextColor ?>;
             margin-top: 6px;
             font-weight: 400;
         }
@@ -60,12 +69,13 @@
         }
         .meta-row-item {
             font-size: 11px;
-            color: rgba(255,255,255,0.6);
+            color: <?= $headerTextColor ?>;
+            opacity: 0.80;
             margin-bottom: 3px;
             line-height: 1.5;
         }
         .meta-row-item strong {
-            color: #FFFFFF;
+            color: <?= $headerTextColor ?>;
             font-weight: 700;
         }
         .meta-label {
@@ -119,9 +129,9 @@
 
         /* ── ITEMS TABLE ── */
         .items-table { margin-bottom: 25px; }
-        .items-table thead tr { background: <?= $accentColor ?>; }
+        .items-table thead tr { background: <?= $tableHeaderBgColor ?>; }
         .items-table th {
-            color: <?= $primaryColor ?>;
+            color: <?= $tableHeaderTextColor ?>;
             font-size: 9px;
             font-weight: 700;
             text-transform: uppercase;
@@ -246,13 +256,13 @@
             bottom: 0;
             left: 0;
             width: 100%;
-            background: <?= $primaryColor ?>;
+            background: <?= $footerBgColor ?>;
             padding: 12px 45px;
             text-align: center;
         }
         .footer-contact {
             font-size: 10px;
-            color: rgba(255,255,255,0.85);
+            color: <?= $footerTextColor ?>;
         }
         .footer-contact span {
             color: <?= $accentColor ?>;

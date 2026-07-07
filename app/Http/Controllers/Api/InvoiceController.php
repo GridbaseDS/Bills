@@ -701,6 +701,24 @@ class InvoiceController extends Controller
     }
 
     /**
+     * Cancel/void an invoice.
+     */
+    public function cancel(Request $request, $id)
+    {
+        if ($request->user() && $request->user()->role === 'vendedor') {
+            return response()->json([
+                'success' => false,
+                'error' => 'No autorizado.',
+                'message' => 'Los vendedores no tienen permisos para anular facturas.'
+            ], 403);
+        }
+
+        $invoice = Invoice::findOrFail($id);
+        $invoice->update(['status' => 'cancelled']);
+        return response()->json(['success' => true, 'message' => 'Factura anulada con éxito.', 'invoice' => $invoice->fresh()]);
+    }
+
+    /**
      * Manually process or retry electronic invoicing (e-CF) validation on the DGII.
      */
     public function processEcf($id, EcfManagerService $ecfManager)
@@ -774,6 +792,23 @@ class InvoiceController extends Controller
         }
         
         switch ($action) {
+            case 'cancel':
+                if ($request->user() && $request->user()->role === 'vendedor') {
+                    return response()->json([
+                        'success' => false,
+                        'error' => 'No autorizado.',
+                        'message' => 'Los vendedores no tienen permisos para anular facturas.'
+                    ], 403);
+                }
+
+                foreach ($ids as $id) {
+                    $invoice = Invoice::find($id);
+                    if ($invoice) {
+                        $invoice->update(['status' => 'cancelled']);
+                    }
+                }
+                return response()->json(['success' => true, 'message' => count($ids) . ' facturas anuladas exitosamente.']);
+
             case 'delete':
                 if ($request->user() && $request->user()->role === 'vendedor') {
                     return response()->json([

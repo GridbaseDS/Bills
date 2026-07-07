@@ -59,18 +59,20 @@ class DashboardController extends Controller
             ->value('net') ?? 0;
 
         // Count invoices issued this / last month using issue_date as plain date string
-        $invoicesThisMonth = Invoice::where('issue_date', '>=', $dateThisMonthStart)->count();
-        $invoicesLastMonth = Invoice::whereBetween('issue_date', [$dateLastMonthStart, $dateLastMonthEnd])->count();
+        $invoicesThisMonth = Invoice::where('status', '!=', 'cancelled')->where('issue_date', '>=', $dateThisMonthStart)->count();
+        $invoicesLastMonth = Invoice::where('status', '!=', 'cancelled')->whereBetween('issue_date', [$dateLastMonthStart, $dateLastMonthEnd])->count();
 
         // ── ITBIS / Tax summary ─────────────────────────────────────────────
         // Tax collected this month (from issued invoices, regardless of payment)
-        $taxCollectedThisMonth = (float) Invoice::where('issue_date', '>=', $dateThisMonthStart)
+        $taxCollectedThisMonth = (float) Invoice::where('status', '!=', 'cancelled')
+            ->where('issue_date', '>=', $dateThisMonthStart)
             ->sum('tax_amount');
         // Tax collected last month
-        $taxCollectedLastMonth = (float) Invoice::whereBetween('issue_date', [$dateLastMonthStart, $dateLastMonthEnd])
+        $taxCollectedLastMonth = (float) Invoice::where('status', '!=', 'cancelled')
+            ->whereBetween('issue_date', [$dateLastMonthStart, $dateLastMonthEnd])
             ->sum('tax_amount');
         // Total tax collected all time (pending to declare/pay to DGII)
-        $taxCollectedTotal = (float) Invoice::sum('tax_amount');
+        $taxCollectedTotal = (float) Invoice::where('status', '!=', 'cancelled')->sum('tax_amount');
         // Tax from unpaid invoices (not yet received by the business)
         $taxPending = (float) Invoice::whereIn('status', ['sent', 'viewed', 'partial', 'overdue'])
             ->sum('tax_amount');

@@ -28,7 +28,7 @@ class DgiiReportController extends Controller
         // 607 only accepts e-NCF types: 31, 33, 44, 45
         $invoices = Invoice::with(['client', 'payments'])
             ->whereBetween('issue_date', [$startDate, $endDate])
-            ->where('status', '!=', 'draft')
+            ->whereNotIn('status', ['draft', 'cancelled'])
             ->where(function ($q) {
                 $q->whereNull('ecf_type')
                   ->orWhereNotIn('ecf_type', [32]);
@@ -135,7 +135,7 @@ class DgiiReportController extends Controller
         // 2. Fetch self-issued invoices of type 41 (Compras/Informal) or 43 (Gastos Menores)
         $selfIssued = Invoice::whereBetween('issue_date', [$startDate, $endDate])
             ->whereIn('ecf_type', [41, 43])
-            ->where('status', '!=', 'draft')
+            ->whereNotIn('status', ['draft', 'cancelled'])
             ->get();
             
         $records = collect();

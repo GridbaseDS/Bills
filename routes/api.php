@@ -57,6 +57,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::apiResource('invoices', InvoiceController::class);
     Route::get('/invoices/{id}/pdf', [InvoiceController::class, 'pdf']);
     Route::post('/invoices/{id}/payment', [InvoiceController::class, 'addPayment']);
+    Route::post('/invoices/{id}/cancel', [InvoiceController::class, 'cancel']);
     Route::post('/invoices/{id}/send-email', [InvoiceController::class, 'sendEmail']);
     Route::post('/invoices/{id}/duplicate', [InvoiceController::class, 'duplicate']);
     Route::post('/invoices/{id}/process-ecf', [InvoiceController::class, 'processEcf']);

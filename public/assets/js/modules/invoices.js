@@ -80,6 +80,10 @@ const InvoicesModule = {
                             <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
                             e-CF
                         </button>
+                        <button class="bulk-btn" style="background-color: var(--amber); border-color: var(--amber);" onclick="InvoicesModule.executeBulkAction('cancel')">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line></svg>
+                            Anular
+                        </button>
                         <button class="bulk-btn bulk-btn-danger" onclick="InvoicesModule.executeBulkAction('delete')">
                             <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
                             Eliminar
@@ -231,19 +235,27 @@ const InvoicesModule = {
                             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
                             Ticket Térmico
                         </a>
-                        <button class="btn btn-secondary btn-sm" onclick="InvoicesModule.sendEmail(${id})">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
-                            Enviar
-                        </button>
+                        ${inv.status !== 'cancelled' ? `
+                            <button class="btn btn-secondary btn-sm" onclick="InvoicesModule.sendEmail(${id})">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
+                                Enviar
+                            </button>
+                        ` : ''}
                         <button class="btn btn-secondary btn-sm" onclick="InvoicesModule.duplicateInvoice(${id})">Duplicar</button>
-                        ${inv.is_ecf && inv.encf && inv.ecf_type != 34 && inv.ecf_type != 33 ? `
+                        ${inv.is_ecf && inv.encf && inv.ecf_type != 34 && inv.ecf_type != 33 && inv.status !== 'cancelled' ? `
                             <button class="btn btn-secondary btn-sm" style="color:var(--color-danger-icon);border-color:rgba(239,68,68,0.2);" onclick="InvoicesModule.issueCreditNote(${id})">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:middle;margin-right:4px;"><path d="M9 14L4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5v0a5.5 5.5 0 0 1-5.5 5.5H11"/></svg>
                                 Nota de Crédito
                             </button>
                         ` : ''}
-                        <a href="#facturas/edit/${id}" class="btn btn-secondary btn-sm">Editar</a>
-                        ${inv.status !== 'paid' ? `<button class="btn btn-primary btn-sm" onclick="InvoicesModule.showPaymentModal(${id}, ${(inv.total || 0) - (inv.amount_paid || 0)})">Registrar Pago</button>` : ''}
+                        ${inv.status !== 'cancelled' ? `
+                            <a href="#facturas/edit/${id}" class="btn btn-secondary btn-sm">Editar</a>
+                            <button class="btn btn-secondary btn-sm" style="color:var(--color-danger-icon);border-color:rgba(239,68,68,0.2);" onclick="InvoicesModule.cancelInvoice(${id})">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:middle;margin-right:4px;"><circle cx="12" cy="12" r="10"></circle><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line></svg>
+                                Anular
+                            </button>
+                        ` : ''}
+                        ${inv.status !== 'paid' && inv.status !== 'cancelled' ? `<button class="btn btn-primary btn-sm" onclick="InvoicesModule.showPaymentModal(${id}, ${(inv.total || 0) - (inv.amount_paid || 0)})">Registrar Pago</button>` : ''}
                     </div>
                 </div>
 
@@ -883,6 +895,17 @@ const InvoicesModule = {
         });
     },
 
+    async cancelInvoice(id) {
+        this._showConfirm('¿Deseas anular esta factura? Mantendrá el histórico pero no computará como deuda ni en reportes.', async () => {
+            try {
+                await App.api(`invoices/${id}/cancel`, { method: 'POST' });
+                App.showToast('Factura anulada');
+                // Refresh details
+                this.renderDetails(document.getElementById('app-content'), id);
+            } catch(e) {}
+        });
+    },
+
     async processEcf(id) {
         try {
             window.App.showToast('Enviando comprobante a la DGII...', 'info');
@@ -1045,6 +1068,9 @@ const InvoicesModule = {
         const count = this.selectedIds.length;
         let confirmMsg = '';
         switch (action) {
+            case 'cancel':
+                confirmMsg = `¿Deseas anular las ${count} ${count === 1 ? 'factura seleccionada' : 'facturas seleccionadas'}? Mantendrán el histórico pero no computarán como deuda.`;
+                break;
             case 'delete':
                 confirmMsg = `¿Estás seguro de eliminar ${count} ${count === 1 ? 'factura' : 'facturas'}? Esta acción no se puede deshacer.`;
                 break;

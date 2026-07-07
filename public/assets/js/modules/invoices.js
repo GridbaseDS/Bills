@@ -472,9 +472,9 @@ const InvoicesModule = {
                             </div>
                         </div>
                         <div class="form-group">
-                            <label class="form-label">Cliente *</label>
-                            <select id="i_client_id" class="form-control" required>
-                                <option value="">Seleccione un cliente</option>
+                            <label class="form-label">Cliente</label>
+                            <select id="i_client_id" class="form-control">
+                                <option value="">Consumidor Final (Sin Cliente)</option>
                                 ${clients.map(c => `<option value="${c.id}" ${invoice && invoice.client_id == c.id ? 'selected' : ''}>${c.company_name || c.contact_name}</option>`).join('')}
                             </select>
                         </div>

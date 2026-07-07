@@ -22,6 +22,24 @@ class InvoiceController extends Controller
     public function store(Request $request, EcfManagerService $ecfManager)
     {
         $data = $request->all();
+        $clientId = $data['client_id'] ?? null;
+        if (empty($clientId)) {
+            $defaultClient = \App\Models\Client::firstOrCreate(
+                ['email' => 'consumidorfinal@bills.gridbase.com.do'],
+                [
+                    'company_name' => 'Consumidor Final',
+                    'contact_name' => 'Consumidor Final',
+                    'phone' => '',
+                    'tax_id' => '',
+                    'address_line1' => 'Santo Domingo, Rep. Dom.',
+                    'country' => 'Republica Dominicana',
+                    'is_active' => true,
+                ]
+            );
+            $clientId = $defaultClient->id;
+        }
+        $data['client_id'] = $clientId;
+
         if (empty($data['exchange_rate'])) {
             $data['exchange_rate'] = \App\Services\CurrencyConverter::getConversionRate($data['currency'] ?? 'DOP', 'DOP');
         }
@@ -218,6 +236,23 @@ class InvoiceController extends Controller
     {
         $invoice = Invoice::findOrFail($id);
         $data = $request->all();
+        $clientId = $data['client_id'] ?? null;
+        if (empty($clientId)) {
+            $defaultClient = \App\Models\Client::firstOrCreate(
+                ['email' => 'consumidorfinal@bills.gridbase.com.do'],
+                [
+                    'company_name' => 'Consumidor Final',
+                    'contact_name' => 'Consumidor Final',
+                    'phone' => '',
+                    'tax_id' => '',
+                    'address_line1' => 'Santo Domingo, Rep. Dom.',
+                    'country' => 'Republica Dominicana',
+                    'is_active' => true,
+                ]
+            );
+            $clientId = $defaultClient->id;
+        }
+        $data['client_id'] = $clientId;
 
         $subtotal = collect($data['items'])->sum(function($i) { return $i['quantity'] * $i['unit_price']; });
         $discountValue = $data['discount_value'] ?? 0;
@@ -233,7 +268,7 @@ class InvoiceController extends Controller
         }
 
         $invoice->update([
-            'client_id' => $data['client_id'], 'currency' => $data['currency'],
+            'client_id' => $clientId, 'currency' => $data['currency'],
             'exchange_rate' => $exchangeRate,
             'issue_date' => $data['issue_date'], 'due_date' => $data['due_date'],
             'discount_type' => $data['discount_type'] ?? 'percentage',

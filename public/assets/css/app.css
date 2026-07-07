@@ -194,39 +194,39 @@
 
 [data-theme="dark"] {
 
-  /* ── Slate / Charcoal Premium Dark Mode ── */
+  /* ── Neutral / Charcoal Premium Dark Mode (No colors / grays) ── */
 
-  --bg-app: #0B0F19;
+  --bg-app: #0A0A0A;
 
-  --bg-sidebar: #111827;
+  --bg-sidebar: #171717;
 
-  --bg-card: #111827;
+  --bg-card: #171717;
 
-  --bg-hover: #1F2937;
+  --bg-hover: #262626;
 
-  --bg-active: #1F2937;
-
-
-
-  --color-text-primary: #F9FAFB;
-
-  --color-text-secondary: #D1D5DB;
-
-  --color-text-muted: #6B7280;
+  --bg-active: #262626;
 
 
 
-  --color-border: #1F2937;
+  --color-text-primary: #FAFAFA;
 
-  --color-border-hover: #374151;
+  --color-text-secondary: #D4D4D4;
+
+  --color-text-muted: #737373;
+
+
+
+  --color-border: #262626;
+
+  --color-border-hover: #404040;
 
 
 
   --color-primary: #FFFFFF;
 
-  --color-primary-hover: #F3F4F6;
+  --color-primary-hover: #F5F5F5;
 
-  --color-primary-light: #1F2937;
+  --color-primary-light: #262626;
 
 
 
@@ -254,23 +254,23 @@
 
   /* Translucent variables for dark glassmorphism */
 
-  --bg-translucent-topbar: rgba(17, 24, 39, 0.88);
+  --bg-translucent-topbar: rgba(23, 23, 23, 0.88);
 
-  --bg-translucent-tabbar: rgba(17, 24, 39, 0.82);
+  --bg-translucent-tabbar: rgba(23, 23, 23, 0.82);
 
-  --bg-translucent-sticky: rgba(17, 24, 39, 0.92);
+  --bg-translucent-sticky: rgba(23, 23, 23, 0.92);
 
 
 
   /* Elevation (tailored shadows for dark depth) */
 
-  --shadow-sm: 0px 1px 2px rgba(0,0,0,0.4);
+  --shadow-sm: 0px 1px 2px rgba(0,0,0,0.6);
 
-  --shadow-md: 0px 4px 6px -1px rgba(0,0,0,0.5), 0px 2px 4px -1px rgba(0,0,0,0.3);
+  --shadow-md: 0px 4px 6px -1px rgba(0,0,0,0.7), 0px 2px 4px -1px rgba(0,0,0,0.5);
 
-  --shadow-lg: 0px 10px 15px -3px rgba(0,0,0,0.6), 0px 4px 6px -2px rgba(0,0,0,0.4);
+  --shadow-lg: 0px 10px 15px -3px rgba(0,0,0,0.8), 0px 4px 6px -2px rgba(0,0,0,0.6);
 
-  --shadow-inset: inset 0 2px 4px 0 rgba(0,0,0,0.5);
+  --shadow-inset: inset 0 2px 4px 0 rgba(0,0,0,0.7);
 
 
 
@@ -286,7 +286,7 @@
 
   --accent: var(--color-primary);
 
-  --accent-light: #1F2937;
+  --accent-light: #262626;
 
   --accent-dark: #FFFFFF;
 

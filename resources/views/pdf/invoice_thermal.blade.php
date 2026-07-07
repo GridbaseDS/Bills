@@ -462,7 +462,7 @@ $hasComprador = !in_array($ecfType, [43, 47]);
     $dgiiEnv = $settings['dgii_env'] ?? 'testing';
     $ecfQrPath = match($dgiiEnv) { 'production' => 'ecf', 'certification' => 'certecf', default => 'testecf' };
     $isRfce = $ecfType === 32 && (float)$invoice['total'] < 250000;
-    $hasComprador = !in_array($ecfType, [43, 47]);
+    $hasComprador = !in_array($ecfType, [43, 47]) && (strlen($rncComprador) === 9 || strlen($rncComprador) === 11);
 
     if ($isRfce) {
         $qrUrl = "https://fc.dgii.gov.do/{$ecfQrPath}/ConsultaTimbreFC?"

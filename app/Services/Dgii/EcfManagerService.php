@@ -447,7 +447,6 @@ class EcfManagerService
             // 2. Build and test ConsultaTimbre QR URL
             $rncEmisor = preg_replace('/[^0-9]/', '', $settings['company_tax_id'] ?? '');
             $ecfType = (int)$invoice->ecf_type;
-            $hasComprador = !in_array($ecfType, [43, 47]);
 
             // Extract values from signed XML (authoritative source)
             preg_match('/<RNCComprador>([^<]+)<\/RNCComprador>/', $signedXml, $rncMatch);
@@ -460,6 +459,8 @@ class EcfManagerService
             $fechaEmision = $fechaMatch[1] ?? '';
             $fechaFirma = $firmaMatch[1] ?? '';
             $securityCode = $invoice->security_code;
+
+            $hasComprador = !in_array($ecfType, [43, 47]) && (strlen($rncComprador) === 9 || strlen($rncComprador) === 11);
 
             $ecfQrPath = match($env) {
                 'production' => 'ecf',

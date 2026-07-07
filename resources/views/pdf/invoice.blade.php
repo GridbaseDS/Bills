@@ -460,7 +460,7 @@ $ecfTypeName = $isEcf ? ($ecfTypeNames[$ecfType] ?? 'Comprobante Fiscal Electron
                 $ecfQrPath = match($dgiiEnv) { 'production' => 'ecf', 'certification' => 'certecf', default => 'testecf' };
                 $isRfce = $ecfType === 32 && (float)$invoice['total'] < 250000;
                 // Types 43 (Gastos Menores) and 47 (Pagos al Exterior) have no RNCComprador
-                $hasComprador = !in_array($ecfType, [43, 47]);
+                $hasComprador = !in_array($ecfType, [43, 47]) && (strlen($rncComprador) === 9 || strlen($rncComprador) === 11);
 
                 if ($isRfce) {
                     // FC<250k: fc.dgii.gov.do — params: RncEmisor, ENCF, MontoTotal, CodigoSeguridad

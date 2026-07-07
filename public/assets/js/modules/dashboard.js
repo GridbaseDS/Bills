@@ -728,7 +728,7 @@ const DashboardModule = {
                             <div class="db-tax-cell">
                                 <div class="db-tax-cell-label">Este Mes</div>
                                 <div class="db-tax-cell-amount highlight">${App.formatCurrency(stats.tax_collected_this_month || 0)}</div>
-                                <div class="db-tax-cell-sub">A declarar en 606</div>
+                                <div class="db-tax-cell-sub">A declarar en 607</div>
                             </div>
                             <div class="db-tax-cell">
                                 <div class="db-tax-cell-label">Mes Pasado</div>

@@ -2,6 +2,12 @@
 
 A continuación se presenta el registro de evolución y mejoras de la plataforma Gridbase Bills. Cada versión detalla los avances e incorporaciones del sistema, orientados a brindar el servicio de facturación y cumplimiento fiscal de mayor robustez, estabilidad y facilidad de uso del mercado.
 
+## Gridbase Bills v3.2.0 (Gestión Multi-Dispositivo para Acceso PIN) (2026-07-08)
+
+* Seguridad: Implementación de la gestión multi-dispositivo para el inicio de sesión rápido por PIN. Ahora el usuario puede autorizar y mantener hasta 3 dispositivos simultáneos (como su computadora, celular y tablet) sin que se invaliden entre sí al ingresar.
+* Seguridad: Detección inteligente del tipo de dispositivo (Android, iOS, Windows, Mac, Linux) a partir del navegador de uso en el momento del registro.
+* Seguridad: Depuración automática del dispositivo más antiguo en desuso al intentar registrar un cuarto dispositivo, asegurando el límite máximo de 3 autorizaciones.
+
 ## Gridbase Bills v3.1.0 (Integración de Tasas de Cambio BPD y RNC en Facturas de Consumo) (2026-07-08)
 
 * Facturas: Implementación de campos dinámicos para introducir Nombre/Razón Social y RNC de forma directa en las Facturas de Consumo (Tipo 32) sin necesidad de registrar previamente un cliente permanente.

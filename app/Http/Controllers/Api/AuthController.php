@@ -183,11 +183,41 @@ class AuthController extends Controller
 
         $user = $request->user();
         $user->quick_pin = Hash::make($request->pin);
+        $user->save();
         
         // Generate a new secure device token
         $deviceToken = bin2hex(random_bytes(32));
-        $user->device_token = $deviceToken;
-        $user->save();
+        
+        // Parse User Agent to get a human-friendly name
+        $userAgent = $request->header('User-Agent') ?: 'Dispositivo desconocido';
+        $deviceName = 'Dispositivo';
+        if (stripos($userAgent, 'Android') !== false) {
+            $deviceName = 'Android Móvil';
+        } elseif (stripos($userAgent, 'iPhone') !== false || stripos($userAgent, 'iPad') !== false) {
+            $deviceName = 'iOS Móvil';
+        } elseif (stripos($userAgent, 'Windows') !== false) {
+            $deviceName = 'Windows PC';
+        } elseif (stripos($userAgent, 'Macintosh') !== false) {
+            $deviceName = 'Mac PC';
+        } elseif (stripos($userAgent, 'Linux') !== false) {
+            $deviceName = 'Linux PC';
+        }
+
+        // Save device
+        $user->devices()->create([
+            'device_token' => $deviceToken,
+            'device_name' => $deviceName,
+            'last_used_at' => now(),
+        ]);
+
+        // Manage max 3 devices: delete oldest ones if count > 3
+        $devices = $user->devices()->orderBy('last_used_at', 'desc')->get();
+        if ($devices->count() > 3) {
+            $devicesToDelete = $devices->slice(3);
+            foreach ($devicesToDelete as $dev) {
+                $dev->delete();
+            }
+        }
 
         return response()->json([
             'success' => true,
@@ -203,11 +233,16 @@ class AuthController extends Controller
             'device_token' => 'required|string'
         ]);
 
-        $user = User::where('email', $request->email)
-                    ->where('device_token', $request->device_token)
-                    ->first();
+        // Look up device in the user_devices table
+        $device = \App\Models\UserDevice::where('device_token', $request->device_token)->first();
 
-        if (!$user || empty($user->quick_pin) || !Hash::check($request->pin, $user->quick_pin)) {
+        if (!$device) {
+            return response()->json(['error' => 'PIN incorrecto o dispositivo no autorizado'], 401);
+        }
+
+        $user = $device->user;
+
+        if (!$user || $user->email !== $request->email || empty($user->quick_pin) || !Hash::check($request->pin, $user->quick_pin)) {
             // Invalid email, token, or PIN
             return response()->json(['error' => 'PIN incorrecto o dispositivo no autorizado'], 401);
         }
@@ -215,6 +250,10 @@ class AuthController extends Controller
         // Complete authentication
         $user->last_login = now();
         $user->save();
+
+        // Update device usage time
+        $device->last_used_at = now();
+        $device->save();
         
         Auth::login($user); // Login without 'remember me' since we don't have remember_token column
         $request->session()->regenerate();

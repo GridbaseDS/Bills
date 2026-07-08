@@ -194,20 +194,40 @@ window.App = {
     },
 
     applySidebarColors() {
-        const bgColor = this.state.settings?.sidebar_bg_color || localStorage.getItem('sidebar_bg_color');
-        const textColor = this.state.settings?.sidebar_text_color || localStorage.getItem('sidebar_text_color');
-        const hoverColor = this.state.settings?.sidebar_hover_color || localStorage.getItem('sidebar_hover_color');
+        const isDark = (document.documentElement.getAttribute('data-theme') || localStorage.getItem('theme')) === 'dark';
+        
+        let bgColor, textColor, hoverColor;
+        if (isDark) {
+            bgColor = this.state.settings?.sidebar_dark_bg_color || localStorage.getItem('sidebar_dark_bg_color');
+            textColor = this.state.settings?.sidebar_dark_text_color || localStorage.getItem('sidebar_dark_text_color');
+            hoverColor = this.state.settings?.sidebar_dark_hover_color || localStorage.getItem('sidebar_dark_hover_color');
+        } else {
+            bgColor = this.state.settings?.sidebar_bg_color || localStorage.getItem('sidebar_bg_color');
+            textColor = this.state.settings?.sidebar_text_color || localStorage.getItem('sidebar_text_color');
+            hoverColor = this.state.settings?.sidebar_hover_color || localStorage.getItem('sidebar_hover_color');
+        }
+        
         const sidebar = document.querySelector('.sidebar');
         if (!sidebar) return;
+        
         if (bgColor) {
             sidebar.style.backgroundColor = bgColor;
             sidebar.style.borderRightColor = 'transparent';
+        } else {
+            sidebar.style.backgroundColor = '';
+            sidebar.style.borderRightColor = '';
         }
+        
         if (textColor) {
             sidebar.querySelectorAll('.sidebar-link, .sidebar-section-title, .sidebar-link svg, .profile-name, .profile-role').forEach(el => {
                 el.style.color = textColor;
             });
+        } else {
+            sidebar.querySelectorAll('.sidebar-link, .sidebar-section-title, .sidebar-link svg, .profile-name, .profile-role').forEach(el => {
+                el.style.color = '';
+            });
         }
+        
         // Hover + active styles via injected <style> (can't do :hover inline)
         let styleTag = document.getElementById('sidebar-custom-colors');
         if (!styleTag) {
@@ -215,7 +235,7 @@ window.App = {
             styleTag.id = 'sidebar-custom-colors';
             document.head.appendChild(styleTag);
         }
-        const hv = hoverColor || 'rgba(0,0,0,0.08)';
+        const hv = hoverColor || (isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)');
         const tc = textColor || '';
         const bg = bgColor || '';
         styleTag.textContent = `
@@ -226,7 +246,7 @@ window.App = {
             .profile-card { background-color: ${hv} !important; border-radius: 10px; }
             .profile-card:hover { opacity: 0.85; }
             ${tc ? `.profile-card, .profile-card svg { color: ${tc} !important; }` : ''}
-            .profile-avatar { background-color: ${bg ? bg : '#111827'} !important; border: 2px solid ${hv} !important; ${tc ? `color: ${tc} !important;` : ''} }
+            .profile-avatar { background-color: ${bg ? bg : (isDark ? '#111827' : '#FFFFFF')} !important; border: 2px solid ${hv} !important; ${tc ? `color: ${tc} !important;` : ''} }
         `;
     },
 
@@ -1150,6 +1170,7 @@ window.App = {
         document.documentElement.setAttribute('data-theme', newTheme);
         localStorage.setItem('theme', newTheme);
         this.updateThemeButton();
+        this.applySidebarColors();
     },
 
     updateThemeButton() {

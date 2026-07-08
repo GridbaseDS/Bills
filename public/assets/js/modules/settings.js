@@ -100,6 +100,37 @@ export default {
                                         <span style="font-size:13px;font-weight:500;">Vista previa</span>
                                     </div>
                                 </div>
+                                <div class="form-group" style="grid-column: span 2; margin-top: 16px; border-top: 1px dashed var(--color-border); padding-top: 16px;">
+                                    <label class="form-label">Personalización del Menú Lateral (Modo Oscuro)</label>
+                                    <div style="display:flex;gap:24px;align-items:flex-start;flex-wrap:wrap;">
+                                        <div>
+                                            <div style="font-size:12px;font-weight:500;color:var(--color-text-secondary);margin-bottom:6px;">Color de Fondo</div>
+                                            <div style="display:flex;gap:8px;align-items:center;">
+                                                <input type="color" id="s_sidebar_dark_bg_color" value="${s.sidebar_dark_bg_color || '#111827'}" style="width:42px;height:34px;border:1px solid var(--color-border);border-radius:var(--radius-md);cursor:pointer;padding:2px;">
+                                                <input type="text" id="s_sidebar_dark_bg_color_hex" class="form-control" value="${s.sidebar_dark_bg_color || '#111827'}" style="width:100px;font-family:monospace;font-size:12px;" maxlength="7">
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <div style="font-size:12px;font-weight:500;color:var(--color-text-secondary);margin-bottom:6px;">Color de Texto</div>
+                                            <div style="display:flex;gap:8px;align-items:center;">
+                                                <input type="color" id="s_sidebar_dark_text_color" value="${s.sidebar_dark_text_color || '#FFFFFF'}" style="width:42px;height:34px;border:1px solid var(--color-border);border-radius:var(--radius-md);cursor:pointer;padding:2px;">
+                                                <input type="text" id="s_sidebar_dark_text_color_hex" class="form-control" value="${s.sidebar_dark_text_color || '#FFFFFF'}" style="width:100px;font-family:monospace;font-size:12px;" maxlength="7">
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <div style="font-size:12px;font-weight:500;color:var(--color-text-secondary);margin-bottom:6px;">Color de Hover</div>
+                                            <div style="display:flex;gap:8px;align-items:center;">
+                                                <input type="color" id="s_sidebar_dark_hover_color" value="${s.sidebar_dark_hover_color || '#1F2937'}" style="width:42px;height:34px;border:1px solid var(--color-border);border-radius:var(--radius-md);cursor:pointer;padding:2px;">
+                                                <input type="text" id="s_sidebar_dark_hover_color_hex" class="form-control" value="${s.sidebar_dark_hover_color || '#1F2937'}" style="width:100px;font-family:monospace;font-size:12px;" maxlength="7">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div style="font-size:11px;color:var(--color-text-muted);margin-top:6px;">Personaliza el fondo y color de texto del menú lateral para cuando el modo oscuro está activo.</div>
+                                    <div id="sidebar-dark-preview" style="margin-top:12px;width:180px;height:60px;border-radius:var(--radius-md);border:1px solid var(--color-border);display:flex;align-items:center;padding:0 16px;gap:10px;transition:all .2s ease;">
+                                        <svg style="width:16px;height:16px;flex-shrink:0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+                                        <span style="font-size:13px;font-weight:500;">Vista previa (Oscuro)</span>
+                                    </div>
+                                </div>
                             </div>
 
                             <h3 style="font-size:15px;font-weight:600;margin:24px 0 16px;border-top:1px solid var(--color-border);padding-top:24px;">Branding</h3>
@@ -697,6 +728,52 @@ export default {
                 }
             });
 
+            // Sidebar (Dark) color picker sync + live preview
+            const updateSidebarDarkPreview = () => {
+                const bg = document.getElementById('s_sidebar_dark_bg_color').value;
+                const text = document.getElementById('s_sidebar_dark_text_color').value;
+                const preview = document.getElementById('sidebar-dark-preview');
+                if (preview) {
+                    preview.style.backgroundColor = bg;
+                    preview.style.color = text;
+                    preview.querySelectorAll('svg').forEach(s => s.style.color = text);
+                }
+            };
+            // Dark BG color
+            document.getElementById('s_sidebar_dark_bg_color')?.addEventListener('input', (e) => {
+                document.getElementById('s_sidebar_dark_bg_color_hex').value = e.target.value;
+                updateSidebarDarkPreview();
+            });
+            document.getElementById('s_sidebar_dark_bg_color_hex')?.addEventListener('input', (e) => {
+                if (/^#[0-9A-Fa-f]{6}$/.test(e.target.value)) {
+                    document.getElementById('s_sidebar_dark_bg_color').value = e.target.value;
+                    updateSidebarDarkPreview();
+                }
+            });
+            // Dark Text color
+            document.getElementById('s_sidebar_dark_text_color')?.addEventListener('input', (e) => {
+                document.getElementById('s_sidebar_dark_text_color_hex').value = e.target.value;
+                updateSidebarDarkPreview();
+            });
+            document.getElementById('s_sidebar_dark_text_color_hex')?.addEventListener('input', (e) => {
+                if (/^#[0-9A-Fa-f]{6}$/.test(e.target.value)) {
+                    document.getElementById('s_sidebar_dark_text_color').value = e.target.value;
+                    updateSidebarDarkPreview();
+                }
+            });
+            // Init dark preview
+            updateSidebarDarkPreview();
+
+            // Dark Hover color sync
+            document.getElementById('s_sidebar_dark_hover_color')?.addEventListener('input', (e) => {
+                document.getElementById('s_sidebar_dark_hover_color_hex').value = e.target.value;
+            });
+            document.getElementById('s_sidebar_dark_hover_color_hex')?.addEventListener('input', (e) => {
+                if (/^#[0-9A-Fa-f]{6}$/.test(e.target.value)) {
+                    document.getElementById('s_sidebar_dark_hover_color').value = e.target.value;
+                }
+            });
+
             // Logo URL live preview
             document.getElementById('s_company_logo')?.addEventListener('input', (e) => {
                 const url = e.target.value.trim();
@@ -836,6 +913,9 @@ export default {
                     sidebar_bg_color: document.getElementById('s_sidebar_bg_color').value,
                     sidebar_text_color: document.getElementById('s_sidebar_text_color').value,
                     sidebar_hover_color: document.getElementById('s_sidebar_hover_color').value,
+                    sidebar_dark_bg_color: document.getElementById('s_sidebar_dark_bg_color').value,
+                    sidebar_dark_text_color: document.getElementById('s_sidebar_dark_text_color').value,
+                    sidebar_dark_hover_color: document.getElementById('s_sidebar_dark_hover_color').value,
                     company_logo: document.getElementById('s_company_logo').value,
                     login_logo: document.getElementById('s_login_logo').value,
                     company_favicon: document.getElementById('s_company_favicon').value,
@@ -901,6 +981,9 @@ export default {
                     if (settingsToUpdate.sidebar_bg_color) localStorage.setItem('sidebar_bg_color', settingsToUpdate.sidebar_bg_color);
                     if (settingsToUpdate.sidebar_text_color) localStorage.setItem('sidebar_text_color', settingsToUpdate.sidebar_text_color);
                     if (settingsToUpdate.sidebar_hover_color) localStorage.setItem('sidebar_hover_color', settingsToUpdate.sidebar_hover_color);
+                    if (settingsToUpdate.sidebar_dark_bg_color) localStorage.setItem('sidebar_dark_bg_color', settingsToUpdate.sidebar_dark_bg_color);
+                    if (settingsToUpdate.sidebar_dark_text_color) localStorage.setItem('sidebar_dark_text_color', settingsToUpdate.sidebar_dark_text_color);
+                    if (settingsToUpdate.sidebar_dark_hover_color) localStorage.setItem('sidebar_dark_hover_color', settingsToUpdate.sidebar_dark_hover_color);
                     
                     // Apply sidebar colors immediately via centralized method
                     window.App.applySidebarColors();

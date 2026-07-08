@@ -140,6 +140,9 @@ class DashboardController extends Controller
             ];
         });
 
+        $bpdRates = \App\Services\CurrencyConverter::fetchBpdRates();
+        $bpdTime = \Illuminate\Support\Facades\Cache::get('exchange_rates_bpd_time');
+
         return response()->json([
             'stats' => [
                 'total_clients'            => $totalClients,
@@ -165,6 +168,11 @@ class DashboardController extends Controller
             'monthly_revenue' => $monthlyData,
             'recent_invoices' => $recentInvoices,
             'overdue_invoices' => $overdueInvoices,
+            'exchange_rates' => [
+                'USD' => (float)($bpdRates['USD'] ?? 60.35),
+                'EUR' => (float)($bpdRates['EUR'] ?? 65.90),
+                'updated_at' => $bpdTime ? date('d/m/Y h:i A', strtotime($bpdTime)) : date('d/m/Y h:i A')
+            ]
         ]);
     }
 }

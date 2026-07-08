@@ -54,6 +54,86 @@ class CurrencyConverter
     }
 
     /**
+     * Fetch live exchange rates from Banco Popular Dominicano (BPD) Sandbox API
+     */
+    public static function fetchBpdRates(): array
+    {
+        return \Illuminate\Support\Facades\Cache::remember('exchange_rates_bpd', 43200, function () {
+            try {
+                $clientId = '35843da05b1107b15c85b641b5806748';
+                $clientSecret = '9f3d924419ef4b8815982146bed4e5a2';
+                
+                // Get dynamic BPD credentials if defined in settings
+                $settingClientId = Setting::get('bpd_client_id');
+                $settingClientSecret = Setting::get('bpd_client_secret');
+                if (!empty($settingClientId)) {
+                    $clientId = $settingClientId;
+                }
+                if (!empty($settingClientSecret)) {
+                    $clientSecret = $settingClientSecret;
+                }
+
+                // 1. Get OAuth2 Token with caching of 50 minutes (3000s) to avoid requesting too often
+                $accessToken = \Illuminate\Support\Facades\Cache::remember('bpd_oauth_token_' . md5($clientId . $clientSecret), 3000, function () use ($clientId, $clientSecret) {
+                    $authResponse = \Illuminate\Support\Facades\Http::asForm()
+                        ->withHeaders([
+                            'X-IBM-Client-Id' => $clientId
+                        ])
+                        ->post('https://api.us-east-a.apiconnect.ibmappdomain.cloud/apiportalpopular/bpdsandbox/bpd/Authentication/oauth2/token', [
+                            'grant_type' => 'client_credentials',
+                            'client_id' => $clientId,
+                            'client_secret' => $clientSecret,
+                            'scope' => 'scope_1'
+                        ]);
+
+                    if ($authResponse->successful()) {
+                        $authData = $authResponse->json();
+                        return $authData['access_token'] ?? null;
+                    }
+
+                    Log::error('BPD OAuth2 token retrieval failed: ' . $authResponse->body());
+                    return null;
+                });
+
+                if (empty($accessToken)) {
+                    throw new \Exception("Could not obtain BPD access token.");
+                }
+
+                // 2. Fetch rates
+                $response = \Illuminate\Support\Facades\Http::timeout(5)
+                    ->withHeaders([
+                        'Authorization' => 'Bearer ' . $accessToken,
+                        'X-IBM-Client-Id' => $clientId,
+                        'accept' => 'application/json'
+                    ])
+                    ->get('https://api.us-east-a.apiconnect.ibmappdomain.cloud/apiportalpopular/bpdsandbox/consultatasa/consultaTasa');
+
+                if ($response->successful()) {
+                    $data = $response->json();
+                    $monedasList = $data['monedas']['moneda'] ?? [];
+                    $rates = [];
+                    foreach ($monedasList as $moneda) {
+                        $currencyName = strtoupper($moneda['descripcion'] ?? '');
+                        $sellRate = (float)($moneda['venta'] ?? 0);
+                        if (!empty($currencyName) && $sellRate > 0) {
+                            $rates[$currencyName] = $sellRate;
+                        }
+                    }
+                    if (!empty($rates)) {
+                        \Illuminate\Support\Facades\Cache::put('exchange_rates_bpd_time', now()->toDateTimeString(), 43200);
+                        return $rates;
+                    }
+                } else {
+                    Log::error('BPD exchange rates retrieval failed: ' . $response->body());
+                }
+            } catch (\Exception $e) {
+                Log::error('Error fetching BPD exchange rates: ' . $e->getMessage());
+            }
+            return [];
+        });
+    }
+
+    /**
      * Get the conversion rate from live API (cached), database settings, or hardcoded default
      */
     public static function getConversionRate(string $fromCurrency, string $toCurrency): float
@@ -65,7 +145,27 @@ class CurrencyConverter
             return 1.0;
         }
         
-        // Attempt to fetch from dynamic live rates first
+        // 1. Attempt to fetch BPD rates first for USD, EUR and DOP conversions
+        if (in_array($fromCurrency, ['USD', 'EUR', 'DOP']) && in_array($toCurrency, ['USD', 'EUR', 'DOP'])) {
+            try {
+                $bpdRates = self::fetchBpdRates();
+                if (!empty($bpdRates)) {
+                    $rates = [
+                        'DOP' => 1.0,
+                        'USD' => (float)($bpdRates['USD'] ?? 60.35),
+                        'EUR' => (float)($bpdRates['EUR'] ?? 65.90),
+                    ];
+                    
+                    if (isset($rates[$fromCurrency]) && isset($rates[$toCurrency])) {
+                        return $rates[$fromCurrency] / $rates[$toCurrency];
+                    }
+                }
+            } catch (\Exception $e) {
+                Log::error('Error using BPD rates, falling back: ' . $e->getMessage());
+            }
+        }
+        
+        // Attempt to fetch live rates first
         $liveRates = self::fetchLiveRates();
         
         if (!empty($liveRates)) {

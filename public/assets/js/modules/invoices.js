@@ -473,10 +473,20 @@ const InvoicesModule = {
                         </div>
                         <div class="form-group">
                             <label class="form-label">Cliente</label>
-                            <select id="i_client_id" class="form-control">
+                            <select id="i_client_id" class="form-control" onchange="InvoicesModule.toggleDirectClientFields()">
                                 <option value="">Consumidor Final (Sin Cliente)</option>
                                 ${clients.map(c => `<option value="${c.id}" ${invoice && invoice.client_id == c.id ? 'selected' : ''}>${c.company_name || c.contact_name}</option>`).join('')}
                             </select>
+                        </div>
+                        <div id="direct-client-fields" class="grid-2" style="grid-column:span 2; display:none; gap:16px; margin-top: 12px; background:var(--bg-hover); padding:12px 16px; border-radius:var(--radius-md); border:1px solid var(--color-border);">
+                            <div class="form-group" style="margin:0;">
+                                <label class="form-label">Razón Social o Nombre</label>
+                                <input type="text" id="i_direct_client_name" class="form-control" placeholder="Ej: Juan Pérez" value="${invoice && !invoice.client_id ? (invoice.client?.company_name || invoice.client?.contact_name || '') : ''}">
+                            </div>
+                            <div class="form-group" style="margin:0;">
+                                <label class="form-label">RNC o Cédula</label>
+                                <input type="text" id="i_direct_client_tax_id" class="form-control" placeholder="Ej: 00100000000" value="${invoice && !invoice.client_id ? (invoice.client?.tax_id || '') : ''}">
+                            </div>
                         </div>
                         <div class="form-group">
                             <label class="form-label">Moneda</label>
@@ -615,6 +625,8 @@ const InvoicesModule = {
 
             const payload = {
                 client_id: document.getElementById('i_client_id').value,
+                client_name: document.getElementById('i_direct_client_name')?.value || null,
+                client_tax_id: document.getElementById('i_direct_client_tax_id')?.value || null,
                 currency: document.getElementById('i_currency').value,
                 exchange_rate: parseFloat(document.getElementById('i_exchange_rate')?.value) || 1.0,
                 issue_date: document.getElementById('i_issue_date').value,
@@ -741,12 +753,29 @@ const InvoicesModule = {
             }
         }
 
+        // Toggle visibility of RNC/Name fields for Consumo
+        this.toggleDirectClientFields();
+
         // Show/hide NC/ND fields
         if (modWrapper) {
             modWrapper.style.display = (type === '33' || type === '34') ? 'grid' : 'none';
         }
 
         if (!isEcf || !taxInput) return;
+    },
+
+    toggleDirectClientFields() {
+        const clientSelect = document.getElementById('i_client_id');
+        const clientVal = clientSelect?.value;
+        const isEcf = document.getElementById('i_is_ecf')?.checked;
+        const type = document.getElementById('i_ecf_type')?.value;
+        const isConsumo = isEcf && type === '32';
+        const directFields = document.getElementById('direct-client-fields');
+
+        if (directFields) {
+            // Show only if it is Consumo AND "Consumidor Final (Sin Cliente)" is selected
+            directFields.style.display = (isConsumo && clientVal === '') ? 'grid' : 'none';
+        }
 
         // Types exempt from ITBIS (0%)
         const exemptTypes = ['43', '44', '46', '47'];

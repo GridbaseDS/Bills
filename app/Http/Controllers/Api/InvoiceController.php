@@ -28,19 +28,50 @@ class InvoiceController extends Controller
 
         if (empty($clientId)) {
             if ($isEcf && $ecfType === 32) {
-                $defaultClient = \App\Models\Client::firstOrCreate(
-                    ['email' => 'consumidorfinal@bills.gridbase.com.do'],
-                    [
-                        'company_name' => 'Consumidor Final',
-                        'contact_name' => 'Consumidor Final',
-                        'phone' => '',
-                        'tax_id' => '',
-                        'address_line1' => 'Santo Domingo, Rep. Dom.',
-                        'country' => 'Republica Dominicana',
-                        'is_active' => true,
-                    ]
-                );
-                $clientId = $defaultClient->id;
+                $clientName = trim($data['client_name'] ?? '');
+                $clientTaxId = trim($data['client_tax_id'] ?? '');
+
+                if (!empty($clientTaxId)) {
+                    $client = \App\Models\Client::where('tax_id', $clientTaxId)->first();
+                    if (!$client) {
+                        $client = \App\Models\Client::create([
+                            'company_name' => $clientName ?: 'Consumidor Final',
+                            'contact_name' => $clientName ?: 'Consumidor Final',
+                            'tax_id' => $clientTaxId,
+                            'email' => 'consumo_' . time() . '_' . rand(1000, 9999) . '@bills.gridbase.com.do',
+                            'country' => 'Republica Dominicana',
+                            'is_active' => true,
+                        ]);
+                    }
+                    $clientId = $client->id;
+                } elseif (!empty($clientName)) {
+                    $client = \App\Models\Client::where('company_name', $clientName)->orWhere('contact_name', $clientName)->first();
+                    if (!$client) {
+                        $client = \App\Models\Client::create([
+                            'company_name' => $clientName,
+                            'contact_name' => $clientName,
+                            'tax_id' => '',
+                            'email' => 'consumo_' . time() . '_' . rand(1000, 9999) . '@bills.gridbase.com.do',
+                            'country' => 'Republica Dominicana',
+                            'is_active' => true,
+                        ]);
+                    }
+                    $clientId = $client->id;
+                } else {
+                    $defaultClient = \App\Models\Client::firstOrCreate(
+                        ['email' => 'consumidorfinal@bills.gridbase.com.do'],
+                        [
+                            'company_name' => 'Consumidor Final',
+                            'contact_name' => 'Consumidor Final',
+                            'phone' => '',
+                            'tax_id' => '',
+                            'address_line1' => 'Santo Domingo, Rep. Dom.',
+                            'country' => 'Republica Dominicana',
+                            'is_active' => true,
+                        ]
+                    );
+                    $clientId = $defaultClient->id;
+                }
             } else {
                 return response()->json(['success' => false, 'error' => 'El cliente es obligatorio para este tipo de factura.'], 400);
             }
@@ -249,19 +280,50 @@ class InvoiceController extends Controller
 
         if (empty($clientId)) {
             if ($isEcf && $ecfType === 32) {
-                $defaultClient = \App\Models\Client::firstOrCreate(
-                    ['email' => 'consumidorfinal@bills.gridbase.com.do'],
-                    [
-                        'company_name' => 'Consumidor Final',
-                        'contact_name' => 'Consumidor Final',
-                        'phone' => '',
-                        'tax_id' => '',
-                        'address_line1' => 'Santo Domingo, Rep. Dom.',
-                        'country' => 'Republica Dominicana',
-                        'is_active' => true,
-                    ]
-                );
-                $clientId = $defaultClient->id;
+                $clientName = trim($data['client_name'] ?? '');
+                $clientTaxId = trim($data['client_tax_id'] ?? '');
+
+                if (!empty($clientTaxId)) {
+                    $client = \App\Models\Client::where('tax_id', $clientTaxId)->first();
+                    if (!$client) {
+                        $client = \App\Models\Client::create([
+                            'company_name' => $clientName ?: 'Consumidor Final',
+                            'contact_name' => $clientName ?: 'Consumidor Final',
+                            'tax_id' => $clientTaxId,
+                            'email' => 'consumo_' . time() . '_' . rand(1000, 9999) . '@bills.gridbase.com.do',
+                            'country' => 'Republica Dominicana',
+                            'is_active' => true,
+                        ]);
+                    }
+                    $clientId = $client->id;
+                } elseif (!empty($clientName)) {
+                    $client = \App\Models\Client::where('company_name', $clientName)->orWhere('contact_name', $clientName)->first();
+                    if (!$client) {
+                        $client = \App\Models\Client::create([
+                            'company_name' => $clientName,
+                            'contact_name' => $clientName,
+                            'tax_id' => '',
+                            'email' => 'consumo_' . time() . '_' . rand(1000, 9999) . '@bills.gridbase.com.do',
+                            'country' => 'Republica Dominicana',
+                            'is_active' => true,
+                        ]);
+                    }
+                    $clientId = $client->id;
+                } else {
+                    $defaultClient = \App\Models\Client::firstOrCreate(
+                        ['email' => 'consumidorfinal@bills.gridbase.com.do'],
+                        [
+                            'company_name' => 'Consumidor Final',
+                            'contact_name' => 'Consumidor Final',
+                            'phone' => '',
+                            'tax_id' => '',
+                            'address_line1' => 'Santo Domingo, Rep. Dom.',
+                            'country' => 'Republica Dominicana',
+                            'is_active' => true,
+                        ]
+                    );
+                    $clientId = $defaultClient->id;
+                }
             } else {
                 return response()->json(['success' => false, 'error' => 'El cliente es obligatorio para este tipo de factura.'], 400);
             }

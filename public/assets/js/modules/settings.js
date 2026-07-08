@@ -20,8 +20,14 @@ export default {
                     <button class="segment-item" data-tab="automation">Recordatorios</button>
                     <button class="segment-item" data-tab="integrations">Integraciones</button>
                     <button class="segment-item" data-tab="dgii">e-CF / DGII</button>
-                    <button class="segment-item" data-tab="devices">💻 Dispositivos</button>
-                    <button class="segment-item" data-tab="apikeys">🔑 API Keys</button>
+                    <button class="segment-item" data-tab="devices" style="display:inline-flex; align-items:center; gap:6px;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--color-text-primary);"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+                        Dispositivos
+                    </button>
+                    <button class="segment-item" data-tab="apikeys" style="display:inline-flex; align-items:center; gap:6px;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--color-text-primary);"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>
+                        API Keys
+                    </button>
                     <button class="segment-item" data-tab="support" style="color:var(--color-danger);">Soporte</button>
                 </div>
 
@@ -524,7 +530,7 @@ export default {
 
                         <!-- TAB: DEVICES -->
                         <div class="tab-content" id="tab-devices" style="display:none;">
-                            <h3 style="font-size:15px;font-weight:600;margin:0 0 8px;">💻 Dispositivos Autorizados</h3>
+                            <h3 style="font-size:15px;font-weight:600;margin:0 0 8px;">Dispositivos Autorizados</h3>
                             <p style="color:var(--color-text-muted);font-size:13px;margin:0 0 24px;">Administra los dispositivos (máximo 3) que tienen acceso rápido por PIN a tu cuenta. Puedes revocar el acceso de cualquiera de ellos en cualquier momento para mantener tu cuenta abierta y segura.</p>
                             
                             <div id="devices-list-container" style="display:flex; flex-direction:column; gap:16px;">

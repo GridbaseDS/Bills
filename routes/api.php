@@ -44,6 +44,8 @@ Route::post('/whatsapp/webhook', [WhatsAppWebhookController::class, 'webhook']);
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/auth/logout', [AuthController::class, 'logout']);
     Route::post('/auth/setup-pin', [AuthController::class, 'setupPin']);
+    Route::get('/auth/devices', [AuthController::class, 'getDevices']);
+    Route::delete('/auth/devices/{id}', [AuthController::class, 'deleteDevice']);
     Route::get('/auth/session', function (Request $request) {
         return ['authenticated' => true, 'user' => $request->user()];
     });

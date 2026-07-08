@@ -749,43 +749,6 @@ const DashboardModule = {
                         ` : ''}
                     </div>
 
-                    <!-- BPD Exchange Rates Widget -->
-                    <div class="db-tax-card">
-                        <div class="db-tax-head" style="border-bottom: 1px solid var(--color-border); background: var(--bg-hover);">
-                            <div class="db-tax-title">
-                                <div class="db-tax-icon" style="background: #E0F2FE; color: #0284C7;">
-                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                        <circle cx="12" cy="12" r="10"/>
-                                        <line x1="12" y1="8" x2="12" y2="16"/>
-                                        <line x1="8" y1="12" x2="16" y2="12"/>
-                                    </svg>
-                                </div>
-                                Tasas de Cambio BPD (Popular)
-                            </div>
-                            <span class="db-tax-badge" style="background: #E0F2FE; color: #0369A1; border-color: #BAE6FD;">Monedas en Vivo</span>
-                        </div>
-                        <div class="db-tax-grid" style="grid-template-columns: repeat(2, 1fr);">
-                            <div class="db-tax-cell" style="border-right: 1px solid var(--color-border);">
-                                <div class="db-tax-cell-label">Dólar Estadounidense (USD)</div>
-                                <div class="db-tax-cell-amount" style="color: #0284C7;">
-                                    RD$ ${(data.exchange_rates?.USD || 60.35).toFixed(2)}
-                                </div>
-                                <div class="db-tax-cell-sub">Tasa de Venta Oficial</div>
-                            </div>
-                            <div class="db-tax-cell" style="border-right: none;">
-                                <div class="db-tax-cell-label">Euro (EUR)</div>
-                                <div class="db-tax-cell-amount" style="color: #0284C7;">
-                                    RD$ ${(data.exchange_rates?.EUR || 65.90).toFixed(2)}
-                                </div>
-                                <div class="db-tax-cell-sub">Tasa de Venta Oficial</div>
-                            </div>
-                        </div>
-                        <div class="db-tax-footer">
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                            Sincronizado vía BPD el ${data.exchange_rates?.updated_at || ''}
-                        </div>
-                    </div>
-
                     <!-- Two-Column Body -->
                     <div class="db-body">
 
@@ -842,6 +805,33 @@ const DashboardModule = {
                                             <div class="db-activity-amount ${isPaid ? 'db-amount-pos' : 'db-amount-neg'}" style="margin-left:auto">${isPaid ? '+' : ''}${App.formatCurrency(inv.total, inv.currency)}</div>
                                         </a>`;
                                     }).join('') : '<div class="db-empty">No hay actividad reciente</div>'}
+                                </div>
+                            </div>
+
+                            <!-- BPD Exchange Rates Widget -->
+                            <div class="db-card" style="margin-top: 16px;">
+                                <div class="db-card-head" style="border-bottom: 1px solid var(--color-border); background: var(--bg-hover);">
+                                    <span class="db-card-title" style="display:flex; align-items:center; gap:8px;">
+                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px; height:16px; color:var(--color-text-secondary);"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+                                        Tasas de Cambio actualizadas
+                                    </span>
+                                    <span class="badge badge-active">En Vivo</span>
+                                </div>
+                                <div style="padding: 18px 24px; display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                                    <div style="background: var(--bg-hover); padding: 16px; border-radius: var(--radius-md); border: 1px solid var(--color-border); text-align: center;">
+                                        <div style="font-size: 11px; font-weight: 600; color: var(--color-text-muted); text-transform: uppercase; margin-bottom: 4px; letter-spacing: 0.04em;">Dólar (USD)</div>
+                                        <div style="font-size: 22px; font-weight: 800; color: var(--color-text-primary); letter-spacing: -0.02em;">RD$ ${(data.exchange_rates?.USD || 60.35).toFixed(2)}</div>
+                                        <div style="font-size: 10px; color: var(--color-text-muted); margin-top: 2px;">Tasa de Venta BPD</div>
+                                    </div>
+                                    <div style="background: var(--bg-hover); padding: 16px; border-radius: var(--radius-md); border: 1px solid var(--color-border); text-align: center;">
+                                        <div style="font-size: 11px; font-weight: 600; color: var(--color-text-muted); text-transform: uppercase; margin-bottom: 4px; letter-spacing: 0.04em;">Euro (EUR)</div>
+                                        <div style="font-size: 22px; font-weight: 800; color: var(--color-text-primary); letter-spacing: -0.02em;">RD$ ${(data.exchange_rates?.EUR || 65.90).toFixed(2)}</div>
+                                        <div style="font-size: 10px; color: var(--color-text-muted); margin-top: 2px;">Tasa de Venta BPD</div>
+                                    </div>
+                                </div>
+                                <div style="padding: 12px 24px; background: var(--bg-hover); border-top: 1px solid var(--color-border); font-size: 11px; color: var(--color-text-muted); display: flex; align-items: center; gap: 6px;">
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:12px; height:12px; flex-shrink: 0;"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                                    Sincronizado vía BPD el ${data.exchange_rates?.updated_at || ''}
                                 </div>
                             </div>
                         </div>

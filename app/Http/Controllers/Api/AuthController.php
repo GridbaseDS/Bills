@@ -268,4 +268,20 @@ class AuthController extends Controller
             ]
         ]);
     }
+
+    public function getDevices(Request $request)
+    {
+        $devices = $request->user()->devices()->orderBy('last_used_at', 'desc')->get();
+        return response()->json($devices);
+    }
+
+    public function deleteDevice(Request $request, $id)
+    {
+        $device = $request->user()->devices()->find($id);
+        if (!$device) {
+            return response()->json(['error' => 'Dispositivo no encontrado'], 404);
+        }
+        $device->delete();
+        return response()->json(['success' => true]);
+    }
 }

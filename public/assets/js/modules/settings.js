@@ -20,6 +20,7 @@ export default {
                     <button class="segment-item" data-tab="automation">Recordatorios</button>
                     <button class="segment-item" data-tab="integrations">Integraciones</button>
                     <button class="segment-item" data-tab="dgii">e-CF / DGII</button>
+                    <button class="segment-item" data-tab="devices">💻 Dispositivos</button>
                     <button class="segment-item" data-tab="apikeys">🔑 API Keys</button>
                     <button class="segment-item" data-tab="support" style="color:var(--color-danger);">Soporte</button>
                 </div>
@@ -517,6 +518,19 @@ export default {
                                     <div class="form-group" style="margin:0;"><label class="form-label" style="font-size:12px;">Tipo 45 — Gubernamental</label><input type="number" id="s_dgii_next_e_ncf_45" class="form-control" min="1" value="${s.dgii_next_e_ncf_45 || '1'}"><div style="font-size:10px;color:var(--color-text-muted);margin-top:2px;">→ <code>E45</code>0000000001</div></div>
                                     <div class="form-group" style="margin:0;"><label class="form-label" style="font-size:12px;">Tipo 46 — Exportaciones</label><input type="number" id="s_dgii_next_e_ncf_46" class="form-control" min="1" value="${s.dgii_next_e_ncf_46 || '1'}"><div style="font-size:10px;color:var(--color-text-muted);margin-top:2px;">→ <code>E46</code>0000000001</div></div>
                                     <div class="form-group" style="margin:0;"><label class="form-label" style="font-size:12px;">Tipo 47 — Pagos al Exterior</label><input type="number" id="s_dgii_next_e_ncf_47" class="form-control" min="1" value="${s.dgii_next_e_ncf_47 || '1'}"><div style="font-size:10px;color:var(--color-text-muted);margin-top:2px;">→ <code>E47</code>0000000001</div></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- TAB: DEVICES -->
+                        <div class="tab-content" id="tab-devices" style="display:none;">
+                            <h3 style="font-size:15px;font-weight:600;margin:0 0 8px;">💻 Dispositivos Autorizados</h3>
+                            <p style="color:var(--color-text-muted);font-size:13px;margin:0 0 24px;">Administra los dispositivos (máximo 3) que tienen acceso rápido por PIN a tu cuenta. Puedes revocar el acceso de cualquiera de ellos en cualquier momento para mantener tu cuenta abierta y segura.</p>
+                            
+                            <div id="devices-list-container" style="display:flex; flex-direction:column; gap:16px;">
+                                <div style="text-align:center;padding:40px 0;color:var(--color-text-muted);">
+                                    <span class="spinner"></span>
+                                    <p style="margin-top:12px;">Cargando dispositivos...</p>
                                 </div>
                             </div>
                         </div>
@@ -1242,12 +1256,87 @@ export default {
                 }
             });
 
+            // User devices management helper
+            const loadUserDevices = async () => {
+                const containerEl = document.getElementById('devices-list-container');
+                if (!containerEl) return;
+                
+                try {
+                    const devices = await window.App.api('auth/devices');
+                    if (devices.length === 0) {
+                        containerEl.innerHTML = `
+                            <div style="text-align:center;padding:32px;color:var(--color-text-muted);border:1px dashed var(--color-border);border-radius:var(--radius-lg);">
+                                No hay dispositivos autorizados para acceso por PIN en esta cuenta.
+                            </div>
+                        `;
+                        return;
+                    }
+                    
+                    containerEl.innerHTML = devices.map(d => {
+                        const lastUsed = d.last_used_at ? new Date(d.last_used_at).toLocaleString('es-DO', { day: 'numeric', month: 'short', hour: '2-digit', minute:'2-digit' }) : 'Nunca';
+                        const isCurrent = d.device_token === localStorage.getItem('device_token');
+                        
+                        return `
+                            <div style="display:flex; align-items:center; justify-content:space-between; padding:16px 20px; background:var(--bg-card); border:1px solid var(--color-border); border-radius:var(--radius-lg); gap:16px; box-shadow:var(--shadow-sm); margin-bottom: 12px;">
+                                <div style="display:flex; align-items:center; gap:16px; min-width:0; flex:1;">
+                                    <div style="width:40px; height:40px; border-radius:50%; background:var(--bg-hover); display:flex; align-items:center; justify-content:center; color:var(--color-text-primary); border:1px solid var(--color-border); flex-shrink:0;">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
+                                    </div>
+                                    <div style="min-width:0; flex:1;">
+                                        <div style="font-size:14px; font-weight:700; color:var(--color-text-primary); display:flex; align-items:center; gap:8px;">
+                                            ${d.device_name || 'Dispositivo desconocido'}
+                                            ${isCurrent ? '<span class="badge badge-active">Este Dispositivo</span>' : ''}
+                                        </div>
+                                        <div style="font-size:12px; color:var(--color-text-muted); margin-top:2px;">Último uso: ${lastUsed}</div>
+                                    </div>
+                                </div>
+                                <div>
+                                    <button type="button" class="btn btn-danger btn-revoke-device" data-id="${d.id}" style="background:#FEE2E2; color:#DC2626; border:1px solid #FCA5A5; font-size:12px; padding:6px 12px; font-weight:600; border-radius:var(--radius-md); cursor:pointer; transition: all 0.15s ease;">
+                                        Revocar Acceso
+                                    </button>
+                                </div>
+                            </div>
+                        `;
+                    }).join('');
+                    
+                    // Attach click handlers to revoke buttons
+                    containerEl.querySelectorAll('.btn-revoke-device').forEach(btn => {
+                        btn.addEventListener('click', async (e) => {
+                            const deviceId = btn.dataset.id;
+                            if (confirm('¿Estás seguro de que deseas revocar el acceso PIN para este dispositivo? Tendrás que iniciar sesión con contraseña la próxima vez.')) {
+                                btn.disabled = true;
+                                btn.innerHTML = '<span class="spinner"></span>';
+                                try {
+                                    await window.App.api(`auth/devices/${deviceId}`, { method: 'DELETE' });
+                                    window.App.showToast('Acceso revocado con éxito', 'success');
+                                    const isCurrent = devices.find(x => x.id == deviceId)?.device_token === localStorage.getItem('device_token');
+                                    if (isCurrent) {
+                                        localStorage.removeItem('device_token');
+                                    }
+                                    loadUserDevices();
+                                } catch (err) {
+                                    window.App.showToast(err.message, 'error');
+                                    loadUserDevices();
+                                }
+                            }
+                        });
+                    });
+                    
+                } catch (error) {
+                    containerEl.innerHTML = `
+                        <div style="color:var(--color-danger); text-align:center; padding:16px;">
+                            Error al cargar dispositivos: ${error.message}
+                        </div>
+                    `;
+                }
+            };
+
             // Hide/Show Save button based on active tab + load API Keys tab lazily
             let apiKeysLoaded = false;
             tabs.forEach(tab => {
                 tab.addEventListener('click', async () => {
                     const saveActions = container.querySelector('#settings-save-actions');
-                    const hideSaveTabs = ['support', 'apikeys'];
+                    const hideSaveTabs = ['support', 'apikeys', 'devices'];
                     if (saveActions) {
                         saveActions.style.display = hideSaveTabs.includes(tab.dataset.tab) ? 'none' : 'block';
                     }
@@ -1261,6 +1350,10 @@ export default {
                             document.getElementById('api-keys-container').innerHTML = '<div class="text-red">Error al cargar módulo de API Keys</div>';
                             apiKeysLoaded = false;
                         }
+                    }
+                    // Load user devices dynamically
+                    if (tab.dataset.tab === 'devices') {
+                        loadUserDevices();
                     }
                 });
             });

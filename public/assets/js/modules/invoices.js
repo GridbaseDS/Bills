@@ -771,10 +771,17 @@ const InvoicesModule = {
         const type = document.getElementById('i_ecf_type')?.value;
         const isConsumo = isEcf && type === '32';
         const directFields = document.getElementById('direct-client-fields');
+        const taxInput = document.getElementById('i_tax');
+        const hint = document.getElementById('itbis_hint');
 
         if (directFields) {
             // Show only if it is Consumo AND "Consumidor Final (Sin Cliente)" is selected
             directFields.style.display = (isConsumo && clientVal === '') ? 'grid' : 'none';
+        }
+
+        if (!taxInput) {
+            this.calculateTotals();
+            return;
         }
 
         // Types exempt from ITBIS (0%)

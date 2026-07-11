@@ -135,22 +135,6 @@ class EmailService
                 <p style='margin: 10px 0 0 0; color: #666; font-size: 13px;'>Fecha de Vencimiento: <strong>{$invoice->due_date->format('d/m/Y')}</strong></p>
             </div>
             
-            <p>Puede pagar esta factura de forma segura usando el siguiente enlace:</p>
-            
-            <p style='text-align: center; margin: 30px 0;'>
-                <a href='{$paymentUrl}' 
-                   style='background: #667eea; color: white; padding: 14px 28px; 
-                          text-decoration: none; border-radius: 6px; display: inline-block; 
-                          font-weight: bold; font-size: 16px;'>
-                    💳 Pagar Ahora
-                </a>
-            </p>
-            
-            <p style='font-size: 13px; color: #666;'>
-                <strong>Nota:</strong> Este enlace es válido hasta el {$invoice->payment_token_expires_at->format('d/m/Y')}.
-                También puede pagar ingresando el código de factura en nuestro portal de pagos.
-            </p>
-            
             <p>Una copia en PDF de la factura ha sido adjuntada a este correo.</p>
             
             <p>Si tiene alguna pregunta, por favor responda a este correo.</p>
@@ -268,17 +252,6 @@ class EmailService
                 <p style='margin: 0; font-size: 24px; font-weight: bold; color: #856404;'>{$invoice->currency} " . number_format($invoice->getRemainingBalance(), 2) . "</p>
                 <p style='margin: 10px 0 0 0; color: #856404; font-size: 13px;'>Fecha de Vencimiento: <strong>{$invoice->due_date->format('d/m/Y')}</strong></p>
             </div>
-            
-            <p>Puede realizar el pago de forma rápida y segura:</p>
-            
-            <p style='text-align: center; margin: 30px 0;'>
-                <a href='{$paymentUrl}' 
-                   style='background: #28a745; color: white; padding: 14px 28px; 
-                          text-decoration: none; border-radius: 6px; display: inline-block; 
-                          font-weight: bold; font-size: 16px;'>
-                    💳 Pagar Ahora
-                </a>
-            </p>
             
             <p>Si ya realizó el pago, por favor ignore este mensaje.</p>
             

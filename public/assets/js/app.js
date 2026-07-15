@@ -827,7 +827,7 @@ window.App = {
                 <div class="sidebar-overlay" id="sidebar-overlay"></div>
                 <aside class="sidebar" id="sidebar">
                     <div class="sidebar-logo" style="padding: 16px 12px; display: flex; justify-content: center; align-items: center;">
-                        <img src="${logoSrc}" alt="Logo" style="max-height: 32px; max-width: 100%; object-fit: contain;">
+                        <img src="${logoSrc}" alt="Logo" style="max-width: 100%; object-fit: contain;">
                     </div>
                     <nav class="sidebar-nav">
                         <div class="sidebar-section-title">Menú</div>

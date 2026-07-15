@@ -1649,7 +1649,7 @@ textarea.form-control { resize: vertical; min-height: 80px; }
 .login-brand {
   position: absolute; top: 32px; left: 64px;
 }
-.login-brand img { height: 36px; object-fit: contain; }
+.login-brand img { height: 79px; object-fit: contain; }
 .login-brand-name { display: none; font-size: 18px; font-weight: 700; color: #111827; letter-spacing: -0.3px; }
 .login-form-wrap { width: 100%; max-width: 380px; }
 .login-title { font-size: 28px; font-weight: 700; margin: 0 0 6px; color: #111827; letter-spacing: -0.5px; }
@@ -1840,7 +1840,7 @@ textarea.form-control { resize: vertical; min-height: 80px; }
     display: flex; align-items: center; justify-content: center;
     padding: 24px 16px 0;
   }
-  .login-brand img { height: 28px; }
+  .login-brand img { height: 79px; }
 
   .login-form-wrap {
     position: relative; z-index: 1;

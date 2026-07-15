@@ -105,4 +105,48 @@ class SaasPreDeploymentTest extends TestCase
             $this->assertArrayNotHasKey($key, $data, "Security Leak: Sensitive key '{$key}' was found in the public settings response!");
         }
     }
+
+    /**
+     * Test that DGII integration endpoints exist and return the correct XML/JSON formats.
+     */
+    public function test_dgii_endpoints_exist_and_conform_to_spec(): void
+    {
+        // 1. Semilla Endpoint (Autenticación)
+        $responseSemilla = $this->get('/fe/autenticacion/api/semilla');
+        $responseSemilla->assertStatus(200);
+        $responseSemilla->assertHeader('Content-Type', 'application/xml');
+        $responseSemilla->assertSee('<Semilla', false);
+        $responseSemilla->assertSee('<UUID>', false);
+        $responseSemilla->assertSee('<Fecha>', false);
+
+        // 2. Validación de Certificado Endpoint (Autenticación)
+        $responseValCert = $this->postJson('/fe/autenticacion/api/validacioncertificado');
+        $responseValCert->assertStatus(200);
+        // Should return JSON by default
+        $responseValCert->assertJsonStructure(['token', 'expira', 'expedido']);
+
+        // With XML Accept Header
+        $responseValCertXml = $this->post('/fe/autenticacion/api/validacioncertificado', [], [
+            'Accept' => 'application/xml'
+        ]);
+        $responseValCertXml->assertStatus(200);
+        $responseValCertXml->assertHeader('Content-Type', 'application/xml');
+        $responseValCertXml->assertSee('<RespuestaAutenticacion>', false);
+        $responseValCertXml->assertSee('<token>', false);
+
+        // 3. Recepción e-CF Webhook (ARECF Acuse de Recibo)
+        $responseRecepcion = $this->post('/fe/recepcion/api/ecf');
+        $responseRecepcion->assertStatus(200);
+        $responseRecepcion->assertHeader('Content-Type', 'application/xml');
+        $responseRecepcion->assertSee('<ARECF', false);
+        $responseRecepcion->assertSee('<DetalleAcusedeRecibo>', false);
+
+        // 4. Aprobación Comercial Webhook (ACECF)
+        $responseAprobacion = $this->post('/fe/aprobacioncomercial/api/ecf');
+        $responseAprobacion->assertStatus(200);
+        $responseAprobacion->assertHeader('Content-Type', 'application/xml');
+        $responseAprobacion->assertSee('<ACECF', false);
+        $responseAprobacion->assertSee('<DetalleAprobacionComercial>', false);
+    }
 }
+

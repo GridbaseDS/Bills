@@ -1211,19 +1211,21 @@ window.App = {
 
         const listItems = changelog.map(item => `
             <li style="margin-bottom: 12px; display: flex; align-items: flex-start; gap: 10px; font-size: 14px; color: #475569; line-height: 1.5; text-align: left;">
-                <span style="font-size: 16px; min-width: 20px; text-align: center;">${item.substring(0, 2)}</span>
-                <span style="font-family: inherit; font-weight: 500;">${item.substring(2)}</span>
+                <span style="color: ${primaryColor}; margin-top: 4px; display: inline-flex; align-items: center; justify-content: center; min-width: 14px; height: 14px;">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                </span>
+                <span style="font-family: inherit; font-weight: 500;">${item}</span>
             </li>
         `).join('');
 
         modal.innerHTML = `
             <div style="background: #ffffff; width: 92%; max-width: 480px; border-radius: 24px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); border: 1px solid rgba(255,255,255,0.7); overflow: hidden; transform: scale(0.9); animation: scaleUp 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; padding: 32px; font-family: system-ui, -apple-system, sans-serif;">
                 <div style="display: flex; align-items: center; gap: 14px; margin-bottom: 20px;">
-                    <div style="width: 48px; height: 48px; border-radius: 14px; background: rgba(11, 72, 76, 0.1); display: flex; align-items: center; justify-content: center; color: ${primaryColor}; font-size: 24px; box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);">
-                        🚀
+                    <div style="width: 48px; height: 48px; border-radius: 14px; background: rgba(11, 72, 76, 0.1); display: flex; align-items: center; justify-content: center; color: ${primaryColor}; box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
                     </div>
                     <div style="text-align: left;">
-                        <h3 style="margin: 0; font-size: 20px; font-weight: 700; color: #1e293b; letter-spacing: -0.01em;">¡Sistema Actualizado!</h3>
+                        <h3 style="margin: 0; font-size: 20px; font-weight: 700; color: #1e293b; letter-spacing: -0.01em;">Sistema Actualizado</h3>
                         <span style="font-size: 11px; font-weight: 700; color: ${primaryColor}; background: rgba(11, 72, 76, 0.15); padding: 3px 10px; border-radius: 99px; display: inline-block; margin-top: 4px;">Versión ${version}</span>
                     </div>
                 </div>

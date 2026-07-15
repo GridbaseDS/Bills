@@ -105,7 +105,7 @@ window.App = {
                 
                 // Fetch settings to check if installed
                 const settings = await this.api('settings');
-                this.state.settings = settings;
+                this.state.settings = { ...this.state.settings, ...settings };
                 
                 // Cache branding elements in localStorage
                 if (settings.company_logo) localStorage.setItem('company_logo', settings.company_logo);
@@ -152,7 +152,7 @@ window.App = {
                 
                 // Fetch settings to check if installed
                 const settings = await this.api('settings');
-                this.state.settings = settings;
+                this.state.settings = { ...this.state.settings, ...settings };
                 
                 // Cache branding elements in localStorage
                 if (settings.company_logo) localStorage.setItem('company_logo', settings.company_logo);

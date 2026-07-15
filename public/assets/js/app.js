@@ -471,7 +471,7 @@ window.App = {
                             <button type="submit" class="login-submit">Iniciar Sesi\u00f3n</button>
                         </form>
                         <p class="login-footer">
-                            Powered by <span>GridBase</span> Digital Solutions
+                            Powered by <a href="https://gridbase.com.do" target="_blank" rel="noopener noreferrer"><span>GridBase</span> Digital Solutions</a>
                         </p>
                     </div>
                 </div>
@@ -570,7 +570,7 @@ window.App = {
                             </div>
                         </form>
                         <p class="login-footer">
-                            Powered by <span>GridBase</span> Digital Solutions
+                            Powered by <a href="https://gridbase.com.do" target="_blank" rel="noopener noreferrer"><span>GridBase</span> Digital Solutions</a>
                         </p>
                     </div>
                 </div>

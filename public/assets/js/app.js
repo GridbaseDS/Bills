@@ -120,7 +120,6 @@ window.App = {
                     this.renderSetupWizard();
                 } else {
                     this.renderAppShell();
-                    this.checkChangelog();
                     const currentRoute = window.location.pathname.substring(1) || 'inicio';
                     this.navigate(currentRoute);
                 }
@@ -169,7 +168,6 @@ window.App = {
                     this.renderPinSetup();
                 } else {
                     this.renderAppShell();
-                    this.checkChangelog();
                     this.navigate('inicio');
                 }
             }
@@ -1007,6 +1005,20 @@ window.App = {
 
             const notifications = [];
 
+            const currentVersion = this.state.settings?.system_version;
+            const changelog = this.state.settings?.system_changelog;
+            const lastSeenVersion = localStorage.getItem('gridbase_bills_last_seen_version');
+
+            if (currentVersion && changelog && Array.isArray(changelog) && changelog.length > 0 && lastSeenVersion !== currentVersion) {
+                notifications.push({
+                    type: 'update',
+                    title: 'Sistema Actualizado',
+                    description: `Nueva versión ${currentVersion} instalada. Haz clic para ver las novedades.`,
+                    onclick: `App.showChangelogModal('${currentVersion}', App.state.settings.system_changelog); App.toggleNotifications(event); event.preventDefault();`,
+                    icon: `<svg style="color:var(--color-primary)" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="8"/></svg>`
+                });
+            }
+
             if (receivedData && receivedData.pending > 0) {
                 notifications.push({
                     type: 'approval',
@@ -1061,7 +1073,7 @@ window.App = {
             }
 
             list.innerHTML = notifications.map(n => `
-                <a href="#${n.link}" onclick="App.toggleNotifications(event)" style="display:flex;gap:12px;padding:12px 16px;border-bottom:1.5px solid var(--color-border);text-decoration:none;color:inherit;transition:background 0.15s;" class="notification-item">
+                <a href="${n.onclick ? '#' : '#' + n.link}" onclick="${n.onclick || 'App.toggleNotifications(event)'}" style="display:flex;gap:12px;padding:12px 16px;border-bottom:1.5px solid var(--color-border);text-decoration:none;color:inherit;transition:background 0.15s;" class="notification-item">
                     <div style="width:32px;height:32px;border-radius:var(--radius-md);background:var(--bg-hover);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
                         ${n.icon}
                     </div>
@@ -1247,7 +1259,10 @@ window.App = {
         document.getElementById('dismiss-changelog-btn').addEventListener('click', () => {
             localStorage.setItem('gridbase_bills_last_seen_version', version);
             modal.style.animation = 'fadeOut 0.2s ease';
-            modal.addEventListener('animationend', () => modal.remove());
+            modal.addEventListener('animationend', () => {
+                modal.remove();
+                this.loadNotifications();
+            });
         });
     },
 

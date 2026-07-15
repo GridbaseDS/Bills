@@ -2417,6 +2417,13 @@ tr:hover .row-actions { opacity: 1; }
   color: #000000 !important;
 }
 
+/* Changelog Modal Animations */
+@keyframes fadeOut {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
 
-
-
+@keyframes scaleUp {
+  from { transform: scale(0.9); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}

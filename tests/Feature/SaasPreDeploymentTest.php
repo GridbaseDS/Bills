@@ -84,6 +84,8 @@ class SaasPreDeploymentTest extends TestCase
             'pdf_primary_color',
             'pdf_accent_color',
             'is_installed',
+            'system_version',
+            'system_changelog',
         ]);
 
         // Verify no sensitive keys are leaked

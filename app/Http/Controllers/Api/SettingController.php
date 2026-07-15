@@ -381,6 +381,8 @@ class SettingController extends Controller
     public function publicSettings()
     {
         $all = Setting::getAll();
+        $changelog = config('changelog') ?? [];
+        
         return response()->json([
             'company_name' => $all['company_name'] ?? 'Bills',
             'company_logo' => $all['company_logo'] ?? '',
@@ -395,6 +397,8 @@ class SettingController extends Controller
             'sidebar_dark_text_color' => $all['sidebar_dark_text_color'] ?? '#FFFFFF',
             'sidebar_dark_hover_color' => $all['sidebar_dark_hover_color'] ?? '#1F2937',
             'is_installed' => $all['is_installed'] ?? '0',
+            'system_version' => $changelog['version'] ?? '1.0.0',
+            'system_changelog' => $changelog['changes'] ?? [],
         ]);
     }
 }

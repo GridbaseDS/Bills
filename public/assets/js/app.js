@@ -120,6 +120,7 @@ window.App = {
                     this.renderSetupWizard();
                 } else {
                     this.renderAppShell();
+                    this.checkChangelog();
                     const currentRoute = window.location.pathname.substring(1) || 'inicio';
                     this.navigate(currentRoute);
                 }
@@ -168,6 +169,7 @@ window.App = {
                     this.renderPinSetup();
                 } else {
                     this.renderAppShell();
+                    this.checkChangelog();
                     this.navigate('inicio');
                 }
             }
@@ -1171,6 +1173,80 @@ window.App = {
         toast.innerHTML = `${icon} <span>${message}</span>`;
         container.appendChild(toast);
         setTimeout(() => { toast.style.opacity = '0'; setTimeout(() => toast.remove(), 300); }, 3000);
+    },
+
+    checkChangelog() {
+        const currentVersion = this.state.settings?.system_version;
+        const changelog = this.state.settings?.system_changelog;
+        
+        if (!currentVersion || !changelog || !Array.isArray(changelog) || changelog.length === 0) {
+            return;
+        }
+
+        const lastSeenVersion = localStorage.getItem('gridbase_bills_last_seen_version');
+        
+        // If we haven't seen this version, display the modal!
+        if (lastSeenVersion !== currentVersion) {
+            this.showChangelogModal(currentVersion, changelog);
+        }
+    },
+
+    showChangelogModal(version, changelog) {
+        const modal = document.createElement('div');
+        modal.id = 'changelog-modal';
+        modal.style.position = 'fixed';
+        modal.style.top = '0';
+        modal.style.left = '0';
+        modal.style.width = '100vw';
+        modal.style.height = '100vh';
+        modal.style.backgroundColor = 'rgba(15, 23, 42, 0.6)';
+        modal.style.backdropFilter = 'blur(12px)';
+        modal.style.display = 'flex';
+        modal.style.justifyContent = 'center';
+        modal.style.alignItems = 'center';
+        modal.style.zIndex = '99999';
+        modal.style.animation = 'fadeIn 0.3s ease';
+
+        const primaryColor = this.state.settings?.pdf_primary_color || '#0B484C';
+
+        const listItems = changelog.map(item => `
+            <li style="margin-bottom: 12px; display: flex; align-items: flex-start; gap: 10px; font-size: 14px; color: #475569; line-height: 1.5; text-align: left;">
+                <span style="font-size: 16px; min-width: 20px; text-align: center;">${item.substring(0, 2)}</span>
+                <span style="font-family: inherit; font-weight: 500;">${item.substring(2)}</span>
+            </li>
+        `).join('');
+
+        modal.innerHTML = `
+            <div style="background: #ffffff; width: 92%; max-width: 480px; border-radius: 24px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); border: 1px solid rgba(255,255,255,0.7); overflow: hidden; transform: scale(0.9); animation: scaleUp 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; padding: 32px; font-family: system-ui, -apple-system, sans-serif;">
+                <div style="display: flex; align-items: center; gap: 14px; margin-bottom: 20px;">
+                    <div style="width: 48px; height: 48px; border-radius: 14px; background: rgba(11, 72, 76, 0.1); display: flex; align-items: center; justify-content: center; color: ${primaryColor}; font-size: 24px; box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);">
+                        🚀
+                    </div>
+                    <div style="text-align: left;">
+                        <h3 style="margin: 0; font-size: 20px; font-weight: 700; color: #1e293b; letter-spacing: -0.01em;">¡Sistema Actualizado!</h3>
+                        <span style="font-size: 11px; font-weight: 700; color: ${primaryColor}; background: rgba(11, 72, 76, 0.15); padding: 3px 10px; border-radius: 99px; display: inline-block; margin-top: 4px;">Versión ${version}</span>
+                    </div>
+                </div>
+                
+                <p style="font-size: 14px; color: #64748b; margin-top: 0; margin-bottom: 24px; text-align: left; line-height: 1.5;">Hemos introducido mejoras de seguridad y optimizaciones de rendimiento en esta actualización:</p>
+                
+                <ul style="list-style: none; padding: 0; margin: 0 0 28px 0;">
+                    ${listItems}
+                </ul>
+                
+                <button id="dismiss-changelog-btn" style="width: 100%; padding: 14px; background: ${primaryColor}; color: #ffffff; border: none; border-radius: 14px; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.2s ease; box-shadow: 0 4px 12px rgba(11, 72, 76, 0.25); outline: none;">
+                    Entendido, ¡continuar!
+                </button>
+            </div>
+        `;
+
+        document.body.appendChild(modal);
+
+        document.getElementById('dismiss-changelog-btn').addEventListener('click', () => {
+            localStorage.setItem('gridbase_bills_last_seen_version', version);
+            modal.style.animation = 'fadeOut 0.2s ease';
+            modal.addEventListener('animationend', () => modal.remove());
+        });
     },
 
     bindSearch() {

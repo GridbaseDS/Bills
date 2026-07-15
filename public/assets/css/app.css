@@ -472,7 +472,7 @@ hr { border: 0; border-top: 1px solid var(--color-border); margin: var(--spacing
 
 }
 
-.sidebar-logo img { height: 32px; object-fit: contain; }
+.sidebar-logo img { height: auto; max-height: 50px; object-fit: contain; }
 
 
 

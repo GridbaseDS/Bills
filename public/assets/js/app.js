@@ -74,10 +74,23 @@ window.App = {
             }
             return data;
         } catch (error) {
-            if (!options.silent) {
-                this.showToast(error.message, 'error');
+            let msg = error.message || 'Error de conexión';
+            const isNetworkError = !navigator.onLine || 
+                msg.toLowerCase().includes('failed to fetch') || 
+                msg.toLowerCase().includes('load failed') || 
+                msg.toLowerCase().includes('networkerror') ||
+                msg.toLowerCase().includes('network error') ||
+                msg.toLowerCase().includes('conexion fallida') ||
+                msg.toLowerCase().includes('conexión fallida');
+
+            if (isNetworkError) {
+                msg = 'No hay internet';
             }
-            throw error;
+
+            if (!options.silent) {
+                this.showToast(msg, 'error');
+            }
+            throw new Error(msg);
         }
     },
 

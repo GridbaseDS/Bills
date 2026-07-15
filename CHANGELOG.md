@@ -2,6 +2,14 @@
 
 A continuación se presenta el registro de evolución y mejoras de la plataforma Gridbase Bills. Cada versión detalla los avances e incorporaciones del sistema, orientados a brindar el servicio de facturación y cumplimiento fiscal de mayor robustez, estabilidad y facilidad de uso del mercado.
 
+## Gridbase Bills v3.3.0 (Pruebas Pre-Despliegue y Notificaciones de Novedades) (2026-07-15)
+
+* Core: Implementación de la suite de pruebas unitarias automáticas previas al despliegue (SaasPreDeploymentTest) para prevenir actualizaciones con fallas.
+* Facturación Electrónica: Verificador técnico de webhooks e endpoints de la DGII (Semilla, Validación de Certificados, ARECF, ACECF) que previene roturas en la integración fiscal.
+* Diseño: Personalización de la pantalla de Login con colores de marca dinámicos y enlaces oficiales a GridBase.
+* Diseño: Logotipo del menú lateral optimizado para una altura máxima de 50px.
+* Notificaciones: Sistema de novedades y actualizaciones integrado en la campana de notificaciones del panel administrativo.
+
 ## Gridbase Bills v3.2.0 (Gestión Multi-Dispositivo para Acceso PIN) (2026-07-08)
 
 * Seguridad: Implementación de la gestión multi-dispositivo para el inicio de sesión rápido por PIN. Ahora el usuario puede autorizar y mantener hasta 3 dispositivos simultáneos (como su computadora, celular y tablet) sin que se invaliden entre sí al ingresar.

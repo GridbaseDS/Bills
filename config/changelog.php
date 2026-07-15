@@ -1,7 +1,7 @@
 <?php
 
 return [
-    'version' => '1.1.1',
+    'version' => '3.3.0',
     'date' => '2026-07-15',
     'changes' => [
         'Nuevo sistema de pruebas automáticas previas al despliegue para evitar errores en producción.',

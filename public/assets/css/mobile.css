@@ -80,8 +80,7 @@ input, select, textarea {
 
 .topbar .search-wrapper,
 .topbar .search-shortcuts,
-.topbar .vertical-divider,
-.topbar .btn-icon[title="Notificaciones"] {
+.topbar .vertical-divider {
   display: none !important;
 }
 
@@ -187,8 +186,31 @@ button.tab-link {
   cursor: pointer;
 }
 
-/* Hide desktop "Nueva Factura" topbar button on mobile (use FAB) */
-.topbar-actions { display: none !important; }
+/* Hide desktop "Nueva Factura" topbar button on mobile (use FAB) but show bell and theme toggles */
+.topbar-actions {
+  display: flex !important;
+  align-items: center;
+  gap: 12px;
+}
+.topbar-actions .btn-primary,
+.topbar-actions .vertical-divider {
+  display: none !important;
+}
+
+/* Floating Notification Dropdown styled for Mobile */
+#notification-dropdown {
+  position: fixed !important;
+  top: 60px !important;
+  left: 16px !important;
+  right: 16px !important;
+  width: auto !important;
+  max-width: none !important;
+  z-index: 1050 !important;
+  background: var(--bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+}
 
 /* FAB tab (center button) */
 .tab-link.tab-fab {

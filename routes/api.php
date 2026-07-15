@@ -29,6 +29,8 @@ use App\Http\Controllers\Api\DgiiLogController;
 Route::post('/auth/login', [AuthController::class, 'login']);
 Route::post('/auth/verify-2fa', [AuthController::class, 'verify2fa']);
 Route::post('/auth/pin-login', [AuthController::class, 'pinLogin']);
+Route::get('/settings/public', [SettingController::class, 'publicSettings']);
+
 
 
 // Lookups (Public or Protected, placing them here as public, but could be protected)

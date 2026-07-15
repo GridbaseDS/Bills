@@ -377,4 +377,25 @@ class SettingController extends Controller
             return response()->json(['success' => false, 'error' => $e->getMessage()], 500);
         }
     }
+
+    public function publicSettings()
+    {
+        $all = Setting::getAll();
+        return response()->json([
+            'company_name' => $all['company_name'] ?? 'Bills',
+            'company_logo' => $all['company_logo'] ?? '',
+            'login_logo' => $all['login_logo'] ?? '',
+            'company_favicon' => $all['company_favicon'] ?? '',
+            'pdf_primary_color' => $all['pdf_primary_color'] ?? '#0B484C',
+            'pdf_accent_color' => $all['pdf_accent_color'] ?? '#00DF83',
+            'sidebar_bg_color' => $all['sidebar_bg_color'] ?? '#FFFFFF',
+            'sidebar_text_color' => $all['sidebar_text_color'] ?? '#374151',
+            'sidebar_hover_color' => $all['sidebar_hover_color'] ?? '#F3F4F6',
+            'sidebar_dark_bg_color' => $all['sidebar_dark_bg_color'] ?? '#111827',
+            'sidebar_dark_text_color' => $all['sidebar_dark_text_color'] ?? '#FFFFFF',
+            'sidebar_dark_hover_color' => $all['sidebar_dark_hover_color'] ?? '#1F2937',
+            'is_installed' => $all['is_installed'] ?? '0',
+        ]);
+    }
 }
+

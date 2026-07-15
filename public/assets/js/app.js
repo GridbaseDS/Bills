@@ -38,6 +38,7 @@ window.App = {
             const appleLink = document.querySelector("link[rel='apple-touch-icon']");
             if (appleLink) appleLink.href = cachedFavicon;
         }
+        this.applyLoginColors();
 
         this.checkAuth();
         this.setupRouter();
@@ -81,6 +82,22 @@ window.App = {
     },
 
     async checkAuth() {
+        // Load public settings for branding/logos/colors
+        try {
+            const publicSettings = await this.api('settings/public', { silent: true });
+            this.state.settings = { ...this.state.settings, ...publicSettings };
+            if (publicSettings.company_logo) localStorage.setItem('company_logo', publicSettings.company_logo);
+            if (publicSettings.login_logo) localStorage.setItem('login_logo', publicSettings.login_logo);
+            if (publicSettings.company_favicon) localStorage.setItem('company_favicon', publicSettings.company_favicon);
+            if (publicSettings.company_name) localStorage.setItem('company_name', publicSettings.company_name);
+            if (publicSettings.pdf_primary_color) localStorage.setItem('pdf_primary_color', publicSettings.pdf_primary_color);
+            this.updateFavicon();
+            this.updateTitle();
+            this.applyLoginColors();
+        } catch (pubErr) {
+            console.error('Failed to load public settings:', pubErr);
+        }
+
         try {
             const res = await this.api('auth/session', { silent: true });
             if (res.authenticated) {
@@ -94,6 +111,8 @@ window.App = {
                 if (settings.company_logo) localStorage.setItem('company_logo', settings.company_logo);
                 if (settings.login_logo) localStorage.setItem('login_logo', settings.login_logo);
                 if (settings.company_favicon) localStorage.setItem('company_favicon', settings.company_favicon);
+                if (settings.company_name) localStorage.setItem('company_name', settings.company_name);
+                if (settings.pdf_primary_color) localStorage.setItem('pdf_primary_color', settings.pdf_primary_color);
                 this.updateFavicon();
                 this.updateTitle();
                 
@@ -250,6 +269,64 @@ window.App = {
         `;
     },
 
+    applyLoginColors() {
+        const primaryColor = this.state.settings?.pdf_primary_color || localStorage.getItem('pdf_primary_color') || '#0B484C';
+        let styleTag = document.getElementById('login-custom-colors');
+        if (!styleTag) {
+            styleTag = document.createElement('style');
+            styleTag.id = 'login-custom-colors';
+            document.head.appendChild(styleTag);
+        }
+        
+        const hexToRgba = (hex, alpha) => {
+            hex = hex.replace('#', '');
+            if (hex.length === 3) {
+                hex = hex[0] + hex[0] + hex[1] + hex[1] + hex[2] + hex[2];
+            }
+            const r = parseInt(hex.substring(0, 2), 16);
+            const g = parseInt(hex.substring(2, 4), 16);
+            const b = parseInt(hex.substring(4, 6), 16);
+            return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+        };
+        
+        let rgbaColor = 'rgba(11, 72, 76, 0.08)';
+        let rgbaHover = 'rgba(11, 72, 76, 0.25)';
+        try {
+            if (primaryColor && primaryColor.startsWith('#')) {
+                rgbaColor = hexToRgba(primaryColor, 0.08);
+                rgbaHover = hexToRgba(primaryColor, 0.25);
+            }
+        } catch(e) {}
+        
+        styleTag.textContent = `
+            .login-field input:focus { 
+                border-color: ${primaryColor} !important; 
+                box-shadow: 0 0 0 3px ${rgbaColor} !important; 
+            }
+            .login-submit { 
+                background: linear-gradient(135deg, ${primaryColor} 0%, ${primaryColor} 100%) !important; 
+            }
+            .login-submit:hover {
+                box-shadow: 0 6px 20px ${rgbaHover} !important;
+            }
+            .login-footer span { 
+                color: ${primaryColor} !important; 
+            }
+            .login-right { 
+                background: linear-gradient(160deg, ${primaryColor} 0%, ${primaryColor} 100%) !important; 
+            }
+            .login-float-sub { 
+                color: ${primaryColor} !important; 
+            }
+            .login-float-dot { 
+                background: ${primaryColor} !important; 
+            }
+            .login-float-mini-icon { 
+                background: ${primaryColor} !important; 
+            }
+        `;
+    },
+
     async logout(callApi = true) {
         if (callApi) {
             try { await this.api('auth/logout', { method: 'POST' }); } catch (e) { }
@@ -370,6 +447,7 @@ window.App = {
     renderLogin() {
         const cachedLogo = localStorage.getItem('login_logo') || localStorage.getItem('company_logo') || 'https://gridbase.com.do/wp-content/uploads/2025/02/cropped-imagen_2026-03-16_154126791.png';
         const companyName = localStorage.getItem('company_name') || this.state.settings?.company_name || 'Bills';
+        const primaryColor = this.state.settings?.pdf_primary_color || localStorage.getItem('pdf_primary_color') || '#0B484C';
         const app = document.getElementById('app');
         app.innerHTML = `
             <div class="login-page">
@@ -416,7 +494,7 @@ window.App = {
                                     <div class="login-float-row-val">24 emitidas</div>
                                 </div>
                             </div>
-                            <div style="font-size:20px;font-weight:700;color:#0B484C;">98%</div>
+                            <div style="font-size:20px;font-weight:700;color:${primaryColor};">98%</div>
                         </div>
                     </div>
                     <div class="login-float-mini">

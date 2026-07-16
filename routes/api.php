@@ -24,6 +24,7 @@ use App\Http\Controllers\Api\External\ExternalQuoteController;
 use App\Http\Controllers\Api\External\ExternalClientController;
 use App\Http\Controllers\Api\CertificationController;
 use App\Http\Controllers\Api\DgiiLogController;
+use App\Http\Controllers\Api\POSController;
 
 // Public Auth
 Route::post('/auth/login', [AuthController::class, 'login']);
@@ -116,6 +117,10 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/settings/evolution-status', [SettingController::class, 'getEvolutionStatus'])->middleware('role:admin');
     Route::get('/settings/evolution-qr', [SettingController::class, 'getEvolutionQr'])->middleware('role:admin');
     Route::post('/settings/evolution-pairing-code', [SettingController::class, 'getEvolutionPairingCode'])->middleware('role:admin');
+
+    // POS / Verifone
+    Route::post('/pos/charge', [POSController::class, 'charge']);
+    Route::post('/pos/cancel', [POSController::class, 'cancel']);
 
     // DGII Tests & User Management
     Route::middleware('role:admin')->group(function () {

@@ -868,6 +868,16 @@ const InvoicesModule = {
                             <option value="other">Otro</option>
                         </select>
                     </div>
+                    <div id="pos-integration-section" style="display:none; margin-top:16px; padding-top:16px; border-top:1px dashed var(--color-border);">
+                        <button type="button" class="btn btn-secondary" id="btn-send-to-pos" style="background:var(--color-primary); color:#fff; border:none; display:flex; align-items:center; justify-content:center; gap:8px; height:42px; font-weight:600; width:100%;">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect><line x1="12" y1="18" x2="12.01" y2="18"></line></svg>
+                            Enviar a Verifone
+                        </button>
+                        <div id="pos-status-message" style="display:none; margin-top:12px; padding:12px; border-radius:var(--radius-md); background:var(--bg-hover); text-align:center; font-size:13px; font-weight:500;">
+                            <span class="spinner" style="width:14px;height:14px;border-width:2px;display:inline-block;vertical-align:middle;margin-right:6px;"></span>
+                            <span id="pos-status-text">Esperando tarjeta en Verifone...</span>
+                        </div>
+                    </div>
                 </div>
                 <div class="modal-footer">
                     <button class="btn btn-secondary" id="payment-cancel-2">Cancelar</button>
@@ -878,6 +888,90 @@ const InvoicesModule = {
         document.body.appendChild(modal);
         setTimeout(() => document.getElementById('payment-amount')?.focus(), 100);
         modal.addEventListener('click', (e) => { if (e.target === modal) modal.remove(); });
+        
+        const methodSelect = document.getElementById('payment-method');
+        const posSection = document.getElementById('pos-integration-section');
+        const confirmBtn = document.getElementById('payment-confirm');
+        const amountInput = document.getElementById('payment-amount');
+        const sendToPosBtn = document.getElementById('btn-send-to-pos');
+        const statusDiv = document.getElementById('pos-status-message');
+        const statusText = document.getElementById('pos-status-text');
+
+        const togglePosUI = () => {
+            const isCard = methodSelect.value === 'credit_card';
+            const isPosEnabled = window.App.state.settings?.pos_enabled === '1';
+            if (isCard && isPosEnabled) {
+                posSection.style.display = 'block';
+                confirmBtn.style.display = 'none';
+            } else {
+                posSection.style.display = 'none';
+                confirmBtn.style.display = 'inline-block';
+            }
+        };
+
+        methodSelect.addEventListener('change', togglePosUI);
+        togglePosUI();
+
+        let isProcessing = false;
+
+        sendToPosBtn.addEventListener('click', async () => {
+            if (isProcessing) {
+                isProcessing = false;
+                try {
+                    await App.api('pos/cancel', { method: 'POST' });
+                } catch(err) {}
+                App.showToast('Transacción cancelada', 'info');
+                modal.remove();
+                return;
+            }
+
+            const amount = parseFloat(amountInput.value);
+            if (isNaN(amount) || amount <= 0) { App.showToast('Monto inválido', 'error'); return; }
+
+            isProcessing = true;
+            sendToPosBtn.innerHTML = 'Cancelar Transacción';
+            sendToPosBtn.style.background = '#ef4444';
+            statusDiv.style.display = 'block';
+            statusText.textContent = 'Procesando en Verifone... Favor pase la tarjeta.';
+
+            amountInput.disabled = true;
+            methodSelect.disabled = true;
+            document.getElementById('payment-cancel').style.display = 'none';
+            document.getElementById('payment-cancel-2').style.display = 'none';
+
+            try {
+                const res = await App.api('pos/charge', {
+                    method: 'POST',
+                    body: { amount, invoice_id: id }
+                });
+
+                if (!isProcessing) return;
+
+                if (res.success && res.status === 'approved') {
+                    App.showToast('¡Pago aprobado por el Verifone!', 'success');
+                    modal.remove();
+                    this.markAsPaid(id, amount, 'credit_card');
+                } else {
+                    throw new Error(res.message || 'Transacción rechazada.');
+                }
+            } catch (err) {
+                if (!isProcessing) return;
+                App.showToast(err.message || 'Error en Verifone', 'error');
+                
+                isProcessing = false;
+                sendToPosBtn.style.background = '';
+                sendToPosBtn.innerHTML = `
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect><line x1="12" y1="18" x2="12.01" y2="18"></line></svg>
+                    Enviar a Verifone
+                `;
+                statusDiv.style.display = 'none';
+                amountInput.disabled = false;
+                methodSelect.disabled = false;
+                document.getElementById('payment-cancel').style.display = 'block';
+                document.getElementById('payment-cancel-2').style.display = 'inline-block';
+            }
+        });
+
         document.getElementById('payment-cancel').addEventListener('click', () => modal.remove());
         document.getElementById('payment-cancel-2').addEventListener('click', () => modal.remove());
         document.getElementById('payment-confirm').addEventListener('click', () => {

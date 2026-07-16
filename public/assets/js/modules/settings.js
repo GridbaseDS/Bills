@@ -460,6 +460,54 @@ export default {
                             <p style="color:var(--color-text-muted);font-size:13px;margin:0 0 24px;">Links de pago adjuntados a correos de facturas.</p>
                             <div class="form-group"><label class="form-label">Enlace de Pago General</label><input type="url" id="s_payment_link_general" class="form-control" placeholder="https://paypal.me/tuusuario" value="${s.payment_link_general || ''}"><div style="font-size:11px;color:var(--color-text-muted);margin-top:4px;">Se mostrará en correos y PDFs</div></div>
                             <div class="form-group"><label class="form-label">Instrucciones de Transferencia</label><textarea id="s_bank_instructions" class="form-control" rows="4" placeholder="Banco XYZ\nCuenta: 123456789">${s.bank_instructions || ''}</textarea></div>
+                            
+                            <h3 style="font-size:15px;font-weight:600;margin:24px 0 8px;padding-top:20px;border-top:1px dashed var(--color-border);">Integración de POS / Verifone</h3>
+                            <p style="color:var(--color-text-muted);font-size:13px;margin:0 0 24px;">Configuración de terminales de tarjetas de crédito físicas (Verifones) para cobro integrado.</p>
+                            
+                            <div class="form-group">
+                                <label style="display:flex;align-items:center;gap:8px;font-weight:600;cursor:pointer;">
+                                    <input type="checkbox" id="s_pos_enabled" style="width:18px;height:18px;" ${s.pos_enabled === '1' ? 'checked' : ''} onchange="document.getElementById('pos-details-wrapper').style.display = this.checked ? 'block' : 'none';">
+                                    Habilitar cobro integrado con Verifone
+                                </label>
+                            </div>
+
+                            <div id="pos-details-wrapper" style="display:${s.pos_enabled === '1' ? 'block' : 'none'}; background:var(--color-bg-secondary); border:1px solid var(--color-border); border-radius:var(--radius-lg); padding:20px; margin-bottom: 16px;">
+                                <div class="grid-2">
+                                    <div class="form-group">
+                                        <label class="form-label">Driver del POS / Adquirente</label>
+                                        <select id="s_pos_driver" class="form-control">
+                                            <option value="mock" ${s.pos_driver === 'mock' || !s.pos_driver ? 'selected' : ''}>Simulador / Mock POS</option>
+                                            <option value="azul_local" ${s.pos_driver === 'azul_local' ? 'selected' : ''}>Azul (Local HTTP Bridge)</option>
+                                            <option value="cardnet_local" ${s.pos_driver === 'cardnet_local' ? 'selected' : ''}>Cardnet (Local SPDH TCP Sockets)</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">Dirección IP del POS / Terminal</label>
+                                        <input type="text" id="s_pos_terminal_ip" class="form-control" placeholder="Ej: 192.168.1.100" value="${s.pos_terminal_ip || ''}">
+                                        <small style="color:var(--color-text-muted);font-size:11px;">IP del Verifone en la red local del negocio.</small>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">Puerto de Comunicación</label>
+                                        <input type="number" id="s_pos_terminal_port" class="form-control" placeholder="Ej: 8080" value="${s.pos_terminal_port || ''}">
+                                        <small style="color:var(--color-text-muted);font-size:11px;">Puerto TCP/HTTP de comunicación con el POS.</small>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">Merchant ID / ID de Comercio</label>
+                                        <input type="text" id="s_pos_merchant_id" class="form-control" placeholder="Ej: 349000000" value="${s.pos_merchant_id || ''}">
+                                        <small style="color:var(--color-text-muted);font-size:11px;">Identificador del comercio provisto por Azul o Cardnet.</small>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">Terminal ID (Sólo Cardnet)</label>
+                                        <input type="text" id="s_pos_terminal_id" class="form-control" placeholder="Ej: 00000001" value="${s.pos_terminal_id || ''}">
+                                        <small style="color:var(--color-text-muted);font-size:11px;">ID de Terminal de 8 dígitos asignado al dispositivo.</small>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">Tiempo de Espera / Timeout (Segundos)</label>
+                                        <input type="number" id="s_pos_timeout" class="form-control" min="10" max="300" value="${s.pos_timeout || '60'}">
+                                        <small style="color:var(--color-text-muted);font-size:11px;">Tiempo límite para deslizar la tarjeta.</small>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
 
                         <!-- TAB: DGII -->
@@ -979,6 +1027,13 @@ export default {
                     reminders_overdue_interval: document.getElementById('s_reminders_overdue_interval').value,
                     payment_link_general: document.getElementById('s_payment_link_general').value,
                     bank_instructions: document.getElementById('s_bank_instructions').value,
+                    pos_enabled: document.getElementById('s_pos_enabled')?.checked ? '1' : '0',
+                    pos_driver: document.getElementById('s_pos_driver')?.value || 'mock',
+                    pos_terminal_ip: document.getElementById('s_pos_terminal_ip')?.value || '',
+                    pos_terminal_port: document.getElementById('s_pos_terminal_port')?.value || '',
+                    pos_merchant_id: document.getElementById('s_pos_merchant_id')?.value || '',
+                    pos_terminal_id: document.getElementById('s_pos_terminal_id')?.value || '',
+                    pos_timeout: document.getElementById('s_pos_timeout')?.value || '60',
                     dgii_razon_social: document.getElementById('s_dgii_razon_social').value,
                     dgii_nombre_comercial: document.getElementById('s_dgii_nombre_comercial').value,
                     dgii_municipio: document.getElementById('s_dgii_municipio').value,

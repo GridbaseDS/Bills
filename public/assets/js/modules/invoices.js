@@ -869,7 +869,7 @@ const InvoicesModule = {
                         </select>
                     </div>
                     <div id="pos-integration-section" style="display:none; margin-top:16px; padding-top:16px; border-top:1px dashed var(--color-border);">
-                        <button type="button" class="btn btn-secondary" id="btn-send-to-pos" style="background:var(--color-primary); color:#fff; border:none; display:flex; align-items:center; justify-content:center; gap:8px; height:42px; font-weight:600; width:100%;">
+                        <button type="button" class="btn btn-primary" id="btn-send-to-pos" style="display:flex; align-items:center; justify-content:center; gap:8px; height:42px; font-weight:600; width:100%;">
                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect><line x1="12" y1="18" x2="12.01" y2="18"></line></svg>
                             Enviar a Verifone
                         </button>

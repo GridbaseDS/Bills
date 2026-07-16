@@ -391,8 +391,7 @@ $ecfTypeName = $isEcf ? ($ecfTypeNames[$ecfType] ?? 'Comprobante Fiscal Electron
     <table class="items-table">
         <thead><tr>
             <th class="text-center" style="width:10%;">CANT.</th>
-            <th style="width:<?= $taxRate > 0 ? '30%' : '40%' ?>;">DESCRIPCIÓN</th>
-            <th class="text-center" style="width:12%;">U/M</th>
+            <th style="width:<?= $taxRate > 0 ? '42%' : '57%' ?>;">DESCRIPCIÓN</th>
             <th class="text-right" style="width:15%;">PRECIO</th>
             <?php if ($taxRate > 0): ?>
             <th class="text-right" style="width:15%;">ITBIS</th>
@@ -406,9 +405,8 @@ $ecfTypeName = $isEcf ? ($ecfTypeNames[$ecfType] ?? 'Comprobante Fiscal Electron
                 $itemItbis = $taxRate > 0 ? round($itemAmount * ($taxRate / 100), 2) : 0;
             ?>
             <tr>
-                <td class="text-center"><?= number_format($item['quantity'], 2) ?></td>
+                <td class="text-center"><?= $item['quantity'] == (int)$item['quantity'] ? number_format($item['quantity'], 0) : number_format($item['quantity'], 2) ?></td>
                 <td class="item-desc"><?= htmlspecialchars($item['description']) ?></td>
-                <td class="text-center" style="font-size:10px;">UND</td>
                 <td class="text-right"><?= number_format($item['unit_price'], 2) ?></td>
                 <?php if ($taxRate > 0): ?>
                 <td class="text-right"><?= number_format($itemItbis, 2) ?></td>

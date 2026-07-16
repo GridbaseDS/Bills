@@ -4,11 +4,11 @@
  */
 
 import DashboardModule from './modules/dashboard.js?v=201';
-import InvoicesModule from './modules/invoices.js?v=201';
+import InvoicesModule from './modules/invoices.js?v=202';
 import QuotesModule from './modules/quotes.js?v=201';
 import ClientsModule from './modules/clients.js?v=201';
 import ItemsModule from './modules/items.js?v=201';
-import SettingsModule from './modules/settings.js?v=201';
+import SettingsModule from './modules/settings.js?v=202';
 import RecurringModule from './modules/recurring.js?v=201';
 import DgiiTestsModule from './modules/dgii-tests.js?v=201';
 import DgiiLogsModule from './modules/dgii-logs.js?v=201';

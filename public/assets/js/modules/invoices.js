@@ -547,8 +547,12 @@ const InvoicesModule = {
                         </div>
                     </div>
 
-                    <div class="mt-24">
-                        <button type="submit" class="btn btn-primary">${editId ? 'Actualizar Factura' : 'Guardar Factura'}</button>
+                    <div class="mt-24" style="display:flex; gap:12px; flex-wrap: wrap;">
+                        <button type="submit" id="btn-submit-invoice" class="btn btn-secondary" style="flex:1; min-width: 140px;">${editId ? 'Actualizar Factura' : 'Guardar Factura'}</button>
+                        <button type="button" id="btn-save-and-charge" class="btn btn-primary" style="flex:1; min-width: 160px; display:flex; align-items:center; justify-content:center; gap:8px;">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect><line x1="12" y1="18" x2="12.01" y2="18"></line></svg>
+                            ${editId ? 'Actualizar y Cobrar' : 'Guardar y Cobrar'}
+                        </button>
                     </div>
                 </div>
             </form>
@@ -613,6 +617,30 @@ const InvoicesModule = {
             document.body.appendChild(datalist);
         }
 
+        let shouldOpenPaymentModal = false;
+
+        const saveAndChargeBtn = document.getElementById('btn-save-and-charge');
+        if (saveAndChargeBtn) {
+            saveAndChargeBtn.addEventListener('click', () => {
+                shouldOpenPaymentModal = true;
+                const form = document.getElementById('invoice-form');
+                if (form) {
+                    if (form.checkValidity()) {
+                        form.requestSubmit();
+                    } else {
+                        form.reportValidity();
+                    }
+                }
+            });
+        }
+
+        const saveInvoiceBtn = document.getElementById('btn-submit-invoice');
+        if (saveInvoiceBtn) {
+            saveInvoiceBtn.addEventListener('click', () => {
+                shouldOpenPaymentModal = false;
+            });
+        }
+
         document.getElementById('invoice-form').addEventListener('submit', async (e) => {
             e.preventDefault();
             const itemsToSave = this.items.map((item) => ({
@@ -643,32 +671,52 @@ const InvoicesModule = {
             };
 
             // Disable all form buttons and show loading feedback
-            const submitBtn = e.target.querySelector('button[type="submit"]');
+            const submitBtn = document.getElementById('btn-submit-invoice') || e.target.querySelector('button[type="submit"]');
             const cancelBtn = e.target.closest('.form-card')?.previousElementSibling?.querySelector('.btn-secondary');
             const origBtnText = submitBtn ? submitBtn.innerHTML : '';
             if (submitBtn) {
                 submitBtn.disabled = true;
                 submitBtn.innerHTML = `<span class="spinner" style="width:14px;height:14px;border-width:2px;margin-right:8px;"></span> ${editId ? 'Actualizando...' : 'Guardando...'}`;
             }
+            if (saveAndChargeBtn) {
+                saveAndChargeBtn.disabled = true;
+            }
             if (cancelBtn) cancelBtn.style.pointerEvents = 'none';
             // Disable all other buttons in the form
-            const formBtns = e.target.querySelectorAll('button:not([type="submit"])');
+            const formBtns = e.target.querySelectorAll('button:not([type="submit"]):not(#btn-save-and-charge)');
             formBtns.forEach(b => b.disabled = true);
 
             try {
+                let savedInvoice = null;
                 if (editId) {
-                    await App.api(`invoices/${editId}`, { method: 'PUT', body: payload });
+                    const result = await App.api(`invoices/${editId}`, { method: 'PUT', body: payload });
+                    savedInvoice = result.invoice;
                     App.showToast('Factura actualizada correctamente');
                 } else {
                     const result = await App.api('invoices', { method: 'POST', body: payload });
+                    savedInvoice = result.invoice;
                     App.showToast(result.email_sent ? 'Factura creada y enviada al cliente ✓' : 'Factura creada correctamente');
                 }
-                window.App.navigate('facturas');
+
+                if (shouldOpenPaymentModal && savedInvoice) {
+                    const balance = parseFloat(savedInvoice.total) - parseFloat(savedInvoice.amount_paid || 0);
+                    // First navigate back to the list
+                    window.App.navigate('facturas');
+                    // Instantly launch payment modal
+                    setTimeout(() => {
+                        this.showPaymentModal(savedInvoice.id, balance);
+                    }, 200);
+                } else {
+                    window.App.navigate('facturas');
+                }
             } catch (err) {
                 // Re-enable buttons on error
                 if (submitBtn) {
                     submitBtn.disabled = false;
                     submitBtn.innerHTML = origBtnText;
+                }
+                if (saveAndChargeBtn) {
+                    saveAndChargeBtn.disabled = false;
                 }
                 if (cancelBtn) cancelBtn.style.pointerEvents = '';
                 formBtns.forEach(b => b.disabled = false);

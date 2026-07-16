@@ -448,7 +448,11 @@ $ecfTypeName = $isEcf ? ($ecfTypeNames[$ecfType] ?? 'Comprobante Fiscal Electron
                 }
 
                 if (empty($monto)) {
-                    $monto = number_format((float)$invoice['total'], 2, '.', '');
+                    $rate = (float)($invoice['exchange_rate'] ?? 1.0);
+                    if ($rate <= 0) {
+                        $rate = 1.0;
+                    }
+                    $monto = number_format((float)$invoice['total'] * $rate, 2, '.', '');
                 }
 
                 $fechaEmision = $xmlFechaEmision ?: date('d-m-Y', strtotime($invoice['issue_date']));

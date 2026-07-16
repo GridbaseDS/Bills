@@ -39,20 +39,20 @@ class DashboardController extends Controller
             ->where(function($q) {
                 $q->whereNull('ecf_type')->orWhereNotIn('ecf_type', [41, 43, 47]);
             })
-            ->selectRaw('SUM(amount_paid - IF(total > 0, tax_amount * amount_paid / total, 0)) as net')
+            ->selectRaw('SUM((amount_paid - IF(total > 0, tax_amount * amount_paid / total, 0)) * exchange_rate) as net')
             ->value('net') ?? 0;
 
         $pending = Invoice::whereIn('status', ['sent', 'viewed', 'partial', 'overdue'])
             ->where(function($q) {
                 $q->whereNull('ecf_type')->orWhereNotIn('ecf_type', [41, 43, 47]);
             })
-            ->sum(DB::raw('total - amount_paid'));
+            ->sum(DB::raw('(total - amount_paid) * exchange_rate'));
 
         $overdue = Invoice::where('status', 'overdue')
             ->where(function($q) {
                 $q->whereNull('ecf_type')->orWhereNotIn('ecf_type', [41, 43, 47]);
             })
-            ->sum(DB::raw('total - amount_paid'));
+            ->sum(DB::raw('(total - amount_paid) * exchange_rate'));
 
         $overdueCount = Invoice::where('status', 'overdue')
             ->where(function($q) {
@@ -66,7 +66,7 @@ class DashboardController extends Controller
             ->where(function($q) {
                 $q->whereNull('ecf_type')->orWhereNotIn('ecf_type', [41, 43, 47]);
             })
-            ->selectRaw('SUM(amount_paid - IF(total > 0, tax_amount * amount_paid / total, 0)) as net')
+            ->selectRaw('SUM((amount_paid - IF(total > 0, tax_amount * amount_paid / total, 0)) * exchange_rate) as net')
             ->value('net') ?? 0;
 
         $revenueLastMonth = Invoice::whereIn('status', ['paid', 'partial'])
@@ -74,7 +74,7 @@ class DashboardController extends Controller
             ->where(function($q) {
                 $q->whereNull('ecf_type')->orWhereNotIn('ecf_type', [41, 43, 47]);
             })
-            ->selectRaw('SUM(amount_paid - IF(total > 0, tax_amount * amount_paid / total, 0)) as net')
+            ->selectRaw('SUM((amount_paid - IF(total > 0, tax_amount * amount_paid / total, 0)) * exchange_rate) as net')
             ->value('net') ?? 0;
 
         // Count invoices issued this / last month using issue_date as plain date string
@@ -92,6 +92,21 @@ class DashboardController extends Controller
             })
             ->count();
 
+        // Total amount invoiced this month and last month (converted to DOP)
+        $invoicedAmountThisMonth = (float) Invoice::where('status', '!=', 'cancelled')
+            ->where('issue_date', '>=', $dateThisMonthStart)
+            ->where(function($q) {
+                $q->whereNull('ecf_type')->orWhereNotIn('ecf_type', [41, 43, 47]);
+            })
+            ->sum(DB::raw('total * exchange_rate'));
+
+        $invoicedAmountLastMonth = (float) Invoice::where('status', '!=', 'cancelled')
+            ->whereBetween('issue_date', [$dateLastMonthStart, $dateLastMonthEnd])
+            ->where(function($q) {
+                $q->whereNull('ecf_type')->orWhereNotIn('ecf_type', [41, 43, 47]);
+            })
+            ->sum(DB::raw('total * exchange_rate'));
+
         // ── ITBIS / Tax summary ─────────────────────────────────────────────
         // Tax collected this month (from issued invoices, regardless of payment)
         $taxCollectedThisMonth = (float) Invoice::where('status', '!=', 'cancelled')
@@ -99,26 +114,26 @@ class DashboardController extends Controller
             ->where(function($q) {
                 $q->whereNull('ecf_type')->orWhereNotIn('ecf_type', [41, 43, 47]);
             })
-            ->sum('tax_amount');
+            ->sum(DB::raw('tax_amount * exchange_rate'));
         // Tax collected last month
         $taxCollectedLastMonth = (float) Invoice::where('status', '!=', 'cancelled')
             ->whereBetween('issue_date', [$dateLastMonthStart, $dateLastMonthEnd])
             ->where(function($q) {
                 $q->whereNull('ecf_type')->orWhereNotIn('ecf_type', [41, 43, 47]);
             })
-            ->sum('tax_amount');
+            ->sum(DB::raw('tax_amount * exchange_rate'));
         // Total tax collected all time (pending to declare/pay to DGII)
         $taxCollectedTotal = (float) Invoice::where('status', '!=', 'cancelled')
             ->where(function($q) {
                 $q->whereNull('ecf_type')->orWhereNotIn('ecf_type', [41, 43, 47]);
             })
-            ->sum('tax_amount');
+            ->sum(DB::raw('tax_amount * exchange_rate'));
         // Tax from unpaid invoices (not yet received by the business)
         $taxPending = (float) Invoice::whereIn('status', ['sent', 'viewed', 'partial', 'overdue'])
             ->where(function($q) {
                 $q->whereNull('ecf_type')->orWhereNotIn('ecf_type', [41, 43, 47]);
             })
-            ->sum('tax_amount');
+            ->sum(DB::raw('tax_amount * exchange_rate'));
 
         // Quotes stats
         $totalQuotes     = Quote::count();
@@ -138,7 +153,7 @@ class DashboardController extends Controller
                 ->where(function($q) {
                     $q->whereNull('ecf_type')->orWhereNotIn('ecf_type', [41, 43, 47]);
                 })
-                ->selectRaw('SUM(amount_paid - IF(total > 0, tax_amount * amount_paid / total, 0)) as net')
+                ->selectRaw('SUM((amount_paid - IF(total > 0, tax_amount * amount_paid / total, 0)) * exchange_rate) as net')
                 ->value('net');
 
             $expense = (float) \App\Models\Expense::whereBetween('expense_date', [$monthStart, $monthEnd])
@@ -148,7 +163,7 @@ class DashboardController extends Controller
             $purchaseInvoicesSum = (float) Invoice::whereIn('ecf_type', [41, 43, 47])
                 ->where('status', '!=', 'cancelled')
                 ->whereBetween('issue_date', [$monthStart, $monthEnd])
-                ->sum('total');
+                ->sum(DB::raw('total * exchange_rate'));
 
             $expense += $purchaseInvoicesSum;
 
@@ -220,6 +235,8 @@ class DashboardController extends Controller
                 'overdue_count'            => $overdueCount,
                 'revenue_this_month'       => round((float)$revenueThisMonth, 2),
                 'revenue_last_month'       => round((float)$revenueLastMonth, 2),
+                'invoiced_amount_this_month' => round((float)$invoicedAmountThisMonth, 2),
+                'invoiced_amount_last_month' => round((float)$invoicedAmountLastMonth, 2),
                 'invoices_this_month'      => $invoicesThisMonth,
                 'invoices_last_month'      => $invoicesLastMonth,
                 'total_quotes'             => $totalQuotes,

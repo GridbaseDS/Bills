@@ -36,45 +36,88 @@ class DashboardController extends Controller
         $totalClients = Client::where('is_active', true)->count();
 
         $revenue = Invoice::whereIn('status', ['paid', 'partial'])
+            ->where(function($q) {
+                $q->whereNull('ecf_type')->orWhereNotIn('ecf_type', [41, 43, 47]);
+            })
             ->selectRaw('SUM(amount_paid - IF(total > 0, tax_amount * amount_paid / total, 0)) as net')
             ->value('net') ?? 0;
 
         $pending = Invoice::whereIn('status', ['sent', 'viewed', 'partial', 'overdue'])
+            ->where(function($q) {
+                $q->whereNull('ecf_type')->orWhereNotIn('ecf_type', [41, 43, 47]);
+            })
             ->sum(DB::raw('total - amount_paid'));
 
         $overdue = Invoice::where('status', 'overdue')
+            ->where(function($q) {
+                $q->whereNull('ecf_type')->orWhereNotIn('ecf_type', [41, 43, 47]);
+            })
             ->sum(DB::raw('total - amount_paid'));
 
-        $overdueCount = Invoice::where('status', 'overdue')->count();
+        $overdueCount = Invoice::where('status', 'overdue')
+            ->where(function($q) {
+                $q->whereNull('ecf_type')->orWhereNotIn('ecf_type', [41, 43, 47]);
+            })
+            ->count();
 
         // This month vs last month — net revenue (excl. tax) + count
         $revenueThisMonth = Invoice::whereIn('status', ['paid', 'partial'])
             ->where('paid_at', '>=', $startOfMonth)
+            ->where(function($q) {
+                $q->whereNull('ecf_type')->orWhereNotIn('ecf_type', [41, 43, 47]);
+            })
             ->selectRaw('SUM(amount_paid - IF(total > 0, tax_amount * amount_paid / total, 0)) as net')
             ->value('net') ?? 0;
 
         $revenueLastMonth = Invoice::whereIn('status', ['paid', 'partial'])
             ->whereBetween('paid_at', [$startOfLastMonth, $endOfLastMonth])
+            ->where(function($q) {
+                $q->whereNull('ecf_type')->orWhereNotIn('ecf_type', [41, 43, 47]);
+            })
             ->selectRaw('SUM(amount_paid - IF(total > 0, tax_amount * amount_paid / total, 0)) as net')
             ->value('net') ?? 0;
 
         // Count invoices issued this / last month using issue_date as plain date string
-        $invoicesThisMonth = Invoice::where('status', '!=', 'cancelled')->where('issue_date', '>=', $dateThisMonthStart)->count();
-        $invoicesLastMonth = Invoice::where('status', '!=', 'cancelled')->whereBetween('issue_date', [$dateLastMonthStart, $dateLastMonthEnd])->count();
+        $invoicesThisMonth = Invoice::where('status', '!=', 'cancelled')
+            ->where('issue_date', '>=', $dateThisMonthStart)
+            ->where(function($q) {
+                $q->whereNull('ecf_type')->orWhereNotIn('ecf_type', [41, 43, 47]);
+            })
+            ->count();
+
+        $invoicesLastMonth = Invoice::where('status', '!=', 'cancelled')
+            ->whereBetween('issue_date', [$dateLastMonthStart, $dateLastMonthEnd])
+            ->where(function($q) {
+                $q->whereNull('ecf_type')->orWhereNotIn('ecf_type', [41, 43, 47]);
+            })
+            ->count();
 
         // ── ITBIS / Tax summary ─────────────────────────────────────────────
         // Tax collected this month (from issued invoices, regardless of payment)
         $taxCollectedThisMonth = (float) Invoice::where('status', '!=', 'cancelled')
             ->where('issue_date', '>=', $dateThisMonthStart)
+            ->where(function($q) {
+                $q->whereNull('ecf_type')->orWhereNotIn('ecf_type', [41, 43, 47]);
+            })
             ->sum('tax_amount');
         // Tax collected last month
         $taxCollectedLastMonth = (float) Invoice::where('status', '!=', 'cancelled')
             ->whereBetween('issue_date', [$dateLastMonthStart, $dateLastMonthEnd])
+            ->where(function($q) {
+                $q->whereNull('ecf_type')->orWhereNotIn('ecf_type', [41, 43, 47]);
+            })
             ->sum('tax_amount');
         // Total tax collected all time (pending to declare/pay to DGII)
-        $taxCollectedTotal = (float) Invoice::where('status', '!=', 'cancelled')->sum('tax_amount');
+        $taxCollectedTotal = (float) Invoice::where('status', '!=', 'cancelled')
+            ->where(function($q) {
+                $q->whereNull('ecf_type')->orWhereNotIn('ecf_type', [41, 43, 47]);
+            })
+            ->sum('tax_amount');
         // Tax from unpaid invoices (not yet received by the business)
         $taxPending = (float) Invoice::whereIn('status', ['sent', 'viewed', 'partial', 'overdue'])
+            ->where(function($q) {
+                $q->whereNull('ecf_type')->orWhereNotIn('ecf_type', [41, 43, 47]);
+            })
             ->sum('tax_amount');
 
         // Quotes stats
@@ -86,17 +129,28 @@ class DashboardController extends Controller
         // Monthly stats chart (last 12 months) — net revenue excl. tax
         $monthlyData = [];
         for ($i = 11; $i >= 0; $i--) {
-            $month      = $now->copy()->subMonths($i);
+            $month = $now->copy()->subMonths($i);
             $monthStart = $month->copy()->startOfMonth();
             $monthEnd   = $month->copy()->endOfMonth();
 
             $monthRevenue = (float) Invoice::whereIn('status', ['paid', 'partial'])
                 ->whereBetween('paid_at', [$monthStart, $monthEnd])
+                ->where(function($q) {
+                    $q->whereNull('ecf_type')->orWhereNotIn('ecf_type', [41, 43, 47]);
+                })
                 ->selectRaw('SUM(amount_paid - IF(total > 0, tax_amount * amount_paid / total, 0)) as net')
                 ->value('net');
 
             $expense = (float) \App\Models\Expense::whereBetween('expense_date', [$monthStart, $monthEnd])
                 ->sum('total');
+
+            // Add purchase e-CFs (E41, E43, E47) to expenses
+            $purchaseInvoicesSum = (float) Invoice::whereIn('ecf_type', [41, 43, 47])
+                ->where('status', '!=', 'cancelled')
+                ->whereBetween('issue_date', [$monthStart, $monthEnd])
+                ->sum('total');
+
+            $expense += $purchaseInvoicesSum;
 
             $label = ucfirst($month->translatedFormat('M'));
             $label = rtrim($label, '.');
@@ -109,36 +163,50 @@ class DashboardController extends Controller
             ];
         }
 
-        // Recent invoices
-        $recentInvoices = Invoice::with('client')->orderBy('created_at', 'desc')->take(5)->get()->map(function($inv) {
-            return [
-                'id'           => $inv->id,
-                'invoice_number' => $inv->invoice_number,
-                'company_name' => $inv->client->company_name ?? '',
-                'contact_name' => $inv->client->contact_name ?? '',
-                'total'        => $inv->total,
-                'currency'     => $inv->currency,
-                'status'       => $inv->status,
-                'issue_date'   => $inv->issue_date ? $inv->issue_date->format('Y-m-d') : null,
-                'sent_at'      => $inv->sent_at,
-            ];
-        });
+        // Recent invoices (sales only)
+        $recentInvoices = Invoice::with('client')
+            ->where(function($q) {
+                $q->whereNull('ecf_type')->orWhereNotIn('ecf_type', [41, 43, 47]);
+            })
+            ->orderBy('created_at', 'desc')
+            ->take(5)
+            ->get()
+            ->map(function($inv) {
+                return [
+                    'id'           => $inv->id,
+                    'invoice_number' => $inv->invoice_number,
+                    'company_name' => $inv->client->company_name ?? '',
+                    'contact_name' => $inv->client->contact_name ?? '',
+                    'total'        => $inv->total,
+                    'currency'     => $inv->currency,
+                    'status'       => $inv->status,
+                    'issue_date'   => $inv->issue_date ? $inv->issue_date->format('Y-m-d') : null,
+                    'sent_at'      => $inv->sent_at,
+                ];
+            });
 
-        // Overdue invoices
-        $overdueInvoices = Invoice::with('client')->where('status', 'overdue')
-            ->orderBy('due_date', 'asc')->take(5)->get()->map(function($inv) {
-            return [
-                'id'           => $inv->id,
-                'invoice_number' => $inv->invoice_number,
-                'company_name' => $inv->client->company_name ?? '',
-                'contact_name' => $inv->client->contact_name ?? '',
-                'total'        => $inv->total,
-                'currency'     => $inv->currency,
-                'status'       => $inv->status,
-                'due_date'     => $inv->due_date ? $inv->due_date->format('Y-m-d') : null,
-                'balance'      => $inv->total - $inv->amount_paid,
-            ];
-        });
+        // Overdue invoices (sales only)
+        $overdueInvoices = Invoice::with('client')
+            ->where('status', 'overdue')
+            ->where(function($q) {
+                $q->whereNull('ecf_type')->orWhereNotIn('ecf_type', [41, 43, 47]);
+            })
+            ->orderBy('due_date', 'asc')
+            ->take(5)
+            ->get()
+            ->map(function($inv) {
+                return [
+                    'id'           => $inv->id,
+                    'invoice_number' => $inv->invoice_number,
+                    'company_name' => $inv->client->company_name ?? '',
+                    'contact_name' => $inv->client->contact_name ?? '',
+                    'total'        => $inv->total,
+                    'currency'     => $inv->currency,
+                    'status'       => $inv->status,
+                    'due_date'     => $inv->due_date ? $inv->due_date->format('Y-m-d') : null,
+                    'balance'      => $inv->total - $inv->amount_paid,
+                ];
+            });
 
         $bpdRates = \App\Services\CurrencyConverter::fetchBpdRates();
         $bpdTime = \Illuminate\Support\Facades\Cache::get('exchange_rates_bpd_time');

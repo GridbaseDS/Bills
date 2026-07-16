@@ -193,65 +193,75 @@ class EcfManagerService
                 $verifiedStatus = $this->verifyPostSubmit($invoice, $signedXml, $settings, $result['track_id']);
 
                 // ── AUTO-RECOVERY: Error 145 = FechaVencimientoSecuencia inválida ──
-                // DGII always renews sequences to Dec 31 of the following year.
-                // When error 145 is detected, auto-advance the date and retry transparently.
+                // DGII always renews sequences to Dec 31 of a future year (usually Y+1 or Y+2).
+                // When error 145 is detected, dynamically increment the year by 1 and retry.
                 if (
                     $verifiedStatus !== null
                     && $verifiedStatus['status'] === 'rejected'
                     && str_contains((string)($verifiedStatus['errors'] ?? ''), '145')
                 ) {
-                    $nextYearExpiry = (date('Y') + 1) . '-12-31';
-                    $currentExpiry  = $settings['dgii_ncf_expiry_date'] ?? null;
-
-                    if ($nextYearExpiry !== $currentExpiry) {
-                        DgiiLog::logStep(
-                            'expiry_auto_update',
-                            "🔄 Error 145 detectado. Auto-actualizando FechaVencimientoSecuencia: {$currentExpiry} → {$nextYearExpiry}",
-                            $invoice->id, $invoice->encf, $invoice->ecf_type,
-                            ['level' => 'warning', 'old_expiry' => $currentExpiry, 'new_expiry' => $nextYearExpiry]
-                        );
-
-                        \App\Models\Setting::updateOrCreate(
-                            ['setting_key' => 'dgii_ncf_expiry_date'],
-                            ['setting_value' => $nextYearExpiry]
-                        );
-                        $settings['dgii_ncf_expiry_date'] = $nextYearExpiry;
-
-                        // Re-build XML with corrected date and re-sign
-                        $rawXmlRetry    = $this->xmlBuilder->buildInvoiceXml($invoice, $settings);
-                        $p12Path        = storage_path('app/secure/' . ($settings['dgii_certificate_path'] ?? ''));
-                        $p12Password    = $settings['dgii_certificate_password'] ?? '';
-                        $signedXml      = $this->signatureService->signXml($rawXmlRetry, $p12Path, $p12Password);
-                        $securityCode   = $this->signatureService->getSecurityCode($signedXml);
-                        $retryFileName  = "signed_ecf/{$invoice->encf}.xml";
-                        Storage::put($retryFileName, $signedXml);
-                        $invoice->update(['dgii_status' => 'signed', 'security_code' => $securityCode, 'dgii_error_messages' => null]);
-
-                        $retryResult = $this->apiService->submitInvoice(
-                            $signedXml, $token, $env, false,
-                            $invoice->id, $invoice->encf, $invoice->ecf_type
-                        );
-
-                        $retryVerified = ($retryResult['success'] && $retryResult['track_id'])
-                            ? $this->verifyPostSubmit($invoice, $signedXml, $settings, $retryResult['track_id'])
-                            : null;
-
-                        $result['status']   = $retryVerified['status'] ?? $retryResult['status'];
-                        $result['success']  = ($result['status'] === 'accepted');
-                        $result['errors']   = $retryVerified['errors'] ?? $retryResult['errors'];
-                        $result['track_id'] = $retryResult['track_id'] ?? $result['track_id'];
-
-                        $invoice->update([
-                            'dgii_status'         => $result['status'],
-                            'dgii_track_id'       => $result['track_id'],
-                            'dgii_error_messages' => $result['errors']
-                                ? (is_array($result['errors']) ? json_encode($result['errors'], JSON_UNESCAPED_UNICODE) : $result['errors'])
-                                : null,
-                        ]);
-
-                        // Skip generic correction block — already handled
-                        goto process_complete;
+                    $tipoECF = $invoice->ecf_type;
+                    $currentExpiry = $settings["dgii_ncf_expiry_date_{$tipoECF}"] ?? $settings['dgii_ncf_expiry_date'] ?? null;
+                    if (!$currentExpiry) {
+                        $currentExpiry = (date('Y') + 1) . '-12-31';
                     }
+
+                    // Dynamically increment year of the current date by 1
+                    $parts = explode('-', $currentExpiry);
+                    if (count($parts) === 3 && strlen($parts[0]) === 4) {
+                        $newYear = ((int)$parts[0]) + 1;
+                        $nextYearExpiry = $newYear . '-' . $parts[1] . '-' . $parts[2];
+                    } else {
+                        $nextYearExpiry = (date('Y') + 2) . '-12-31';
+                    }
+
+                    DgiiLog::logStep(
+                        'expiry_auto_update',
+                        "🔄 Error 145 detectado para e-CF tipo {$tipoECF}. Auto-actualizando FechaVencimientoSecuencia: {$currentExpiry} → {$nextYearExpiry}",
+                        $invoice->id, $invoice->encf, $invoice->ecf_type,
+                        ['level' => 'warning', 'old_expiry' => $currentExpiry, 'new_expiry' => $nextYearExpiry]
+                    );
+
+                    \App\Models\Setting::updateOrCreate(
+                        ['setting_key' => "dgii_ncf_expiry_date_{$tipoECF}"],
+                        ['setting_value' => $nextYearExpiry, 'setting_group' => 'dgii']
+                    );
+                    $settings["dgii_ncf_expiry_date_{$tipoECF}"] = $nextYearExpiry;
+
+                    // Re-build XML with corrected date and re-sign
+                    $rawXmlRetry    = $this->xmlBuilder->buildInvoiceXml($invoice, $settings);
+                    $p12Path        = storage_path('app/secure/' . ($settings['dgii_certificate_path'] ?? ''));
+                    $p12Password    = $settings['dgii_certificate_password'] ?? '';
+                    $signedXml      = $this->signatureService->signXml($rawXmlRetry, $p12Path, $p12Password);
+                    $securityCode   = $this->signatureService->getSecurityCode($signedXml);
+                    $retryFileName  = "signed_ecf/{$invoice->encf}.xml";
+                    Storage::put($retryFileName, $signedXml);
+                    $invoice->update(['dgii_status' => 'signed', 'security_code' => $securityCode, 'dgii_error_messages' => null]);
+
+                    $retryResult = $this->apiService->submitInvoice(
+                        $signedXml, $token, $env, false,
+                        $invoice->id, $invoice->encf, $invoice->ecf_type
+                    );
+
+                    $retryVerified = ($retryResult['success'] && $retryResult['track_id'])
+                        ? $this->verifyPostSubmit($invoice, $signedXml, $settings, $retryResult['track_id'])
+                        : null;
+
+                    $result['status']   = $retryVerified['status'] ?? $retryResult['status'];
+                    $result['success']  = ($result['status'] === 'accepted');
+                    $result['errors']   = $retryVerified['errors'] ?? $retryResult['errors'];
+                    $result['track_id'] = $retryResult['track_id'] ?? $result['track_id'];
+
+                    $invoice->update([
+                        'dgii_status'         => $result['status'],
+                        'dgii_track_id'       => $result['track_id'],
+                        'dgii_error_messages' => $result['errors']
+                            ? (is_array($result['errors']) ? json_encode($result['errors'], JSON_UNESCAPED_UNICODE) : $result['errors'])
+                            : null,
+                    ]);
+
+                    // Skip generic correction block — already handled
+                    goto process_complete;
                 }
                 // ── END AUTO-RECOVERY ──────────────────────────────────────────
 

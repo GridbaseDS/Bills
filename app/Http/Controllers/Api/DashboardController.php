@@ -92,15 +92,15 @@ class DashboardController extends Controller
             })
             ->count();
 
-        // Total amount invoiced this month and last month (converted to DOP)
-        $invoicedAmountThisMonth = (float) Invoice::where('status', '!=', 'cancelled')
+        // Total amount invoiced this month and last month (converted to DOP) — only paid or partial invoices
+        $invoicedAmountThisMonth = (float) Invoice::whereIn('status', ['paid', 'partial'])
             ->where('issue_date', '>=', $dateThisMonthStart)
             ->where(function($q) {
                 $q->whereNull('ecf_type')->orWhereNotIn('ecf_type', [41, 43, 47]);
             })
             ->sum(DB::raw('total * exchange_rate'));
 
-        $invoicedAmountLastMonth = (float) Invoice::where('status', '!=', 'cancelled')
+        $invoicedAmountLastMonth = (float) Invoice::whereIn('status', ['paid', 'partial'])
             ->whereBetween('issue_date', [$dateLastMonthStart, $dateLastMonthEnd])
             ->where(function($q) {
                 $q->whereNull('ecf_type')->orWhereNotIn('ecf_type', [41, 43, 47]);

@@ -57,8 +57,8 @@ class XmlBuilderService
         $tipoECF = (int)$invoice->ecf_type;
         $eNCF = $invoice->encf;
         // Auto-calculate expiry date: DGII always assigns Dec 31 of the following year.
-        // Use stored setting if present and not expired; otherwise auto-compute.
-        $storedExpiry = $settings['dgii_ncf_expiry_date'] ?? null;
+        // Use stored setting specific to the e-CF type first, then global, otherwise auto-compute.
+        $storedExpiry = $settings["dgii_ncf_expiry_date_{$tipoECF}"] ?? $settings['dgii_ncf_expiry_date'] ?? null;
         if ($storedExpiry && strtotime($storedExpiry) >= strtotime('today')) {
             $fechaVencimientoSecuencia = $storedExpiry;
         } else {

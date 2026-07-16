@@ -73,13 +73,21 @@ class CurrencyConverter
                     $clientSecret = $settingClientSecret;
                 }
 
+                // Determine environment
+                $bpdEnv = Setting::get('bpd_env');
+                if (empty($bpdEnv)) {
+                    $bpdEnv = ($clientId !== '35843da05b1107b15c85b641b5806748') ? 'production' : 'sandbox';
+                }
+                
+                $bpdPrefix = ($bpdEnv === 'production') ? 'bpd' : 'bpdsandbox';
+
                 // 1. Get OAuth2 Token with caching of 50 minutes (3000s) to avoid requesting too often
-                $accessToken = \Illuminate\Support\Facades\Cache::remember('bpd_oauth_token_' . md5($clientId . $clientSecret), 3000, function () use ($clientId, $clientSecret) {
+                $accessToken = \Illuminate\Support\Facades\Cache::remember('bpd_oauth_token_' . md5($clientId . $clientSecret . $bpdEnv), 3000, function () use ($clientId, $clientSecret, $bpdPrefix) {
                     $authResponse = \Illuminate\Support\Facades\Http::asForm()
                         ->withHeaders([
                             'X-IBM-Client-Id' => $clientId
                         ])
-                        ->post('https://api.us-east-a.apiconnect.ibmappdomain.cloud/apiportalpopular/bpdsandbox/bpd/Authentication/oauth2/token', [
+                        ->post("https://api.us-east-a.apiconnect.ibmappdomain.cloud/apiportalpopular/{$bpdPrefix}/bpd/Authentication/oauth2/token", [
                             'grant_type' => 'client_credentials',
                             'client_id' => $clientId,
                             'client_secret' => $clientSecret,
@@ -106,7 +114,7 @@ class CurrencyConverter
                         'X-IBM-Client-Id' => $clientId,
                         'accept' => 'application/json'
                     ])
-                    ->get('https://api.us-east-a.apiconnect.ibmappdomain.cloud/apiportalpopular/bpdsandbox/consultatasa/consultaTasa');
+                    ->get("https://api.us-east-a.apiconnect.ibmappdomain.cloud/apiportalpopular/{$bpdPrefix}/consultatasa/consultaTasa");
 
                 if ($response->successful()) {
                     $data = $response->json();

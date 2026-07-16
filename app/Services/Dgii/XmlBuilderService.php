@@ -70,11 +70,16 @@ class XmlBuilderService
         $isCredito = $invoice->due_date && $invoice->due_date > $invoice->issue_date;
         $tipoPago = $isCredito ? 2 : 1; 
 
-        // 4. Calculate XML structural totals
-        $subtotal = (float)$invoice->subtotal;
-        $discountTotal = (float)($invoice->discount_amount ?? 0);
-        $totalITBIS = (float)($invoice->tax_amount ?? 0);
-        $montoTotal = (float)$invoice->total;
+        // 4. Calculate XML structural totals (convert to DOP using exchange rate if currency is not DOP)
+        $rate = (float)($invoice->exchange_rate ?? 1.0);
+        if ($rate <= 0) {
+            $rate = 1.0;
+        }
+
+        $subtotal = (float)$invoice->subtotal * $rate;
+        $discountTotal = (float)($invoice->discount_amount ?? 0) * $rate;
+        $totalITBIS = (float)($invoice->tax_amount ?? 0) * $rate;
+        $montoTotal = (float)$invoice->total * $rate;
 
         $montoGravadoTotal = 0.00;
         $montoExento = 0.00;
@@ -334,8 +339,8 @@ class XmlBuilderService
             
             $itemNode->appendChild($dom->createElement('CantidadItem', number_format((float)$item->quantity, 2, '.', '')));
             $itemNode->appendChild($dom->createElement('UnidadMedida', 43));
-            $itemNode->appendChild($dom->createElement('PrecioUnitarioItem', number_format((float)$item->unit_price, 4, '.', '')));
-            $itemNode->appendChild($dom->createElement('MontoItem', number_format((float)$item->amount, 2, '.', '')));
+            $itemNode->appendChild($dom->createElement('PrecioUnitarioItem', number_format((float)$item->unit_price * $rate, 4, '.', '')));
+            $itemNode->appendChild($dom->createElement('MontoItem', number_format((float)$item->amount * $rate, 2, '.', '')));
 
             $lineNum++;
         }
@@ -397,10 +402,15 @@ class XmlBuilderService
         $isCredito = $invoice->due_date && $invoice->due_date > $invoice->issue_date;
         $tipoPago = $isCredito ? 2 : 1;
 
-        $subtotal = (float)$invoice->subtotal;
-        $discountTotal = (float)($invoice->discount_amount ?? 0);
-        $totalITBIS = (float)($invoice->tax_amount ?? 0);
-        $montoTotal = (float)$invoice->total;
+        $rate = (float)($invoice->exchange_rate ?? 1.0);
+        if ($rate <= 0) {
+            $rate = 1.0;
+        }
+
+        $subtotal = (float)$invoice->subtotal * $rate;
+        $discountTotal = (float)($invoice->discount_amount ?? 0) * $rate;
+        $totalITBIS = (float)($invoice->tax_amount ?? 0) * $rate;
+        $montoTotal = (float)$invoice->total * $rate;
         $montoGravadoTotal = $invoice->tax_rate > 0 ? ($subtotal - $discountTotal) : 0;
         $montoExento = $invoice->tax_rate > 0 ? 0 : ($subtotal - $discountTotal);
 

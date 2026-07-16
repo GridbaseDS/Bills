@@ -2,6 +2,11 @@
 
 A continuación se presenta el registro de evolución y mejoras de la plataforma Gridbase Bills. Cada versión detalla los avances e incorporaciones del sistema, orientados a brindar el servicio de facturación y cumplimiento fiscal de mayor robustez, estabilidad y facilidad de uso del mercado.
 
+## Gridbase Bills v3.3.2 (Conversión de Divisas e-CF y PayPal con Tasa BPD) (2026-07-15)
+
+* Facturación Electrónica: Conversión automática a Pesos (DOP) en el XML de e-CF (DGII) para facturas registradas en dólares/euros usando la tasa BPD guardada en la factura.
+* Pagos: Conversión automática a Dólares (USD) usando la tasa de venta en vivo de BPD al realizar pagos de facturas DOP mediante la pasarela de PayPal.
+
 ## Gridbase Bills v3.3.1 (Ajustes de PDF, Notificaciones Móviles e Internet) (2026-07-15)
 
 * PDF: Remoción de la columna U/M en las plantillas de factura PDF para simplificar y limpiar el diseño visual.

@@ -396,6 +396,7 @@ class SettingController extends Controller
             'sidebar_dark_bg_color' => $all['sidebar_dark_bg_color'] ?? '#111827',
             'sidebar_dark_text_color' => $all['sidebar_dark_text_color'] ?? '#FFFFFF',
             'sidebar_dark_hover_color' => $all['sidebar_dark_hover_color'] ?? '#1F2937',
+            'sidebar_logo_height' => $all['sidebar_logo_height'] ?? '45',
             'is_installed' => $all['is_installed'] ?? '0',
             'system_version' => $changelog['version'] ?? '1.0.0',
             'system_changelog' => $changelog['changes'] ?? [],

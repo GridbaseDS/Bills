@@ -125,6 +125,7 @@ window.App = {
             if (publicSettings.company_favicon) localStorage.setItem('company_favicon', publicSettings.company_favicon);
             if (publicSettings.company_name) localStorage.setItem('company_name', publicSettings.company_name);
             if (publicSettings.pdf_primary_color) localStorage.setItem('pdf_primary_color', publicSettings.pdf_primary_color);
+            if (publicSettings.sidebar_logo_height) localStorage.setItem('sidebar_logo_height', publicSettings.sidebar_logo_height);
             this.updateFavicon();
             this.updateTitle();
             this.applyLoginColors();
@@ -147,6 +148,7 @@ window.App = {
                 if (settings.company_favicon) localStorage.setItem('company_favicon', settings.company_favicon);
                 if (settings.company_name) localStorage.setItem('company_name', settings.company_name);
                 if (settings.pdf_primary_color) localStorage.setItem('pdf_primary_color', settings.pdf_primary_color);
+                if (settings.sidebar_logo_height) localStorage.setItem('sidebar_logo_height', settings.sidebar_logo_height);
                 this.updateFavicon();
                 this.updateTitle();
                 
@@ -191,6 +193,7 @@ window.App = {
                 if (settings.company_logo) localStorage.setItem('company_logo', settings.company_logo);
                 if (settings.login_logo) localStorage.setItem('login_logo', settings.login_logo);
                 if (settings.company_favicon) localStorage.setItem('company_favicon', settings.company_favicon);
+                if (settings.sidebar_logo_height) localStorage.setItem('sidebar_logo_height', settings.sidebar_logo_height);
                 this.updateFavicon();
                 this.updateTitle();
                 
@@ -855,13 +858,14 @@ window.App = {
         const app = document.getElementById('app');
         const userInitial = this.state.user.name ? this.state.user.name.charAt(0).toUpperCase() : '?';
         const logoSrc = this.state.settings?.company_logo || 'https://gridbase.com.do/wp-content/uploads/2025/02/cropped-imagen_2026-03-16_154126791.png';
+        const logoHeight = this.state.settings?.sidebar_logo_height || localStorage.getItem('sidebar_logo_height') || '45';
 
         app.innerHTML = `
             <div class="app-container">
                 <div class="sidebar-overlay" id="sidebar-overlay"></div>
                 <aside class="sidebar" id="sidebar">
                     <div class="sidebar-logo" style="padding: 16px 12px; display: flex; justify-content: center; align-items: center;">
-                        <img src="${logoSrc}" alt="Logo" style="max-width: 100%; object-fit: contain;">
+                        <img id="sidebar-logo-img" src="${logoSrc}" alt="Logo" style="max-width: 100%; height: ${logoHeight}px; object-fit: contain;">
                     </div>
                     <nav class="sidebar-nav">
                         <div class="sidebar-section-title">Menú</div>

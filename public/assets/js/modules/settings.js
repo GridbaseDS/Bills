@@ -144,6 +144,14 @@ export default {
                                     </div>
                                 </div>
                                 <div class="form-group">
+                                    <label class="form-label">Tamaño del Logo en Sidebar (Altura)</label>
+                                    <div style="display:flex;align-items:center;gap:12px;margin-top:8px;">
+                                        <input type="range" id="s_sidebar_logo_height" class="form-range" min="20" max="100" step="1" value="${s.sidebar_logo_height || '45'}" style="flex:1;cursor:pointer;accent-color:var(--color-primary, #0B484C);height:6px;border-radius:3px;background:var(--color-border);border:none;padding:0;">
+                                        <span id="sidebar_logo_height_val" style="font-size:13px;font-weight:600;min-width:40px;text-align:right;">${s.sidebar_logo_height || '45'}px</span>
+                                    </div>
+                                    <div style="font-size:11px;color:var(--color-text-muted);margin-top:4px;">Desliza para ajustar la altura del logo en el menú lateral en tiempo real.</div>
+                                </div>
+                                <div class="form-group">
                                     <label class="form-label">Logo de Login (URL)</label>
                                     <input type="url" id="s_login_logo" class="form-control" placeholder="https://miempresa.com/login-logo.png" value="${s.login_logo || ''}">
                                     <div style="font-size:11px;color:var(--color-text-muted);margin-top:4px;">Logo que aparece exclusivamente en la pantalla de inicio de sesión.</div>
@@ -783,6 +791,16 @@ export default {
                 else if (preview) { preview.style.display = 'none'; }
             });
 
+            // Sidebar logo height live preview
+            document.getElementById('s_sidebar_logo_height')?.addEventListener('input', (e) => {
+                const val = e.target.value;
+                const display = document.getElementById('sidebar_logo_height_val');
+                if (display) display.textContent = `${val}px`;
+                
+                const sidebarImg = document.querySelector('#sidebar-logo-img');
+                if (sidebarImg) sidebarImg.style.height = `${val}px`;
+            });
+
             // Favicon URL live preview
             document.getElementById('s_company_favicon')?.addEventListener('input', (e) => {
                 const url = e.target.value.trim();
@@ -917,6 +935,7 @@ export default {
                     sidebar_dark_text_color: document.getElementById('s_sidebar_dark_text_color').value,
                     sidebar_dark_hover_color: document.getElementById('s_sidebar_dark_hover_color').value,
                     company_logo: document.getElementById('s_company_logo').value,
+                    sidebar_logo_height: document.getElementById('s_sidebar_logo_height').value,
                     login_logo: document.getElementById('s_login_logo').value,
                     company_favicon: document.getElementById('s_company_favicon').value,
                     default_currency: document.getElementById('s_default_currency').value,
@@ -995,6 +1014,11 @@ export default {
                         localStorage.setItem('company_logo', settingsToUpdate.company_logo);
                         const sidebarImg = document.querySelector('.sidebar-logo img');
                         if (sidebarImg) sidebarImg.src = settingsToUpdate.company_logo;
+                    }
+                    if (settingsToUpdate.sidebar_logo_height !== undefined) {
+                        localStorage.setItem('sidebar_logo_height', settingsToUpdate.sidebar_logo_height);
+                        const sidebarImg = document.querySelector('.sidebar-logo img');
+                        if (sidebarImg) sidebarImg.style.height = `${settingsToUpdate.sidebar_logo_height}px`;
                     }
                     if (settingsToUpdate.login_logo !== undefined) {
                         localStorage.setItem('login_logo', settingsToUpdate.login_logo);

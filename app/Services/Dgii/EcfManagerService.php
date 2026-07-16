@@ -229,7 +229,7 @@ class EcfManagerService
                     $settings["dgii_ncf_expiry_date_{$tipoECF}"] = $nextYearExpiry;
 
                     // Re-build XML with corrected date and re-sign
-                    $rawXmlRetry    = $this->xmlBuilder->buildInvoiceXml($invoice, $settings);
+                    $rawXmlRetry    = $this->builderService->buildInvoiceXml($invoice, $settings);
                     $p12Path        = storage_path('app/secure/' . ($settings['dgii_certificate_path'] ?? ''));
                     $p12Password    = $settings['dgii_certificate_password'] ?? '';
                     $signedXml      = $this->signatureService->signXml($rawXmlRetry, $p12Path, $p12Password);

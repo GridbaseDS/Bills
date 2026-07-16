@@ -476,7 +476,8 @@ export default {
                                     <div class="form-group">
                                         <label class="form-label">Driver del POS / Adquirente</label>
                                         <select id="s_pos_driver" class="form-control">
-                                            <option value="mock" ${s.pos_driver === 'mock' || !s.pos_driver ? 'selected' : ''}>Simulador / Mock POS</option>
+                                            <option value="mock" ${s.pos_driver === 'mock' || !s.pos_driver ? 'selected' : ''}>Simulador / Mock POS (Local 3s)</option>
+                                            <option value="virtual_pos" ${s.pos_driver === 'virtual_pos' ? 'selected' : ''}>Simulador Móvil (Virtual POS via QR)</option>
                                             <option value="azul_local" ${s.pos_driver === 'azul_local' ? 'selected' : ''}>Azul (Local HTTP Bridge)</option>
                                             <option value="cardnet_local" ${s.pos_driver === 'cardnet_local' ? 'selected' : ''}>Cardnet (Local SPDH TCP Sockets)</option>
                                         </select>

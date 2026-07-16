@@ -7,6 +7,8 @@ use App\Models\Setting;
 use App\Models\Invoice;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Cache;
 use Exception;
 
 class POSController extends Controller
@@ -26,6 +28,7 @@ class POSController extends Controller
 
         $enabled = Setting::get('pos_enabled', '0');
         if ($enabled !== '1') {
+            Log::warning("POS: Intento de cargo pero la integración de POS está desactivada.");
             return response()->json([
                 'success' => false,
                 'message' => 'La integración de POS / Verifone está desactivada.'
@@ -35,12 +38,16 @@ class POSController extends Controller
         $driver = Setting::get('pos_driver', 'mock');
         $ip = Setting::get('pos_terminal_ip', '');
         $port = Setting::get('pos_terminal_port', '');
-        $merchantId = Setting::get('pos_merchant_id', '');
         $timeout = (int) Setting::get('pos_timeout', '60');
+
+        Log::info("POS: Iniciando cargo de {$amount} para Factura ID {$invoiceId} usando driver '{$driver}'");
 
         switch ($driver) {
             case 'mock':
                 return $this->handleMockCharge($amount, $timeout);
+
+            case 'virtual_pos':
+                return $this->handleVirtualPosCharge($amount, $invoiceId);
 
             case 'azul_local':
                 return $this->handleAzulLocalCharge($amount, $ip, $port, $timeout);
@@ -49,6 +56,7 @@ class POSController extends Controller
                 return $this->handleCardnetLocalCharge($amount, $ip, $port, $invoiceId, $timeout);
 
             default:
+                Log::error("POS: Driver de POS '{$driver}' no soportado.");
                 return response()->json([
                     'success' => false,
                     'message' => 'Driver de POS no soportado.'
@@ -62,11 +70,20 @@ class POSController extends Controller
     public function cancel(Request $request)
     {
         $driver = Setting::get('pos_driver', 'mock');
+        Log::info("POS: Recibida solicitud de cancelación para driver '{$driver}'");
         
         if ($driver === 'mock') {
             return response()->json([
                 'success' => true,
                 'message' => 'Transacción cancelada correctamente en el simulador.'
+            ]);
+        }
+
+        if ($driver === 'virtual_pos') {
+            // Cancelar cualquier transacción virtual en cache
+            return response()->json([
+                'success' => true,
+                'message' => 'Transacción virtual cancelada.'
             ]);
         }
 
@@ -77,7 +94,113 @@ class POSController extends Controller
     }
 
     /**
-     * Simulación de cobro.
+     * Retorna el estado actual de una transacción en cache para el sondeo (polling).
+     */
+    public function status($invoiceId)
+    {
+        $data = Cache::get('pos_tx_' . $invoiceId);
+        
+        return response()->json([
+            'success' => true,
+            'data' => $data
+        ]);
+    }
+
+    /**
+     * Actualiza el estado de la transacción (llamado desde el teléfono simulator).
+     */
+    public function updateStatus(Request $request)
+    {
+        $request->validate([
+            'invoice_id' => 'required',
+            'status' => 'required|in:approved,declined',
+            'auth_code' => 'nullable|string',
+            'card_number' => 'nullable|string',
+            'card_type' => 'nullable|string',
+            'message' => 'nullable|string'
+        ]);
+
+        $invoiceId = $request->input('invoice_id');
+        $status = $request->input('status');
+
+        $cacheKey = 'pos_tx_' . $invoiceId;
+        $currentTx = Cache::get($cacheKey);
+
+        if (!$currentTx) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Transacción no encontrada o expirada.'
+            ], 404);
+        }
+
+        $updatedTx = array_merge($currentTx, [
+            'status' => $status,
+            'auth_code' => $request->input('auth_code', '999999'),
+            'card_number' => $request->input('card_number', '************0000'),
+            'card_type' => $request->input('card_type', 'Tarjeta Simulado'),
+            'message' => $request->input('message', ($status === 'approved' ? 'Aprobada' : 'Declinada'))
+        ]);
+
+        Cache::put($cacheKey, $updatedTx, 600); // Guardar por 10 minutos
+        Log::info("POS (Virtual): Estado de transacción de Factura {$invoiceId} actualizado a '{$status}'");
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Transacción actualizada correctamente.'
+        ]);
+    }
+
+    /**
+     * Renderiza el simulador de Verifone en móviles.
+     */
+    public function simulatorView($invoiceId)
+    {
+        $invoice = Invoice::with('client')->findOrFail($invoiceId);
+        $tx = Cache::get('pos_tx_' . $invoiceId);
+
+        if (!$tx) {
+            // Crear una transacción por si acceden directamente
+            $tx = [
+                'status' => 'pending',
+                'amount' => $invoice->total,
+                'invoice_id' => $invoiceId
+            ];
+            Cache::put('pos_tx_' . $invoiceId, $tx, 600);
+        }
+
+        return view('pos.simulator', [
+            'invoice' => $invoice,
+            'tx' => $tx
+        ]);
+    }
+
+    /**
+     * Inicializa cobro para el simulador virtual en móviles.
+     */
+    private function handleVirtualPosCharge($amount, $invoiceId)
+    {
+        $tx = [
+            'status' => 'pending',
+            'amount' => $amount,
+            'invoice_id' => $invoiceId
+        ];
+        
+        Cache::put('pos_tx_' . $invoiceId, $tx, 600); // 10 minutos de expiración
+        Log::info("POS (Virtual): Cargo inicializado en cache de Factura {$invoiceId} por DOP {$amount}");
+
+        // Obtener la URL absoluta del simulador móvil
+        $simulatorUrl = route('pos.simulator', ['invoice_id' => $invoiceId]);
+
+        return response()->json([
+            'success' => true,
+            'status' => 'pending',
+            'virtual_url' => $simulatorUrl,
+            'message' => 'Transacción virtual inicializada. Escanee el código QR en su móvil para continuar.'
+        ]);
+    }
+
+    /**
+     * Simulación de cobro estática de 3 segundos.
      */
     private function handleMockCharge($amount, $timeout)
     {
@@ -85,6 +208,8 @@ class POSController extends Controller
 
         $authCode = str_pad(rand(100000, 999999), 6, '0', STR_PAD_LEFT);
         $lastFour = rand(1000, 9999);
+
+        Log::info("POS (Mock): Cargo exitoso simulado. Autorización: {$authCode}");
 
         return response()->json([
             'success' => true,
@@ -102,6 +227,7 @@ class POSController extends Controller
     private function handleAzulLocalCharge($amount, $ip, $port, $timeout)
     {
         if (empty($ip) || empty($port)) {
+            Log::error("POS (Azul): IP o Puerto no configurados.");
             return response()->json([
                 'success' => false,
                 'message' => 'IP o Puerto del terminal Azul no configurados.'
@@ -109,12 +235,15 @@ class POSController extends Controller
         }
 
         $url = "http://{$ip}:{$port}/azul/charge";
+        Log::info("POS (Azul): Conectando a bridge local en {$url}...");
 
         try {
             $response = Http::timeout($timeout)->post($url, [
                 'amount' => $amount,
                 'tax' => 0.00,
             ]);
+
+            Log::debug("POS (Azul): Respuesta del bridge HTTP: Status " . $response->status() . " - Body: " . $response->body());
 
             if ($response->successful()) {
                 $data = $response->json();
@@ -134,6 +263,7 @@ class POSController extends Controller
             ], 502);
 
         } catch (Exception $e) {
+            Log::error("POS (Azul): Error de conexión con Azul: " . $e->getMessage());
             return response()->json([
                 'success' => false,
                 'message' => 'Error de conexión con Azul: ' . $e->getMessage()
@@ -143,53 +273,53 @@ class POSController extends Controller
 
     /**
      * Conexión con Cardnet Local ECRti (Sockets TCP).
-     * Abre un socket TCP directo al Verifone en puerto 7060, realiza el apretón de manos SYN/EOM/ENQ
-     * y transmite la trama de compra formateada con FS (Field Separator 0x1C).
      */
     private function handleCardnetLocalCharge($amount, $ip, $port, $invoiceId, $timeout)
     {
-        $port = !empty($port) ? $port : '7060'; // Puerto estándar Cardnet ECRti es 7060
+        $port = !empty($port) ? $port : '7060';
 
         if (empty($ip)) {
+            Log::error("POS (Cardnet): IP no configurada.");
             return response()->json([
                 'success' => false,
                 'message' => 'IP del terminal Cardnet no configurada.'
             ], 400);
         }
 
-        // 1. Intentar abrir conexión socket TCP
+        Log::info("POS (Cardnet): Intentando abrir conexión socket TCP a {$ip}:{$port}...");
         $socket = @fsockopen($ip, $port, $errno, $errstr, 5);
         if (!$socket) {
+            Log::error("POS (Cardnet): Fallo de conexión de socket: [{$errno}] {$errstr}");
             return response()->json([
                 'success' => false,
                 'message' => "No se pudo conectar al Verifone Cardnet ({$ip}:{$port}): {$errstr}"
             ], 504);
         }
 
-        // Establecer el tiempo de lectura/escritura del socket según timeout del POS
         stream_set_timeout($socket, $timeout);
 
         try {
             // A. Envío de SYN (0x16)
+            Log::debug("POS (Cardnet): Enviando SYN (0x16)...");
             fwrite($socket, chr(0x16));
 
-            // B. Espera de EOM (0x19) del POS
+            // B. Espera de EOM (0x19)
             $byte1 = fread($socket, 1);
+            Log::debug("POS (Cardnet): Recibido byte 1: " . (ord($byte1) ?? 'NULL'));
             if (ord($byte1) !== 0x19) {
                 throw new Exception("Se esperaba EOM (0x19) pero se recibió: " . ord($byte1));
             }
 
-            // C. Espera de ENQ (0x05) del POS
+            // C. Espera de ENQ (0x05)
             $byte2 = fread($socket, 1);
+            Log::debug("POS (Cardnet): Recibido byte 2: " . (ord($byte2) ?? 'NULL'));
             if (ord($byte2) !== 0x05) {
                 throw new Exception("Se esperaba ENQ (0x05) pero se recibió: " . ord($byte2));
             }
 
-            // D. Construir la trama de Venta CN00
-            // Monto formateado a 12 caracteres relleno con ceros a la izquierda (ej: DOP 250.00 -> 000000025000)
+            // D. Construir trama
             $amountStr = str_pad(round($amount * 100), 12, '0', STR_PAD_LEFT);
             
-            // Buscar la factura para obtener su tasa de ITBIS real o default
             $invoice = Invoice::find($invoiceId);
             $taxAmount = 0.00;
             if ($invoice) {
@@ -197,28 +327,26 @@ class POSController extends Controller
             }
             $taxStr = str_pad(round($taxAmount * 100), 12, '0', STR_PAD_LEFT);
             $otherTaxesStr = str_pad(0, 12, '0', STR_PAD_LEFT);
-            
-            // Número de ticket / factura (6 dígitos, relleno con ceros)
             $ticketStr = str_pad(substr($invoiceId, -6), 6, '0', STR_PAD_LEFT);
 
-            // Trama ECR a POS: CN00<FS>Monto<FS>ITBIS<FS>OtrosImpuestos<FS>Ticket<FS>
-            $fs = chr(0x1C); // Separador de campos
+            $fs = chr(0x1C);
             $txMessage = "CN00" . $fs . $amountStr . $fs . $taxStr . $fs . $otherTaxesStr . $fs . $ticketStr . $fs;
 
-            // Enviar trama al Verifone
+            Log::debug("POS (Cardnet): Transmitiendo trama de venta: CN00|<amount>|<tax>|<other>|<ticket>|");
             fwrite($socket, $txMessage);
 
-            // E. Leer confirmación ACK (0x06) del envío
+            // E. Espera de ACK (0x06)
             $ackByte = fread($socket, 1);
+            Log::debug("POS (Cardnet): Recibido ACK byte: " . (ord($ackByte) ?? 'NULL'));
             if (ord($ackByte) !== 0x06) {
                 throw new Exception("Se esperaba ACK (0x06) pero se recibió: " . ord($ackByte));
             }
 
-            // F. Espera y lectura del resultado de la transacción (puede tomar hasta 90 segundos)
-            // La trama empieza con <STX> (0x02) y termina con <ETX> (0x03) y <LRC>
+            // F. Espera y lectura de resultado de la transacción
             $resBuffer = '';
             $stxReceived = false;
 
+            Log::debug("POS (Cardnet): Esperando resultado del Verifone...");
             while (!feof($socket)) {
                 $c = fread($socket, 1);
                 if ($c === false || $c === '') {
@@ -228,11 +356,10 @@ class POSController extends Controller
                 $ascii = ord($c);
                 if ($ascii === 0x02) {
                     $stxReceived = true;
-                    continue; // Skip STX
+                    continue;
                 }
                 if ($ascii === 0x03) {
-                    // ETX recibido, leer el siguiente byte (LRC) y terminar
-                    fread($socket, 1); // Leer LRC
+                    fread($socket, 1); // LRC
                     break;
                 }
                 if ($stxReceived) {
@@ -243,35 +370,20 @@ class POSController extends Controller
             }
 
             fclose($socket);
+            Log::debug("POS (Cardnet): Respuesta cruda del Verifone: " . urlencode($resBuffer));
 
             if (empty($resBuffer)) {
                 throw new Exception("No se recibió respuesta con la trama de autorización del Verifone.");
             }
 
-            // Parsear campos separados por FS (0x1C)
             $fields = explode($fs, $resBuffer);
-
-            // Según Cardnet Layout Ventas:
-            // index 0 = HOST (06=Crédito, 07=Débito)
-            // index 1 = Tipo Tarjeta (Visa, MC, AMEX)
-            // index 2 = Modo de Transacción (C@5, D@5, etc)
-            // index 3 = Tarjeta (489952******4010)
-            // index 4 = Lote (004)
-            // index 5 = Fecha (DDMMAA)
-            // index 6 = Hora (HHMMSS)
-            // index 7 = Nombre Tarjetahabiente
-            // index 8 = Código de Autorización (Aprobación)
-            // index 9 = Terminal ID
-            // index 10 = Secuencia / Ref.
-            // index 11 = Retrieval Reference Number
-            // index 12 = Merchant ID
             
             $authCode = isset($fields[8]) ? trim($fields[8]) : '';
             $cardNo = isset($fields[3]) ? trim($fields[3]) : '************0000';
             $cardType = isset($fields[1]) ? trim($fields[1]) : 'Tarjeta';
             
-            // Si el código de respuesta indica transacción no progresó
             if (isset($fields[0]) && trim($fields[0]) === '99') {
+                Log::warning("POS (Cardnet): Transacción no progresó en el terminal (Error 99)");
                 return response()->json([
                     'success' => false,
                     'message' => 'Transacción declinada o no progresó en el Verifone.'
@@ -279,6 +391,7 @@ class POSController extends Controller
             }
 
             if (!empty($authCode) && $authCode !== '000000') {
+                Log::info("POS (Cardnet): APROBADA - Auth: {$authCode}, Tarjeta: {$cardNo}");
                 return response()->json([
                     'success' => true,
                     'status' => 'approved',
@@ -289,7 +402,6 @@ class POSController extends Controller
                 ]);
             }
 
-            // Validar si entre los campos especiales viene un mensaje legible de rechazo
             $responseText = 'Transacción declinada por el Verifone.';
             foreach ($fields as $f) {
                 if (str_contains($f, 'DECLINADA') || str_contains($f, 'FONDOS INSUF') || str_contains($f, 'PIN INVALIDO') || str_contains($f, 'ERROR')) {
@@ -298,6 +410,7 @@ class POSController extends Controller
                 }
             }
 
+            Log::warning("POS (Cardnet): DECLINADA - Detalle: {$responseText}");
             return response()->json([
                 'success' => false,
                 'message' => $responseText
@@ -305,6 +418,7 @@ class POSController extends Controller
 
         } catch (Exception $e) {
             @fclose($socket);
+            Log::error("POS (Cardnet): Error en transacción: " . $e->getMessage());
             return response()->json([
                 'success' => false,
                 'message' => 'Error durante la transacción con Cardnet: ' . $e->getMessage()

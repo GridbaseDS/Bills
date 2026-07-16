@@ -89,6 +89,9 @@ Route::get('/api-docs', function () {
     ]);
 })->name('api.docs');
 
+// POS Mobile Simulator View
+Route::get('/pos-simulator/{invoice_id}', [App\Http\Controllers\Api\POSController::class, 'simulatorView'])->name('pos.simulator');
+
 Route::get('/{any}', function () {
     return view('welcome');
 })->where('any', '.*');

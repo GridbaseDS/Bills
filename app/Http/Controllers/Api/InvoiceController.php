@@ -376,7 +376,9 @@ class InvoiceController extends Controller
         $invoice->payments()->create([
             'amount' => $amount,
             'payment_method' => $request->payment_method ?? 'other',
-            'payment_date' => now()
+            'payment_date' => now(),
+            'reference' => $request->input('reference'),
+            'notes' => $request->input('notes'),
         ]);
         
         $invoice->amount_paid += $amount;

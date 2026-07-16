@@ -877,6 +877,13 @@ const InvoicesModule = {
                             <span class="spinner" style="width:14px;height:14px;border-width:2px;display:inline-block;vertical-align:middle;margin-right:6px;"></span>
                             <span id="pos-status-text">Esperando tarjeta en Verifone...</span>
                         </div>
+                        <div id="pos-qr-container" style="display:none; margin-top:12px; text-align:center;">
+                            <div style="font-size:11px; color:var(--color-text-muted); margin-bottom:8px; font-weight:500; line-height: 1.4;">
+                                Escanea este código QR con tu móvil para simular la transacción:
+                            </div>
+                            <img id="pos-qr-image" style="background:#fff; padding:6px; border-radius:8px; border:1px solid var(--color-border); display:inline-block; width:150px; height:150px;" src="" alt="QR">
+                            <div style="margin-top:6px;"><a id="pos-simulator-link" href="#" target="_blank" style="font-size:12px; color:var(--color-primary); font-weight:600; text-decoration:underline;">Abrir simulador móvil en otra pestaña</a></div>
+                        </div>
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -913,10 +920,19 @@ const InvoicesModule = {
         togglePosUI();
 
         let isProcessing = false;
+        let pollInterval = null;
+
+        const cleanUpAndClose = () => {
+            if (pollInterval) {
+                clearInterval(pollInterval);
+                pollInterval = null;
+            }
+            isProcessing = false;
+        };
 
         sendToPosBtn.addEventListener('click', async () => {
             if (isProcessing) {
-                isProcessing = false;
+                cleanUpAndClose();
                 try {
                     await App.api('pos/cancel', { method: 'POST' });
                 } catch(err) {}
@@ -947,45 +963,108 @@ const InvoicesModule = {
 
                 if (!isProcessing) return;
 
-                if (res.success && res.status === 'approved') {
+                if (res.success && res.status === 'pending') {
+                    // Virtual POS Simulator
+                    const qrContainer = document.getElementById('pos-qr-container');
+                    const qrImage = document.getElementById('pos-qr-image');
+                    const simLink = document.getElementById('pos-simulator-link');
+
+                    if (qrContainer && qrImage && simLink) {
+                        qrImage.src = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(res.virtual_url)}`;
+                        simLink.href = res.virtual_url;
+                        qrContainer.style.display = 'block';
+                    }
+
+                    statusText.textContent = 'Esperando aprobación en simulador móvil...';
+
+                    pollInterval = setInterval(async () => {
+                        if (!isProcessing) {
+                            cleanUpAndClose();
+                            return;
+                        }
+                        try {
+                            const statusRes = await App.api(`pos/status/${id}`);
+                            if (statusRes.success && statusRes.data) {
+                                const tx = statusRes.data;
+                                if (tx.status === 'approved') {
+                                    cleanUpAndClose();
+                                    App.showToast('¡Pago aprobado por el simulador móvil!', 'success');
+                                    modal.remove();
+                                    const notes = `Verifone: Simulador Móvil | Tarjeta: ${tx.card_number || 'VISA 1040'} | Aprobación: ${tx.auth_code} | Mensaje: ${tx.message}`;
+                                    this.markAsPaid(id, amount, 'credit_card', tx.auth_code, notes);
+                                } else if (tx.status === 'declined') {
+                                    cleanUpAndClose();
+                                    App.showToast(tx.message || 'Transacción declinada en el móvil', 'error');
+                                    resetToDefaultUI();
+                                }
+                            }
+                        } catch (err) {
+                            console.error("Error al consultar el estado del simulador POS:", err);
+                        }
+                    }, 2000);
+
+                } else if (res.success && res.status === 'approved') {
+                    cleanUpAndClose();
                     App.showToast('¡Pago aprobado por el Verifone!', 'success');
                     modal.remove();
-                    this.markAsPaid(id, amount, 'credit_card');
+                    const notes = `Verifone: ${res.card_type || 'Tarjeta'} | Tarjeta: ${res.card_number || '•••• •••• •••• 1040'} | Aprobación: ${res.auth_code} | Mensaje: ${res.message || 'Aprobada'}`;
+                    this.markAsPaid(id, amount, 'credit_card', res.auth_code, notes);
                 } else {
                     throw new Error(res.message || 'Transacción rechazada.');
                 }
             } catch (err) {
                 if (!isProcessing) return;
                 App.showToast(err.message || 'Error en Verifone', 'error');
-                
-                isProcessing = false;
-                sendToPosBtn.style.background = '';
-                sendToPosBtn.innerHTML = `
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect><line x1="12" y1="18" x2="12.01" y2="18"></line></svg>
-                    Enviar a Verifone
-                `;
-                statusDiv.style.display = 'none';
-                amountInput.disabled = false;
-                methodSelect.disabled = false;
-                document.getElementById('payment-cancel').style.display = 'block';
-                document.getElementById('payment-cancel-2').style.display = 'inline-block';
+                cleanUpAndClose();
+                resetToDefaultUI();
             }
         });
 
-        document.getElementById('payment-cancel').addEventListener('click', () => modal.remove());
-        document.getElementById('payment-cancel-2').addEventListener('click', () => modal.remove());
+        const resetToDefaultUI = () => {
+            const qrContainer = document.getElementById('pos-qr-container');
+            if (qrContainer) qrContainer.style.display = 'none';
+
+            sendToPosBtn.style.background = '';
+            sendToPosBtn.innerHTML = `
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect><line x1="12" y1="18" x2="12.01" y2="18"></line></svg>
+                Enviar a Verifone
+            `;
+            statusDiv.style.display = 'none';
+            amountInput.disabled = false;
+            methodSelect.disabled = false;
+            document.getElementById('payment-cancel').style.display = 'block';
+            document.getElementById('payment-cancel-2').style.display = 'inline-block';
+        };
+
+        document.getElementById('payment-cancel').addEventListener('click', () => {
+            cleanUpAndClose();
+            modal.remove();
+        });
+        document.getElementById('payment-cancel-2').addEventListener('click', () => {
+            cleanUpAndClose();
+            modal.remove();
+        });
         document.getElementById('payment-confirm').addEventListener('click', () => {
             const amount = parseFloat(document.getElementById('payment-amount').value);
             const method = document.getElementById('payment-method').value;
             if (isNaN(amount) || amount <= 0) { App.showToast('Monto inválido', 'error'); return; }
+            cleanUpAndClose();
             modal.remove();
             this.markAsPaid(id, amount, method);
         });
     },
 
-    async markAsPaid(id, amount, method = 'other') {
+    async markAsPaid(id, amount, method = 'other', reference = null, notes = null) {
         try {
-            await App.api(`invoices/${id}/payment`, { method: 'POST', body: { amount, payment_method: method } });
+            await App.api(`invoices/${id}/payment`, { 
+                method: 'POST', 
+                body: { 
+                    amount, 
+                    payment_method: method,
+                    reference: reference,
+                    notes: notes
+                } 
+            });
             App.showToast('Pago registrado correctamente');
             App.navigate(`facturas/${id}`);
         } catch(e) {}

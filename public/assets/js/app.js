@@ -126,6 +126,7 @@ window.App = {
             if (publicSettings.company_name) localStorage.setItem('company_name', publicSettings.company_name);
             if (publicSettings.pdf_primary_color) localStorage.setItem('pdf_primary_color', publicSettings.pdf_primary_color);
             if (publicSettings.sidebar_logo_height) localStorage.setItem('sidebar_logo_height', publicSettings.sidebar_logo_height);
+            if (publicSettings.login_logo_height) localStorage.setItem('login_logo_height', publicSettings.login_logo_height);
             this.updateFavicon();
             this.updateTitle();
             this.applyLoginColors();
@@ -149,6 +150,7 @@ window.App = {
                 if (settings.company_name) localStorage.setItem('company_name', settings.company_name);
                 if (settings.pdf_primary_color) localStorage.setItem('pdf_primary_color', settings.pdf_primary_color);
                 if (settings.sidebar_logo_height) localStorage.setItem('sidebar_logo_height', settings.sidebar_logo_height);
+                if (settings.login_logo_height) localStorage.setItem('login_logo_height', settings.login_logo_height);
                 this.updateFavicon();
                 this.updateTitle();
                 
@@ -194,6 +196,7 @@ window.App = {
                 if (settings.login_logo) localStorage.setItem('login_logo', settings.login_logo);
                 if (settings.company_favicon) localStorage.setItem('company_favicon', settings.company_favicon);
                 if (settings.sidebar_logo_height) localStorage.setItem('sidebar_logo_height', settings.sidebar_logo_height);
+                if (settings.login_logo_height) localStorage.setItem('login_logo_height', settings.login_logo_height);
                 this.updateFavicon();
                 this.updateTitle();
                 
@@ -483,6 +486,7 @@ window.App = {
        ═══════════════════════════════════════════════ */
     renderLogin() {
         const cachedLogo = localStorage.getItem('login_logo') || localStorage.getItem('company_logo') || 'https://gridbase.com.do/wp-content/uploads/2025/02/cropped-imagen_2026-03-16_154126791.png';
+        const loginLogoHeight = this.state.settings?.login_logo_height || localStorage.getItem('login_logo_height') || '79';
         const companyName = localStorage.getItem('company_name') || this.state.settings?.company_name || 'Bills';
         const primaryColor = this.state.settings?.pdf_primary_color || localStorage.getItem('pdf_primary_color') || '#0B484C';
         const app = document.getElementById('app');
@@ -490,7 +494,7 @@ window.App = {
             <div class="login-page">
                 <div class="login-left">
                     <div class="login-brand">
-                        <img src="${cachedLogo}" alt="Logo">
+                        <img src="${cachedLogo}" alt="Logo" style="height: ${loginLogoHeight}px; object-fit: contain;">
                     </div>
                     <div class="login-form-wrap">
                         <h1 class="login-title">Bienvenido</h1>
@@ -588,11 +592,12 @@ window.App = {
             `;
         }
         
+        const loginLogoHeight = this.state.settings?.login_logo_height || localStorage.getItem('login_logo_height') || '79';
         app.innerHTML = `
             <div class="login-page">
                 <div class="login-left">
                     <div class="login-brand">
-                        <img src="${cachedLogo}" alt="Logo">
+                        <img src="${cachedLogo}" alt="Logo" style="height: ${loginLogoHeight}px; object-fit: contain;">
                     </div>
                     <div class="login-form-wrap">
                         ${formContent}
@@ -706,13 +711,14 @@ window.App = {
 
     renderPinSetup() {
         const cachedLogo = localStorage.getItem('login_logo') || localStorage.getItem('company_logo') || 'https://gridbase.com.do/wp-content/uploads/2025/02/cropped-imagen_2026-03-16_154126791.png';
+        const loginLogoHeight = this.state.settings?.login_logo_height || localStorage.getItem('login_logo_height') || '79';
         const app = document.getElementById('app');
         
         app.innerHTML = `
             <div class="login-page">
                 <div class="login-left">
                     <div class="login-brand">
-                        <img src="${cachedLogo}" alt="Logo">
+                        <img src="${cachedLogo}" alt="Logo" style="height: ${loginLogoHeight}px; object-fit: contain;">
                     </div>
                     <div class="login-form-wrap">
                         <h1 class="login-title">Acceso Rápido</h1>
@@ -774,13 +780,14 @@ window.App = {
 
     renderPinLogin(email) {
         const cachedLogo = localStorage.getItem('login_logo') || localStorage.getItem('company_logo') || 'https://gridbase.com.do/wp-content/uploads/2025/02/cropped-imagen_2026-03-16_154126791.png';
+        const loginLogoHeight = this.state.settings?.login_logo_height || localStorage.getItem('login_logo_height') || '79';
         const app = document.getElementById('app');
         
         app.innerHTML = `
             <div class="login-page">
                 <div class="login-left">
                     <div class="login-brand">
-                        <img src="${cachedLogo}" alt="Logo">
+                        <img src="${cachedLogo}" alt="Logo" style="height: ${loginLogoHeight}px; object-fit: contain;">
                     </div>
                     <div class="login-form-wrap">
                         <div style="display:flex; align-items:center; gap:16px; margin-bottom:24px;">

@@ -156,8 +156,16 @@ export default {
                                     <input type="url" id="s_login_logo" class="form-control" placeholder="https://miempresa.com/login-logo.png" value="${s.login_logo || ''}">
                                     <div style="font-size:11px;color:var(--color-text-muted);margin-top:4px;">Logo que aparece exclusivamente en la pantalla de inicio de sesión.</div>
                                     <div id="login-logo-preview" style="margin-top:10px;display:${s.login_logo ? 'block' : 'none'};">
-                                        <img id="login-logo-preview-img" src="${s.login_logo || ''}" style="max-height:40px;max-width:180px;border:1px solid var(--color-border);border-radius:var(--radius-md);padding:6px;background:var(--bg-hover);" onerror="this.style.display='none'" onload="this.style.display='inline-block'">
+                                        <img id="login-logo-preview-img" src="${s.login_logo || ''}" style="max-height:${s.login_logo_height || '79'}px;max-width:180px;border:1px solid var(--color-border);border-radius:var(--radius-md);padding:6px;background:var(--bg-hover);" onerror="this.style.display='none'" onload="this.style.display='inline-block'">
                                     </div>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Tamaño del Logo de Login (Altura)</label>
+                                    <div style="display:flex;align-items:center;gap:12px;margin-top:8px;">
+                                        <input type="range" id="s_login_logo_height" class="form-range" min="30" max="150" step="1" value="${s.login_logo_height || '79'}" style="flex:1;cursor:pointer;accent-color:var(--color-primary, #0B484C);height:6px;border-radius:3px;background:var(--color-border);border:none;padding:0;">
+                                        <span id="login_logo_height_val" style="font-size:13px;font-weight:600;min-width:40px;text-align:right;">${s.login_logo_height || '79'}px</span>
+                                    </div>
+                                    <div style="font-size:11px;color:var(--color-text-muted);margin-top:4px;">Desliza para ajustar la altura del logo de login en las pantallas de acceso.</div>
                                 </div>
                                 <div class="form-group">
                                     <label class="form-label">Favicon (URL)</label>
@@ -801,6 +809,16 @@ export default {
                 if (sidebarImg) sidebarImg.style.height = `${val}px`;
             });
 
+            // Login logo height live preview
+            document.getElementById('s_login_logo_height')?.addEventListener('input', (e) => {
+                const val = e.target.value;
+                const display = document.getElementById('login_logo_height_val');
+                if (display) display.textContent = `${val}px`;
+                
+                const previewImg = document.getElementById('login-logo-preview-img');
+                if (previewImg) previewImg.style.maxHeight = `${val}px`;
+            });
+
             // Favicon URL live preview
             document.getElementById('s_company_favicon')?.addEventListener('input', (e) => {
                 const url = e.target.value.trim();
@@ -937,6 +955,7 @@ export default {
                     company_logo: document.getElementById('s_company_logo').value,
                     sidebar_logo_height: document.getElementById('s_sidebar_logo_height').value,
                     login_logo: document.getElementById('s_login_logo').value,
+                    login_logo_height: document.getElementById('s_login_logo_height').value,
                     company_favicon: document.getElementById('s_company_favicon').value,
                     default_currency: document.getElementById('s_default_currency').value,
                     default_tax_rate: document.getElementById('s_default_tax_rate').value,
@@ -1022,6 +1041,9 @@ export default {
                     }
                     if (settingsToUpdate.login_logo !== undefined) {
                         localStorage.setItem('login_logo', settingsToUpdate.login_logo);
+                    }
+                    if (settingsToUpdate.login_logo_height !== undefined) {
+                        localStorage.setItem('login_logo_height', settingsToUpdate.login_logo_height);
                     }
                     if (settingsToUpdate.company_favicon !== undefined) {
                         localStorage.setItem('company_favicon', settingsToUpdate.company_favicon);

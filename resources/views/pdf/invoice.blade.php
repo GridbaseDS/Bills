@@ -420,7 +420,7 @@ $ecfTypeName = $isEcf ? ($ecfTypeNames[$ecfType] ?? 'Comprobante Fiscal Electron
     <!-- Payment + Totals -->
     <table class="bottom-area"><tr>
         <td style="width:55%; padding-right:30px;">
-            <?php if ($isEcf): ?>
+            <?php if ($isEcf && !empty($invoice['security_code'])): ?>
                 <?php
                 $rncEmisor = preg_replace('/[^0-9]/', '', $settings['company_tax_id'] ?? '');
                 $rncComprador = preg_replace('/[^0-9]/', '', $client['tax_id'] ?? '');

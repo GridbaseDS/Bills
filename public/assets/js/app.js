@@ -1054,7 +1054,7 @@ window.App = {
             const changelog = this.state.settings?.system_changelog;
             const lastSeenVersion = localStorage.getItem('gridbase_bills_last_seen_version');
 
-            if (currentVersion && changelog && Array.isArray(changelog) && changelog.length > 0 && lastSeenVersion !== currentVersion) {
+            if (currentVersion && changelog && Array.isArray(changelog) && changelog.length > 0) {
                 notifications.push({
                     type: 'update',
                     title: 'Sistema Actualizado',
@@ -1097,8 +1097,13 @@ window.App = {
                 });
             }
 
+            const unreadNotifications = notifications.filter(n => {
+                if (n.type === 'update') return lastSeenVersion !== currentVersion;
+                return true;
+            });
+
             if (badge) {
-                badge.style.display = notifications.length > 0 ? 'block' : 'none';
+                badge.style.display = unreadNotifications.length > 0 ? 'block' : 'none';
             }
             if (countBadge) {
                 countBadge.textContent = notifications.length;

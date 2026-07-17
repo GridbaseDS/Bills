@@ -957,9 +957,11 @@ const InvoicesModule = {
             const isPosEnabled = window.App.state.settings?.pos_enabled === '1';
             if (isCard && isPosEnabled) {
                 posSection.style.display = 'block';
-                confirmBtn.style.display = 'none';
+                confirmBtn.textContent = 'Registrar Manual (sin Verifone)';
+                confirmBtn.style.display = 'inline-block';
             } else {
                 posSection.style.display = 'none';
+                confirmBtn.textContent = 'Confirmar Pago';
                 confirmBtn.style.display = 'inline-block';
             }
         };
@@ -1009,47 +1011,110 @@ const InvoicesModule = {
                 const useBridge = window.App.state.settings?.pos_use_bridge === '1' && driver !== 'virtual_pos';
 
                 if (useBridge) {
-                    statusText.textContent = 'Conectando con BillsBridge local...';
+                    statusText.textContent = 'Buscando BillsBridge local...';
                     
-                    const bridgeUrl = 'http://localhost:8080/charge';
+                    const bridgeUrl = 'http://localhost:8080/status';
                     const ip = window.App.state.settings?.pos_terminal_ip || '';
                     const port = window.App.state.settings?.pos_terminal_port || '';
                     const timeout = parseInt(window.App.state.settings?.pos_timeout || '60');
 
-                    console.log(`[Caja] Enviando cobro al bridge local: ${bridgeUrl}`, {
-                        driver, amount, ip, port, invoice_id: id, timeout
-                    });
-
-                    const controller = new AbortController();
-                    const timeoutId = setTimeout(() => controller.abort(), (timeout + 5) * 1000);
-
+                    let localBridgeAvailable = false;
                     try {
-                        const bridgeResponse = await fetch(bridgeUrl, {
+                        const check = await fetch(bridgeUrl, { method: 'GET', signal: AbortSignal.timeout(1500) });
+                        if (check.ok) {
+                            localBridgeAvailable = true;
+                        }
+                    } catch (e) {
+                        console.log('[Caja] Bridge local no detectado en localhost. Usando cola en la nube.');
+                    }
+
+                    if (localBridgeAvailable) {
+                        statusText.textContent = 'Conectando con BillsBridge local...';
+                        const controller = new AbortController();
+                        const timeoutId = setTimeout(() => controller.abort(), (timeout + 5) * 1000);
+
+                        try {
+                            const bridgeResponse = await fetch('http://localhost:8080/charge', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    driver,
+                                    amount,
+                                    ip,
+                                    port,
+                                    invoice_id: String(id),
+                                    timeout
+                                }),
+                                signal: controller.signal
+                            });
+                            clearTimeout(timeoutId);
+
+                            if (!bridgeResponse.ok && bridgeResponse.status !== 402) {
+                                throw new Error(`BillsBridge local error HTTP ${bridgeResponse.status}`);
+                            }
+
+                            res = await bridgeResponse.json();
+                        } catch (fetchErr) {
+                            clearTimeout(timeoutId);
+                            if (fetchErr.name === 'AbortError') {
+                                throw new Error('Tiempo de espera agotado en el Bridge Local.');
+                            }
+                            throw new Error('Error al comunicar con BillsBridge: ' + fetchErr.message);
+                        }
+                    } else {
+                        statusText.textContent = 'Enviando cobro a la nube (Móvil / Red)...';
+                        
+                        const cloudCharge = await App.api('pos/charge', {
                             method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({
-                                driver,
-                                amount,
-                                ip,
-                                port,
-                                invoice_id: String(id),
-                                timeout
-                            }),
-                            signal: controller.signal
+                            body: { amount, invoice_id: id }
                         });
-                        clearTimeout(timeoutId);
 
-                        if (!bridgeResponse.ok && bridgeResponse.status !== 402) {
-                            throw new Error(`BillsBridge respondió con error HTTP ${bridgeResponse.status}`);
-                        }
+                        if (cloudCharge.success && cloudCharge.status === 'pending') {
+                            statusText.textContent = 'Esperando aprobación en el Verifone...';
+                            
+                            res = await new Promise((resolve, reject) => {
+                                const pollLimit = (timeout + 5) * 1000;
+                                const startTime = Date.now();
+                                
+                                const interval = setInterval(async () => {
+                                    if (!isProcessing) {
+                                        clearInterval(interval);
+                                        reject(new Error('Transacción cancelada.'));
+                                        return;
+                                    }
+                                    if (Date.now() - startTime > pollLimit) {
+                                        clearInterval(interval);
+                                        reject(new Error('Tiempo de espera agotado. Asegúrate de tener BillsBridge.exe abierto en la computadora de la caja.'));
+                                        return;
+                                    }
 
-                        res = await bridgeResponse.json();
-                    } catch (fetchErr) {
-                        clearTimeout(timeoutId);
-                        if (fetchErr.name === 'AbortError') {
-                            throw new Error('Tiempo de espera agotado en el Bridge Local.');
+                                    try {
+                                        const statusRes = await App.api(`pos/status/${id}`);
+                                        if (statusRes.success && statusRes.data) {
+                                            const tx = statusRes.data;
+                                            if (tx.status === 'approved') {
+                                                clearInterval(interval);
+                                                resolve({
+                                                    success: true,
+                                                    status: 'approved',
+                                                    auth_code: tx.auth_code,
+                                                    card_number: tx.card_number,
+                                                    card_type: tx.card_type,
+                                                    message: tx.message
+                                                });
+                                            } else if (tx.status === 'declined') {
+                                                clearInterval(interval);
+                                                reject(new Error(tx.message || 'Transacción declinada.'));
+                                            }
+                                        }
+                                    } catch (err) {
+                                        console.error("Error en sondeo:", err);
+                                    }
+                                }, 2000);
+                            });
+                        } else {
+                            throw new Error(cloudCharge.message || 'Error al iniciar cobro en nube.');
                         }
-                        throw new Error('No se pudo establecer comunicación con BillsBridge. Asegúrate de que BillsBridge.exe esté ejecutándose en esta computadora.');
                     }
                 } else {
                     res = await App.api('pos/charge', {
@@ -1147,7 +1212,12 @@ const InvoicesModule = {
             if (isNaN(amount) || amount <= 0) { App.showToast('Monto inválido', 'error'); return; }
             cleanUpAndClose();
             modal.remove();
-            this.markAsPaid(id, amount, method);
+
+            let notes = null;
+            if (method === 'credit_card' && window.App.state.settings?.pos_enabled === '1') {
+                notes = 'Cobro con tarjeta registrado manualmente (sin Verifone integrado)';
+            }
+            this.markAsPaid(id, amount, method, null, notes);
         });
     },
 

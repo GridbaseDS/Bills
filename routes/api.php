@@ -38,9 +38,11 @@ Route::get('/settings/public', [SettingController::class, 'publicSettings']);
 Route::get('/lookup/rnc/{rnc}', [LookupController::class, 'rnc']);
 Route::get('/lookup/cedula/{cedula}', [LookupController::class, 'cedula']);
 
-// POS Mobile Simulator API (Public)
+// POS Mobile Simulator & Local Bridge Queue API (Public)
 Route::get('/pos/status/{invoice_id}', [POSController::class, 'status']);
 Route::post('/pos/update-status', [POSController::class, 'updateStatus']);
+Route::get('/pos/bridge/poll', [POSController::class, 'bridgePoll']);
+Route::post('/pos/bridge/respond', [POSController::class, 'bridgeRespond']);
 
 // WhatsApp Webhooks (must be public for Meta to access)
 Route::get('/whatsapp/webhook', [WhatsAppWebhookController::class, 'verify']);

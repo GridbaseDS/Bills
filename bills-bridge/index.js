@@ -1,4 +1,5 @@
 const http = require('http');
+const https = require('https');
 const net = require('net');
 const { URL } = require('url');
 const path = require('path');
@@ -22,6 +23,7 @@ const configPath = path.join(exeDir, 'config.json');
 
 let currentConfig = null;
 let allowedDomain = '*';
+let isPollingStarted = false;
 
 // Cargar configuración inicial si existe
 if (fs.existsSync(configPath)) {
@@ -111,7 +113,7 @@ function startServer() {
         success: true,
         service: 'BillsBridge',
         status: 'running',
-        version: '1.0.0',
+        version: '1.2.0',
         linked: allowedDomain !== '*',
         allowed_domain: allowedDomain
       }));
@@ -154,6 +156,9 @@ function startServer() {
 
           // Intentar registrar el servicio de Windows
           installScheduledTask();
+
+          // Activar el sondeo del servidor en la nube inmediatamente
+          startCloudPolling();
 
           res.writeHead(200, { 'Content-Type': 'application/json' });
           res.end(JSON.stringify({ success: true, message: `Bridge vinculado a ${domain} con éxito.` }));
@@ -229,15 +234,133 @@ function startServer() {
 
   server.listen(PORT, '0.0.0.0', () => {
     console.log(`==================================================`);
-    console.log(` BillsBridge v1.1.0 - Iniciado en puerto ${PORT}`);
+    console.log(` BillsBridge v1.2.0 - Iniciado en puerto ${PORT}`);
     if (allowedDomain === '*') {
       console.log(` [⚠️] ESTADO: Sin vincular.`);
       console.log(` Abre el panel de Bills y haz clic en "Vincular"`);
     } else {
       console.log(` [✓] ESTADO: Vinculado.`);
       console.log(` Dominio autorizado: https://${allowedDomain}`);
+      // Iniciar el polling de nube al arrancar
+      startCloudPolling();
     }
     console.log(`==================================================`);
+  });
+}
+
+// ─────────────────────────────────────────────────────────────
+// SISTEMA DE SONDEO (POLLING) DE LA NUBE PARA MULTI-DISPOSITIVO
+// ─────────────────────────────────────────────────────────────
+let isPollingActive = false;
+
+function startCloudPolling() {
+  if (allowedDomain === '*' || isPollingStarted) return;
+  isPollingStarted = true;
+
+  console.log(`[BillsBridge] Iniciando sondeo de nube en https://${allowedDomain} ...`);
+
+  setInterval(async () => {
+    if (isPollingActive) return;
+    isPollingActive = true;
+
+    try {
+      const url = `https://${allowedDomain}/api/pos/bridge/poll`;
+      const response = await makeGetRequest(url);
+      
+      if (response && response.success && response.pending && response.transaction) {
+        const tx = response.transaction;
+        console.log(`[BillsBridge] [Nube] Transacción recibida para Factura #${tx.invoice_id} (RD$ ${tx.amount})`);
+
+        let result;
+        switch (tx.driver) {
+          case 'mock':
+            result = await handleMockCharge(tx.amount);
+            break;
+          case 'cardnet_local':
+            result = await handleCardnetLocalCharge(tx.amount, tx.ip, tx.port, tx.invoice_id, tx.timeout);
+            break;
+          case 'cardnet_android':
+            result = await handleCardnetAndroidCharge(tx.amount, tx.ip, tx.port, tx.timeout);
+            break;
+          case 'azul_local':
+            result = await handleAzulLocalCharge(tx.amount, tx.ip, tx.port, tx.timeout);
+            break;
+          default:
+            result = { success: false, message: `Driver '${tx.driver}' no soportado.` };
+        }
+
+        // Reportar respuesta a la nube
+        console.log(`[BillsBridge] [Nube] Enviando resultado al servidor...`);
+        const reportUrl = `https://${allowedDomain}/api/pos/bridge/respond`;
+        await makePostRequest(reportUrl, {
+          invoice_id: String(tx.invoice_id),
+          status: result.success ? 'approved' : 'declined',
+          auth_code: result.auth_code || '000000',
+          card_number: result.card_number || '************0000',
+          card_type: result.card_type || 'Tarjeta',
+          message: result.message || (result.success ? 'Aprobada' : 'Declinada')
+        });
+
+        console.log(`[BillsBridge] [Nube] Resultado reportado con éxito.`);
+      }
+    } catch (err) {
+      // Ignorar errores silenciosamente para no inundar consola por fallos temporales de red
+    } finally {
+      isPollingActive = false;
+    }
+  }, 2000);
+}
+
+// ─────────────────────────────────────────────────────────────
+// CLIENTE HTTP LIVIANO INTEGRADO (SIN DEPENDENCIAS)
+// ─────────────────────────────────────────────────────────────
+function makeGetRequest(urlStr) {
+  return new Promise((resolve, reject) => {
+    const req = https.get(urlStr, (res) => {
+      let data = '';
+      res.on('data', chunk => data += chunk);
+      res.on('end', () => {
+        try {
+          resolve(JSON.parse(data));
+        } catch (e) {
+          reject(new Error('Formato JSON inválido.'));
+        }
+      });
+    });
+    req.on('error', reject);
+  });
+}
+
+function makePostRequest(urlStr, body) {
+  return new Promise((resolve, reject) => {
+    const urlObj = new URL(urlStr);
+    const postData = JSON.stringify(body);
+
+    const options = {
+      hostname: urlObj.hostname,
+      port: 443,
+      path: urlObj.pathname,
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Content-Length': Buffer.byteLength(postData)
+      }
+    };
+
+    const req = https.request(options, (res) => {
+      let data = '';
+      res.on('data', chunk => data += chunk);
+      res.on('end', () => {
+        try {
+          resolve(JSON.parse(data));
+        } catch (e) {
+          reject(new Error('Formato JSON inválido.'));
+        }
+      });
+    });
+    req.on('error', reject);
+    req.write(postData);
+    req.end();
   });
 }
 

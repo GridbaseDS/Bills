@@ -41,6 +41,33 @@ class POSController extends Controller
         $timeout = (int) Setting::get('pos_timeout', '60');
 
         Log::info("POS: Iniciando cargo de {$amount} para Factura ID {$invoiceId} usando driver '{$driver}'");
+        
+        // Si se usa el bridge local y el driver no es el simulador virtual en la nube,
+        // encolamos la transacción para que el bridge la consulte mediante polling
+        $useBridge = Setting::get('pos_use_bridge', '0');
+        if ($useBridge === '1' && $driver !== 'virtual_pos') {
+            $tx = [
+                'id' => uniqid('tx_'),
+                'status' => 'pending',
+                'amount' => $amount,
+                'invoice_id' => $invoiceId,
+                'driver' => $driver,
+                'ip' => $ip,
+                'port' => $port,
+                'timeout' => $timeout
+            ];
+
+            Cache::put('bridge_pending_tx', $tx, 300); // 5 minutos de validez
+            Cache::put('pos_tx_' . $invoiceId, $tx, 600); // 10 minutos de validez en el estado
+
+            Log::info("POS: Transacción encolada para bridge en la nube. Factura {$invoiceId}");
+
+            return response()->json([
+                'success' => true,
+                'status' => 'pending',
+                'message' => 'Transacción enviada al bridge en la nube.'
+            ]);
+        }
 
         switch ($driver) {
             case 'mock':
@@ -495,6 +522,71 @@ class POSController extends Controller
                 'success' => false,
                 'message' => 'Fallo de comunicación con Cardnet Android: ' . $e->getMessage()
             ], 504);
+    }
+
+    /**
+     * Retorna cualquier transacción en cola para el bridge local.
+     */
+    public function bridgePoll()
+    {
+        $tx = Cache::get('bridge_pending_tx');
+        if ($tx) {
+            return response()->json([
+                'success' => true,
+                'pending' => true,
+                'transaction' => $tx
+            ]);
         }
+
+        return response()->json([
+            'success' => true,
+            'pending' => false
+        ]);
+    }
+
+    /**
+     * Recibe la respuesta del bridge local y actualiza el estado de la transacción.
+     */
+    public function bridgeRespond(Request $request)
+    {
+        $request->validate([
+            'invoice_id' => 'required',
+            'status' => 'required|in:approved,declined',
+            'auth_code' => 'nullable|string',
+            'card_number' => 'nullable|string',
+            'card_type' => 'nullable|string',
+            'message' => 'nullable|string'
+        ]);
+
+        $invoiceId = $request->input('invoice_id');
+        $status = $request->input('status');
+
+        $cacheKey = 'pos_tx_' . $invoiceId;
+        $currentTx = Cache::get($cacheKey);
+
+        if (!$currentTx) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Transacción no encontrada o expirada.'
+            ], 404);
+        }
+
+        $updatedTx = array_merge($currentTx, [
+            'status' => $status,
+            'auth_code' => $request->input('auth_code', '000000'),
+            'card_number' => $request->input('card_number', '************0000'),
+            'card_type' => $request->input('card_type', 'Tarjeta'),
+            'message' => $request->input('message', ($status === 'approved' ? 'Aprobada' : 'Declinada'))
+        ]);
+
+        Cache::put($cacheKey, $updatedTx, 600); // 10 minutos
+        Cache::forget('bridge_pending_tx'); // Limpiar cola
+
+        Log::info("POS (Bridge): Estado de transacción de Factura {$invoiceId} actualizado a '{$status}'");
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Transacción actualizada en el servidor.'
+        ]);
     }
 }

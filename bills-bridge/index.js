@@ -48,19 +48,25 @@ function installScheduledTask() {
     const workingDir = exeDir;
     const taskName = "BillsBridge";
 
+    // Comando PowerShell usando comillas simples para soportar rutas con espacios
     let psCommand;
     if (isPackaged) {
-      psCommand = `Register-ScheduledTask -TaskName "${taskName}" -Trigger (New-ScheduledTaskTrigger -AtStartup) -Action (New-ScheduledTaskAction -Execute "${exePath}" -WorkingDirectory "${workingDir}") -Settings (New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries) -User "SYSTEM" -Force`;
+      psCommand = `Register-ScheduledTask -TaskName '${taskName}' -Trigger (New-ScheduledTaskTrigger -AtStartup) -Action (New-ScheduledTaskAction -Execute '${exePath}' -WorkingDirectory '${workingDir}') -Settings (New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries) -User 'SYSTEM' -Force`;
     } else {
       const nodeExe = process.execPath;
-      psCommand = `Register-ScheduledTask -TaskName "${taskName}" -Trigger (New-ScheduledTaskTrigger -AtStartup) -Action (New-ScheduledTaskAction -Execute "${nodeExe}" -Argument "${exePath}" -WorkingDirectory "${workingDir}") -Settings (New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries) -User "SYSTEM" -Force`;
+      psCommand = `Register-ScheduledTask -TaskName '${taskName}' -Trigger (New-ScheduledTaskTrigger -AtStartup) -Action (New-ScheduledTaskAction -Execute '${nodeExe}' -Argument '${exePath}' -WorkingDirectory '${workingDir}') -Settings (New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries) -User 'SYSTEM' -Force`;
     }
 
-    execSync(`powershell -Command "${psCommand}"`, { stdio: 'ignore' });
+    execSync(`powershell -NoProfile -ExecutionPolicy Bypass -Command "${psCommand}"`, { stdio: 'pipe' });
     console.log('✅ ¡BillsBridge registrado en el Programador de Tareas de Windows (arrancará al iniciar la PC)!');
   } catch (err) {
     console.log(`\n[⚠️] Nota: No se pudo registrar la tarea automáticamente en Windows.`);
-    console.log(`Para que arranque con Windows, vuelve a ejecutar el programa como ADMINISTRADOR.`);
+    if (err.stderr) {
+      console.log(`Detalle del error:\n${err.stderr.toString().trim()}`);
+    } else {
+      console.log(`Detalle del error: ${err.message}`);
+    }
+    console.log(`--------------------------------------------------`);
   }
 }
 

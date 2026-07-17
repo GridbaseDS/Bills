@@ -7,11 +7,42 @@ on:
 
 jobs:
   # ═══════════════════════════════════════════
-  # Job 1: Deploy SaaS to VPS (HestiaCP)
+  # Job 1: Run Stability & Security Tests
+  # ═══════════════════════════════════════════
+  test:
+    name: 🧪 Run Stability & Security Tests
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v4
+
+    - name: Setup PHP
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: '8.2'
+        extensions: dom, curl, libxml, mbstring, zip, pdo, sqlite, pdo_sqlite
+        coverage: none
+
+    - name: Install Composer Dependencies
+      run: composer install --no-interaction --no-progress
+
+    - name: Copy Env File
+      run: cp .env.example .env
+
+    - name: Generate App Key
+      run: php artisan key:generate
+
+    - name: Run Tests
+      run: php artisan test --env=testing
+
+  # ═══════════════════════════════════════════
+  # Job 2: Deploy SaaS to VPS (HestiaCP)
   # ═══════════════════════════════════════════
   deploy-vps:
     name: 🚀 VPS (HestiaCP)
     runs-on: ubuntu-latest
+    needs: test
 
     steps:
     - name: Checkout Code
@@ -62,11 +93,12 @@ jobs:
           sudo -u grupaqgl php artisan view:cache
 
   # ═══════════════════════════════════════════
-  # Job 2: Deploy Original to cPanel
+  # Job 3: Deploy Original to cPanel
   # ═══════════════════════════════════════════
   deploy-cpanel:
     name: 🌐 cPanel (Original)
     runs-on: ubuntu-latest
+    needs: test
 
     steps:
     - name: SSH Deploy to cPanel

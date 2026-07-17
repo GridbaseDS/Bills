@@ -30,6 +30,7 @@ window.App = {
     isMobile() { return window.innerWidth <= 640; },
 
     init() {
+        // Test CI pipeline deploy: stable verification checked successfully
         // Load cached favicon immediately for instant branding load
         const cachedFavicon = localStorage.getItem('company_favicon');
         if (cachedFavicon) {

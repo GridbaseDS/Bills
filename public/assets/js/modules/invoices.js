@@ -1003,11 +1003,60 @@ const InvoicesModule = {
             document.getElementById('payment-cancel').style.display = 'none';
             document.getElementById('payment-cancel-2').style.display = 'none';
 
-            try {
-                const res = await App.api('pos/charge', {
-                    method: 'POST',
-                    body: { amount, invoice_id: id }
-                });
+             try {
+                let res;
+                const driver = window.App.state.settings?.pos_driver || 'mock';
+                const useBridge = window.App.state.settings?.pos_use_bridge === '1' && driver !== 'virtual_pos';
+
+                if (useBridge) {
+                    statusText.textContent = 'Conectando con BillsBridge local...';
+                    
+                    const bridgeUrl = 'http://localhost:8080/charge';
+                    const ip = window.App.state.settings?.pos_terminal_ip || '';
+                    const port = window.App.state.settings?.pos_terminal_port || '';
+                    const timeout = parseInt(window.App.state.settings?.pos_timeout || '60');
+
+                    console.log(`[Caja] Enviando cobro al bridge local: ${bridgeUrl}`, {
+                        driver, amount, ip, port, invoice_id: id, timeout
+                    });
+
+                    const controller = new AbortController();
+                    const timeoutId = setTimeout(() => controller.abort(), (timeout + 5) * 1000);
+
+                    try {
+                        const bridgeResponse = await fetch(bridgeUrl, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                driver,
+                                amount,
+                                ip,
+                                port,
+                                invoice_id: String(id),
+                                timeout
+                            }),
+                            signal: controller.signal
+                        });
+                        clearTimeout(timeoutId);
+
+                        if (!bridgeResponse.ok && bridgeResponse.status !== 402) {
+                            throw new Error(`BillsBridge respondió con error HTTP ${bridgeResponse.status}`);
+                        }
+
+                        res = await bridgeResponse.json();
+                    } catch (fetchErr) {
+                        clearTimeout(timeoutId);
+                        if (fetchErr.name === 'AbortError') {
+                            throw new Error('Tiempo de espera agotado en el Bridge Local.');
+                        }
+                        throw new Error('No se pudo establecer comunicación con BillsBridge. Asegúrate de que BillsBridge.exe esté ejecutándose en esta computadora.');
+                    }
+                } else {
+                    res = await App.api('pos/charge', {
+                        method: 'POST',
+                        body: { amount, invoice_id: id }
+                    });
+                }
 
                 if (!isProcessing) return;
 

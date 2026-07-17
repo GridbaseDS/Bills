@@ -1,0 +1,15 @@
+{
+  "name": "billsbridge",
+  "version": "1.0.0",
+  "description": "Local bridge for Verifone integration - Gridbase Bills",
+  "main": "index.js",
+  "bin": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "build": "npx pkg . --targets node18-win-x64 --output dist/billsbridge.exe"
+  },
+  "pkg": {
+    "assets": []
+  },
+  "dependencies": {}
+}

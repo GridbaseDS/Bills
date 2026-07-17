@@ -522,6 +522,7 @@ class POSController extends Controller
                 'success' => false,
                 'message' => 'Fallo de comunicación con Cardnet Android: ' . $e->getMessage()
             ], 504);
+        }
     }
 
     /**

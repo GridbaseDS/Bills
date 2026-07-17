@@ -487,6 +487,12 @@ export default {
                                              Descargar BillsBridge (.exe)
                                          </a>
                                      </div>
+                                     <div id="bridge-status-container" style="margin-top:12px; padding:12px; border-radius:var(--radius-md); border:1px solid var(--color-border); background:var(--color-bg-primary); display:none;">
+                                          <div style="display:flex; align-items:center; gap:8px; font-size:12px; font-weight:600; color:var(--color-text-muted);" id="bridge-status-badge">
+                                              <span class="spinner" style="width:12px;height:12px;border-width:2px;display:inline-block;vertical-align:middle;margin-right:6px;"></span>
+                                              Detectando estado de BillsBridge...
+                                          </div>
+                                      </div>
                                 </div>
                                 <div class="grid-2">
                                     <div class="form-group">
@@ -1145,6 +1151,9 @@ export default {
                     const data = await res.json();
                     if (res.ok && data.success) {
                         window.App.showToast('¡Computadora vinculada con BillsBridge con éxito!', 'success');
+                        if (typeof window._checkBridgeStatus === 'function') {
+                            window._checkBridgeStatus();
+                        }
                     } else {
                         throw new Error(data.message || 'Error en la respuesta del bridge.');
                     }
@@ -1619,6 +1628,64 @@ export default {
                     }
                 });
             });
+
+            // Función para verificar el estado de BillsBridge en tiempo real
+            const checkBridgeStatus = async () => {
+                const containerEl = document.getElementById('bridge-status-container');
+                const badgeEl = document.getElementById('bridge-status-badge');
+                const checkboxEl = document.getElementById('s_pos_use_bridge');
+                const isPosEnabled = document.getElementById('s_pos_enabled')?.checked;
+
+                if (!containerEl || !badgeEl || !checkboxEl) return;
+
+                if (!isPosEnabled || !checkboxEl.checked) {
+                    containerEl.style.display = 'none';
+                    return;
+                }
+
+                containerEl.style.display = 'block';
+                badgeEl.style.color = 'var(--color-text-muted)';
+                badgeEl.innerHTML = `
+                    <span class="spinner" style="width:12px;height:12px;border-width:2px;display:inline-block;vertical-align:middle;margin-right:6px;"></span>
+                    Consultando estado del bridge local...
+                `;
+
+                try {
+                    const check = await fetch('http://localhost:8080/status', { method: 'GET', signal: AbortSignal.timeout(1500) });
+                    if (check.ok) {
+                        const data = await check.json();
+                        if (data.success && data.service === 'BillsBridge') {
+                            badgeEl.style.color = '#16a34a';
+                            badgeEl.innerHTML = `
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-right:6px; color:#16a34a; vertical-align:middle;"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                <strong>[✓] BillsBridge Conectado Localmente:</strong> Esta PC tiene el ejecutable abierto y responderá de forma directa.
+                            `;
+                            return;
+                        }
+                    }
+                } catch (e) {
+                    // Ignorar y pasar al canal de nube
+                }
+
+                badgeEl.style.color = '#d97706';
+                badgeEl.innerHTML = `
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-right:6px; color:#d97706; vertical-align:middle;"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"></path></svg>
+                    <strong>[✓] Canal de Nube Activo:</strong> No se detecta el bridge abierto en esta computadora/celular, por lo que las solicitudes se enviarán a la cola de la nube para que las procese la PC de la caja que tiene el bridge abierto.
+                `;
+            };
+
+            window._checkBridgeStatus = checkBridgeStatus;
+
+            document.getElementById('s_pos_use_bridge')?.addEventListener('change', checkBridgeStatus);
+            document.getElementById('s_pos_enabled')?.addEventListener('change', checkBridgeStatus);
+
+            const tabBtn = container.querySelector('[data-tab="integrations"]');
+            tabBtn?.addEventListener('click', () => {
+                setTimeout(checkBridgeStatus, 150);
+            });
+
+            // Verificar estado inicialmente
+            setTimeout(checkBridgeStatus, 250);
 
         } catch (e) {
             container.innerHTML = `<div class="text-red">Error al cargar configuraciones</div>`;

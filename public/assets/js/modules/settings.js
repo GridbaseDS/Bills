@@ -468,10 +468,7 @@ export default {
                                 <label style="display:flex;align-items:center;gap:8px;font-weight:600;cursor:pointer;">
                                     <input type="checkbox" id="s_pos_enabled" style="width:18px;height:18px;" ${s.pos_enabled === '1' ? 'checked' : ''} onchange="document.getElementById('pos-details-wrapper').style.display = this.checked ? 'block' : 'none';">
                                     Habilitar cobro integrado con Verifone
-                                </label>
-                            </div>
-
-                            <div id="pos-details-wrapper" style="display:${s.pos_enabled === '1' ? 'block' : 'none'}; background:var(--color-bg-secondary); border:1px solid var(--color-border); border-radius:var(--radius-lg); padding:20px; margin-bottom: 16px;">
+                                  <div id="pos-details-wrapper" style="display:${s.pos_enabled === '1' ? 'block' : 'none'}; background:var(--color-bg-secondary); border:1px solid var(--color-border); border-radius:var(--radius-lg); padding:20px; margin-bottom: 16px;">
                                 <div class="form-group" style="margin-bottom: 16px; border-bottom: 1px dashed var(--color-border); padding-bottom: 16px; display:flex; flex-direction:column; gap:8px;">
                                      <label style="display:flex;align-items:center;gap:8px;font-weight:600;cursor:pointer;margin:0;">
                                          <input type="checkbox" id="s_pos_use_bridge" style="width:16px;height:16px;" ${s.pos_use_bridge === '1' ? 'checked' : ''}>
@@ -480,11 +477,17 @@ export default {
                                      <small style="color:var(--color-text-muted);font-size:11px;display:block;">
                                          Recomendado si Bills corre en la nube. Requiere tener ejecutándose la aplicación local <strong>BillsBridge.exe</strong> en la PC de la caja.
                                      </small>
-                                     <button type="button" class="btn btn-secondary" id="btn-link-bridge" style="align-self:flex-start; height:32px; font-size:12px; padding:0 12px; display:flex; align-items:center; gap:6px; font-weight:600; margin-top:4px;">
-                                         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>
-                                         Vincular esta PC con el Bridge
-                                     </button>
-                                 </div>
+                                     <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:4px;">
+                                         <button type="button" class="btn btn-secondary" id="btn-link-bridge" style="height:32px; font-size:12px; padding:0 12px; display:flex; align-items:center; gap:6px; font-weight:600;">
+                                             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>
+                                             Vincular esta PC con el Bridge
+                                         </button>
+                                         <a href="/billsbridge.exe" download class="btn btn-secondary" style="height:32px; font-size:12px; padding:0 12px; display:flex; align-items:center; gap:6px; font-weight:600; text-decoration:none; background:var(--color-bg-primary); border:1px solid var(--color-border); color:var(--color-text);">
+                                             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                                             Descargar BillsBridge (.exe)
+                                         </a>
+                                     </div>
+                                </div>
                                 <div class="grid-2">
                                     <div class="form-group">
                                         <label class="form-label">Driver del POS / Adquirente</label>

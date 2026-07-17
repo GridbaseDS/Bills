@@ -2,6 +2,14 @@
 
 A continuación se presenta el registro de evolución y mejoras de la plataforma Gridbase Bills. Cada versión detalla los avances e incorporaciones del sistema, orientados a brindar el servicio de facturación y cumplimiento fiscal de mayor robustez, estabilidad y facilidad de uso del mercado.
 
+## Gridbase Bills v3.4.0 (Cola en Nube para Verifone y Diseño Responsivo Móvil) (2026-07-17)
+
+* POS / Verifone: Implementación del canal por cola en la nube (Cloud Queue) que permite disparar cobros integrados a terminales físicas Verifone desde teléfonos móviles y otros dispositivos locales, sin necesidad de redirigir puertos en el router.
+* POS / Verifone: Adición del botón "Registrar Manual (sin Verifone)" en el modal de cobro para saltar el flujo integrado en caso de fallas físicas del datáfono.
+* POS / Verifone: Incorporación de una tarjeta diagnóstica de estado en tiempo real (Ajustes > Integraciones) que detecta si el bridge local está activo en el dispositivo actual o se está comunicando a través del canal en la nube.
+* Diseño Responsivo: Optimización adaptativa completa de la fila de conceptos (artículos) en la creación de facturas, cotizaciones y suscripciones recurrentes en dispositivos móviles, ampliando la descripción al 100% de ancho y mejorando la legibilidad.
+* Diseño Responsivo: Ajuste de rejillas de formulario de doble columna para que se apilen en una sola columna en pantallas táctiles, evitando campos extremadamente reducidos.
+
 ## Gridbase Bills v3.3.2 (Conversión de Divisas e-CF y PayPal con Tasa BPD) (2026-07-15)
 
 * Facturación Electrónica: Conversión automática a Pesos (DOP) en el XML de e-CF (DGII) para facturas registradas en dólares/euros usando la tasa BPD guardada en la factura.

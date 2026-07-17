@@ -1,13 +1,13 @@
 <?php
 
 return [
-    'version' => '3.3.2',
-    'date' => '2026-07-15',
+    'version' => '3.4.0',
+    'date' => '2026-07-17',
     'changes' => [
-        'Conversión automática a Pesos (DOP) en el XML de e-CF de la DGII para facturas en dólares/euros usando la tasa BPD.',
-        'Conversión automática a Dólares (USD) usando la tasa oficial de venta de BPD al pagar facturas DOP por PayPal.',
-        'Remoción de la columna U/M de las plantillas de factura PDF para simplificar y limpiar el diseño visual.',
-        'Formateo dinámico inteligente de cantidades enteras en PDF para mostrar números limpios sin decimales redundantes.',
-        'Visualización y habilitación de campana de notificaciones y cambio de tema en dispositivos móviles.'
+        'POS / Verifone: Canal de comunicación por cola en la nube (Cloud Queue) que permite disparar cobros integrados desde móviles y otros dispositivos sin abrir puertos.',
+        'POS / Verifone: Botón de omisión manual en el modal de cobro con tarjeta para saltar el flujo automático en caso de fallas de la terminal.',
+        'POS / Verifone: Tarjeta diagnóstica en Ajustes > Integraciones que indica si el bridge local está conectado o se utiliza el canal de la nube.',
+        'Diseño Responsivo: Rediseño adaptativo completo de la fila de conceptos en facturas, cotizaciones y suscripciones recurrentes en móviles, expandiendo los campos.',
+        'Diseño Responsivo: Rejillas de formulario de doble columna adaptadas para apilarse en una sola columna en móviles, mejorando la legibilidad al escribir.'
     ]
 ];

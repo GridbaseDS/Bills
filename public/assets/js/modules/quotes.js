@@ -233,6 +233,53 @@ const QuotesModule = {
         const nextMonth = new Date(Date.now() + 30*24*60*60*1000).toISOString().split('T')[0];
 
         container.innerHTML = `
+            <style>
+                .invoice-item-row {
+                    display: flex;
+                    gap: 12px;
+                    margin-bottom: 12px;
+                    align-items: flex-start;
+                }
+                .invoice-item-desc {
+                    flex: 1;
+                }
+                .invoice-item-qty {
+                    width: 100px;
+                }
+                .invoice-item-price {
+                    width: 150px;
+                }
+                .invoice-item-delete {
+                    width: 38px;
+                    height: 38px;
+                    flex-shrink: 0;
+                    display: inline-flex;
+                    align-items: center;
+                    justify-content: center;
+                }
+                @media (max-width: 767px) {
+                    .grid-2 {
+                        grid-template-columns: 1fr !important;
+                        gap: 12px !important;
+                    }
+                    .invoice-item-row {
+                        flex-wrap: wrap;
+                        border-bottom: 1.5px dashed var(--color-border);
+                        padding-bottom: 16px;
+                        margin-bottom: 16px;
+                        gap: 8px;
+                    }
+                    .invoice-item-desc {
+                        flex: 1 1 100%;
+                    }
+                    .invoice-item-qty {
+                        width: 70px;
+                    }
+                    .invoice-item-price {
+                        flex: 1;
+                    }
+                }
+            </style>
             <div style="margin-bottom:12px;"><a href="#cotizaciones" style="color:var(--color-text-muted);text-decoration:none;font-size:13px;">← Cotizaciones</a></div>
             <div class="page-header">
                 <div>
@@ -376,11 +423,11 @@ const QuotesModule = {
         const c = document.getElementById('quote-items-container'); if(!c) return;
         const v = {}; this.items.forEach(item => { const d = document.getElementById(`q_item_desc_${item.id}`); if(d) v[item.id] = { desc: d.value, qty: document.getElementById(`q_item_qty_${item.id}`).value, price: document.getElementById(`q_item_price_${item.id}`).value }; });
         c.innerHTML = this.items.map(item => `
-            <div style="display:flex;gap:12px;margin-bottom:12px;align-items:flex-start;">
-                <div style="flex:1"><input type="text" id="q_item_desc_${item.id}" list="catalog_items_list" class="form-control" placeholder="Descripción..." required oninput="QuotesModule.onItemDescChange(${item.id})"></div>
-                <div style="width:100px"><input type="number" id="q_item_qty_${item.id}" class="form-control" placeholder="Cant." min="0.01" step="0.01" value="1" required oninput="QuotesModule.calculateTotals()"></div>
-                <div style="width:150px"><input type="number" id="q_item_price_${item.id}" class="form-control" placeholder="Precio" min="0" step="0.01" required oninput="QuotesModule.calculateTotals()"></div>
-                <button type="button" class="btn-icon" style="color:var(--color-danger-icon);width:38px;height:38px;" onclick="QuotesModule.removeItem(${item.id})"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg></button>
+            <div class="invoice-item-row">
+                <div class="invoice-item-desc"><input type="text" id="q_item_desc_${item.id}" list="catalog_items_list" class="form-control" placeholder="Descripción..." required oninput="QuotesModule.onItemDescChange(${item.id})"></div>
+                <div class="invoice-item-qty"><input type="number" id="q_item_qty_${item.id}" class="form-control" placeholder="Cant." min="0.01" step="0.01" value="1" required oninput="QuotesModule.calculateTotals()"></div>
+                <div class="invoice-item-price"><input type="number" id="q_item_price_${item.id}" class="form-control" placeholder="Precio" min="0" step="0.01" required oninput="QuotesModule.calculateTotals()"></div>
+                <button type="button" class="btn-icon invoice-item-delete" style="color:var(--color-danger-icon);" onclick="QuotesModule.removeItem(${item.id})"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg></button>
             </div>
         `).join('');
         this.items.forEach(item => { if(v[item.id]) { document.getElementById(`q_item_desc_${item.id}`).value = v[item.id].desc; document.getElementById(`q_item_qty_${item.id}`).value = v[item.id].qty; document.getElementById(`q_item_price_${item.id}`).value = v[item.id].price; } });

@@ -223,5 +223,64 @@ class POSControllerTest extends TestCase
         $response->assertSee('GRIDBASE TPV');
         $response->assertSee('Aprobar Transacción');
     }
+
+    public function test_pos_charge_success_with_cardnet_android_driver(): void
+    {
+        $user = User::first();
+
+        $client = Client::create([
+            'company_name' => 'Test Client',
+            'contact_name' => 'John Doe',
+            'email' => 'client@test.com',
+            'tax_id' => '101010101'
+        ]);
+
+        $invoice = Invoice::create([
+            'client_id' => $client->id,
+            'invoice_number' => 'INV-005',
+            'issue_date' => now()->format('Y-m-d'),
+            'due_date' => now()->addDays(7)->format('Y-m-d'),
+            'status' => 'draft',
+            'currency' => 'DOP',
+            'subtotal' => 1500.00,
+            'tax_amount' => 270.00,
+            'total' => 1770.00,
+            'amount_paid' => 0.00
+        ]);
+
+        Setting::updateOrCreate(['setting_key' => 'pos_enabled'], ['setting_value' => '1']);
+        Setting::updateOrCreate(['setting_key' => 'pos_driver'], ['setting_value' => 'cardnet_android']);
+        Setting::updateOrCreate(['setting_key' => 'pos_terminal_ip'], ['setting_value' => '192.168.1.70']);
+        Setting::updateOrCreate(['setting_key' => 'pos_terminal_port'], ['setting_value' => '2001']);
+
+        // Mock Cardnet API Response
+        \Illuminate\Support\Facades\Http::fake([
+            '192.168.1.70:2001/*' => \Illuminate\Support\Facades\Http::response([
+                'amount' => '177000 DOP',
+                'amountOriginalFormat' => '177000',
+                'approbationNumber' => '419886',
+                'bankName' => 'Popular',
+                'cardInformation' => [
+                    'maskedPAN' => '***********9547',
+                    'cardSubType' => 'MASTERCARD'
+                ],
+                'referenceNumber' => '0000118',
+                'txnMessage' => 'OPERACION ACEPTADA',
+                'txnResult' => 4
+            ], 200)
+        ]);
+
+        $response = $this->actingAs($user)->postJson('/api/pos/charge', [
+            'amount' => 1770.00,
+            'invoice_id' => $invoice->id
+        ]);
+
+        $response->assertStatus(200);
+        $this->assertTrue($response->json('success'));
+        $this->assertEquals('approved', $response->json('status'));
+        $this->assertEquals('419886', $response->json('auth_code'));
+        $this->assertEquals('***********9547', $response->json('card_number'));
+        $this->assertEquals('MASTERCARD', $response->json('card_type'));
+    }
 }
 

@@ -480,6 +480,7 @@ export default {
                                             <option value="virtual_pos" ${s.pos_driver === 'virtual_pos' ? 'selected' : ''}>Simulador Móvil (Virtual POS via QR)</option>
                                             <option value="azul_local" ${s.pos_driver === 'azul_local' ? 'selected' : ''}>Azul (Local HTTP Bridge)</option>
                                             <option value="cardnet_local" ${s.pos_driver === 'cardnet_local' ? 'selected' : ''}>Cardnet (Local SPDH TCP Sockets)</option>
+                                            <option value="cardnet_android" ${s.pos_driver === 'cardnet_android' ? 'selected' : ''}>Cardnet (Android SmartPOS via REST)</option>
                                         </select>
                                     </div>
                                     <div class="form-group">

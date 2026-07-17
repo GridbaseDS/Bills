@@ -55,6 +55,9 @@ class POSController extends Controller
             case 'cardnet_local':
                 return $this->handleCardnetLocalCharge($amount, $ip, $port, $invoiceId, $timeout);
 
+            case 'cardnet_android':
+                return $this->handleCardnetAndroidCharge($amount, $ip, $port, $timeout);
+
             default:
                 Log::error("POS: Driver de POS '{$driver}' no soportado.");
                 return response()->json([
@@ -423,6 +426,75 @@ class POSController extends Controller
                 'success' => false,
                 'message' => 'Error durante la transacción con Cardnet: ' . $e->getMessage()
             ], 502);
+        }
+    }
+
+    /**
+     * Conexión con Cardnet Android REST Local.
+     */
+    private function handleCardnetAndroidCharge($amount, $ip, $port, $timeout)
+    {
+        $port = !empty($port) ? $port : '2001';
+
+        if (empty($ip)) {
+            Log::error("POS (Cardnet Android): IP no configurada.");
+            return response()->json([
+                'success' => false,
+                'message' => 'IP del terminal Cardnet no configurada.'
+            ], 400);
+        }
+
+        $amountToSend = (int) round($amount * 100);
+        $url = "http://{$ip}:{$port}/tx_sale";
+        Log::info("POS (Cardnet Android): Enviando POST a {$url} con monto {$amountToSend} (centavos)...");
+
+        try {
+            $response = Http::timeout($timeout)->post("{$url}?amount={$amountToSend}", [
+                'amount' => $amountToSend
+            ]);
+
+            Log::debug("POS (Cardnet Android): Respuesta recibida. Status: " . $response->status() . " - Body: " . $response->body());
+
+            if ($response->successful()) {
+                $data = $response->json();
+                
+                $authCode = $data['approbationNumber'] ?? '';
+                $txnMessage = $data['txnMessage'] ?? 'Tarjeta Declinada / Error';
+                $cardInfo = $data['cardInformation'] ?? [];
+                
+                $maskedPan = $cardInfo['maskedPAN'] ?? '************0000';
+                $cardSubType = $cardInfo['cardSubType'] ?? 'Tarjeta';
+
+                if (!empty($authCode) && $authCode !== '000000') {
+                    Log::info("POS (Cardnet Android): APROBADA - Auth: {$authCode}, Tarjeta: {$maskedPan}");
+                    return response()->json([
+                        'success' => true,
+                        'status' => 'approved',
+                        'auth_code' => $authCode,
+                        'card_number' => $maskedPan,
+                        'card_type' => $cardSubType,
+                        'message' => $txnMessage
+                    ]);
+                }
+
+                Log::warning("POS (Cardnet Android): DECLINADA - Mensaje: {$txnMessage}");
+                return response()->json([
+                    'success' => false,
+                    'message' => $txnMessage
+                ], 402);
+            }
+
+            return response()->json([
+                'success' => false,
+                'message' => 'El terminal Cardnet Android respondió con error HTTP ' . $response->status()
+            ], 502);
+
+        } catch (Exception $e) {
+            Log::error("POS (Cardnet Android): Error de conexión: " . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Fallo de comunicación con Cardnet Android: ' . $e->getMessage()
+            ], 504);
         }
     }
 }

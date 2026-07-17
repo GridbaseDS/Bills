@@ -468,7 +468,9 @@ export default {
                                 <label style="display:flex;align-items:center;gap:8px;font-weight:600;cursor:pointer;">
                                     <input type="checkbox" id="s_pos_enabled" style="width:18px;height:18px;" ${s.pos_enabled === '1' ? 'checked' : ''} onchange="document.getElementById('pos-details-wrapper').style.display = this.checked ? 'block' : 'none';">
                                     Habilitar cobro integrado con Verifone
-                                  <div id="pos-details-wrapper" style="display:${s.pos_enabled === '1' ? 'block' : 'none'}; background:var(--color-bg-secondary); border:1px solid var(--color-border); border-radius:var(--radius-lg); padding:20px; margin-bottom: 16px;">
+                                </label>
+                            </div>
+                            <div id="pos-details-wrapper" style="display:${s.pos_enabled === '1' ? 'block' : 'none'}; background:var(--color-bg-secondary); border:1px solid var(--color-border); border-radius:var(--radius-lg); padding:20px; margin-bottom: 16px;">
                                 <div class="form-group" style="margin-bottom: 16px; border-bottom: 1px dashed var(--color-border); padding-bottom: 16px; display:flex; flex-direction:column; gap:8px;">
                                      <label style="display:flex;align-items:center;gap:8px;font-weight:600;cursor:pointer;margin:0;">
                                          <input type="checkbox" id="s_pos_use_bridge" style="width:16px;height:16px;" ${s.pos_use_bridge === '1' ? 'checked' : ''}>

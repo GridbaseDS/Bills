@@ -568,8 +568,8 @@ window.App = {
                 <p class="login-subtitle">Protege tu cuenta activando el segundo factor de autenticaci\u00f3n</p>
                 <div id="login-error" class="login-error"></div>
                 
-                <div style="background:#FEF2F2; color:#DC2626; border:1px solid rgba(239,68,68,0.2); border-radius:10px; padding:10px 14px; font-size:11px; margin-bottom:20px; font-weight:600; line-height:1.4;">
-                    La activaci\u00f3n del 2FA es obligatoria para acceder a la plataforma.
+                <div style="background:#E6F4F5; color:#0B484C; border:1px solid rgba(11,72,76,0.2); border-radius:10px; padding:10px 14px; font-size:11px; margin-bottom:20px; font-weight:600; line-height:1.4;">
+                    La activación del 2FA es recomendada para proteger tu cuenta.
                 </div>
                 
                 <p style="font-size:13px; color:#6B7280; margin-bottom:20px; line-height:1.5;">
@@ -976,6 +976,59 @@ window.App = {
         this.bindSearch();
         this.updateThemeButton();
         this.loadNotifications();
+        this.check2faReminder();
+    },
+
+    check2faReminder() {
+        if (!this.state.user || this.state.user.two_factor_enabled) return;
+
+        const dismissedAt = localStorage.getItem('2fa_reminder_dismissed');
+        if (dismissedAt) {
+            const diffDays = (Date.now() - parseInt(dismissedAt, 10)) / (1000 * 60 * 60 * 24);
+            if (diffDays < 7) return;
+        }
+
+        if (document.getElementById('2fa-reminder-banner')) return;
+
+        const mainContent = document.querySelector('.main-content');
+        if (!mainContent) return;
+
+        const banner = document.createElement('div');
+        banner.id = '2fa-reminder-banner';
+        banner.style.cssText = 'background:linear-gradient(90deg, #111827 0%, #0B484C 100%); color:#fff; padding:12px 20px; display:flex; align-items:center; justify-content:space-between; gap:16px; border-bottom:1px solid rgba(255,255,255,0.1); font-size:13px; animation:fadeIn 0.3s ease; position:relative; z-index:100;';
+        banner.innerHTML = `
+            <div style="display:flex; align-items:center; gap:12px;">
+                <div style="width:32px; height:32px; border-radius:8px; background:rgba(255,255,255,0.15); display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                </div>
+                <div>
+                    <strong style="font-weight:600;">Recomendación de Seguridad:</strong> Protege tu cuenta activando la Autenticación en Dos Pasos (2FA).
+                </div>
+            </div>
+            <div style="display:flex; align-items:center; gap:10px;">
+                <button id="btn-banner-enable-2fa" style="background:#00E5FF; color:#111827; border:none; padding:6px 14px; border-radius:6px; font-weight:700; font-size:12px; cursor:pointer; transition:all .15s;">Activar 2FA Ahora</button>
+                <button id="btn-banner-dismiss-2fa" style="background:transparent; color:rgba(255,255,255,0.7); border:none; padding:6px; cursor:pointer; font-size:18px; line-height:1;" title="Recordar más tarde">✕</button>
+            </div>
+        `;
+
+        mainContent.insertBefore(banner, mainContent.firstChild);
+
+        document.getElementById('btn-banner-enable-2fa')?.addEventListener('click', () => {
+            banner.remove();
+            if (this.state.currentRoute !== 'configuracion' && this.state.currentRoute !== 'settings') {
+                this.navigate('settings');
+            }
+            setTimeout(() => {
+                const secTab = document.querySelector('#settings-tabs .segment-item[data-tab="security"]');
+                if (secTab) secTab.click();
+            }, 150);
+        });
+
+        document.getElementById('btn-banner-dismiss-2fa')?.addEventListener('click', () => {
+            localStorage.setItem('2fa_reminder_dismissed', Date.now().toString());
+            banner.remove();
+            this.showToast('Recordatorio pospuesto por 7 días', 'info');
+        });
     },
 
     async loadOverdueBadge() {

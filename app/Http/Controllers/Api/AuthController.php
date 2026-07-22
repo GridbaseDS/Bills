@@ -71,21 +71,28 @@ class AuthController extends Controller
             return response()->json(['error' => 'Credenciales inválidas'], 401);
         }
 
-        // Store pre-authenticated state in session
-        $request->session()->put('pre_auth_user_id', $user->id);
-
         if (empty($user->two_factor_secret)) {
-            // Setup Mode
-            $temp_secret = $this->generate2faSecret();
-            $request->session()->put('temp_2fa_secret', $temp_secret);
-            
+            // Optional 2FA: Direct login if 2FA is not enabled
+            $user->last_login = now();
+            $user->save();
+            Auth::login($user);
+            $request->session()->forget('pre_auth_user_id');
+
             return response()->json([
-                'requires_2fa' => true,
-                'setup_mode' => true,
-                'temp_secret' => $temp_secret,
-                'qr_uri' => 'otpauth://totp/Bills%20(' . rawurlencode($user->email) . ')?secret=' . $temp_secret . '&issuer=Bills'
+                'success' => true,
+                'requires_2fa' => false,
+                'user' => [
+                    'id' => $user->id,
+                    'name' => $user->name,
+                    'email' => $user->email,
+                    'role' => $user->role,
+                    'two_factor_enabled' => false,
+                ]
             ]);
         }
+
+        // Store pre-authenticated state in session for users with 2FA enabled
+        $request->session()->put('pre_auth_user_id', $user->id);
 
         // Standard 2FA Verification Mode
         return response()->json([
@@ -113,18 +120,14 @@ class AuthController extends Controller
         $code = str_replace(' ', '', $request->code);
 
         if (empty($user->two_factor_secret)) {
-            // Setup Verification
+            // Setup Verification from login flow if applicable
             $secret = $request->session()->get('temp_2fa_secret');
             if (empty($secret)) {
                 return response()->json(['error' => 'No se ha podido iniciar la configuración del 2FA. Reintente.'], 422);
             }
 
             if ($this->verifyTotp($secret, $code)) {
-                // Save secret permanently
                 $user->two_factor_secret = $secret;
-                $user->save();
-
-                // Complete authentication
                 $user->last_login = now();
                 $user->save();
                 Auth::login($user);
@@ -138,13 +141,13 @@ class AuthController extends Controller
                         'name' => $user->name,
                         'email' => $user->email,
                         'role' => $user->role,
+                        'two_factor_enabled' => true,
                     ]
                 ]);
             }
         } else {
             // Standard Verification
             if ($this->verifyTotp($user->two_factor_secret, $code)) {
-                // Complete authentication
                 $user->last_login = now();
                 $user->save();
                 Auth::login($user);
@@ -158,12 +161,90 @@ class AuthController extends Controller
                         'name' => $user->name,
                         'email' => $user->email,
                         'role' => $user->role,
+                        'two_factor_enabled' => true,
                     ]
                 ]);
             }
         }
 
         return response()->json(['error' => 'Código de verificación incorrecto. Inténtalo de nuevo.'], 422);
+    }
+
+    public function get2faStatus(Request $request)
+    {
+        $user = $request->user();
+        return response()->json([
+            'enabled' => !empty($user->two_factor_secret)
+        ]);
+    }
+
+    public function init2faSetup(Request $request)
+    {
+        $user = $request->user();
+        $temp_secret = $this->generate2faSecret();
+        $request->session()->put('temp_2fa_secret', $temp_secret);
+
+        $appName = config('app.name', 'Bills');
+        $qrUri = 'otpauth://totp/' . rawurlencode($appName) . '%20(' . rawurlencode($user->email) . ')?secret=' . $temp_secret . '&issuer=' . rawurlencode($appName);
+
+        return response()->json([
+            'success' => true,
+            'temp_secret' => $temp_secret,
+            'qr_uri' => $qrUri
+        ]);
+    }
+
+    public function enable2fa(Request $request)
+    {
+        $request->validate([
+            'code' => 'required|string|size:6',
+            'temp_secret' => 'nullable|string'
+        ]);
+
+        $user = $request->user();
+        $code = str_replace(' ', '', $request->code);
+        $secret = $request->session()->get('temp_2fa_secret') ?? $request->temp_secret;
+
+        if (empty($secret)) {
+            return response()->json(['error' => 'No se ha iniciado la configuración del 2FA. Reintente.'], 422);
+        }
+
+        if ($this->verifyTotp($secret, $code)) {
+            $user->two_factor_secret = $secret;
+            $user->save();
+
+            $request->session()->forget('temp_2fa_secret');
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Autenticación en dos pasos (2FA) activada exitosamente.'
+            ]);
+        }
+
+        return response()->json(['error' => 'Código de verificación incorrecto.'], 422);
+    }
+
+    public function disable2fa(Request $request)
+    {
+        $user = $request->user();
+
+        if (empty($user->two_factor_secret)) {
+            return response()->json(['message' => 'La autenticación en dos pasos ya está desactivada.'], 200);
+        }
+
+        if ($request->has('password') && !empty($request->password)) {
+            if (!Hash::check($request->password, $user->password)) {
+                return response()->json(['error' => 'Contraseña incorrecta.'], 422);
+            }
+        }
+
+        $user->two_factor_secret = null;
+        $user->save();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Autenticación en dos pasos (2FA) desactivada exitosamente.'
+        ]);
     }
 
     public function logout(Request $request)

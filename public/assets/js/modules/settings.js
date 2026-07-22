@@ -41,6 +41,10 @@ export default {
                         <svg xmlns="http://www.w3.org/2000/svg" width="13.5" height="13.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--color-text-primary);"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
                         e-CF / DGII
                     </button>
+                    <button class="segment-item" data-tab="security" style="display:inline-flex; align-items:center; gap:6.5px;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="13.5" height="13.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--color-text-primary);"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                        Seguridad & 2FA
+                    </button>
                     <button class="segment-item" data-tab="devices" style="display:inline-flex; align-items:center; gap:6.5px;">
                         <svg xmlns="http://www.w3.org/2000/svg" width="13.5" height="13.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--color-text-primary);"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
                         Dispositivos
@@ -673,6 +677,33 @@ export default {
                             </div>
                         </div>
 
+                        <!-- TAB: SECURITY / 2FA -->
+                        <div class="tab-content" id="tab-security" style="display:none;">
+                            <h3 style="font-size:15px;font-weight:600;margin:0 0 8px;">Seguridad & Autenticación en Dos Pasos (2FA)</h3>
+                            <p style="color:var(--color-text-muted);font-size:13px;margin:0 0 24px;">Configura métodos de autenticación adicionales para proteger tu cuenta contra accesos no autorizados.</p>
+                            
+                            <div style="background:var(--bg-card); border:1px solid var(--color-border); border-radius:var(--radius-lg); padding:24px; max-width:680px; box-shadow:var(--shadow-sm);">
+                                <div style="display:flex; align-items:flex-start; gap:16px; margin-bottom:20px;">
+                                    <div style="width:48px; height:48px; border-radius:12px; background:var(--color-primary-light, #E6F4F5); color:var(--color-primary, #0B484C); display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                                    </div>
+                                    <div style="flex:1;">
+                                        <div style="display:flex; align-items:center; gap:10px; margin-bottom:6px; flex-wrap:wrap;">
+                                            <h4 style="font-size:16px; font-weight:700; margin:0; color:var(--color-text-primary);">Verificación en Dos Pasos (2FA)</h4>
+                                            <span id="2fa-status-badge" class="badge" style="font-size:11px; padding:3px 10px; font-weight:700;">Cargando...</span>
+                                        </div>
+                                        <p style="font-size:13px; color:var(--color-text-secondary); margin:0; line-height:1.5;">
+                                            Agrega una capa adicional de seguridad. Al activar 2FA, cada vez que inicies sesión se te solicitará un código de 6 dígitos generado en tiempo real por tu aplicación de autenticación (Google Authenticator, Authy, 1Password, etc.).
+                                        </p>
+                                    </div>
+                                </div>
+
+                                <div id="2fa-status-content" style="border-top:1px solid var(--color-border); padding-top:20px;">
+                                    <div style="text-align:center; padding:20px 0;"><span class="spinner"></span></div>
+                                </div>
+                            </div>
+                        </div>
+
                         <!-- TAB: DEVICES -->
                         <div class="tab-content" id="tab-devices" style="display:none;">
                             <h3 style="font-size:15px;font-weight:600;margin:0 0 8px;">Dispositivos Autorizados</h3>
@@ -747,9 +778,199 @@ export default {
                     tabs.forEach(t => t.classList.remove('active'));
                     contents.forEach(c => c.style.display = 'none');
                     tab.classList.add('active');
-                    container.querySelector('#tab-' + tab.dataset.tab).style.display = 'block';
+                    const target = container.querySelector('#tab-' + tab.dataset.tab);
+                    if (target) target.style.display = 'block';
+                    if (tab.dataset.tab === 'security') {
+                        load2faSecurityStatus();
+                    }
                 });
             });
+
+            // 2FA Security Management
+            const load2faSecurityStatus = async () => {
+                const badge = document.getElementById('2fa-status-badge');
+                const content = document.getElementById('2fa-status-content');
+                if (!badge || !content) return;
+
+                try {
+                    const res = await window.App.api('auth/2fa/status');
+                    const isEnabled = res.enabled;
+                    if (window.App.state.user) window.App.state.user.two_factor_enabled = isEnabled;
+
+                    if (isEnabled) {
+                        badge.className = 'badge badge-paid';
+                        badge.style.background = 'rgba(16,185,129,0.12)';
+                        badge.style.color = '#10b981';
+                        badge.textContent = 'ACTIVA';
+                        content.innerHTML = `
+                            <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:16px;">
+                                <div>
+                                    <div style="font-weight:600; font-size:14px; color:var(--color-text-primary);">Protección 2FA Habilitada</div>
+                                    <div style="font-size:12px; color:var(--color-text-muted); margin-top:2px;">Tu cuenta requiere un código de 6 dígitos en cada inicio de sesión.</div>
+                                </div>
+                                <button type="button" id="btn-open-disable-2fa" class="btn" style="background:#ef4444; color:#fff; border:none; font-weight:600; font-size:13px; padding:9px 16px; border-radius:8px; cursor:pointer;">
+                                    Desactivar 2FA
+                                </button>
+                            </div>
+                        `;
+                        document.getElementById('btn-open-disable-2fa')?.addEventListener('click', () => {
+                            showDisable2faModal();
+                        });
+                    } else {
+                        badge.className = 'badge badge-draft';
+                        badge.style.background = 'rgba(245,158,11,0.12)';
+                        badge.style.color = '#f59e0b';
+                        badge.textContent = 'INACTIVA';
+                        content.innerHTML = `
+                            <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:16px;">
+                                <div>
+                                    <div style="font-weight:600; font-size:14px; color:var(--color-text-primary);">Protección 2FA Desactivada</div>
+                                    <div style="font-size:12px; color:var(--color-text-muted); margin-top:2px;">La autenticación en dos pasos es opcional. Puedes activarla en cualquier momento.</div>
+                                </div>
+                                <button type="button" id="btn-open-enable-2fa" class="btn btn-primary" style="font-weight:600; font-size:13px; padding:9px 16px; border-radius:8px;">
+                                    Activar 2FA Ahora
+                                </button>
+                            </div>
+                        `;
+                        document.getElementById('btn-open-enable-2fa')?.addEventListener('click', () => {
+                            showEnable2faModal();
+                        });
+                    }
+                } catch (err) {
+                    badge.textContent = 'Error';
+                    content.innerHTML = `<div style="color:var(--color-danger); font-size:13px;">Error al cargar el estado de 2FA.</div>`;
+                }
+            };
+
+            const showEnable2faModal = async () => {
+                try {
+                    window.App.showToast('Generando código QR...', 'info');
+                    const res = await window.App.api('auth/2fa/setup', { method: 'POST' });
+                    
+                    const modalOverlay = document.createElement('div');
+                    modalOverlay.id = 'modal-2fa-setup';
+                    modalOverlay.style.cssText = 'position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.6); z-index:9999; display:flex; align-items:center; justify-content:center; backdrop-filter:blur(4px); padding:16px;';
+                    modalOverlay.innerHTML = `
+                        <div style="background:var(--bg-card, #fff); border-radius:16px; width:100%; max-width:440px; padding:28px; box-shadow:0 20px 25px -5px rgba(0,0,0,0.2); animation:fadeIn 0.2s ease;">
+                            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+                                <h3 style="font-size:18px; font-weight:700; margin:0; color:var(--color-text-primary);">Configurar 2FA</h3>
+                                <button type="button" id="close-2fa-modal" style="background:none; border:none; font-size:20px; color:var(--color-text-muted); cursor:pointer;">✕</button>
+                            </div>
+                            <p style="font-size:13px; color:var(--color-text-secondary); margin:0 0 16px; line-height:1.4;">
+                                1. Escanea este código QR con <strong>Google Authenticator</strong> o <strong>Authy</strong>:<br>
+                            </p>
+                            <div style="text-align:center; margin-bottom:16px; background:#fff; padding:16px; border-radius:12px; border:1px solid var(--color-border); display:inline-block; width:100%;">
+                                <canvas id="settings-qr-canvas" style="display:block; margin:0 auto;"></canvas>
+                                <div style="font-size:11px; font-family:monospace; color:#374151; margin-top:8px; background:#F3F4F6; padding:6px; border-radius:6px; word-break:break-all;">
+                                    Clave manual: <strong>${res.temp_secret}</strong>
+                                </div>
+                            </div>
+                            <form id="form-confirm-enable-2fa">
+                                <div style="margin-bottom:16px;">
+                                    <label style="display:block; font-size:12px; font-weight:600; color:var(--color-text-primary); margin-bottom:6px;">2. Ingresa el código de 6 dígitos generado:</label>
+                                    <input type="text" id="code-enable-2fa" placeholder="000000" pattern="[0-9]*" inputmode="numeric" maxlength="6" required style="width:100%; text-align:center; font-size:22px; font-weight:700; letter-spacing:4px; padding:10px; border:1.5px solid var(--color-border); border-radius:8px;">
+                                </div>
+                                <div style="display:flex; gap:12px;">
+                                    <button type="button" id="btn-cancel-enable-2fa" class="btn btn-outline" style="flex:1;">Cancelar</button>
+                                    <button type="submit" class="btn btn-primary" style="flex:1;">Activar 2FA</button>
+                                </div>
+                            </form>
+                        </div>
+                    `;
+                    document.body.appendChild(modalOverlay);
+
+                    const renderQR = () => {
+                        if (typeof QRious !== 'undefined') {
+                            new QRious({
+                                element: document.getElementById('settings-qr-canvas'),
+                                value: res.qr_uri,
+                                size: 160,
+                                background: '#ffffff',
+                                foreground: '#111827',
+                                level: 'H'
+                            });
+                        }
+                    };
+                    if (typeof QRious === 'undefined') {
+                        const script = document.createElement('script');
+                        script.src = "https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js";
+                        script.onload = renderQR;
+                        document.head.appendChild(script);
+                    } else {
+                        renderQR();
+                    }
+
+                    const closeModal = () => modalOverlay.remove();
+                    document.getElementById('close-2fa-modal')?.addEventListener('click', closeModal);
+                    document.getElementById('btn-cancel-enable-2fa')?.addEventListener('click', closeModal);
+
+                    document.getElementById('form-confirm-enable-2fa').addEventListener('submit', async (e) => {
+                        e.preventDefault();
+                        const code = document.getElementById('code-enable-2fa').value.trim();
+                        try {
+                            const enableRes = await window.App.api('auth/2fa/enable', {
+                                method: 'POST',
+                                body: { code, temp_secret: res.temp_secret }
+                            });
+                            closeModal();
+                            window.App.showToast(enableRes.message || '2FA activado con éxito', 'success');
+                            load2faSecurityStatus();
+                        } catch (err) {
+                            window.App.showToast(err.message || 'Código incorrecto', 'error');
+                        }
+                    });
+                } catch (err) {
+                    window.App.showToast(err.message || 'Error iniciando 2FA', 'error');
+                }
+            };
+
+            const showDisable2faModal = () => {
+                const modalOverlay = document.createElement('div');
+                modalOverlay.id = 'modal-2fa-disable';
+                modalOverlay.style.cssText = 'position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.6); z-index:9999; display:flex; align-items:center; justify-content:center; backdrop-filter:blur(4px); padding:16px;';
+                modalOverlay.innerHTML = `
+                    <div style="background:var(--bg-card, #fff); border-radius:16px; width:100%; max-width:400px; padding:28px; box-shadow:0 20px 25px -5px rgba(0,0,0,0.2); animation:fadeIn 0.2s ease;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+                            <h3 style="font-size:18px; font-weight:700; margin:0; color:#ef4444;">Desactivar 2FA</h3>
+                            <button type="button" id="close-disable-modal" style="background:none; border:none; font-size:20px; color:var(--color-text-muted); cursor:pointer;">✕</button>
+                        </div>
+                        <p style="font-size:13px; color:var(--color-text-secondary); margin:0 0 16px; line-height:1.4;">
+                            ¿Estás seguro de que deseas desactivar la autenticación en dos pasos? Tu cuenta volverá a requerir únicamente correo y contraseña para ingresar.
+                        </p>
+                        <form id="form-confirm-disable-2fa">
+                            <div style="margin-bottom:16px;">
+                                <label style="display:block; font-size:12px; font-weight:600; color:var(--color-text-primary); margin-bottom:6px;">Ingresa tu contraseña para confirmar:</label>
+                                <input type="password" id="password-disable-2fa" placeholder="••••••••" required style="width:100%; padding:10px; border:1.5px solid var(--color-border); border-radius:8px; font-size:14px;">
+                            </div>
+                            <div style="display:flex; gap:12px;">
+                                <button type="button" id="btn-cancel-disable-2fa" class="btn btn-outline" style="flex:1;">Cancelar</button>
+                                <button type="submit" class="btn" style="flex:1; background:#ef4444; color:#fff; border:none; font-weight:600;">Confirmar</button>
+                            </div>
+                        </form>
+                    </div>
+                `;
+                document.body.appendChild(modalOverlay);
+
+                const closeModal = () => modalOverlay.remove();
+                document.getElementById('close-disable-modal')?.addEventListener('click', closeModal);
+                document.getElementById('btn-cancel-disable-2fa')?.addEventListener('click', closeModal);
+
+                document.getElementById('form-confirm-disable-2fa').addEventListener('submit', async (e) => {
+                    e.preventDefault();
+                    const password = document.getElementById('password-disable-2fa').value;
+                    try {
+                        const disableRes = await window.App.api('auth/2fa/disable', {
+                            method: 'POST',
+                            body: { password }
+                        });
+                        closeModal();
+                        window.App.showToast(disableRes.message || '2FA desactivado', 'success');
+                        load2faSecurityStatus();
+                    } catch (err) {
+                        window.App.showToast(err.message || 'Contraseña incorrecta', 'error');
+                    }
+                });
+            };
 
             // RNC Lookup
             document.getElementById('s_company_tax_id')?.addEventListener('input', async (e) => {

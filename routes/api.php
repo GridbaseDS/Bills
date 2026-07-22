@@ -55,8 +55,18 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/auth/setup-pin', [AuthController::class, 'setupPin']);
     Route::get('/auth/devices', [AuthController::class, 'getDevices']);
     Route::delete('/auth/devices/{id}', [AuthController::class, 'deleteDevice']);
+    Route::get('/auth/2fa/status', [AuthController::class, 'get2faStatus']);
+    Route::post('/auth/2fa/setup', [AuthController::class, 'init2faSetup']);
+    Route::post('/auth/2fa/enable', [AuthController::class, 'enable2fa']);
+    Route::post('/auth/2fa/disable', [AuthController::class, 'disable2fa']);
     Route::get('/auth/session', function (Request $request) {
-        return ['authenticated' => true, 'user' => $request->user()];
+        $user = $request->user();
+        if ($user) {
+            $userArray = $user->toArray();
+            $userArray['two_factor_enabled'] = !empty($user->two_factor_secret);
+            return ['authenticated' => true, 'user' => $userArray];
+        }
+        return response()->json(['authenticated' => false], 401);
     });
 
     // Dashboard

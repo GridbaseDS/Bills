@@ -18,7 +18,21 @@ class SettingController extends Controller
 
     public function updateMultiple(Request $request)
     {
+        $user = $request->user();
+        $isGerente = $user && $user->role === 'gerente';
+        $restrictedKeys = [
+            'company_logo', 'login_logo', 'company_favicon', 'sidebar_logo_height', 'login_logo_height', 'pdf_primary_color', 'pdf_footer_text',
+            'smtp_host', 'smtp_port', 'smtp_username', 'smtp_password', 'smtp_encryption', 'smtp_from_email', 'smtp_from_name',
+            'dgii_rnc', 'dgii_environment', 'dgii_certificate_path', 'dgii_certificate_password',
+            'dgii_next_e_ncf_31', 'dgii_next_e_ncf_32', 'dgii_next_e_ncf_33', 'dgii_next_e_ncf_34',
+            'dgii_next_e_ncf_41', 'dgii_next_e_ncf_43', 'dgii_next_e_ncf_44', 'dgii_next_e_ncf_45',
+            'dgii_next_e_ncf_46', 'dgii_next_e_ncf_47', 'is_installed'
+        ];
+
         foreach ($request->all() as $key => $value) {
+            if ($isGerente && in_array($key, $restrictedKeys)) {
+                continue;
+            }
             Setting::updateOrCreate(
                 ['setting_key' => $key],
                 ['setting_value' => $value ?? '']
@@ -129,6 +143,10 @@ class SettingController extends Controller
 
     public function resetDatabase(Request $request)
     {
+        if ($request->user() && $request->user()->role !== 'admin') {
+            return response()->json(['success' => false, 'error' => 'No tienes permisos de Administrador para reiniciar el sistema.'], 403);
+        }
+
         $request->validate([
             'confirm_email' => 'required|email',
         ]);

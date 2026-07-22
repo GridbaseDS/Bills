@@ -1,6 +1,7 @@
 const UsersModule = {
     roles: {
         'admin': 'Administrador / Soporte',
+        'gerente': 'Gerente Operativo',
         'contador': 'Contador',
         'vendedor': 'Vendedor'
     },
@@ -160,6 +161,7 @@ const UsersModule = {
                             <select id="u_role" class="form-select" required>
                                 <option value="vendedor" ${user.role === 'vendedor' ? 'selected' : ''}>Vendedor (Acceso Facturas/Cotizaciones)</option>
                                 <option value="contador" ${user.role === 'contador' ? 'selected' : ''}>Contador (Acceso Reportes/Gastos/Facturas)</option>
+                                <option value="gerente" ${user.role === 'gerente' ? 'selected' : ''}>Gerente Operativo (Acceso Operativo Sin Configuración Crítica)</option>
                                 <option value="admin" ${user.role === 'admin' ? 'selected' : ''}>Administrador / Soporte (Acceso Total)</option>
                             </select>
                         </div>

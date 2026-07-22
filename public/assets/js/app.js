@@ -995,19 +995,19 @@ window.App = {
 
         const banner = document.createElement('div');
         banner.id = '2fa-reminder-banner';
-        banner.style.cssText = 'background:var(--color-primary-light, rgba(11,72,76,0.08)); border:1px solid rgba(11,72,76,0.2); border-radius:var(--radius-lg, 12px); padding:14px 20px; margin-bottom:20px; display:flex; align-items:center; justify-content:space-between; gap:16px; animation:fadeIn 0.25s ease; box-shadow:var(--shadow-sm);';
+        banner.className = 'security-reminder-card';
         banner.innerHTML = `
             <div style="display:flex; align-items:center; gap:14px;">
-                <div style="width:38px; height:38px; border-radius:10px; background:var(--color-primary, #0B484C); color:#fff; display:flex; align-items:center; justify-content:center; flex-shrink:0; box-shadow:0 2px 4px rgba(0,0,0,0.1);">
+                <div class="security-reminder-icon">
                     <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
                 </div>
                 <div>
-                    <div style="font-weight:700; font-size:13.5px; color:var(--color-text-primary); font-family:var(--font-sans, inherit);">Recomendación de Seguridad</div>
-                    <div style="font-size:12px; color:var(--color-text-secondary); margin-top:2px; font-family:var(--font-sans, inherit);">Protege tu cuenta activando la Autenticación en Dos Pasos (2FA).</div>
+                    <div class="security-reminder-title">Recomendación de Seguridad</div>
+                    <div class="security-reminder-sub">Protege tu cuenta activando la Autenticación en Dos Pasos (2FA).</div>
                 </div>
             </div>
             <div style="display:flex; align-items:center; gap:12px; flex-shrink:0;">
-                <button id="btn-banner-enable-2fa" class="btn btn-primary" style="padding:8px 16px; font-size:12px; font-weight:600; white-space:nowrap; border-radius:var(--radius-md, 8px);">Activar 2FA Ahora</button>
+                <button id="btn-banner-enable-2fa" class="security-reminder-btn">Activar 2FA Ahora</button>
                 <button id="btn-banner-dismiss-2fa" style="background:none; border:none; color:var(--color-text-muted); cursor:pointer; padding:6px; font-size:16px; display:flex; align-items:center; justify-content:center; transition:opacity .15s;" title="Recordar más tarde">✕</button>
             </div>
         `;

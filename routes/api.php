@@ -105,8 +105,8 @@ Route::middleware('auth:sanctum')->group(function () {
     // Items
     Route::apiResource('items', ItemController::class);
 
-    // Expenses (Gastos - Admin and Contador only)
-    Route::apiResource('expenses', ExpenseController::class)->middleware('role:admin,contador');
+    // Expenses (Gastos - Admin, Gerente and Contador)
+    Route::apiResource('expenses', ExpenseController::class)->middleware('role:admin,gerente,contador');
 
     // Payment Links
     Route::prefix('invoices/{id}/payment-link')->group(function () {
@@ -124,7 +124,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Settings
     Route::get('/settings', [SettingController::class, 'index']); // Read allowed for all (e.g. for general UI details)
-    Route::post('/settings', [SettingController::class, 'updateMultiple'])->middleware('role:admin');
+    Route::post('/settings', [SettingController::class, 'updateMultiple'])->middleware('role:admin,gerente');
     Route::post('/settings/test-smtp', [SettingController::class, 'testSmtp'])->middleware('role:admin');
     Route::get('/settings/diagnose-smtp', [SettingController::class, 'diagnoseSmtp'])->middleware('role:admin');
     Route::post('/settings/reset-database', [SettingController::class, 'resetDatabase'])->middleware('role:admin');
@@ -138,11 +138,12 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/pos/charge', [POSController::class, 'charge']);
     Route::post('/pos/cancel', [POSController::class, 'cancel']);
 
-    // DGII Tests & User Management
-    Route::middleware('role:admin')->group(function () {
+    // User Management (Admin & Gerente)
+    Route::middleware('role:admin,gerente')->group(function () {
         Route::apiResource('users', UserController::class);
     });
 
+    // DGII Tests & Audit Logs
     Route::middleware('role:admin,contador')->group(function () {
         Route::post('/dgii/run-tests', [DgiiTestUIController::class, 'runTests']);
         Route::post('/dgii/diagnose', [DgiiTestUIController::class, 'diagnose']);
@@ -170,16 +171,16 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/api-keys/{id}/logs', [ApiKeyController::class, 'logs']);
     });
 
-    // DGII Reports (Admin and Contador only)
-    Route::middleware('role:admin,contador')->group(function () {
+    // DGII Reports (Admin, Gerente and Contador)
+    Route::middleware('role:admin,gerente,contador')->group(function () {
         Route::get('/dgii/reports/607', [DgiiReportController::class, 'report607']);
         Route::get('/dgii/reports/606', [DgiiReportController::class, 'report606']);
         Route::post('/dgii/reports/607/export', [DgiiReportController::class, 'export607']);
         Route::post('/dgii/reports/606/export', [DgiiReportController::class, 'export606']);
     });
 
-    // Received Invoices (Aprobaciones Comerciales - Admin and Contador only)
-    Route::middleware('role:admin,contador')->group(function () {
+    // Received Invoices (Aprobaciones Comerciales - Admin, Gerente and Contador)
+    Route::middleware('role:admin,gerente,contador')->group(function () {
         Route::get('/received-invoices', [ReceivedInvoiceController::class, 'index']);
         Route::get('/received-invoices/summary', [ReceivedInvoiceController::class, 'summary']);
         Route::get('/received-invoices/{id}', [ReceivedInvoiceController::class, 'show']);

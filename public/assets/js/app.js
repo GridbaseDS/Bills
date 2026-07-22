@@ -8,7 +8,7 @@ import InvoicesModule from './modules/invoices.js?v=203';
 import QuotesModule from './modules/quotes.js?v=201';
 import ClientsModule from './modules/clients.js?v=201';
 import ItemsModule from './modules/items.js?v=201';
-import SettingsModule from './modules/settings.js?v=203';
+import SettingsModule from './modules/settings.js?v=204';
 import RecurringModule from './modules/recurring.js?v=201';
 import DgiiTestsModule from './modules/dgii-tests.js?v=201';
 import DgiiLogsModule from './modules/dgii-logs.js?v=201';
@@ -16,7 +16,7 @@ import ReceivedInvoicesModule from './modules/received-invoices.js?v=201';
 import ReportsModule from './modules/reports.js?v=201';
 import SetupModule from './modules/setup.js?v=201';
 import ExpensesModule from './modules/expenses.js?v=201';
-import UsersModule from './modules/users.js?v=201';
+import UsersModule from './modules/users.js?v=204';
 
 
 

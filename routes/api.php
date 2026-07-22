@@ -138,6 +138,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/pos/charge', [POSController::class, 'charge']);
     Route::post('/pos/cancel', [POSController::class, 'cancel']);
 
+    // DGII Status (Top Navbar Pill - Available for all authenticated users)
+    Route::get('/dgii/status', [DgiiTestUIController::class, 'connectionStatus']);
+
     // User Management (Admin & Gerente)
     Route::middleware('role:admin,gerente')->group(function () {
         Route::apiResource('users', UserController::class);
@@ -148,7 +151,6 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/dgii/run-tests', [DgiiTestUIController::class, 'runTests']);
         Route::post('/dgii/diagnose', [DgiiTestUIController::class, 'diagnose']);
         Route::post('/dgii/run-aprobaciones', [DgiiTestUIController::class, 'runAprobaciones']);
-        Route::get('/dgii/status', [DgiiTestUIController::class, 'connectionStatus']);
         Route::post('/dgii/simulation/generate', [DgiiTestUIController::class, 'generateSimulation']);
 
         // DGII Certification Test Runner

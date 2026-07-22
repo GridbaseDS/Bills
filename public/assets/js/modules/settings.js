@@ -1005,8 +1005,11 @@ export default {
 
             // Sidebar color picker sync + live preview
             const updateSidebarPreview = () => {
-                const bg = document.getElementById('s_sidebar_bg_color').value;
-                const text = document.getElementById('s_sidebar_text_color').value;
+                const bgEl = document.getElementById('s_sidebar_bg_color');
+                const textEl = document.getElementById('s_sidebar_text_color');
+                if (!bgEl || !textEl) return;
+                const bg = bgEl.value;
+                const text = textEl.value;
                 const preview = document.getElementById('sidebar-preview');
                 if (preview) {
                     preview.style.backgroundColor = bg;
@@ -1051,8 +1054,11 @@ export default {
 
             // Sidebar (Dark) color picker sync + live preview
             const updateSidebarDarkPreview = () => {
-                const bg = document.getElementById('s_sidebar_dark_bg_color').value;
-                const text = document.getElementById('s_sidebar_dark_text_color').value;
+                const bgEl = document.getElementById('s_sidebar_dark_bg_color');
+                const textEl = document.getElementById('s_sidebar_dark_text_color');
+                if (!bgEl || !textEl) return;
+                const bg = bgEl.value;
+                const text = textEl.value;
                 const preview = document.getElementById('sidebar-dark-preview');
                 if (preview) {
                     preview.style.backgroundColor = bg;
@@ -1568,15 +1574,17 @@ export default {
 
             // ── PDF Appearance: Color sync + Live Preview ──
             const updatePdfPreview = () => {
-                const primary = document.getElementById('s_pdf_primary_color').value;
-                const accent = document.getElementById('s_pdf_accent_color').value;
-                const headerBg = document.getElementById('s_pdf_header_bg_color').value;
-                const headerText = document.getElementById('s_pdf_header_text_color').value;
-                const tableHeaderBg = document.getElementById('s_pdf_table_header_bg_color').value;
-                const tableHeaderTxt = document.getElementById('s_pdf_table_header_text_color').value;
-                const footerBg = document.getElementById('s_pdf_footer_bg_color').value;
-                const footerText = document.getElementById('s_pdf_footer_text_color').value;
-                const footerVisible = document.getElementById('s_pdf_show_footer').value === '1';
+                const primaryEl = document.getElementById('s_pdf_primary_color');
+                if (!primaryEl) return;
+                const primary = primaryEl.value;
+                const accent = document.getElementById('s_pdf_accent_color')?.value || '#0B484C';
+                const headerBg = document.getElementById('s_pdf_header_bg_color')?.value || '#0B484C';
+                const headerText = document.getElementById('s_pdf_header_text_color')?.value || '#FFFFFF';
+                const tableHeaderBg = document.getElementById('s_pdf_table_header_bg_color')?.value || '#0B484C';
+                const tableHeaderTxt = document.getElementById('s_pdf_table_header_text_color')?.value || '#FFFFFF';
+                const footerBg = document.getElementById('s_pdf_footer_bg_color')?.value || '#0B484C';
+                const footerText = document.getElementById('s_pdf_footer_text_color')?.value || '#FFFFFF';
+                const footerVisible = document.getElementById('s_pdf_show_footer')?.value === '1';
 
                 // Header & footer backgrounds
                 const header = document.getElementById('pdf-preview-header');

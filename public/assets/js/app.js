@@ -1451,72 +1451,300 @@ window.App = {
     },
 
     bindSearch() {
+        // Global Keyboard Listener: Cmd + K or Ctrl + K
+        document.addEventListener('keydown', (e) => {
+            if ((e.metaKey || e.ctrlKey) && (e.key === 'k' || e.key === 'K')) {
+                e.preventDefault();
+                this.openCommandPalette();
+            } else if (e.key === 'Escape') {
+                this.closeCommandPalette();
+            }
+        });
+
+        // Search input or topbar search wrapper click opens Command Palette
         const searchInput = document.getElementById('global-search-input');
-        if (!searchInput) return;
+        const searchWrap = document.getElementById('search-wrapper');
 
-        searchInput.addEventListener('input', async (e) => {
-            const q = e.target.value.trim().toLowerCase();
-            document.getElementById('global-search-results')?.remove();
-            if (q.length < 2) return;
+        if (searchInput) {
+            searchInput.addEventListener('focus', (e) => {
+                e.preventDefault();
+                searchInput.blur();
+                this.openCommandPalette();
+            });
+        }
 
-            const searchContainer = document.getElementById('search-wrapper');
-            const dropdown = document.createElement('div');
-            dropdown.id = 'global-search-results';
-            dropdown.style.cssText = 'position:absolute;top:100%;left:0;right:0;background:var(--bg-card);border:1px solid var(--color-border);border-radius:var(--radius-lg);margin-top:8px;z-index:9999;max-height:400px;overflow-y:auto;padding:8px 0;box-shadow:var(--shadow-lg);';
-            dropdown.innerHTML = '<div style="padding:12px 16px;color:var(--color-text-muted);font-size:13px;text-align:center;">Buscando...</div>';
-            searchContainer.appendChild(dropdown);
+        if (searchWrap) {
+            searchWrap.addEventListener('click', (e) => {
+                e.preventDefault();
+                this.openCommandPalette();
+            });
+        }
+    },
+
+    openCommandPalette() {
+        if (document.getElementById('command-palette-overlay')) return;
+
+        const backdrop = document.createElement('div');
+        backdrop.id = 'command-palette-overlay';
+        backdrop.className = 'cmd-palette-backdrop';
+        backdrop.innerHTML = `
+            <div class="cmd-palette-modal" onclick="event.stopPropagation()">
+                <div class="cmd-palette-header">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                    <input type="text" id="cmd-palette-input" placeholder="Escribe un comando o busca facturas, clientes, productos..." autocomplete="off">
+                    <span class="cmd-palette-esc" onclick="window.App.closeCommandPalette()">ESC</span>
+                </div>
+                <div class="cmd-palette-body" id="cmd-palette-results">
+                </div>
+                <div class="cmd-palette-footer">
+                    <span><kbd>↑</kbd> <kbd>↓</kbd> Navegar</span>
+                    <span><kbd>↵</kbd> Seleccionar</span>
+                    <span><kbd>ESC</kbd> Cerrar</span>
+                </div>
+            </div>
+        `;
+
+        backdrop.addEventListener('click', () => this.closeCommandPalette());
+        document.body.appendChild(backdrop);
+
+        const input = document.getElementById('cmd-palette-input');
+        const resultsEl = document.getElementById('cmd-palette-results');
+        setTimeout(() => input?.focus(), 50);
+
+        this.renderCommandDefaultActions(resultsEl);
+
+        let selectedIndex = -1;
+
+        input?.addEventListener('input', async (e) => {
+            const query = e.target.value.trim().toLowerCase();
+            selectedIndex = -1;
+
+            if (!query) {
+                this.renderCommandDefaultActions(resultsEl);
+                return;
+            }
+
+            resultsEl.innerHTML = '<div style="padding:24px;text-align:center;color:var(--color-text-muted);font-size:13px;"><span class="spinner" style="width:16px;height:16px;margin:0 auto 8px;display:block;"></span> Buscando en el sistema...</div>';
 
             try {
-                const [invRes, cliRes] = await Promise.all([
-                    this.api('invoices').catch(()=>({data:[]})),
-                    this.api('clients').catch(()=>({data:[]}))
+                const [invRes, cliRes, itemRes, expRes] = await Promise.all([
+                    this.api('invoices').catch(() => ({ data: [] })),
+                    this.api('clients').catch(() => ({ data: [] })),
+                    this.api('items').catch(() => ({ data: [] })),
+                    this.api('expenses').catch(() => ({ data: [] }))
                 ]);
 
                 const invoices = (invRes.data || []).filter(i =>
-                    (i.invoice_number||'').toLowerCase().includes(q) ||
-                    (i.company_name||'').toLowerCase().includes(q) ||
-                    (i.contact_name||'').toLowerCase().includes(q)
+                    (i.invoice_number || '').toLowerCase().includes(query) ||
+                    (i.company_name || '').toLowerCase().includes(query) ||
+                    (i.contact_name || '').toLowerCase().includes(query)
                 );
+
                 const clients = (cliRes.data || []).filter(c =>
-                    (c.company_name||'').toLowerCase().includes(q) ||
-                    (c.contact_name||'').toLowerCase().includes(q) ||
-                    (c.email||'').toLowerCase().includes(q)
+                    (c.company_name || '').toLowerCase().includes(query) ||
+                    (c.contact_name || '').toLowerCase().includes(query) ||
+                    (c.email || '').toLowerCase().includes(query) ||
+                    (c.tax_id || '').toLowerCase().includes(query)
+                );
+
+                const items = (itemRes.data || []).filter(it =>
+                    (it.name || '').toLowerCase().includes(query) ||
+                    (it.code || '').toLowerCase().includes(query) ||
+                    (it.description || '').toLowerCase().includes(query)
+                );
+
+                const expenses = (expRes.data || []).filter(ex =>
+                    (ex.provider_name || '').toLowerCase().includes(query) ||
+                    (ex.ncf || '').toLowerCase().includes(query) ||
+                    (ex.rnc_cedula || '').toLowerCase().includes(query)
                 );
 
                 let html = '';
+
                 if (invoices.length > 0) {
-                    html += '<div style="padding:4px 16px;font-size:11px;text-transform:uppercase;color:var(--color-text-muted);font-weight:600;letter-spacing:1px;">Facturas</div>';
-                    invoices.slice(0, 5).forEach(i => {
-                        html += `<a href="#facturas/${i.id}" style="display:block;padding:10px 16px;text-decoration:none;color:inherit;border-bottom:1px solid var(--color-border);font-size:13px;transition:background .15s ease;" onmouseover="this.style.background='var(--bg-hover)'" onmouseout="this.style.background=''" onclick="document.getElementById('global-search-results').remove();document.getElementById('global-search-input').value=''">
-                            <div style="display:flex;justify-content:space-between;">
-                                <strong>${i.invoice_number}</strong>
-                                <span style="color:var(--color-primary);font-weight:700;">${this.formatCurrency(i.total, i.currency)}</span>
-                            </div>
-                            <div style="color:var(--color-text-secondary);font-size:12px;margin-top:2px;">${i.company_name || i.contact_name}</div>
-                        </a>`;
+                    html += '<div class="cmd-group-title">Facturas Emitidas</div>';
+                    invoices.slice(0, 4).forEach(i => {
+                        html += `
+                            <button type="button" class="cmd-item" data-action="route" data-value="facturas/${i.id}">
+                                <div class="cmd-item-left">
+                                    <div class="cmd-item-icon">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                                    </div>
+                                    <div>
+                                        <div class="cmd-item-title">${i.invoice_number} — ${i.company_name || i.contact_name || 'Cliente'}</div>
+                                        <div class="cmd-item-sub">Total: ${this.formatCurrency(i.total, i.currency)} | ${i.status || 'Emitida'}</div>
+                                    </div>
+                                </div>
+                                <span class="cmd-item-badge">Factura</span>
+                            </button>
+                        `;
                     });
                 }
+
                 if (clients.length > 0) {
-                    html += '<div style="padding:4px 16px;font-size:11px;text-transform:uppercase;color:var(--color-text-muted);font-weight:600;letter-spacing:1px;margin-top:8px;">Clientes</div>';
-                    clients.slice(0, 5).forEach(c => {
-                        html += `<a href="#clientes/profile/${c.id}" style="display:block;padding:10px 16px;text-decoration:none;color:inherit;border-bottom:1px solid var(--color-border);font-size:13px;transition:background .15s ease;" onmouseover="this.style.background='var(--bg-hover)'" onmouseout="this.style.background=''" onclick="document.getElementById('global-search-results').remove();document.getElementById('global-search-input').value=''">
-                            <div><strong>${c.company_name || c.contact_name}</strong></div>
-                            <div style="color:var(--color-text-secondary);font-size:12px;margin-top:2px;">${c.email}</div>
-                        </a>`;
+                    html += '<div class="cmd-group-title">Clientes</div>';
+                    clients.slice(0, 4).forEach(c => {
+                        html += `
+                            <button type="button" class="cmd-item" data-action="route" data-value="clientes/profile/${c.id}">
+                                <div class="cmd-item-left">
+                                    <div class="cmd-item-icon">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+                                    </div>
+                                    <div>
+                                        <div class="cmd-item-title">${c.company_name || c.contact_name}</div>
+                                        <div class="cmd-item-sub">${c.email || c.phone || 'Sin correo'} ${c.tax_id ? '• RNC: ' + c.tax_id : ''}</div>
+                                    </div>
+                                </div>
+                                <span class="cmd-item-badge">Cliente</span>
+                            </button>
+                        `;
                     });
                 }
-                if (!html) html = '<div style="padding:12px 16px;color:var(--color-text-muted);font-size:13px;text-align:center;">No se encontraron resultados</div>';
-                dropdown.innerHTML = html;
-            } catch(e) {
-                dropdown.innerHTML = '<div style="padding:12px 16px;color:var(--red);font-size:14px;text-align:center;">Error al buscar</div>';
+
+                if (items.length > 0) {
+                    html += '<div class="cmd-group-title">Artículos / Productos</div>';
+                    items.slice(0, 4).forEach(it => {
+                        html += `
+                            <button type="button" class="cmd-item" data-action="route" data-value="articulos">
+                                <div class="cmd-item-left">
+                                    <div class="cmd-item-icon">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+                                    </div>
+                                    <div>
+                                        <div class="cmd-item-title">${it.name} ${it.code ? '(' + it.code + ')' : ''}</div>
+                                        <div class="cmd-item-sub">Precio: RD$ ${Number(it.price || 0).toLocaleString('es-DO', {minimumFractionDigits:2})}</div>
+                                    </div>
+                                </div>
+                                <span class="cmd-item-badge">Producto</span>
+                            </button>
+                        `;
+                    });
+                }
+
+                if (expenses.length > 0) {
+                    html += '<div class="cmd-group-title">Gastos Registrados</div>';
+                    expenses.slice(0, 4).forEach(ex => {
+                        html += `
+                            <button type="button" class="cmd-item" data-action="route" data-value="gastos">
+                                <div class="cmd-item-left">
+                                    <div class="cmd-item-icon">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                                    </div>
+                                    <div>
+                                        <div class="cmd-item-title">${ex.provider_name || 'Proveedor'} ${ex.ncf ? '• NCF: ' + ex.ncf : ''}</div>
+                                        <div class="cmd-item-sub">Monto: RD$ ${Number(ex.amount || 0).toLocaleString('es-DO', {minimumFractionDigits:2})}</div>
+                                    </div>
+                                </div>
+                                <span class="cmd-item-badge">Gasto</span>
+                            </button>
+                        `;
+                    });
+                }
+
+                if (!html) {
+                    html = '<div style="padding:24px;text-align:center;color:var(--color-text-muted);font-size:13px;">No se encontraron resultados para "' + query + '"</div>';
+                }
+
+                resultsEl.innerHTML = html;
+                this.bindCommandItemEvents(resultsEl);
+
+            } catch (err) {
+                resultsEl.innerHTML = '<div style="padding:24px;text-align:center;color:var(--color-danger);font-size:13px;">Error al buscar en el sistema</div>';
             }
         });
 
-        document.addEventListener('click', (e) => {
-            if (!e.target.closest('#search-wrapper')) {
-                document.getElementById('global-search-results')?.remove();
+        input?.addEventListener('keydown', (e) => {
+            const items = Array.from(resultsEl.querySelectorAll('.cmd-item'));
+            if (!items.length) return;
+
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                selectedIndex = (selectedIndex + 1) % items.length;
+                items.forEach((item, idx) => {
+                    if (idx === selectedIndex) {
+                        item.classList.add('selected');
+                        item.scrollIntoView({ block: 'nearest' });
+                    } else {
+                        item.classList.remove('selected');
+                    }
+                });
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                selectedIndex = (selectedIndex - 1 + items.length) % items.length;
+                items.forEach((item, idx) => {
+                    if (idx === selectedIndex) {
+                        item.classList.add('selected');
+                        item.scrollIntoView({ block: 'nearest' });
+                    } else {
+                        item.classList.remove('selected');
+                    }
+                });
+            } else if (e.key === 'Enter') {
+                e.preventDefault();
+                if (selectedIndex >= 0 && items[selectedIndex]) {
+                    items[selectedIndex].click();
+                } else if (items.length > 0) {
+                    items[0].click();
+                }
             }
         });
+    },
+
+    renderCommandDefaultActions(container) {
+        if (!container) return;
+
+        const actions = [
+            { title: 'Nueva Factura', sub: 'Crear e imprimir comprobante fiscal', icon: '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/>', action: 'route', value: 'invoices/new', badge: 'Acción' },
+            { title: 'Nueva Cotización', sub: 'Generar cotización para cliente', icon: '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/>', action: 'route', value: 'cotizaciones/new', badge: 'Acción' },
+            { title: 'Nuevo Cliente', sub: 'Registrar un nuevo cliente o empresa', icon: '<path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/>', action: 'route', value: 'clientes/new', badge: 'Acción' },
+            { title: 'Registrar Gasto', sub: 'Añadir un egreso o factura de proveedor', icon: '<line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>', action: 'route', value: 'gastos', badge: 'Acción' },
+            { title: 'Auditoría & Logs DGII', sub: 'Ver respuestas e-CF y trackId DGII', icon: '<polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>', action: 'route', value: 'auditoria-dgii', badge: 'DGII' },
+            { title: 'Configuración del Sistema', sub: 'Branding, empresa, 2FA y sensores biométricos', icon: '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>', action: 'route', value: 'configuracion', badge: 'Ajustes' },
+            { title: 'Cambiar Modo Claro / Oscuro', sub: 'Alternar tema de la interfaz', icon: '<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>', action: 'theme', value: '', badge: 'Tema' }
+        ];
+
+        let html = '<div class="cmd-group-title">Acciones Rápidas & Accesos Directos</div>';
+        actions.forEach(a => {
+            html += `
+                <button type="button" class="cmd-item" data-action="${a.action}" data-value="${a.value}">
+                    <div class="cmd-item-left">
+                        <div class="cmd-item-icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${a.icon}</svg>
+                        </div>
+                        <div>
+                            <div class="cmd-item-title">${a.title}</div>
+                            <div class="cmd-item-sub">${a.sub}</div>
+                        </div>
+                    </div>
+                    <span class="cmd-item-badge">${a.badge}</span>
+                </button>
+            `;
+        });
+
+        container.innerHTML = html;
+        this.bindCommandItemEvents(container);
+    },
+
+    bindCommandItemEvents(container) {
+        container.querySelectorAll('.cmd-item').forEach(item => {
+            item.addEventListener('click', () => {
+                const action = item.dataset.action;
+                const val = item.dataset.value;
+                this.closeCommandPalette();
+                if (action === 'route' && val) {
+                    this.navigate(val);
+                } else if (action === 'theme') {
+                    this.toggleTheme();
+                }
+            });
+        });
+    },
+
+    closeCommandPalette() {
+        const overlay = document.getElementById('command-palette-overlay');
+        if (overlay) {
+            overlay.remove();
+        }
     },
 
     toggleTheme() {

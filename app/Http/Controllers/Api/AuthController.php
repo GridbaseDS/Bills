@@ -505,7 +505,7 @@ class AuthController extends Controller
     {
         $request->validate([
             'email' => 'required|email',
-            'device_token' => 'required|string',
+            'device_token' => 'nullable|string',
         ]);
 
         $user = User::where('email', $request->email)->first();
@@ -514,13 +514,15 @@ class AuthController extends Controller
             return response()->json(['error' => 'Usuario no encontrado'], 404);
         }
 
-        // Find credentials for user on this device
-        $credentials = UserBiometric::where('user_id', $user->id)
-            ->where('device_token', $request->device_token)
-            ->get();
+        // Find credentials for user
+        $query = UserBiometric::where('user_id', $user->id);
+        if ($request->device_token) {
+            $query->where('device_token', $request->device_token);
+        }
+        $credentials = $query->get();
 
         if ($credentials->isEmpty()) {
-            return response()->json(['error' => 'No hay sensores biométricos registrados en este dispositivo.'], 404);
+            return response()->json(['error' => 'No hay sensores biométricos registrados para este correo.'], 404);
         }
 
         $challenge = $webAuthn->generateChallenge();
@@ -551,7 +553,7 @@ class AuthController extends Controller
             'authenticatorData' => 'required|string',
             'clientDataJSON' => 'required|string',
             'signature' => 'required|string',
-            'device_token' => 'required|string',
+            'device_token' => 'nullable|string',
         ]);
 
         $expectedChallenge = session('webauthn_login_challenge');
@@ -561,12 +563,10 @@ class AuthController extends Controller
             return response()->json(['error' => 'Sesión de autenticación biométrica expirada.'], 400);
         }
 
-        $biometric = UserBiometric::where('credential_id', $request->credential_id)
-            ->where('device_token', $request->device_token)
-            ->first();
+        $biometric = UserBiometric::where('credential_id', $request->credential_id)->first();
 
         if (!$biometric) {
-            return response()->json(['error' => 'Biometría no registrada o dispositivo no autorizado.'], 401);
+            return response()->json(['error' => 'Biometría no registrada o no válida.'], 401);
         }
 
         $user = $biometric->user;
@@ -591,20 +591,29 @@ class AuthController extends Controller
 
             session()->forget(['webauthn_login_challenge', 'webauthn_login_email']);
 
-            // Update user and device
+            // Create or update device_token for this session
+            $deviceToken = $request->device_token ?: bin2hex(random_bytes(32));
+            $device = \App\Models\UserDevice::firstOrCreate(
+                ['device_token' => $deviceToken],
+                [
+                    'user_id' => $user->id,
+                    'device_name' => 'Dispositivo (Biométrico)',
+                    'last_used_at' => now(),
+                ]
+            );
+
             $user->last_login = now();
             $user->save();
 
-            if ($device = $biometric->device) {
-                $device->last_used_at = now();
-                $device->save();
-            }
+            $device->last_used_at = now();
+            $device->save();
 
             Auth::login($user);
             $request->session()->regenerate();
 
             return response()->json([
                 'success' => true,
+                'device_token' => $deviceToken,
                 'user' => [
                     'id' => $user->id,
                     'name' => $user->name,

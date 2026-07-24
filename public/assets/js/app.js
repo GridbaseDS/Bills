@@ -503,6 +503,19 @@ window.App = {
                         <h1 class="login-title">Bienvenido</h1>
                         <p class="login-subtitle">Inicia sesi\u00f3n para acceder a tu cuenta</p>
                         <div id="login-error" class="login-error"></div>
+
+                        <div id="main-biometric-login-wrap" style="display:none; margin-bottom:20px;">
+                            <button type="button" id="btn-main-webauthn-login" class="login-submit" style="background:var(--color-bg-secondary); border:1px solid var(--color-border); color:var(--color-text-primary); font-weight:600; display:inline-flex; align-items:center; justify-content:center; gap:10px; width:100%; transition:all 0.2s ease;">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--color-primary);"><path d="M12 11c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8 0-1.84.63-3.53 1.69-4.88l1.43 1.43c-.7.96-1.12 2.14-1.12 3.45 0 3.31 2.69 6 6 6s6-2.69 6-6c0-1.31-.42-2.49-1.12-3.45l1.43-1.43C19.37 8.47 20 10.16 20 12c0 4.41-3.59 8-8 8z"/></svg>
+                                Ingresar con Face ID / Touch ID
+                            </button>
+                            <div style="display:flex; align-items:center; margin:16px 0 0; color:var(--color-text-muted); font-size:12px;">
+                                <div style="flex:1; height:1px; background:var(--color-border);"></div>
+                                <span style="padding:0 12px;">o ingresa con tu contraseña</span>
+                                <div style="flex:1; height:1px; background:var(--color-border);"></div>
+                            </div>
+                        </div>
+
                         <form id="login-form">
                             <div class="login-field">
                                 <label>Correo Electr\u00f3nico</label>
@@ -553,6 +566,53 @@ window.App = {
                 </div>
             </div>
         `;
+        WebAuthnHelper.isSupported().then(supported => {
+            if (supported) {
+                const wrap = document.getElementById('main-biometric-login-wrap');
+                if (wrap) wrap.style.display = 'block';
+
+                const btnWebAuthn = document.getElementById('btn-main-webauthn-login');
+                btnWebAuthn?.addEventListener('click', async () => {
+                    const errorEl = document.getElementById('login-error');
+                    if (errorEl) errorEl.style.display = 'none';
+
+                    let email = document.getElementById('login-email')?.value?.trim();
+                    if (!email) {
+                        email = prompt('Ingresa tu correo para verificar tu Face ID / Touch ID:');
+                    }
+
+                    if (!email) return;
+
+                    btnWebAuthn.disabled = true;
+                    btnWebAuthn.innerHTML = '<span class="spinner"></span> Verificando biometría...';
+
+                    try {
+                        const res = await WebAuthnHelper.login(email);
+                        if (res.success) {
+                            if (res.device_token) {
+                                localStorage.setItem('device_token', res.device_token);
+                            }
+                            this.state.user = res.user;
+                            const settings = await this.api('settings');
+                            this.state.settings = settings;
+                            this.renderAppShell();
+                            this.navigate('inicio');
+                        }
+                    } catch (err) {
+                        btnWebAuthn.disabled = false;
+                        btnWebAuthn.innerHTML = `
+                            <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--color-primary);"><path d="M12 11c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8 0-1.84.63-3.53 1.69-4.88l1.43 1.43c-.7.96-1.12 2.14-1.12 3.45 0 3.31 2.69 6 6 6s6-2.69 6-6c0-1.31-.42-2.49-1.12-3.45l1.43-1.43C19.37 8.47 20 10.16 20 12c0 4.41-3.59 8-8 8z"/></svg>
+                            Ingresar con Face ID / Touch ID
+                        `;
+                        if (errorEl) {
+                            errorEl.textContent = err.message || 'Error en la verificación biométrica';
+                            errorEl.style.display = 'block';
+                        }
+                    }
+                });
+            }
+        });
+
         document.getElementById('login-form').addEventListener('submit', (e) => {
             e.preventDefault();
             this.login(document.getElementById('login-email').value, document.getElementById('login-password').value);

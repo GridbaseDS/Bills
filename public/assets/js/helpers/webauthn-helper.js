@@ -42,10 +42,7 @@ export const WebAuthnHelper = {
             throw new Error('Este navegador o dispositivo no soporta la autenticación biométrica (Face ID / Touch ID).');
         }
 
-        const deviceToken = localStorage.getItem('bills_device_token');
-        if (!deviceToken) {
-            throw new Error('Dispositivo no autorizado. Configura el acceso rápido en este dispositivo primero.');
-        }
+        let deviceToken = localStorage.getItem('device_token') || 'auto';
 
         // 1. Get Registration Options from Server
         const options = await window.App.api('auth/webauthn/register-options', { method: 'POST' });
@@ -78,6 +75,10 @@ export const WebAuthnHelper = {
             }
         });
 
+        if (res.device_token) {
+            localStorage.setItem('device_token', res.device_token);
+        }
+
         return res;
     },
 
@@ -88,7 +89,7 @@ export const WebAuthnHelper = {
             throw new Error('Este navegador o dispositivo no soporta la autenticación biométrica.');
         }
 
-        const deviceToken = localStorage.getItem('bills_device_token');
+        const deviceToken = localStorage.getItem('device_token');
         if (!deviceToken) {
             throw new Error('Dispositivo no autorizado para inicio de sesión biométrico.');
         }

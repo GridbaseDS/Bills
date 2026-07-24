@@ -430,6 +430,49 @@ class AuthController extends Controller
 
         session()->forget('webauthn_register_challenge');
 
+        $deviceToken = $request->device_token;
+        if ($deviceToken === 'auto' || empty($deviceToken)) {
+            $deviceToken = bin2hex(random_bytes(32));
+            $userAgent = $request->header('User-Agent') ?: 'Dispositivo';
+            $deviceName = 'Dispositivo';
+            if (stripos($userAgent, 'Android') !== false) {
+                $deviceName = 'Android Móvil';
+            } elseif (stripos($userAgent, 'iPhone') !== false || stripos($userAgent, 'iPad') !== false) {
+                $deviceName = 'iOS Móvil';
+            } elseif (stripos($userAgent, 'Windows') !== false) {
+                $deviceName = 'Windows PC';
+            } elseif (stripos($userAgent, 'Macintosh') !== false) {
+                $deviceName = 'Mac PC';
+            }
+
+            $user->devices()->create([
+                'device_token' => $deviceToken,
+                'device_name' => $deviceName,
+                'last_used_at' => now(),
+            ]);
+        } else {
+            $device = \App\Models\UserDevice::where('device_token', $deviceToken)->where('user_id', $user->id)->first();
+            if (!$device) {
+                $userAgent = $request->header('User-Agent') ?: 'Dispositivo';
+                $deviceName = 'Dispositivo';
+                if (stripos($userAgent, 'Android') !== false) {
+                    $deviceName = 'Android Móvil';
+                } elseif (stripos($userAgent, 'iPhone') !== false || stripos($userAgent, 'iPad') !== false) {
+                    $deviceName = 'iOS Móvil';
+                } elseif (stripos($userAgent, 'Windows') !== false) {
+                    $deviceName = 'Windows PC';
+                } elseif (stripos($userAgent, 'Macintosh') !== false) {
+                    $deviceName = 'Mac PC';
+                }
+
+                $user->devices()->create([
+                    'device_token' => $deviceToken,
+                    'device_name' => $deviceName,
+                    'last_used_at' => now(),
+                ]);
+            }
+        }
+
         try {
             $parsed = $webAuthn->parseAttestationObject($request->attestationObject);
 
@@ -440,7 +483,7 @@ class AuthController extends Controller
                     'credential_id' => $parsed['credential_id'],
                 ],
                 [
-                    'device_token' => $request->device_token,
+                    'device_token' => $deviceToken,
                     'public_key' => $parsed['public_key'],
                     'sign_count' => $parsed['sign_count'],
                     'authenticator_name' => $request->authenticator_name ?: 'Dispositivo Biométrico',
@@ -450,6 +493,7 @@ class AuthController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'Sensor biométrico (Face ID / Touch ID) registrado con éxito.',
+                'device_token' => $deviceToken,
                 'biometric' => $biometric,
             ]);
         } catch (\Exception $e) {

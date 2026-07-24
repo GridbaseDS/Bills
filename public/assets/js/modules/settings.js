@@ -718,7 +718,15 @@ export default {
                             <div style="background:var(--bg-card); border:1px solid var(--color-border); border-radius:var(--radius-lg); padding:20px 16px; max-width:680px; width:100%; box-sizing:border-box; box-shadow:var(--shadow-sm); margin-top:24px;">
                                 <div style="display:flex; align-items:flex-start; gap:14px; min-width:0; width:100%;">
                                     <div style="width:44px; height:44px; border-radius:12px; background:var(--color-primary-light, #E6F4F5); color:var(--color-primary, #0B484C); display:flex; align-items:center; justify-content:center; flex-shrink:0;">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 11c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8 0-1.84.63-3.53 1.69-4.88l1.43 1.43c-.7.96-1.12 2.14-1.12 3.45 0 3.31 2.69 6 6 6s6-2.69 6-6c0-1.31-.42-2.49-1.12-3.45l1.43-1.43C19.37 8.47 20 10.16 20 12c0 4.41-3.59 8-8 8z"/></svg>
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="M12 10a2 2 0 0 0-2 2c0 1.02-.1 2.51-.26 4"/>
+                                            <path d="M14 13.12c0 2.38 0 3.88-.26 5.88"/>
+                                            <path d="M17.29 21.02c.12-.6.43-2.3.43-5.02 0-2.28-.56-4.17-1.73-5.67"/>
+                                            <path d="M2 12C2 6.5 6.5 2 12 2a10 10 0 0 1 8 4"/>
+                                            <path d="M4.27 17.58A8.98 8.98 0 0 1 3 12c0-2.2.8-4.2 2.1-5.7"/>
+                                            <path d="M7 11c0-1.7 1.3-3 3-3s3 1.3 3 3c0 2.22 0 3.72-.26 5.72"/>
+                                            <path d="M9 18a6 6 0 0 1-2-4.5"/>
+                                        </svg>
                                     </div>
                                     <div style="flex:1; min-width:0;">
                                         <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px; flex-wrap:wrap;">

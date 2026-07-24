@@ -8,7 +8,7 @@ import InvoicesModule from './modules/invoices.js?v=203';
 import QuotesModule from './modules/quotes.js?v=201';
 import ClientsModule from './modules/clients.js?v=201';
 import ItemsModule from './modules/items.js?v=201';
-import SettingsModule from './modules/settings.js?v=208';
+import SettingsModule from './modules/settings.js?v=209';
 import RecurringModule from './modules/recurring.js?v=201';
 import DgiiTestsModule from './modules/dgii-tests.js?v=201';
 import DgiiLogsModule from './modules/dgii-logs.js?v=201';
@@ -505,8 +505,16 @@ window.App = {
                         <div id="login-error" class="login-error"></div>
 
                         <div id="main-biometric-login-wrap" style="display:none; margin-bottom:20px;">
-                            <button type="button" id="btn-main-webauthn-login" class="login-submit" style="background:var(--color-bg-secondary); border:1px solid var(--color-border); color:var(--color-text-primary); font-weight:600; display:inline-flex; align-items:center; justify-content:center; gap:10px; width:100%; transition:all 0.2s ease;">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--color-primary);"><path d="M12 11c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8 0-1.84.63-3.53 1.69-4.88l1.43 1.43c-.7.96-1.12 2.14-1.12 3.45 0 3.31 2.69 6 6 6s6-2.69 6-6c0-1.31-.42-2.49-1.12-3.45l1.43-1.43C19.37 8.47 20 10.16 20 12c0 4.41-3.59 8-8 8z"/></svg>
+                            <button type="button" id="btn-main-webauthn-login" style="width:100%; padding:13px 20px; border:none; border-radius:10px; font-size:15px; font-weight:600; color:#ffffff; background:linear-gradient(135deg, #0B484C 0%, #16696e 100%); display:inline-flex; align-items:center; justify-content:center; gap:10px; cursor:pointer; box-shadow:0 4px 14px rgba(11,72,76,0.22); transition:all 0.2s ease;">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;">
+                                    <path d="M12 10a2 2 0 0 0-2 2c0 1.02-.1 2.51-.26 4"/>
+                                    <path d="M14 13.12c0 2.38 0 3.88-.26 5.88"/>
+                                    <path d="M17.29 21.02c.12-.6.43-2.3.43-5.02 0-2.28-.56-4.17-1.73-5.67"/>
+                                    <path d="M2 12C2 6.5 6.5 2 12 2a10 10 0 0 1 8 4"/>
+                                    <path d="M4.27 17.58A8.98 8.98 0 0 1 3 12c0-2.2.8-4.2 2.1-5.7"/>
+                                    <path d="M7 11c0-1.7 1.3-3 3-3s3 1.3 3 3c0 2.22 0 3.72-.26 5.72"/>
+                                    <path d="M9 18a6 6 0 0 1-2-4.5"/>
+                                </svg>
                                 Ingresar con Face ID / Touch ID
                             </button>
                             <div style="display:flex; align-items:center; margin:16px 0 0; color:var(--color-text-muted); font-size:12px;">
@@ -601,7 +609,15 @@ window.App = {
                     } catch (err) {
                         btnWebAuthn.disabled = false;
                         btnWebAuthn.innerHTML = `
-                            <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--color-primary);"><path d="M12 11c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8 0-1.84.63-3.53 1.69-4.88l1.43 1.43c-.7.96-1.12 2.14-1.12 3.45 0 3.31 2.69 6 6 6s6-2.69 6-6c0-1.31-.42-2.49-1.12-3.45l1.43-1.43C19.37 8.47 20 10.16 20 12c0 4.41-3.59 8-8 8z"/></svg>
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;">
+                                <path d="M12 10a2 2 0 0 0-2 2c0 1.02-.1 2.51-.26 4"/>
+                                <path d="M14 13.12c0 2.38 0 3.88-.26 5.88"/>
+                                <path d="M17.29 21.02c.12-.6.43-2.3.43-5.02 0-2.28-.56-4.17-1.73-5.67"/>
+                                <path d="M2 12C2 6.5 6.5 2 12 2a10 10 0 0 1 8 4"/>
+                                <path d="M4.27 17.58A8.98 8.98 0 0 1 3 12c0-2.2.8-4.2 2.1-5.7"/>
+                                <path d="M7 11c0-1.7 1.3-3 3-3s3 1.3 3 3c0 2.22 0 3.72-.26 5.72"/>
+                                <path d="M9 18a6 6 0 0 1-2-4.5"/>
+                            </svg>
                             Ingresar con Face ID / Touch ID
                         `;
                         if (errorEl) {
@@ -865,8 +881,16 @@ window.App = {
                         <div id="login-error" class="login-error"></div>
 
                         <div id="biometric-login-wrap" style="display:none; margin-bottom:16px;">
-                            <button type="button" id="btn-webauthn-login" class="login-submit" style="background:var(--color-bg-secondary); border:1px solid var(--color-border); color:var(--color-text-primary); font-weight:600; display:inline-flex; align-items:center; justify-content:center; gap:10px; width:100%; transition:all 0.2s ease;">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--color-primary);"><path d="M12 11c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8 0-1.84.63-3.53 1.69-4.88l1.43 1.43c-.7.96-1.12 2.14-1.12 3.45 0 3.31 2.69 6 6 6s6-2.69 6-6c0-1.31-.42-2.49-1.12-3.45l1.43-1.43C19.37 8.47 20 10.16 20 12c0 4.41-3.59 8-8 8z"/></svg>
+                            <button type="button" id="btn-webauthn-login" style="width:100%; padding:13px 20px; border:none; border-radius:10px; font-size:15px; font-weight:600; color:#ffffff; background:linear-gradient(135deg, #0B484C 0%, #16696e 100%); display:inline-flex; align-items:center; justify-content:center; gap:10px; cursor:pointer; box-shadow:0 4px 14px rgba(11,72,76,0.22); transition:all 0.2s ease;">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;">
+                                    <path d="M12 10a2 2 0 0 0-2 2c0 1.02-.1 2.51-.26 4"/>
+                                    <path d="M14 13.12c0 2.38 0 3.88-.26 5.88"/>
+                                    <path d="M17.29 21.02c.12-.6.43-2.3.43-5.02 0-2.28-.56-4.17-1.73-5.67"/>
+                                    <path d="M2 12C2 6.5 6.5 2 12 2a10 10 0 0 1 8 4"/>
+                                    <path d="M4.27 17.58A8.98 8.98 0 0 1 3 12c0-2.2.8-4.2 2.1-5.7"/>
+                                    <path d="M7 11c0-1.7 1.3-3 3-3s3 1.3 3 3c0 2.22 0 3.72-.26 5.72"/>
+                                    <path d="M9 18a6 6 0 0 1-2-4.5"/>
+                                </svg>
                                 Ingresar con Face ID / Touch ID / Huella
                             </button>
                             <div style="display:flex; align-items:center; margin:16px 0; color:var(--color-text-muted); font-size:12px;">
@@ -921,7 +945,15 @@ window.App = {
                     } catch (err) {
                         btnWebAuthn.disabled = false;
                         btnWebAuthn.innerHTML = `
-                            <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--color-primary);"><path d="M12 11c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8 0-1.84.63-3.53 1.69-4.88l1.43 1.43c-.7.96-1.12 2.14-1.12 3.45 0 3.31 2.69 6 6 6s6-2.69 6-6c0-1.31-.42-2.49-1.12-3.45l1.43-1.43C19.37 8.47 20 10.16 20 12c0 4.41-3.59 8-8 8z"/></svg>
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;">
+                                <path d="M12 10a2 2 0 0 0-2 2c0 1.02-.1 2.51-.26 4"/>
+                                <path d="M14 13.12c0 2.38 0 3.88-.26 5.88"/>
+                                <path d="M17.29 21.02c.12-.6.43-2.3.43-5.02 0-2.28-.56-4.17-1.73-5.67"/>
+                                <path d="M2 12C2 6.5 6.5 2 12 2a10 10 0 0 1 8 4"/>
+                                <path d="M4.27 17.58A8.98 8.98 0 0 1 3 12c0-2.2.8-4.2 2.1-5.7"/>
+                                <path d="M7 11c0-1.7 1.3-3 3-3s3 1.3 3 3c0 2.22 0 3.72-.26 5.72"/>
+                                <path d="M9 18a6 6 0 0 1-2-4.5"/>
+                            </svg>
                             Ingresar con Face ID / Touch ID / Huella
                         `;
                         if (errorEl) {

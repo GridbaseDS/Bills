@@ -935,43 +935,40 @@ hr { border: 0; border-top: 1px solid var(--color-border); margin: var(--spacing
    ═══════════════════════════════════════════════════════════ */
 
 .segmented-control {
-
-  display: inline-flex;
-
+  display: flex;
+  align-items: center;
   background-color: var(--bg-hover);
-
-  padding: 3px;
-
+  padding: 4px;
   border-radius: var(--radius-lg);
-
-  gap: 2px;
-
+  gap: 4px;
   margin-bottom: var(--spacing-lg);
+  max-width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  white-space: nowrap;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  box-sizing: border-box;
+}
 
+.segmented-control::-webkit-scrollbar {
+  display: none;
 }
 
 .segment-item {
-
-  padding: 8px 18px;
-
+  flex-shrink: 0;
+  padding: 8px 16px;
   font-size: 13px;
-
   font-weight: 500;
-
   color: var(--color-text-secondary);
-
   border-radius: var(--radius-md);
-
   cursor: pointer;
-
   transition: var(--transition-fast);
-
   user-select: none;
-
   border: none;
-
   background: none;
-
+  white-space: nowrap;
 }
 
 .segment-item:hover { color: var(--color-text-primary); }

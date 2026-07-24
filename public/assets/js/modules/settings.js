@@ -205,7 +205,6 @@ export default {
                             </div>
                             ` : ''}
                         </div>
-                        </div>
 
                         <!-- TAB: APARIENCIA PDF -->
                         <div class="tab-content" id="tab-apariencia" style="display:none;">

@@ -5,6 +5,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Auth;
 use App\Models\User;
+use App\Models\UserBiometric;
+use App\Services\Auth\WebAuthnService;
 
 class AuthController extends Controller
 {
@@ -363,6 +365,227 @@ class AuthController extends Controller
             return response()->json(['error' => 'Dispositivo no encontrado'], 404);
         }
         $device->delete();
+        return response()->json(['success' => true]);
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // WebAuthn (Biometric Face ID / Touch ID / Fingerprint) API
+    // ═══════════════════════════════════════════════════════════════════════
+
+    public function webauthnRegisterOptions(Request $request, WebAuthnService $webAuthn)
+    {
+        $user = $request->user();
+        $challenge = $webAuthn->generateChallenge();
+
+        session(['webauthn_register_challenge' => $challenge]);
+
+        // Exclude credentials user has already registered
+        $excludeCredentials = $user->biometrics()->pluck('credential_id')->map(function ($id) {
+            return [
+                'type' => 'public-key',
+                'id' => $id,
+            ];
+        })->toArray();
+
+        return response()->json([
+            'challenge' => $challenge,
+            'rp' => [
+                'name' => 'GridBase Bills',
+                'id' => $request->getHost(),
+            ],
+            'user' => [
+                'id' => $webAuthn->base64UrlEncode((string)$user->id),
+                'name' => $user->email,
+                'displayName' => $user->name,
+            ],
+            'pubKeyCredParams' => [
+                ['type' => 'public-key', 'alg' => -7],   // ES256 (ECDSA P-256)
+                ['type' => 'public-key', 'alg' => -257], // RS256 (RSA)
+            ],
+            'authenticatorSelection' => [
+                'authenticatorAttachment' => 'platform',
+                'userVerification' => 'preferred',
+                'residentKey' => 'preferred',
+            ],
+            'timeout' => 60000,
+            'excludeCredentials' => $excludeCredentials,
+        ]);
+    }
+
+    public function webauthnRegister(Request $request, WebAuthnService $webAuthn)
+    {
+        $request->validate([
+            'attestationObject' => 'required|string',
+            'clientDataJSON' => 'required|string',
+            'device_token' => 'required|string',
+            'authenticator_name' => 'nullable|string|max:100',
+        ]);
+
+        $user = $request->user();
+        $expectedChallenge = session('webauthn_register_challenge');
+
+        if (!$expectedChallenge) {
+            return response()->json(['error' => 'Desafío biométrico no válido o expirado.'], 400);
+        }
+
+        session()->forget('webauthn_register_challenge');
+
+        try {
+            $parsed = $webAuthn->parseAttestationObject($request->attestationObject);
+
+            // Save credential
+            $biometric = UserBiometric::updateOrCreate(
+                [
+                    'user_id' => $user->id,
+                    'credential_id' => $parsed['credential_id'],
+                ],
+                [
+                    'device_token' => $request->device_token,
+                    'public_key' => $parsed['public_key'],
+                    'sign_count' => $parsed['sign_count'],
+                    'authenticator_name' => $request->authenticator_name ?: 'Dispositivo Biométrico',
+                ]
+            );
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Sensor biométrico (Face ID / Touch ID) registrado con éxito.',
+                'biometric' => $biometric,
+            ]);
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'Error al registrar biometría: ' . $e->getMessage()], 422);
+        }
+    }
+
+    public function webauthnLoginOptions(Request $request, WebAuthnService $webAuthn)
+    {
+        $request->validate([
+            'email' => 'required|email',
+            'device_token' => 'required|string',
+        ]);
+
+        $user = User::where('email', $request->email)->first();
+
+        if (!$user) {
+            return response()->json(['error' => 'Usuario no encontrado'], 404);
+        }
+
+        // Find credentials for user on this device
+        $credentials = UserBiometric::where('user_id', $user->id)
+            ->where('device_token', $request->device_token)
+            ->get();
+
+        if ($credentials->isEmpty()) {
+            return response()->json(['error' => 'No hay sensores biométricos registrados en este dispositivo.'], 404);
+        }
+
+        $challenge = $webAuthn->generateChallenge();
+        session([
+            'webauthn_login_challenge' => $challenge,
+            'webauthn_login_email' => $user->email,
+        ]);
+
+        $allowCredentials = $credentials->map(function ($c) {
+            return [
+                'type' => 'public-key',
+                'id' => $c->credential_id,
+            ];
+        })->toArray();
+
+        return response()->json([
+            'challenge' => $challenge,
+            'allowCredentials' => $allowCredentials,
+            'userVerification' => 'preferred',
+            'timeout' => 60000,
+        ]);
+    }
+
+    public function webauthnLogin(Request $request, WebAuthnService $webAuthn)
+    {
+        $request->validate([
+            'credential_id' => 'required|string',
+            'authenticatorData' => 'required|string',
+            'clientDataJSON' => 'required|string',
+            'signature' => 'required|string',
+            'device_token' => 'required|string',
+        ]);
+
+        $expectedChallenge = session('webauthn_login_challenge');
+        $email = session('webauthn_login_email');
+
+        if (!$expectedChallenge || !$email) {
+            return response()->json(['error' => 'Sesión de autenticación biométrica expirada.'], 400);
+        }
+
+        $biometric = UserBiometric::where('credential_id', $request->credential_id)
+            ->where('device_token', $request->device_token)
+            ->first();
+
+        if (!$biometric) {
+            return response()->json(['error' => 'Biometría no registrada o dispositivo no autorizado.'], 401);
+        }
+
+        $user = $biometric->user;
+
+        if (!$user || $user->email !== $email || !$user->is_active) {
+            return response()->json(['error' => 'Usuario inactivo o no válido.'], 401);
+        }
+
+        try {
+            $isValid = $webAuthn->verifyAssertion(
+                $request->authenticatorData,
+                $request->clientDataJSON,
+                $request->signature,
+                $biometric->public_key,
+                $expectedChallenge,
+                $request->getSchemeAndHttpHost()
+            );
+
+            if (!$isValid) {
+                return response()->json(['error' => 'Firma biométrica no válida.'], 401);
+            }
+
+            session()->forget(['webauthn_login_challenge', 'webauthn_login_email']);
+
+            // Update user and device
+            $user->last_login = now();
+            $user->save();
+
+            if ($device = $biometric->device) {
+                $device->last_used_at = now();
+                $device->save();
+            }
+
+            Auth::login($user);
+            $request->session()->regenerate();
+
+            return response()->json([
+                'success' => true,
+                'user' => [
+                    'id' => $user->id,
+                    'name' => $user->name,
+                    'email' => $user->email,
+                    'role' => $user->role,
+                ],
+            ]);
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'Error al verificar biometría: ' . $e->getMessage()], 401);
+        }
+    }
+
+    public function getBiometrics(Request $request)
+    {
+        $biometrics = $request->user()->biometrics()->with('device')->orderBy('created_at', 'desc')->get();
+        return response()->json($biometrics);
+    }
+
+    public function deleteBiometric(Request $request, $id)
+    {
+        $biometric = $request->user()->biometrics()->find($id);
+        if (!$biometric) {
+            return response()->json(['error' => 'Credencial biométrica no encontrada'], 404);
+        }
+        $biometric->delete();
         return response()->json(['success' => true]);
     }
 }

@@ -69,4 +69,8 @@ class User extends Authenticatable
         return $this->hasMany(UserDevice::class);
     }
 
+    public function biometrics()
+    {
+        return $this->hasMany(UserBiometric::class);
+    }
 }

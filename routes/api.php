@@ -30,9 +30,9 @@ use App\Http\Controllers\Api\POSController;
 Route::post('/auth/login', [AuthController::class, 'login']);
 Route::post('/auth/verify-2fa', [AuthController::class, 'verify2fa']);
 Route::post('/auth/pin-login', [AuthController::class, 'pinLogin']);
+Route::post('/auth/webauthn/login-options', [AuthController::class, 'webauthnLoginOptions']);
+Route::post('/auth/webauthn/login', [AuthController::class, 'webauthnLogin']);
 Route::get('/settings/public', [SettingController::class, 'publicSettings']);
-
-
 
 // Lookups (Public or Protected, placing them here as public, but could be protected)
 Route::get('/lookup/rnc/{rnc}', [LookupController::class, 'rnc']);
@@ -48,13 +48,15 @@ Route::post('/pos/bridge/respond', [POSController::class, 'bridgeRespond']);
 Route::get('/whatsapp/webhook', [WhatsAppWebhookController::class, 'verify']);
 Route::post('/whatsapp/webhook', [WhatsAppWebhookController::class, 'webhook']);
 
-
-
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/auth/logout', [AuthController::class, 'logout']);
     Route::post('/auth/setup-pin', [AuthController::class, 'setupPin']);
     Route::get('/auth/devices', [AuthController::class, 'getDevices']);
     Route::delete('/auth/devices/{id}', [AuthController::class, 'deleteDevice']);
+    Route::post('/auth/webauthn/register-options', [AuthController::class, 'webauthnRegisterOptions']);
+    Route::post('/auth/webauthn/register', [AuthController::class, 'webauthnRegister']);
+    Route::get('/auth/webauthn/biometrics', [AuthController::class, 'getBiometrics']);
+    Route::delete('/auth/webauthn/biometrics/{id}', [AuthController::class, 'deleteBiometric']);
     Route::get('/auth/2fa/status', [AuthController::class, 'get2faStatus']);
     Route::post('/auth/2fa/setup', [AuthController::class, 'init2faSetup']);
     Route::post('/auth/2fa/enable', [AuthController::class, 'enable2fa']);

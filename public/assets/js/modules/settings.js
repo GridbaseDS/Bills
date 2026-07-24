@@ -1,3 +1,5 @@
+import { WebAuthnHelper } from '../helpers/webauthn-helper.js?v=207';
+
 export default {
     async render(container) {
         try {
@@ -712,6 +714,32 @@ export default {
                                     <div style="text-align:center; padding:20px 0;"><span class="spinner"></span></div>
                                 </div>
                             </div>
+
+                            <div style="background:var(--bg-card); border:1px solid var(--color-border); border-radius:var(--radius-lg); padding:24px; max-width:680px; box-shadow:var(--shadow-sm); margin-top:24px;">
+                                <div style="display:flex; align-items:flex-start; gap:16px;">
+                                    <div style="width:48px; height:48px; border-radius:12px; background:var(--color-primary-light, #E6F4F5); color:var(--color-primary, #0B484C); display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 11c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8 0-1.84.63-3.53 1.69-4.88l1.43 1.43c-.7.96-1.12 2.14-1.12 3.45 0 3.31 2.69 6 6 6s6-2.69 6-6c0-1.31-.42-2.49-1.12-3.45l1.43-1.43C19.37 8.47 20 10.16 20 12c0 4.41-3.59 8-8 8z"/></svg>
+                                    </div>
+                                    <div style="flex:1;">
+                                        <div style="display:flex; align-items:center; gap:10px; margin-bottom:6px; flex-wrap:wrap;">
+                                            <h4 style="font-size:16px; font-weight:700; margin:0; color:var(--color-text-primary);">Inicio de Sesión Biométrico (Face ID / Touch ID / Huella)</h4>
+                                            <span id="biometric-support-badge" class="badge" style="font-size:11px; padding:3px 10px; font-weight:700;">Verificando...</span>
+                                        </div>
+                                        <p style="font-size:13px; color:var(--color-text-secondary); margin:0 0 16px; line-height:1.5;">
+                                            Registra el sensor de tu teléfono o computadora para iniciar sesión rápidamente sin tener que digitar tu contraseña o PIN.
+                                        </p>
+                                        <div id="biometric-actions-wrap">
+                                            <button type="button" id="btn-register-biometric" class="btn btn-primary" style="display:inline-flex; align-items:center; gap:8px;">
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                                                Activar Face ID / Touch ID en este Dispositivo
+                                            </button>
+                                        </div>
+                                        <div id="biometric-list-container" style="margin-top:20px; border-top:1px solid var(--color-border); padding-top:16px;">
+                                            <div style="text-align:center; padding:16px; color:var(--color-text-muted); font-size:13px;">Cargando sensores biométricos...</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
 
                         <!-- TAB: DEVICES -->
@@ -981,6 +1009,103 @@ export default {
                     }
                 });
             };
+
+            const loadBiometricSecurityStatus = async () => {
+                const badgeEl = document.getElementById('biometric-support-badge');
+                const listEl = document.getElementById('biometric-list-container');
+                const btnRegister = document.getElementById('btn-register-biometric');
+
+                if (!badgeEl || !listEl) return;
+
+                const supported = await WebAuthnHelper.isSupported();
+                if (supported) {
+                    badgeEl.className = 'badge badge-active';
+                    badgeEl.style.background = 'rgba(34,197,94,0.12)';
+                    badgeEl.style.color = '#16a34a';
+                    badgeEl.textContent = 'Disponible en este dispositivo';
+                    if (btnRegister) btnRegister.disabled = false;
+                } else {
+                    badgeEl.className = 'badge';
+                    badgeEl.style.background = 'var(--color-border)';
+                    badgeEl.style.color = 'var(--color-text-muted)';
+                    badgeEl.textContent = 'No soportado en este navegador/dispositivo';
+                    if (btnRegister) {
+                        btnRegister.disabled = true;
+                        btnRegister.title = 'Requiere un dispositivo con Face ID, Touch ID, Huella o Windows Hello en HTTPS/localhost';
+                    }
+                }
+
+                try {
+                    const biometrics = await window.App.api('auth/webauthn/biometrics');
+                    if (biometrics.length === 0) {
+                        listEl.innerHTML = `
+                            <div style="font-size:12px; color:var(--color-text-muted); text-align:center; padding:8px 0;">
+                                No has activado Face ID / Touch ID en ningún dispositivo.
+                            </div>
+                        `;
+                        return;
+                    }
+
+                    listEl.innerHTML = `
+                        <div style="font-size:12px; font-weight:700; color:var(--color-text-secondary); margin-bottom:10px;">Sensores Registrados:</div>
+                    ` + biometrics.map(b => {
+                        const isCurrent = b.device_token === localStorage.getItem('device_token');
+                        const created = new Date(b.created_at).toLocaleDateString('es-DO', { day: 'numeric', month: 'short', year: 'numeric' });
+                        return `
+                            <div style="display:flex; align-items:center; justify-content:space-between; padding:10px 14px; background:var(--color-bg-secondary); border:1px solid var(--color-border); border-radius:var(--radius-md); margin-bottom:8px; font-size:13px;">
+                                <div>
+                                    <div style="font-weight:600; color:var(--color-text-primary); display:flex; align-items:center; gap:8px;">
+                                        ${b.authenticator_name || 'Sensor Biométrico'}
+                                        ${isCurrent ? '<span class="badge badge-active" style="font-size:10px; padding:2px 6px;">Este Dispositivo</span>' : ''}
+                                    </div>
+                                    <div style="font-size:11px; color:var(--color-text-muted);">Registrado el: ${created}</div>
+                                </div>
+                                <button type="button" class="btn btn-danger btn-delete-biometric" data-id="${b.id}" style="padding:4px 8px; font-size:11px; background:#FEE2E2; color:#DC2626; border:1px solid #FCA5A5; cursor:pointer;">
+                                    Eliminar
+                                </button>
+                            </div>
+                        `;
+                    }).join('');
+
+                    listEl.querySelectorAll('.btn-delete-biometric').forEach(btn => {
+                        btn.addEventListener('click', async () => {
+                            if (confirm('¿Eliminar esta credencial biométrica?')) {
+                                try {
+                                    await window.App.api(`auth/webauthn/biometrics/${btn.dataset.id}`, { method: 'DELETE' });
+                                    window.App.showToast('Credencial biométrica eliminada', 'success');
+                                    loadBiometricSecurityStatus();
+                                } catch (err) {
+                                    window.App.showToast(err.message, 'error');
+                                }
+                            }
+                        });
+                    });
+                } catch (e) {
+                    listEl.innerHTML = `<div style="font-size:12px; color:#ef4444; text-align:center;">Error cargando biometría: ${e.message}</div>`;
+                }
+            };
+
+            // Register Biometric Button Handler
+            document.getElementById('btn-register-biometric')?.addEventListener('click', async () => {
+                const btn = document.getElementById('btn-register-biometric');
+                const orig = btn.innerHTML;
+                btn.disabled = true;
+                btn.innerHTML = '<span class="spinner"></span> Solicitando confirmación biométrica...';
+
+                try {
+                    const devName = window.App.isMobile() ? 'Móvil (Face ID / Huella)' : 'PC / Mac (Touch ID / Hello)';
+                    const res = await WebAuthnHelper.register(devName);
+                    window.App.showToast(res.message || 'Face ID / Touch ID activado con éxito', 'success');
+                    loadBiometricSecurityStatus();
+                } catch (err) {
+                    window.App.showToast(err.message || 'No se pudo registrar la biometría', 'error');
+                } finally {
+                    btn.disabled = false;
+                    btn.innerHTML = orig;
+                }
+            });
+
+            loadBiometricSecurityStatus();
 
             // RNC Lookup
             document.getElementById('s_company_tax_id')?.addEventListener('input', async (e) => {

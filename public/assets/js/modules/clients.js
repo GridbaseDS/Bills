@@ -278,29 +278,20 @@ const ClientsModule = {
             </form>
         `;
 
-        document.getElementById('c_tax_id')?.addEventListener('input', async (e) => {
-            const val = e.target.value.replace(/[^0-9]/g, '');
-            if (val.length === 9 || val.length === 11) {
-                if (e.target.dataset.lastFetch === val) return;
-                e.target.dataset.lastFetch = val;
-                const isRnc = val.length === 9;
-                const endpoint = isRnc ? 'rnc' : 'cedula';
-                try {
-                    window.App.showToast('Buscando identificación...', 'info');
-                    const res = await window.App.api(`lookup/${endpoint}/${val}`);
-                    if (res.found && res.data) {
-                        const d = res.data;
-                        if (isRnc) { if (d.nombre) document.getElementById('c_company_name').value = d.nombre; }
-                        else {
-                            const fullName = `${d.nombres} ${d.apellido1} ${d.apellido2}`.trim();
-                            document.getElementById('c_contact_name').value = fullName;
-                            if (!document.getElementById('c_company_name').value) document.getElementById('c_company_name').value = fullName;
-                        }
-                        window.App.showToast('Información autocompletada', 'success');
-                    }
-                } catch (err) { window.App.showToast('RNC o Cédula no encontrada', 'error'); }
-            }
-        });
+        const cTaxIdInput = document.getElementById('c_tax_id');
+        if (cTaxIdInput) {
+            window.App.bindTaxIdLookup(cTaxIdInput, (d, type) => {
+                const compNameInput = document.getElementById('c_company_name');
+                const contNameInput = document.getElementById('c_contact_name');
+                if (d.nombre) {
+                    if (compNameInput) compNameInput.value = d.nombre;
+                } else if (d.nombres) {
+                    const fullName = `${d.nombres || ''} ${d.apellido1 || ''} ${d.apellido2 || ''}`.trim();
+                    if (contNameInput) contNameInput.value = fullName;
+                    if (compNameInput && !compNameInput.value) compNameInput.value = fullName;
+                }
+            });
+        }
 
         document.getElementById('client-form').addEventListener('submit', async (e) => {
             e.preventDefault();

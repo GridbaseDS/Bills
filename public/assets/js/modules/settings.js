@@ -1114,26 +1114,19 @@ export default {
 
             loadBiometricSecurityStatus();
 
-            // RNC Lookup
-            document.getElementById('s_company_tax_id')?.addEventListener('input', async (e) => {
-                const val = e.target.value.replace(/[^0-9]/g, '');
-                if (val.length === 9 || val.length === 11) {
-                    if (e.target.dataset.lastFetch === val) return;
-                    e.target.dataset.lastFetch = val;
-                    const isRnc = val.length === 9;
-                    const endpoint = isRnc ? 'rnc' : 'cedula';
-                    try {
-                        window.App.showToast('Buscando identificación...', 'info');
-                        const res = await window.App.api(`lookup/${endpoint}/${val}`);
-                        if (res.found && res.data) {
-                            const d = res.data;
-                            if (isRnc) { if (d.nombre) document.getElementById('s_company_name').value = d.nombre; }
-                            else { const fullName = `${d.nombres} ${d.apellido1} ${d.apellido2}`.trim(); if (!document.getElementById('s_company_name').value) document.getElementById('s_company_name').value = fullName; }
-                            window.App.showToast('Información autocompletada', 'success');
+            const sTaxIdInput = document.getElementById('s_company_tax_id');
+            if (sTaxIdInput) {
+                window.App.bindTaxIdLookup(sTaxIdInput, (d, type) => {
+                    const compNameInput = document.getElementById('s_company_name');
+                    if (compNameInput) {
+                        if (d.nombre) compNameInput.value = d.nombre;
+                        else if (d.nombres) {
+                            const fullName = `${d.nombres || ''} ${d.apellido1 || ''} ${d.apellido2 || ''}`.trim();
+                            if (!compNameInput.value) compNameInput.value = fullName;
                         }
-                    } catch (err) { window.App.showToast('RNC o Cédula no encontrada', 'error'); }
-                }
-            });
+                    }
+                });
+            }
 
             // Sidebar color picker sync + live preview
             const updateSidebarPreview = () => {

@@ -871,7 +871,22 @@ const InvoicesModule = {
 
         if (directFields) {
             // Show only if it is Consumo AND "Consumidor Final (Sin Cliente)" is selected
-            directFields.style.display = (isConsumo && clientVal === '') ? 'grid' : 'none';
+            const showDirect = (isConsumo && clientVal === '');
+            directFields.style.display = showDirect ? 'grid' : 'none';
+
+            if (showDirect) {
+                const directTaxIdInput = document.getElementById('i_direct_client_tax_id');
+                if (directTaxIdInput && !directTaxIdInput.dataset.lookupBound) {
+                    directTaxIdInput.dataset.lookupBound = '1';
+                    window.App.bindTaxIdLookup(directTaxIdInput, (d, type) => {
+                        const nameInput = document.getElementById('i_direct_client_name');
+                        if (nameInput) {
+                            if (d.nombre) nameInput.value = d.nombre;
+                            else if (d.nombres) nameInput.value = `${d.nombres || ''} ${d.apellido1 || ''} ${d.apellido2 || ''}`.trim();
+                        }
+                    });
+                }
+            }
         }
 
         if (!taxInput) {

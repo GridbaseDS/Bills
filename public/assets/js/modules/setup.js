@@ -291,33 +291,18 @@ export default {
 
             // RNC Lookup in step 1
             const rncInput = container.querySelector('#setup_company_tax_id');
-            rncInput?.addEventListener('input', async (e) => {
-                const val = e.target.value.replace(/[^0-9]/g, '');
-                if (val.length === 9 || val.length === 11) {
-                    if (e.target.dataset.lastFetch === val) return;
-                    e.target.dataset.lastFetch = val;
-                    const isRnc = val.length === 9;
-                    const endpoint = isRnc ? 'rnc' : 'cedula';
-                    try {
-                        window.App.showToast('Buscando identificación...', 'info');
-                        const res = await window.App.api(`lookup/${endpoint}/${val}`);
-                        if (res.found && res.data) {
-                            const d = res.data;
-                            if (isRnc) {
-                                if (d.nombre) container.querySelector('#setup_company_name').value = d.nombre;
-                            } else {
-                                const fullName = `${d.nombres} ${d.apellido1} ${d.apellido2}`.trim();
-                                if (!container.querySelector('#setup_company_name').value) {
-                                    container.querySelector('#setup_company_name').value = fullName;
-                                }
-                            }
-                            window.App.showToast('Información autocompletada', 'success');
+            if (rncInput) {
+                window.App.bindTaxIdLookup(rncInput, (d, type) => {
+                    const compNameInput = container.querySelector('#setup_company_name');
+                    if (compNameInput) {
+                        if (d.nombre) compNameInput.value = d.nombre;
+                        else if (d.nombres) {
+                            const fullName = `${d.nombres || ''} ${d.apellido1 || ''} ${d.apellido2 || ''}`.trim();
+                            if (!compNameInput.value) compNameInput.value = fullName;
                         }
-                    } catch (err) {
-                        window.App.showToast('Identificación no encontrada en DGII', 'error');
                     }
-                }
-            });
+                });
+            }
 
             // Update Progress UI
             const updateProgress = () => {

@@ -301,6 +301,17 @@ const ExpensesModule = {
             totalEl.value = (sub + tax).toFixed(2);
         };
 
+        const providerTaxIdInput = document.getElementById('e_provider_tax_id');
+        if (providerTaxIdInput) {
+            window.App.bindTaxIdLookup(providerTaxIdInput, (d, type) => {
+                const nameInput = document.getElementById('e_provider_name');
+                if (nameInput) {
+                    if (d.nombre) nameInput.value = d.nombre;
+                    else if (d.nombres) nameInput.value = `${d.nombres || ''} ${d.apellido1 || ''} ${d.apellido2 || ''}`.trim();
+                }
+            });
+        }
+
         subtotalEl.addEventListener('input', calculateTotal);
         taxEl.addEventListener('input', calculateTotal);
 

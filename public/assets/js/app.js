@@ -1767,6 +1767,70 @@ window.App = {
         }
     },
 
+    bindTaxIdLookup(inputEl, onFound) {
+        if (!inputEl) return;
+
+        let timer = null;
+        let lastProcessed = '';
+
+        const handleLookup = async () => {
+            const raw = inputEl.value || '';
+            const clean = raw.replace(/[^0-9]/g, '');
+
+            if (clean.length !== 9 && clean.length !== 11) return;
+            if (clean === lastProcessed) return;
+
+            lastProcessed = clean;
+
+            try {
+                this.showToast('Buscando RNC/Cédula...', 'info');
+
+                let res = null;
+
+                if (clean.length === 9) {
+                    res = await this.api(`lookup/rnc/${clean}`);
+                } else {
+                    // Try RNC first for 11 digits (Persona Física en DGII)
+                    try {
+                        res = await this.api(`lookup/rnc/${clean}`);
+                    } catch (e) {
+                        res = null;
+                    }
+                    // Fallback to Cédula lookup in JCE if not found in DGII
+                    if (!res || !res.found) {
+                        res = await this.api(`lookup/cedula/${clean}`);
+                    }
+                }
+
+                if (res && res.found && res.data) {
+                    const d = res.data;
+                    this.showToast('Información encontrada y autocompletada', 'success');
+                    if (typeof onFound === 'function') {
+                        onFound(d, clean.length === 9 ? 'rnc' : 'cedula');
+                    }
+                } else {
+                    lastProcessed = '';
+                    this.showToast('RNC o Cédula no encontrada', 'error');
+                }
+            } catch (err) {
+                lastProcessed = '';
+                this.showToast('RNC o Cédula no encontrada en la DGII / JCE', 'error');
+            }
+        };
+
+        inputEl.addEventListener('input', (e) => {
+            const clean = (e.target.value || '').replace(/[^0-9]/g, '');
+            if (clean !== lastProcessed) {
+                if (clean.length !== 9 && clean.length !== 11) {
+                    lastProcessed = '';
+                }
+            }
+
+            clearTimeout(timer);
+            timer = setTimeout(handleLookup, 450);
+        });
+    },
+
     getGreeting() {
         const hour = new Date().getHours();
         if (hour < 12) return 'Buenos Días';

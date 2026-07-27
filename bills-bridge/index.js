@@ -515,11 +515,15 @@ function handleCardnetAndroidCharge(amount, ip, port, timeoutSec) {
     }
 
     const amountFormatted = parseFloat(amount).toFixed(2);
+    const postData = JSON.stringify({ amount: amountFormatted, amountNum: parseFloat(amountFormatted) });
     const url = `http://${ip}:${targetPort}/tx_sale?amount=${amountFormatted}`;
 
     const req = http.request(url, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'Content-Length': Buffer.byteLength(postData)
+      },
       timeout: timeoutSec * 1000
     }, (res) => {
       let body = '';
@@ -564,7 +568,7 @@ function handleCardnetAndroidCharge(amount, ip, port, timeoutSec) {
       resolve({ success: false, message: `Fallo de comunicación con Verifone Android: ${err.message}` });
     });
 
-    req.write(JSON.stringify({ amount: amountCents }));
+    req.write(postData);
     req.end();
   });
 }

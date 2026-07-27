@@ -477,7 +477,8 @@ class POSController extends Controller
 
         try {
             $response = Http::timeout($timeout)->post("{$url}?amount={$amountFormatted}", [
-                'amount' => $amountFormatted
+                'amount' => $amountFormatted,
+                'amountNum' => (float)$amountFormatted
             ]);
 
             Log::debug("POS (Cardnet Android): Respuesta recibida. Status: " . $response->status() . " - Body: " . $response->body());

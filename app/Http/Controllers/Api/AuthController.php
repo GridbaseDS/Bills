@@ -508,18 +508,15 @@ class AuthController extends Controller
             'device_token' => 'nullable|string',
         ]);
 
-        $user = User::where('email', $request->email)->first();
+        $email = strtolower(trim($request->email));
+        $user = User::whereRaw('LOWER(email) = ?', [$email])->first();
 
         if (!$user) {
             return response()->json(['error' => 'Usuario no encontrado'], 404);
         }
 
-        // Find credentials for user
-        $query = UserBiometric::where('user_id', $user->id);
-        if ($request->device_token) {
-            $query->where('device_token', $request->device_token);
-        }
-        $credentials = $query->get();
+        // Find all registered biometric credentials for user (allow Passkeys across sessions)
+        $credentials = UserBiometric::where('user_id', $user->id)->get();
 
         if ($credentials->isEmpty()) {
             return response()->json(['error' => 'No hay sensores biométricos registrados para este correo.'], 404);

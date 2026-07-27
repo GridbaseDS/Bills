@@ -86,13 +86,10 @@ export const WebAuthnHelper = {
     async login(email) {
         const supported = await this.isSupported();
         if (!supported) {
-            throw new Error('Este navegador o dispositivo no soporta la autenticación biométrica.');
+            throw new Error('Este navegador o dispositivo no soporta la autenticación biométrica (Face ID / Touch ID).');
         }
 
-        const deviceToken = localStorage.getItem('device_token');
-        if (!deviceToken) {
-            throw new Error('Dispositivo no autorizado para inicio de sesión biométrico.');
-        }
+        const deviceToken = localStorage.getItem('device_token') || null;
 
         // 1. Get Login Options from Server
         const options = await window.App.api('auth/webauthn/login-options', {

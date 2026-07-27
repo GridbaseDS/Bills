@@ -514,8 +514,8 @@ function handleCardnetAndroidCharge(amount, ip, port, timeoutSec) {
       return resolve({ success: false, message: 'IP del terminal Android no configurada.' });
     }
 
-    const amountCents = Math.round(parseFloat(amount) * 100);
-    const url = `http://${ip}:${targetPort}/tx_sale?amount=${amountCents}`;
+    const amountFormatted = parseFloat(amount).toFixed(2);
+    const url = `http://${ip}:${targetPort}/tx_sale?amount=${amountFormatted}`;
 
     const req = http.request(url, {
       method: 'POST',

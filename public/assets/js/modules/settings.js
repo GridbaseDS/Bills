@@ -22,8 +22,8 @@ export default {
                     </button>
                     ${!isGerente ? `
                     <button class="segment-item" data-tab="apariencia" style="display:inline-flex; align-items:center; gap:6.5px;">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="13.5" height="13.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--color-text-primary);"><path d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 14.7255 3.09032 17.1962 4.85857 19C5.38534 19.5371 5.43851 20.3807 5.02534 20.9729C4.54228 21.6654 4.89679 22 5.5 22H12Z"/><circle cx="7.5" cy="10.5" r="1.5"/><circle cx="11.5" cy="7.5" r="1.5"/><circle cx="16.5" cy="9.5" r="1.5"/><circle cx="15.5" cy="14.5" r="1.5"/></svg>
-                        Apariencia PDF
+                        <svg xmlns="http://www.w3.org/2000/svg" width="13.5" height="13.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--color-text-primary);"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+                        Apariencia & Impresión
                     </button>
                     <button class="segment-item" data-tab="email" style="display:inline-flex; align-items:center; gap:6.5px;">
                         <svg xmlns="http://www.w3.org/2000/svg" width="13.5" height="13.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--color-text-primary);"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
@@ -39,8 +39,8 @@ export default {
                         Recordatorios
                     </button>
                     <button class="segment-item" data-tab="integrations" style="display:inline-flex; align-items:center; gap:6.5px;">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="13.5" height="13.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--color-text-primary);"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
-                        Integraciones
+                        <svg xmlns="http://www.w3.org/2000/svg" width="13.5" height="13.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--color-text-primary);"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+                        POS & Verifone
                     </button>
                     ${!isGerente ? `
                     <button class="segment-item" data-tab="dgii" style="display:inline-flex; align-items:center; gap:6.5px;">
@@ -208,8 +208,8 @@ export default {
 
                         <!-- TAB: APARIENCIA PDF -->
                         <div class="tab-content" id="tab-apariencia" style="display:none;">
-                            <h3 style="font-size:15px;font-weight:600;margin:0 0 8px;">Línea Gráfica del PDF</h3>
-                            <p style="color:var(--color-text-muted);font-size:13px;margin:0 0 24px;">Personaliza los colores, logo y estilo de tus facturas y cotizaciones en PDF.</p>
+                            <h3 style="font-size:15px;font-weight:600;margin:0 0 8px;">Impresión & Línea Gráfica de Facturas</h3>
+                            <p style="color:var(--color-text-muted);font-size:13px;margin:0 0 24px;">Personaliza la plantilla por defecto (Ticket Térmico 80mm 2Connect, 58mm Saturn 1000 o Carta A4), colores y logotipos.</p>
                             
                             <div class="grid-2">
                                 <div class="form-group">

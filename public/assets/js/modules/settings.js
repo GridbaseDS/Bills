@@ -300,11 +300,12 @@ export default {
                                 </div>
                                 <div class="form-group">
                                     <label class="form-label">Plantilla de Factura por Defecto</label>
-                                    <select id="s_invoice_pdf_template" class="form-control" style="width:200px;">
-                                        <option value="normal" ${s.invoice_pdf_template === 'thermal' ? '' : 'selected'}>Normal (Carta/A4)</option>
-                                        <option value="thermal" ${s.invoice_pdf_template === 'thermal' ? 'selected' : ''}>Ticket Térmico (80mm)</option>
+                                    <select id="s_invoice_pdf_template" class="form-control" style="width:260px;">
+                                        <option value="normal" ${s.invoice_pdf_template === 'normal' || !s.invoice_pdf_template ? 'selected' : ''}>Normal (Carta / A4)</option>
+                                        <option value="thermal" ${s.invoice_pdf_template === 'thermal' ? 'selected' : ''}>Ticket Térmico 80mm (2Connect POS80-01 V7)</option>
+                                        <option value="thermal_58mm" ${s.invoice_pdf_template === 'thermal_58mm' ? 'selected' : ''}>Ticket Térmico 58mm (Cardnet Saturn 1000 / Móvil)</option>
                                     </select>
-                                    <div style="font-size:11px;color:var(--color-text-muted);margin-top:4px;">Define el formato de factura predeterminado en el sistema</div>
+                                    <div style="font-size:11px;color:var(--color-text-muted);margin-top:4px;">Define el formato de impresión predeterminado en el sistema</div>
                                 </div>
                             </div>
 
@@ -517,9 +518,9 @@ export default {
                                         <select id="s_pos_driver" class="form-control">
                                             <option value="mock" ${s.pos_driver === 'mock' || !s.pos_driver ? 'selected' : ''}>Simulador / Mock POS (Local 3s)</option>
                                             <option value="virtual_pos" ${s.pos_driver === 'virtual_pos' ? 'selected' : ''}>Simulador Móvil (Virtual POS via QR)</option>
+                                            <option value="cardnet_android" ${s.pos_driver === 'cardnet_android' ? 'selected' : ''}>Cardnet Saturn 1000 (Android SmartPOS REST)</option>
+                                            <option value="cardnet_local" ${s.pos_driver === 'cardnet_local' ? 'selected' : ''}>Cardnet ECRti / SPDH (TCP Sockets Local)</option>
                                             <option value="azul_local" ${s.pos_driver === 'azul_local' ? 'selected' : ''}>Azul (Local HTTP Bridge)</option>
-                                            <option value="cardnet_local" ${s.pos_driver === 'cardnet_local' ? 'selected' : ''}>Cardnet (Local SPDH TCP Sockets)</option>
-                                            <option value="cardnet_android" ${s.pos_driver === 'cardnet_android' ? 'selected' : ''}>Cardnet (Android SmartPOS via REST)</option>
                                         </select>
                                     </div>
                                     <div class="form-group">

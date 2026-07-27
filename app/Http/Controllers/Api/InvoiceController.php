@@ -156,7 +156,7 @@ class InvoiceController extends Controller
                         'settings' => $settings,
                     ];
                     $template = request()->query('template', $settings['invoice_pdf_template'] ?? 'normal');
-                    $view = ($template === 'thermal') ? 'pdf.invoice_thermal' : 'pdf.invoice';
+                    $view = (str_starts_with($template, 'thermal')) ? 'pdf.invoice_thermal' : 'pdf.invoice';
                     $pdfContent = \Barryvdh\DomPDF\Facade\Pdf::loadView($view, $pdfData)->output();
                     $pdfFilename = "Factura-{$invoice->invoice_number}.pdf";
 
@@ -204,7 +204,7 @@ class InvoiceController extends Controller
             'settings' => $settings,
         ];
         $template = Setting::get('invoice_pdf_template', 'normal');
-        $view = ($template === 'thermal') ? 'pdf.invoice_thermal' : 'pdf.invoice';
+        $view = (str_starts_with($template, 'thermal')) ? 'pdf.invoice_thermal' : 'pdf.invoice';
         $pdfContent = \Barryvdh\DomPDF\Facade\Pdf::loadView($view, $pdfData)->output();
 
         // Generate payment link
@@ -435,7 +435,7 @@ class InvoiceController extends Controller
             'settings' => $settings,
         ];
         $template = Setting::get('invoice_pdf_template', 'normal');
-        $view = ($template === 'thermal') ? 'pdf.invoice_thermal' : 'pdf.invoice';
+        $view = (str_starts_with($template, 'thermal')) ? 'pdf.invoice_thermal' : 'pdf.invoice';
         $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView($view, $pdfData);
         $pdfContent = $pdf->output();
 
@@ -518,7 +518,7 @@ class InvoiceController extends Controller
         ];
 
         $template = request()->query('template', $settings['invoice_pdf_template'] ?? 'normal');
-        $view = ($template === 'thermal') ? 'pdf.invoice_thermal' : 'pdf.invoice';
+        $view = (str_starts_with($template, 'thermal')) ? 'pdf.invoice_thermal' : 'pdf.invoice';
         $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView($view, $data);
         
         if (request()->has('download')) {
@@ -586,7 +586,7 @@ class InvoiceController extends Controller
                 'settings' => $settings
             ];
             $template = Setting::get('invoice_pdf_template', 'normal');
-            $view = ($template === 'thermal') ? 'pdf.invoice_thermal' : 'pdf.invoice';
+            $view = (str_starts_with($template, 'thermal')) ? 'pdf.invoice_thermal' : 'pdf.invoice';
             $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView($view, $pdfData);
             $pdfContent = $pdf->output();
 

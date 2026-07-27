@@ -118,13 +118,47 @@ if (!empty($invoice['terms'])) {
     $notesHeight += ceil(strlen($invoice['terms']) / 30) * 4 + 6;
 }
 
+$templateQuery = request()->query('template', $settings['invoice_pdf_template'] ?? 'thermal');
+$is58mm = ($templateQuery === 'thermal_58mm' || (isset($paper_size) && $paper_size === '58mm'));
+$paperWidth = $is58mm ? 58 : 80;
+$marginSide = $is58mm ? 2.5 : 3.5;
+
+// Calculate page height dynamically in mm with cutter clearance for 2Connect POS80-01 V7 & Saturn 1000
+$itemCount = count($invoice['items'] ?? $items ?? []);
+$baseHeight = 85;
+
+$itemsHeight = 0;
+foreach (($invoice['items'] ?? $items ?? []) as $item) {
+    $descLength = strlen($item['description'] ?? '');
+    $charsPerLine = $is58mm ? 14 : 22;
+    $lines = max(1, ceil($descLength / $charsPerLine));
+    $itemsHeight += $lines * 4.5 + 4;
+}
+
+$totalsHeight = 15;
+if (($invoice['discount_amount'] ?? 0) > 0) { $totalsHeight += 4; }
+if (($invoice['tax_amount'] ?? 0) > 0) { $totalsHeight += 4; }
+if (($invoice['amount_paid'] ?? 0) > 0) { $totalsHeight += 8; }
+if (!empty($invoice['currency']) && $invoice['currency'] !== 'DOP') { $totalsHeight += 8; }
+
+$notesHeight = 0;
+if (!empty($invoice['notes'])) {
+    $notesHeight += ceil(strlen($invoice['notes']) / 30) * 4 + 6;
+}
+if (!empty($invoice['terms'])) {
+    $notesHeight += ceil(strlen($invoice['terms']) / 30) * 4 + 6;
+}
+
 $dgiiHeight = 0;
 if (!$isQuote && $isEcf) {
     $dgiiHeight = 55;
 }
 
-$pageHeight = $baseHeight + $itemsHeight + $totalsHeight + $notesHeight + $dgiiHeight;
-$pageHeight = max(120, $pageHeight + 10);
+// 2Connect POS80-01 V7 auto-cutter clearance margin at bottom (12mm)
+$cutterClearance = 14;
+
+$pageHeight = $baseHeight + $itemsHeight + $totalsHeight + $notesHeight + $dgiiHeight + $cutterClearance;
+$pageHeight = max(120, $pageHeight);
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -133,7 +167,7 @@ $pageHeight = max(120, $pageHeight + 10);
     <title>{{ $isQuote ?? false ? 'Cotización' : 'Factura' }}</title>
     <style>
         @page {
-            size: 80mm {{ $pageHeight }}mm;
+            size: {{ $paperWidth }}mm {{ $pageHeight }}mm;
             margin: 0;
         }
         * {
@@ -142,12 +176,13 @@ $pageHeight = max(120, $pageHeight + 10);
             box-sizing: border-box;
         }
         body {
-            font-family: 'Courier', 'DejaVu Sans', monospace, sans-serif;
-            font-size: 8px;
+            font-family: 'Courier', 'DejaVu Sans Mono', monospace, sans-serif;
+            font-size: {{ $is58mm ? '7.5pt' : '8.5pt' }};
             color: #000000;
             background: #FFFFFF;
             line-height: 1.3;
-            margin: 4mm 4mm 6mm 4mm;
+            margin: 3mm {{ $marginSide }}mm 12mm {{ $marginSide }}mm;
+            -webkit-print-color-adjust: exact;
         }
         .text-center { text-align: center; }
         .text-right { text-align: right; }
@@ -160,31 +195,31 @@ $pageHeight = max(120, $pageHeight + 10);
 
         /* ── HEADER ── */
         .company-name {
-            font-size: 11px;
+            font-size: {{ $is58mm ? '10pt' : '11.5pt' }};
             font-weight: bold;
             text-transform: uppercase;
             margin-bottom: 2px;
         }
         .company-info {
-            font-size: 8px;
+            font-size: {{ $is58mm ? '7pt' : '8pt' }};
             margin-bottom: 4px;
         }
 
         /* ── DOCUMENT INFO ── */
         .doc-title {
-            font-size: 9px;
+            font-size: {{ $is58mm ? '8.5pt' : '9.5pt' }};
             font-weight: bold;
             text-transform: uppercase;
             margin: 4px 0 2px 0;
         }
         .meta-info {
-            font-size: 8px;
+            font-size: {{ $is58mm ? '7.5pt' : '8pt' }};
             margin-bottom: 4px;
         }
 
         /* ── CLIENT INFO ── */
         .client-info {
-            font-size: 8px;
+            font-size: {{ $is58mm ? '7.5pt' : '8pt' }};
             margin-bottom: 5px;
         }
 
@@ -195,20 +230,20 @@ $pageHeight = max(120, $pageHeight + 10);
             margin: 6px 0;
         }
         .items-table th {
-            font-size: 8px;
+            font-size: {{ $is58mm ? '7pt' : '8pt' }};
             font-weight: bold;
             border-bottom: 1px dashed #000000;
             padding: 3px 0;
             text-align: left;
         }
         .items-table td {
-            font-size: 8px;
+            font-size: {{ $is58mm ? '7.5pt' : '8pt' }};
             padding: 4px 0;
             vertical-align: top;
         }
         .items-table td.item-desc {
             word-wrap: break-word;
-            max-width: 35mm;
+            max-width: {{ $is58mm ? '24mm' : '36mm' }};
         }
 
         /* ── TOTALS ── */
@@ -217,12 +252,12 @@ $pageHeight = max(120, $pageHeight + 10);
             margin-top: 5px;
         }
         .totals-table td {
-            font-size: 8px;
+            font-size: {{ $is58mm ? '7.5pt' : '8pt' }};
             padding: 2px 0;
         }
         .totals-table .label {
             text-align: right;
-            padding-right: 8px;
+            padding-right: 6px;
         }
         .totals-table .val {
             text-align: right;
@@ -232,34 +267,34 @@ $pageHeight = max(120, $pageHeight + 10);
         .balance-row td {
             border-top: 1px dashed #000000;
             padding-top: 4px;
-            font-size: 9px;
+            font-size: {{ $is58mm ? '8.5pt' : '9.5pt' }};
         }
 
         /* ── FOOTER & QR ── */
         .qr-section {
-            margin: 10px 0;
+            margin: 8px 0;
             text-align: center;
         }
         .qr-section img {
-            width: 30mm;
-            height: 30mm;
+            width: {{ $is58mm ? '26mm' : '30mm' }};
+            height: {{ $is58mm ? '26mm' : '30mm' }};
             display: inline-block;
         }
         .security-info {
-            font-size: 7.5px;
+            font-size: {{ $is58mm ? '7pt' : '7.5pt' }};
             margin-top: 4px;
             line-height: 1.4;
         }
         .footer-thanks {
-            font-size: 8px;
-            margin-top: 10px;
+            font-size: {{ $is58mm ? '7.5pt' : '8.5pt' }};
+            margin-top: 8px;
             text-transform: uppercase;
             font-weight: bold;
         }
     </style>
 </head>
 <body>
-<div style="height: 4mm; width: 100%;"></div>
+<div style="height: 3mm; width: 100%;"></div>
 
 
 <!-- ── EMISOR (COMPANY) ── -->

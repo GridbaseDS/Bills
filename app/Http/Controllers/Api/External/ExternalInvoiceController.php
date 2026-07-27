@@ -237,7 +237,7 @@ class ExternalInvoiceController extends Controller
         ];
 
         $template = request()->query('template', $settings['invoice_pdf_template'] ?? 'normal');
-        $view = ($template === 'thermal') ? 'pdf.invoice_thermal' : 'pdf.invoice';
+        $view = (str_starts_with($template, 'thermal')) ? 'pdf.invoice_thermal' : 'pdf.invoice';
         $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView($view, $data);
 
         return $pdf->download('Factura-' . $invoice->invoice_number . '.pdf');

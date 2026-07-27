@@ -4,6 +4,8 @@ const net = require('net');
 const { URL } = require('url');
 const path = require('path');
 const fs = require('fs');
+const os = require('os');
+const { exec } = require('child_process');
 
 const PORT = 8080;
 
@@ -221,6 +223,31 @@ function startServer() {
 
         } catch (err) {
           console.error('[BillsBridge] Error en transacción:', err);
+          res.writeHead(500, { 'Content-Type': 'application/json' });
+    // Endpoint para impresión silenciosa directa en la impresora de caja
+    if (parsedUrl.pathname === '/print-ticket' && req.method === 'POST') {
+      let body = '';
+      req.on('data', chunk => { body += chunk; });
+      req.on('end', async () => {
+        try {
+          const params = JSON.parse(body);
+          const { pdf_url, printer_name } = params;
+
+          if (!pdf_url) {
+            res.writeHead(400, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ success: false, message: 'Falta parámetro pdf_url.' }));
+            return;
+          }
+
+          console.log(`[BillsBridge Print] Petición de impresión silenciosa enviada a: ${printer_name || 'Impresora Predeterminada'}`);
+          const result = await handleSilentPrint(pdf_url, printer_name);
+
+          const statusCode = result.success ? 200 : 500;
+          res.writeHead(statusCode, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify(result));
+
+        } catch (err) {
+          console.error('[BillsBridge Print] Error en impresión:', err);
           res.writeHead(500, { 'Content-Type': 'application/json' });
           res.end(JSON.stringify({ success: false, message: 'Error interno: ' + err.message }));
         }
@@ -625,5 +652,53 @@ function handleAzulLocalCharge(amount, ip, port, timeoutSec) {
 
     req.write(postData);
     req.end();
+  });
+}
+
+function handleSilentPrint(pdfUrl, printerName) {
+  return new Promise((resolve) => {
+    try {
+      const httpLib = pdfUrl.startsWith('https') ? https : http;
+      const tempPath = path.join(os.tmpdir(), `ticket_${Date.now()}.pdf`);
+      const file = fs.createWriteStream(tempPath);
+
+      httpLib.get(pdfUrl, (res) => {
+        res.pipe(file);
+        file.on('finish', () => {
+          file.close(() => {
+            let cmd = '';
+            if (process.platform === 'win32') {
+              if (printerName) {
+                cmd = `powershell -Command "Start-Process -FilePath '${tempPath}' -Verb PrintTo -ArgumentList '${printerName}'"`;
+              } else {
+                cmd = `powershell -Command "Start-Process -FilePath '${tempPath}' -Verb Print"`;
+              }
+            } else {
+              if (printerName) {
+                cmd = `lp -d "${printerName}" "${tempPath}"`;
+              } else {
+                cmd = `lp "${tempPath}"`;
+              }
+            }
+
+            exec(cmd, (err, stdout, stderr) => {
+              setTimeout(() => { try { fs.unlinkSync(tempPath); } catch(e){} }, 4000);
+
+              if (err) {
+                console.error('[BillsBridge Print] Error ejecutando comando de impresión:', err.message);
+                resolve({ success: false, message: 'Fallo al imprimir en sistema: ' + err.message });
+              } else {
+                console.log('[BillsBridge Print] Ticket enviado silenciosamente a la impresora');
+                resolve({ success: true, message: 'Ticket impreso silenciosamente.' });
+              }
+            });
+          });
+        });
+      }).on('error', (err) => {
+        resolve({ success: false, message: 'Error descargando PDF para impresión: ' + err.message });
+      });
+    } catch(e) {
+      resolve({ success: false, message: 'Error procesando impresión silenciosa: ' + e.message });
+    }
   });
 }

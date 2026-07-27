@@ -1292,7 +1292,7 @@ const InvoicesModule = {
         });
     },
 
-    printInvoice(id, type = 'thermal') {
+    async printInvoice(id, type = 'thermal') {
         const settings = window.App.state.settings || {};
         let template = 'normal';
         if (type === 'thermal') {
@@ -1300,8 +1300,31 @@ const InvoicesModule = {
                 ? settings.invoice_pdf_template 
                 : 'thermal';
         }
-        const pdfUrl = `/api/invoices/${id}/pdf?template=${template}`;
+        
+        const fullPdfUrl = `${window.location.origin}/api/invoices/${id}/pdf?template=${template}`;
+        const printerName = settings.thermal_printer_name || '2Connect POS80-01 V7';
 
+        // 1. Intentar impresión silenciosa directa de 0 clics vía BillsBridge local
+        try {
+            const check = await fetch('http://localhost:8080/status', { method: 'GET', signal: AbortSignal.timeout(1000) });
+            if (check.ok) {
+                App.showToast(`Enviando ticket a ${printerName}...`, 'info');
+                const bridgeRes = await fetch('http://localhost:8080/print-ticket', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ pdf_url: fullPdfUrl, printer_name: printerName })
+                });
+                const resData = await bridgeRes.json();
+                if (resData.success) {
+                    App.showToast(`✓ Ticket impreso automáticamente en ${printerName}`, 'success');
+                    return;
+                }
+            }
+        } catch(e) {
+            console.log('[Impresión] BillsBridge local no activo. Usando impresión en navegador.');
+        }
+
+        // 2. Fallback a cuadro de diálogo de navegador
         let iframe = document.getElementById('invoice-print-iframe');
         if (!iframe) {
             iframe = document.createElement('iframe');
@@ -1315,14 +1338,14 @@ const InvoicesModule = {
             document.body.appendChild(iframe);
         }
 
-        App.showToast(`Enviando a impresión (${type === 'thermal' ? 'Ticket Térmico 2Connect' : 'Carta A4'})...`, 'info');
-        iframe.src = pdfUrl;
+        App.showToast(`Abriendo vista de impresión (${type === 'thermal' ? 'Ticket Térmico 2Connect' : 'Carta A4'})...`, 'info');
+        iframe.src = fullPdfUrl;
         iframe.onload = () => {
             try {
                 iframe.contentWindow.focus();
                 iframe.contentWindow.print();
             } catch(e) {
-                window.open(pdfUrl, '_blank');
+                window.open(fullPdfUrl, '_blank');
             }
         };
     },
@@ -1332,31 +1355,7 @@ const InvoicesModule = {
         const shouldPrint = settings.auto_print_thermal_on_pay === '1' || (settings.invoice_pdf_template && settings.invoice_pdf_template.startsWith('thermal'));
         if (!shouldPrint) return;
 
-        const template = settings.invoice_pdf_template && settings.invoice_pdf_template.startsWith('thermal') ? settings.invoice_pdf_template : 'thermal';
-        const pdfUrl = `/api/invoices/${id}/pdf?template=${template}`;
-
-        let iframe = document.getElementById('thermal-print-iframe');
-        if (!iframe) {
-            iframe = document.createElement('iframe');
-            iframe.id = 'thermal-print-iframe';
-            iframe.style.position = 'fixed';
-            iframe.style.right = '0';
-            iframe.style.bottom = '0';
-            iframe.style.width = '0';
-            iframe.style.height = '0';
-            iframe.style.border = '0';
-            document.body.appendChild(iframe);
-        }
-
-        iframe.src = pdfUrl;
-        iframe.onload = () => {
-            try {
-                iframe.contentWindow.focus();
-                iframe.contentWindow.print();
-            } catch(e) {
-                window.open(pdfUrl, '_blank');
-            }
-        };
+        this.printInvoice(id, 'thermal');
     },
 
     async markAsPaid(id, amount, method = 'other', reference = null, notes = null) {

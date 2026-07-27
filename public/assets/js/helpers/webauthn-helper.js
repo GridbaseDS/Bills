@@ -59,7 +59,18 @@ export const WebAuthnHelper = {
         }
 
         // 2. Prompt Device Sensor (Face ID / Touch ID)
-        const credential = await navigator.credentials.create({ publicKey: options });
+        let credential;
+        try {
+            credential = await navigator.credentials.create({ publicKey: options });
+        } catch (err) {
+            if (err.name === 'InvalidStateError') {
+                throw new Error('Este dispositivo (Face ID / Touch ID) ya se encuentra activado para tu cuenta.');
+            }
+            if (err.name === 'NotAllowedError') {
+                throw new Error('Se canceló la lectura biométrica o no se concedió el permiso de Face ID.');
+            }
+            throw new Error(err.message || 'Error al interactuar con el sensor biométrico.');
+        }
 
         // 3. Send Credentials to Server
         const attestationObject = this.arrayBufferToBase64Url(credential.response.attestationObject);
@@ -104,7 +115,18 @@ export const WebAuthnHelper = {
         }));
 
         // 2. Prompt Device Sensor (Face ID / Touch ID)
-        const credential = await navigator.credentials.get({ publicKey: options });
+        let credential;
+        try {
+            credential = await navigator.credentials.get({ publicKey: options });
+        } catch (err) {
+            if (err.name === 'InvalidStateError') {
+                throw new Error('El sensor de Face ID / Touch ID ya está registrado en este dispositivo.');
+            }
+            if (err.name === 'NotAllowedError') {
+                throw new Error('Se canceló la lectura biométrica o no se autorizó Face ID.');
+            }
+            throw new Error(err.message || 'Error al autenticar con el sensor biométrico.');
+        }
 
         // 3. Send Assertion to Server
         const authenticatorData = this.arrayBufferToBase64Url(credential.response.authenticatorData);

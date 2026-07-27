@@ -227,12 +227,12 @@ const InvoicesModule = {
                         <p class="page-subtitle">Emitida el ${App.formatDate(inv.issue_date)}</p>
                     </div>
                     <div class="invoice-actions detail-actions">
-                        <a href="/api/invoices/${id}/pdf" target="_blank" class="btn btn-secondary btn-sm">
+                        <a href="/api/invoices/${id}/pdf?template=normal" target="_blank" class="btn btn-secondary btn-sm">
                             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
-                            Ver PDF
+                            Ver PDF (Carta / A4)
                         </a>
-                        <a href="/api/invoices/${id}/pdf?template=thermal" target="_blank" class="btn btn-secondary btn-sm">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
+                        <a href="/api/invoices/${id}/pdf?template=${window.App.state.settings?.invoice_pdf_template?.startsWith('thermal') ? window.App.state.settings.invoice_pdf_template : 'thermal'}" target="_blank" class="btn btn-secondary btn-sm">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
                             Ticket Térmico
                         </a>
                         ${inv.status !== 'cancelled' ? `
@@ -1283,6 +1283,38 @@ const InvoicesModule = {
         });
     },
 
+    autoPrintThermal(id) {
+        const settings = window.App.state.settings || {};
+        const shouldPrint = settings.auto_print_thermal_on_pay === '1' || (settings.invoice_pdf_template && settings.invoice_pdf_template.startsWith('thermal'));
+        if (!shouldPrint) return;
+
+        const template = settings.invoice_pdf_template && settings.invoice_pdf_template.startsWith('thermal') ? settings.invoice_pdf_template : 'thermal';
+        const pdfUrl = `/api/invoices/${id}/pdf?template=${template}`;
+
+        let iframe = document.getElementById('thermal-print-iframe');
+        if (!iframe) {
+            iframe = document.createElement('iframe');
+            iframe.id = 'thermal-print-iframe';
+            iframe.style.position = 'fixed';
+            iframe.style.right = '0';
+            iframe.style.bottom = '0';
+            iframe.style.width = '0';
+            iframe.style.height = '0';
+            iframe.style.border = '0';
+            document.body.appendChild(iframe);
+        }
+
+        iframe.src = pdfUrl;
+        iframe.onload = () => {
+            try {
+                iframe.contentWindow.focus();
+                iframe.contentWindow.print();
+            } catch(e) {
+                window.open(pdfUrl, '_blank');
+            }
+        };
+    },
+
     async markAsPaid(id, amount, method = 'other', reference = null, notes = null) {
         try {
             await App.api(`invoices/${id}/payment`, { 
@@ -1295,6 +1327,7 @@ const InvoicesModule = {
                 } 
             });
             App.showToast('Pago registrado correctamente');
+            this.autoPrintThermal(id);
             App.navigate(`facturas/${id}`);
         } catch(e) {}
     },

@@ -299,13 +299,30 @@ export default {
                                     <div style="font-size:11px;color:var(--color-text-muted);margin-top:4px;">Barra con datos de contacto al pie del PDF</div>
                                 </div>
                                 <div class="form-group">
-                                    <label class="form-label">Plantilla de Factura por Defecto</label>
-                                    <select id="s_invoice_pdf_template" class="form-control" style="width:260px;">
-                                        <option value="normal" ${s.invoice_pdf_template === 'normal' || !s.invoice_pdf_template ? 'selected' : ''}>Normal (Carta / A4)</option>
-                                        <option value="thermal" ${s.invoice_pdf_template === 'thermal' ? 'selected' : ''}>Ticket Térmico 80mm (2Connect POS80-01 V7)</option>
+                                    <label class="form-label">Plantilla por Defecto para Auto-Impresión</label>
+                                    <select id="s_invoice_pdf_template" class="form-control" style="width:100%;">
+                                        <option value="thermal" ${s.invoice_pdf_template === 'thermal' || !s.invoice_pdf_template ? 'selected' : ''}>Ticket Térmico 80mm (2Connect POS80-01 V7)</option>
                                         <option value="thermal_58mm" ${s.invoice_pdf_template === 'thermal_58mm' ? 'selected' : ''}>Ticket Térmico 58mm (Cardnet Saturn 1000 / Móvil)</option>
+                                        <option value="normal" ${s.invoice_pdf_template === 'normal' ? 'selected' : ''}>Factura Estándar (Carta / A4)</option>
                                     </select>
-                                    <div style="font-size:11px;color:var(--color-text-muted);margin-top:4px;">Define el formato de impresión predeterminado en el sistema</div>
+                                    <div style="font-size:11px;color:var(--color-text-muted);margin-top:4px;">Define la plantilla usada al imprimir tickets de caja automáticamente</div>
+                                </div>
+                            </div>
+
+                            <h3 style="font-size:15px;font-weight:600;margin:24px 0 16px;border-top:1px solid var(--color-border);padding-top:24px;">Auto-Impresión al Pagar</h3>
+                            <div class="grid-2">
+                                <div class="form-group">
+                                    <label class="form-label">Auto-Imprimir Ticket al Marcar como Pagada</label>
+                                    <select id="s_auto_print_thermal_on_pay" class="form-control">
+                                        <option value="1" ${s.auto_print_thermal_on_pay === '1' ? 'selected' : ''}>Sí — Imprimir Ticket Térmico Automáticamente al Pagar</option>
+                                        <option value="0" ${s.auto_print_thermal_on_pay === '0' || !s.auto_print_thermal_on_pay ? 'selected' : ''}>No — Imprimir Manualmente</option>
+                                    </select>
+                                    <div style="font-size:11px;color:var(--color-text-muted);margin-top:4px;">Dispara automáticamente la impresión del ticket térmico tan pronto se registra un pago.</div>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Impresora Térmica por Defecto (Nombre de Sistema)</label>
+                                    <input type="text" id="s_thermal_printer_name" class="form-control" placeholder="Ej: 2Connect POS80-01 V7 o POS-80" value="${s.thermal_printer_name || '2Connect POS80-01 V7'}">
+                                    <div style="font-size:11px;color:var(--color-text-muted);margin-top:4px;">Nombre de la impresora predeterminada para que el sistema mande los tickets directo al pagar.</div>
                                 </div>
                             </div>
 
@@ -1455,6 +1472,8 @@ export default {
                     pdf_logo_url: getValue('s_pdf_logo_url'),
                     pdf_show_footer: getValue('s_pdf_show_footer'),
                     invoice_pdf_template: getValue('s_invoice_pdf_template'),
+                    auto_print_thermal_on_pay: getValue('s_auto_print_thermal_on_pay'),
+                    thermal_printer_name: getValue('s_thermal_printer_name'),
                 };
 
                 const settingsToUpdate = Object.fromEntries(

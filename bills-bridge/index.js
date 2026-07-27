@@ -224,6 +224,12 @@ function startServer() {
         } catch (err) {
           console.error('[BillsBridge] Error en transacción:', err);
           res.writeHead(500, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ success: false, message: 'Error interno: ' + err.message }));
+        }
+      });
+      return;
+    }
+
     // Endpoint para impresión silenciosa directa en la impresora de caja
     if (parsedUrl.pathname === '/print-ticket' && req.method === 'POST') {
       let body = '';

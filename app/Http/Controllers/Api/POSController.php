@@ -471,14 +471,13 @@ class POSController extends Controller
             ], 400);
         }
 
-        $amountFormatted = number_format((float)$amount, 2, '.', '');
+        $amountVal = (float) round((float)$amount, 2);
         $url = "http://{$ip}:{$port}/tx_sale";
-        Log::info("POS (Cardnet Saturn 1000): Enviando POST a {$url} con monto {$amountFormatted} DOP...");
+        Log::info("POS (Cardnet Saturn 1000): Enviando POST a {$url} con monto {$amountVal} DOP...");
 
         try {
-            $response = Http::timeout($timeout)->post("{$url}?amount={$amountFormatted}", [
-                'amount' => $amountFormatted,
-                'amountNum' => (float)$amountFormatted
+            $response = Http::timeout($timeout)->post("{$url}?amount={$amountVal}", [
+                'amount' => $amountVal
             ]);
 
             Log::debug("POS (Cardnet Android): Respuesta recibida. Status: " . $response->status() . " - Body: " . $response->body());

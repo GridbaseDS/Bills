@@ -845,16 +845,17 @@ window.App = {
             </div>
         `;
 
-        // Check WebAuthn support
+        // Check WebAuthn support & auto-launch Passkey prompt (Zero-click authentication)
         WebAuthnHelper.isSupported().then(supported => {
             if (supported) {
                 const wrap = document.getElementById('biometric-login-wrap');
                 if (wrap) wrap.style.display = 'block';
 
                 const btnWebAuthn = document.getElementById('btn-webauthn-login');
-                btnWebAuthn?.addEventListener('click', async () => {
+                const triggerBiometricLogin = async () => {
                     const errorEl = document.getElementById('login-error');
-                    errorEl.style.display = 'none';
+                    if (errorEl) errorEl.style.display = 'none';
+                    if (!btnWebAuthn) return;
                     btnWebAuthn.disabled = true;
                     btnWebAuthn.innerHTML = '<span class="spinner"></span> Verificando biometría...';
 
@@ -868,6 +869,7 @@ window.App = {
                             this.navigate('inicio');
                         }
                     } catch (err) {
+                        if (!btnWebAuthn) return;
                         btnWebAuthn.disabled = false;
                         btnWebAuthn.innerHTML = `
                             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;">
@@ -881,12 +883,21 @@ window.App = {
                             </svg>
                             Ingresar con Face ID / Touch ID / Huella
                         `;
-                        if (errorEl) {
-                            errorEl.textContent = err.message || 'Error en la verificación biométrica';
+                        if (errorEl && err.message && !err.message.includes('canceló')) {
+                            errorEl.textContent = err.message;
                             errorEl.style.display = 'block';
                         }
                     }
-                });
+                };
+
+                btnWebAuthn?.addEventListener('click', triggerBiometricLogin);
+
+                // Zero-click Auto-Launch: Launch Face ID / Touch ID prompt immediately on page load
+                setTimeout(() => {
+                    if (document.getElementById('btn-webauthn-login')) {
+                        triggerBiometricLogin();
+                    }
+                }, 250);
             }
         });
         

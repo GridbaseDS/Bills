@@ -299,14 +299,15 @@ export default {
                                     <div style="font-size:11px;color:var(--color-text-muted);margin-top:4px;">Barra con datos de contacto al pie del PDF</div>
                                 </div>
                                 <div class="form-group">
-                                    <label class="form-label">Plantilla por Defecto para Auto-Impresión</label>
-                                    <select id="s_invoice_pdf_template" class="form-control" style="width:100%;">
-                                        <option value="thermal" ${s.invoice_pdf_template === 'thermal' || !s.invoice_pdf_template ? 'selected' : ''}>Ticket Térmico 80mm (2Connect POS80-01 V7)</option>
-                                        <option value="thermal_58mm" ${s.invoice_pdf_template === 'thermal_58mm' ? 'selected' : ''}>Ticket Térmico 58mm (Cardnet Saturn 1000 / Móvil)</option>
-                                        <option value="normal" ${s.invoice_pdf_template === 'normal' ? 'selected' : ''}>Factura Estándar (Carta / A4)</option>
-                                    </select>
-                                    <div style="font-size:11px;color:var(--color-text-muted);margin-top:4px;">Define la plantilla usada al imprimir tickets de caja automáticamente</div>
-                                </div>
+                                     <label class="form-label">Modelo de Impresora / Plantilla de Ticket</label>
+                                     <select id="s_invoice_pdf_template" class="form-control" style="width:100%;">
+                                         <option value="thermal" ${s.invoice_pdf_template === 'thermal' || s.invoice_pdf_template === 'thermal_2connect_80mm' || !s.invoice_pdf_template ? 'selected' : ''}>2Connect POS80 Series (80mm — POS80-01 V7 / POS80-02 / POS80-03)</option>
+                                         <option value="thermal_2connect_58mm" ${s.invoice_pdf_template === 'thermal_2connect_58mm' ? 'selected' : ''}>2Connect POS58 Series (58mm — POS58 USB / POS58 BT Portátil)</option>
+                                         <option value="thermal_58mm" ${s.invoice_pdf_template === 'thermal_58mm' ? 'selected' : ''}>Cardnet Saturn 1000 POS (58mm Integrada)</option>
+                                         <option value="normal" ${s.invoice_pdf_template === 'normal' ? 'selected' : ''}>Factura Estándar (Carta / A4)</option>
+                                     </select>
+                                     <div style="font-size:11px;color:var(--color-text-muted);margin-top:4px;">Define la calibración de papel, fuente y márgenes de corte de tu impresora 2Connect.</div>
+                                 </div>
                             </div>
 
                             <h3 style="font-size:15px;font-weight:600;margin:24px 0 16px;border-top:1px solid var(--color-border);padding-top:24px;">Auto-Impresión al Pagar</h3>
@@ -321,8 +322,8 @@ export default {
                                 </div>
                                 <div class="form-group">
                                     <label class="form-label">Impresora Térmica por Defecto (Nombre de Sistema)</label>
-                                    <input type="text" id="s_thermal_printer_name" class="form-control" placeholder="Ej: 2Connect POS80-01 V7 o POS-80" value="${s.thermal_printer_name || '2Connect POS80-01 V7'}">
-                                    <div style="font-size:11px;color:var(--color-text-muted);margin-top:4px;">Nombre de la impresora predeterminada para que el sistema mande los tickets directo al pagar.</div>
+                                    <input type="text" id="s_thermal_printer_name" class="form-control" placeholder="Ej: 2Connect POS80-01 V7, 2Connect POS58, 2C-POS58-USB" value="${s.thermal_printer_name || '2Connect POS80-01 V7'}">
+                                    <div style="font-size:11px;color:var(--color-text-muted);margin-top:4px;">Nombre de la impresora predeterminada 2Connect para que el sistema mande los tickets directo al pagar.</div>
                                 </div>
                             </div>
 

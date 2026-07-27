@@ -119,9 +119,10 @@ if (!empty($invoice['terms'])) {
 }
 
 $templateQuery = request()->query('template', $settings['invoice_pdf_template'] ?? 'thermal');
-$is58mm = ($templateQuery === 'thermal_58mm' || (isset($paper_size) && $paper_size === '58mm'));
+$is58mm = (str_contains($templateQuery, '58mm') || (isset($paper_size) && $paper_size === '58mm'));
 $paperWidth = $is58mm ? 58 : 80;
 $marginSide = $is58mm ? 2.5 : 3.5;
+$cutterClearance = $is58mm ? 10 : 14; // 14mm bottom feed clearance for 2Connect POS80 auto-cutter
 
 // Calculate page height dynamically in mm with cutter clearance for 2Connect POS80-01 V7 & Saturn 1000
 $itemCount = count($invoice['items'] ?? $items ?? []);

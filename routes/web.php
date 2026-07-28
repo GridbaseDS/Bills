@@ -102,22 +102,16 @@ Route::get('/billsbridge.exe', function () {
     return response()->download($path, 'billsbridge.exe');
 });
 
-Route::get('/billsbridge-macos-arm64', function () {
-    $path = public_path('billsbridge-macos-arm64');
-    if (!file_exists($path)) {
-        $path = base_path('bills-bridge/dist/billsbridge-macos-arm64');
-    }
+Route::get('/BillsBridge-Mac-AppleSilicon.zip', function () {
+    $path = public_path('BillsBridge-Mac-AppleSilicon.zip');
     if (!file_exists($path)) abort(404);
-    return response()->download($path, 'billsbridge-macos-arm64');
+    return response()->download($path, 'BillsBridge-Mac-AppleSilicon.zip');
 });
 
-Route::get('/billsbridge-macos-x64', function () {
-    $path = public_path('billsbridge-macos-x64');
-    if (!file_exists($path)) {
-        $path = base_path('bills-bridge/dist/billsbridge-macos-x64');
-    }
+Route::get('/BillsBridge-Mac-Intel.zip', function () {
+    $path = public_path('BillsBridge-Mac-Intel.zip');
     if (!file_exists($path)) abort(404);
-    return response()->download($path, 'billsbridge-macos-x64');
+    return response()->download($path, 'BillsBridge-Mac-Intel.zip');
 });
 
 Route::get('/{any}', function () {

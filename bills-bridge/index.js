@@ -45,6 +45,7 @@ startServer();
 // FUNCIÓN PARA INSTALAR EL SERVICIO EN SEGUNDO PLANO
 // ─────────────────────────────────────────────────────────────
 function installScheduledTask() {
+  if (process.platform !== 'win32') return;
   console.log('[BillsBridge] Intentando registrar servicio de Windows en segundo plano...');
   try {
     const { execSync } = require('child_process');

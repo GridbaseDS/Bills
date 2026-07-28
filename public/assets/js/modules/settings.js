@@ -520,7 +520,15 @@ export default {
                                          </button>
                                          <a href="/billsbridge.exe" download class="btn btn-secondary" style="height:32px; font-size:12px; padding:0 12px; display:flex; align-items:center; gap:6px; font-weight:600; text-decoration:none; background:var(--color-bg-primary); border:1px solid var(--color-border); color:var(--color-text);">
                                              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
-                                             Descargar BillsBridge (.exe)
+                                             Descargar Windows (.exe)
+                                         </a>
+                                         <a href="/billsbridge-macos-arm64" download class="btn btn-secondary" style="height:32px; font-size:12px; padding:0 12px; display:flex; align-items:center; gap:6px; font-weight:600; text-decoration:none; background:var(--color-bg-primary); border:1px solid var(--color-border); color:var(--color-text);">
+                                             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                                             Descargar Mac (M1/M2/M3/M4)
+                                         </a>
+                                         <a href="/billsbridge-macos-x64" download class="btn btn-secondary" style="height:32px; font-size:12px; padding:0 12px; display:flex; align-items:center; gap:6px; font-weight:600; text-decoration:none; background:var(--color-bg-primary); border:1px solid var(--color-border); color:var(--color-text);">
+                                             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                                             Descargar Mac (Intel)
                                          </a>
                                      </div>
                                      <div id="bridge-status-container" style="margin-top:12px; padding:12px; border-radius:var(--radius-md); border:1px solid var(--color-border); background:var(--color-bg-primary); display:none;">

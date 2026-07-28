@@ -114,14 +114,6 @@ Route::get('/BillsBridge-Mac-Intel.zip', function () {
     return response()->download($path, 'BillsBridge-Mac-Intel.zip');
 });
 
-Route::get('/saturn1000-sim.js', function () {
-    return response()->file(public_path('saturn1000-sim.js'));
-});
-
-Route::get('/saturn1000-interactive.py', function () {
-    return response()->file(public_path('saturn1000-interactive.py'));
-});
-
 Route::get('/{any}', function () {
     return view('welcome');
 })->where('any', '.*');

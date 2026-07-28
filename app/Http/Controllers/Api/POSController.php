@@ -472,6 +472,22 @@ class POSController extends Controller
         }
 
         $amountVal = (float) round((float)$amount, 2);
+
+        // Modo Demo / Prueba sin necesidad de estar en la red local
+        if ($ip === 'demo' || $ip === 'test' || $ip === '127.0.0.1' || $ip === 'localhost') {
+            sleep(1);
+            $authCode = str_pad(rand(100000, 999999), 6, '0', STR_PAD_LEFT);
+            $lastFour = rand(1000, 9999);
+            Log::info("POS (Cardnet Saturn 1000 Demo): Cobro de DOP {$amountVal} simulado. Auth: {$authCode}");
+            return response()->json([
+                'success' => true,
+                'status' => 'approved',
+                'auth_code' => $authCode,
+                'card_number' => "411111******{$lastFour}",
+                'card_type' => 'VISA',
+                'message' => "APROBADA {$authCode}"
+            ]);
+        }
         $url = "http://{$ip}:{$port}/tx_sale";
         Log::info("POS (Cardnet Saturn 1000): Enviando POST a {$url} con monto {$amountVal} DOP...");
 

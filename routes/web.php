@@ -92,6 +92,34 @@ Route::get('/api-docs', function () {
 // POS Mobile Simulator View
 Route::get('/pos-simulator/{invoice_id}', [App\Http\Controllers\Api\POSController::class, 'simulatorView'])->name('pos.simulator');
 
+// BillsBridge direct binary download routes
+Route::get('/billsbridge.exe', function () {
+    $path = public_path('billsbridge.exe');
+    if (!file_exists($path)) {
+        $path = base_path('bills-bridge/dist/billsbridge-win-x64.exe');
+    }
+    if (!file_exists($path)) abort(404);
+    return response()->download($path, 'billsbridge.exe');
+});
+
+Route::get('/billsbridge-macos-arm64', function () {
+    $path = public_path('billsbridge-macos-arm64');
+    if (!file_exists($path)) {
+        $path = base_path('bills-bridge/dist/billsbridge-macos-arm64');
+    }
+    if (!file_exists($path)) abort(404);
+    return response()->download($path, 'billsbridge-macos-arm64');
+});
+
+Route::get('/billsbridge-macos-x64', function () {
+    $path = public_path('billsbridge-macos-x64');
+    if (!file_exists($path)) {
+        $path = base_path('bills-bridge/dist/billsbridge-macos-x64');
+    }
+    if (!file_exists($path)) abort(404);
+    return response()->download($path, 'billsbridge-macos-x64');
+});
+
 Route::get('/{any}', function () {
     return view('welcome');
 })->where('any', '.*');

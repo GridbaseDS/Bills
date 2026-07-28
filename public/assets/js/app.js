@@ -794,14 +794,20 @@ window.App = {
                         <img src="${cachedLogo}" alt="Logo" style="height: ${loginLogoHeight}px; object-fit: contain;">
                     </div>
                     <div class="login-form-wrap">
-                        <div style="display:flex; align-items:center; gap:16px; margin-bottom:24px;">
-                            <div style="width:48px;height:48px;border-radius:50%;background:var(--color-primary);color:#fff;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:700;">
-                                ${email.charAt(0).toUpperCase()}
+                        <div style="display:flex; align-items:center; justify-space:space-between; margin-bottom:24px; background:var(--color-bg-secondary); border:1px solid var(--color-border); border-radius:12px; padding:12px 16px;">
+                            <div style="display:flex; align-items:center; gap:14px; min-width:0;">
+                                <div style="width:42px;height:42px;border-radius:50%;background:var(--color-primary);color:#fff;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;flex-shrink:0;">
+                                    ${email.charAt(0).toUpperCase()}
+                                </div>
+                                <div style="overflow:hidden;">
+                                    <h1 class="login-title" style="margin-bottom:2px; font-size:18px;">Hola de nuevo</h1>
+                                    <p class="login-subtitle" style="margin-bottom:0; font-size:13px; text-overflow:ellipsis; overflow:hidden; white-space:nowrap;">${email}</p>
+                                </div>
                             </div>
-                            <div>
-                                <h1 class="login-title" style="margin-bottom:0;">Hola de nuevo</h1>
-                                <p class="login-subtitle" style="margin-bottom:0;">${email}</p>
-                            </div>
+                            <button type="button" id="btn-quick-logout-top" class="btn btn-secondary btn-sm" style="font-size:12px; font-weight:600; padding:6px 10px; display:inline-flex; align-items:center; gap:4px; color:var(--color-danger-icon); border-color:rgba(239,68,68,0.3); background:var(--color-bg-primary); flex-shrink:0;" title="Cerrar sesión e iniciar con otra cuenta">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+                                Cerrar sesión
+                            </button>
                         </div>
                         <div id="login-error" class="login-error"></div>
 
@@ -832,8 +838,11 @@ window.App = {
                             </div>
                             <button type="submit" class="login-submit">Ingresar</button>
                         </form>
-                        <div style="margin-top:24px; text-align:center;">
-                            <button type="button" id="btn-fallback-login" style="background:none; border:none; color:var(--color-primary); font-size:14px; font-weight:600; cursor:pointer; text-decoration:underline;">Ingresar con contraseña u otra cuenta</button>
+                        <div style="margin-top:20px; text-align:center; display:flex; flex-direction:column; gap:10px;">
+                            <button type="button" id="btn-fallback-login" class="btn btn-secondary" style="width:100%; padding:12px; font-size:14px; font-weight:600; display:inline-flex; align-items:center; justify-content:center; gap:8px;">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+                                Cerrar sesión / Iniciar con otra cuenta
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -901,10 +910,15 @@ window.App = {
             }
         });
         
-        document.getElementById('btn-fallback-login').addEventListener('click', () => {
+        const handleFullLogout = () => {
             localStorage.removeItem('device_token');
+            localStorage.removeItem('saved_email');
+            localStorage.removeItem('auth_token');
             this.renderLogin();
-        });
+        };
+
+        document.getElementById('btn-fallback-login')?.addEventListener('click', handleFullLogout);
+        document.getElementById('btn-quick-logout-top')?.addEventListener('click', handleFullLogout);
         
         document.getElementById('pin-login-form').addEventListener('submit', async (e) => {
             e.preventDefault();

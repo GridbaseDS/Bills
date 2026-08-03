@@ -585,16 +585,18 @@ function handleCardnetAndroidCharge(amount, ip, port, timeoutSec) {
         let body = '';
         res.on('data', chunk => { body += chunk; });
         res.on('end', () => {
+          console.log(`[BillsBridge Cardnet Saturn] HTTP ${res.statusCode} | Respuesta cruda del Verifone: "${body}"`);
           if (res.statusCode === 200) {
             try {
-              const data = JSON.parse(body);
-              const authCode = data.approbationNumber || data.auth_code || data.approvalCode || '';
-              const txnMessage = data.txnMessage || data.message || 'Tarjeta Declinada / Error';
-              const cardInfo = data.cardInformation || data.cardInfo || {};
-              const maskedPan = cardInfo.maskedPAN || cardInfo.cardNumber || '************0000';
-              const cardSubType = cardInfo.cardSubType || cardInfo.cardType || 'Tarjeta';
+              const data = JSON.parse(body || '{}');
+              const authCode = data.approbationNumber || data.auth_code || data.approvalCode || data.authorizationCode || '';
+              const txnMessage = data.txnMessage || data.message || data.responseMessage || 'Tarjeta Declinada / Error';
+              const cardInfo = data.cardInformation || data.cardInfo || data.card || {};
+              const maskedPan = cardInfo.maskedPAN || cardInfo.cardNumber || cardInfo.pan || '************0000';
+              const cardSubType = cardInfo.cardSubType || cardInfo.cardType || cardInfo.type || 'Tarjeta';
 
               if (authCode && authCode !== '000000') {
+                console.log(`[BillsBridge Cardnet Saturn] ✅ APROBADA! Auth: ${authCode}`);
                 return resolve({
                   success: true,
                   status: 'approved',
@@ -604,9 +606,11 @@ function handleCardnetAndroidCharge(amount, ip, port, timeoutSec) {
                   message: txnMessage
                 });
               } else {
-                return resolve({ success: false, message: txnMessage });
+                console.warn(`[BillsBridge Cardnet Saturn] ❌ DECLINADA / RECHAZADA por el Verifone: ${txnMessage}`);
+                return resolve({ success: false, message: `Verifone: ${txnMessage}` });
               }
             } catch (e) {
+              console.error(`[BillsBridge Cardnet Saturn] Error parseando JSON:`, e.message);
               return resolve({ success: false, message: 'Error procesando la respuesta del POS Cardnet Saturn.' });
             }
           } else if (res.statusCode === 404 && attemptIndex < endpoints.length) {

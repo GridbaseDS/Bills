@@ -146,9 +146,13 @@ function startServer() {
             return;
           }
 
-          // Guardar configuración
+          // Guardar configuración (en disco y memoria)
           const config = { domain };
-          fs.writeFileSync(configPath, JSON.stringify(config, null, 2));
+          try {
+            fs.writeFileSync(configPath, JSON.stringify(config, null, 2));
+          } catch (fsErr) {
+            console.warn('[!] Advertencia: No se pudo escribir config.json en disco, pero se mantendrá en memoria:', fsErr.message);
+          }
           currentConfig = config;
           allowedDomain = domain;
 

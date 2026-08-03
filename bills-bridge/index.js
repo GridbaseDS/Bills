@@ -612,10 +612,11 @@ function handleCardnetLocalCharge(amount, ip, port, invoiceId, timeoutSec) {
 }
 
 function handleCardnetAndroidCharge(amount, ip, port, merchantId, terminalId, invoiceId, timeoutSec) {
-  return new Promise((resolve) => {
-    const targetPort = port || 2001;
-    if (!ip) {
-      return resolve({ success: false, message: 'IP del terminal Android no configurada.' });
+    // Guard: si se pasó timeout (ej: 90 o 60) como 4to argumento por firma legacy
+    let actualMerchantId = merchantId;
+    if (typeof actualMerchantId === 'number' && (timeoutSec === undefined || actualMerchantId <= 300)) {
+      if (!timeoutSec) timeoutSec = actualMerchantId;
+      actualMerchantId = null;
     }
 
     const amountVal = Math.round(parseFloat(amount) * 100) / 100;
@@ -628,7 +629,7 @@ function handleCardnetAndroidCharge(amount, ip, port, merchantId, terminalId, in
       { amount: amountCents }
     ];
 
-    if (merchantId) payloadVariants.forEach(p => p.merchantId = merchantId);
+    if (actualMerchantId) payloadVariants.forEach(p => p.merchantId = actualMerchantId);
     if (terminalId) payloadVariants.forEach(p => p.terminalId = terminalId);
 
     const endpoints = [

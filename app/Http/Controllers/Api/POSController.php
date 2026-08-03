@@ -55,6 +55,8 @@ class POSController extends Controller
                     'driver' => $driver,
                     'ip' => $ip,
                     'port' => $port,
+                    'merchant_id' => Setting::get('pos_merchant_id', ''),
+                    'terminal_id' => Setting::get('pos_terminal_id', ''),
                     'timeout' => $timeout
                 ];
 

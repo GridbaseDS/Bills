@@ -384,7 +384,7 @@ function startCloudPolling() {
             result = await handleCardnetLocalCharge(tx.amount, tx.ip, tx.port, tx.invoice_id, tx.timeout);
             break;
           case 'cardnet_android':
-            result = await handleCardnetAndroidCharge(tx.amount, tx.ip, tx.port, tx.timeout);
+            result = await handleCardnetAndroidCharge(tx.amount, tx.ip, tx.port, tx.merchant_id, tx.terminal_id, tx.invoice_id, tx.timeout);
             break;
           case 'azul_local':
             result = await handleAzulLocalCharge(tx.amount, tx.ip, tx.port, tx.timeout);

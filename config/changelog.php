@@ -1,11 +1,11 @@
 <?php
 
 return [
-    'version' => '3.6.8',
-    'date' => '2026-07-28',
+    'version' => '3.6.9',
+    'date' => '2026-08-03',
     'changes' => [
-        'Acceso Rápido / PIN: Agregado botón explícito "Cerrar sesión / Iniciar con otra cuenta" en la pantalla de PIN y login biométrico para permitir cambiar de usuario fácilmente.',
-        'BillsBridge para macOS (.zip & .command): Paquetes comprimidos .zip con script ejecutable .command para que Mac abra Terminal automáticamente al hacer doble clic sin abrir TextEdit.',
+        'Indicador de Estado BillsBridge: Corrección en el badge de diagnóstico en Ajustes > POS para diferenciar claramente entre "Desactivado", "Abierto pero Sin Vincular", "Conectado y Vinculado" y "Canal de Nube".',
+        'Acceso Rápido / PIN: Agregado botón explícito "Cerrar sesión / Iniciar con otra cuenta" en la pantalla de PIN y login biométrico.',
         'Impresión Silenciosa de 0 Clics: Integración con BillsBridge para enviar tickets térmicos directamente a la impresora de caja (2Connect) sin abrir ningún cuadro de diálogo ni ventana del navegador.'
     ]
 ];

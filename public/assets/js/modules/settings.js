@@ -2051,27 +2051,46 @@ export default {
                     Consultando estado del bridge local...
                 `;
 
+                const useBridgeInput = document.getElementById('s_pos_use_bridge');
+                if (!useBridgeInput || !useBridgeInput.checked) {
+                    badgeEl.style.color = 'var(--color-text-muted)';
+                    badgeEl.innerHTML = `
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:6px; vertical-align:middle;"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+                        <strong>Bridge Local Desactivado:</strong> Las solicitudes se enviarán directamente a la IP del Verifone sin usar el Bridge.
+                    `;
+                    return;
+                }
+
                 try {
                     const check = await fetch('http://localhost:8080/status', { method: 'GET', signal: AbortSignal.timeout(1500) });
                     if (check.ok) {
                         const data = await check.json();
                         if (data.success && data.service === 'BillsBridge') {
-                            badgeEl.style.color = '#16a34a';
-                            badgeEl.innerHTML = `
-                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-right:6px; color:#16a34a; vertical-align:middle;"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                                <strong>[✓] BillsBridge Conectado Localmente:</strong> Esta PC tiene el ejecutable abierto y responderá de forma directa.
-                            `;
-                            return;
+                            if (data.linked && (data.allowed_domain === window.location.hostname || data.allowed_domain === '*')) {
+                                badgeEl.style.color = '#16a34a';
+                                badgeEl.innerHTML = `
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-right:6px; color:#16a34a; vertical-align:middle;"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                    <strong>[✓] BillsBridge Conectado y Vinculado:</strong> Esta PC tiene el ejecutable abierto y responderá de forma directa.
+                                `;
+                                return;
+                            } else {
+                                badgeEl.style.color = '#d97706';
+                                badgeEl.innerHTML = `
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-right:6px; color:#d97706; vertical-align:middle;"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12" y2="17"></line></svg>
+                                    <strong>[⚠️] BillsBridge Abierto pero SIN VINCULAR:</strong> Haz clic arriba en <em>"Vincular esta PC con el Bridge"</em> para vincularla a este dominio.
+                                `;
+                                return;
+                            }
                         }
                     }
                 } catch (e) {
                     // Ignorar y pasar al canal de nube
                 }
 
-                badgeEl.style.color = '#d97706';
+                badgeEl.style.color = '#0284c7';
                 badgeEl.innerHTML = `
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-right:6px; color:#d97706; vertical-align:middle;"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"></path></svg>
-                    <strong>[✓] Canal de Nube Activo:</strong> No se detecta el bridge abierto en esta computadora/celular, por lo que las solicitudes se enviarán a la cola de la nube para que las procese la PC de la caja que tiene el bridge abierto.
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-right:6px; color:#0284c7; vertical-align:middle;"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"></path></svg>
+                    <strong>[✓] Canal de Nube Activo:</strong> No se detecta el ejecutable abierto en esta PC. Las órdenes se enviarán a la nube para que las procese la PC de la caja que tenga el Bridge abierto.
                 `;
             };
 

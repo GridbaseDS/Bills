@@ -573,6 +573,26 @@ export default {
                                         <small style="color:var(--color-text-muted);font-size:11px;">Tiempo límite para deslizar la tarjeta.</small>
                                     </div>
                                 </div>
+
+                                <!-- Consola de Logs de BillsBridge -->
+                                <div style="margin-top:24px; background:var(--color-bg-secondary); border:1px solid var(--color-border); border-radius:var(--radius-lg); padding:20px;">
+                                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; flex-wrap:wrap; gap:10px;">
+                                        <div>
+                                            <h4 style="font-size:14px; font-weight:600; margin:0; display:flex; align-items:center; gap:8px;">
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 17 10 11 4 5"></polyline><line x1="12" y1="19" x2="20" y2="19"></line></svg>
+                                                Consola de Logs de BillsBridge & Verifone (En Vivo)
+                                            </h4>
+                                            <p style="font-size:12px; color:var(--color-text-muted); margin:4px 0 0 0;">Inspecciona las peticiones HTTP, JSONs crudos y respuestas del Verifone enviadas por el Bridge.</p>
+                                        </div>
+                                        <button type="button" id="btn-refresh-bridge-logs" class="btn btn-secondary" style="height:32px; font-size:12px; font-weight:600; padding:0 12px; display:inline-flex; align-items:center; gap:6px;">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+                                            Actualizar Logs
+                                        </button>
+                                    </div>
+                                    <div id="bridge-logs-container" style="background:#090d16; color:#a7f3d0; font-family:'JetBrains Mono', monospace; font-size:12px; padding:14px 16px; border-radius:var(--radius-md); max-height:280px; overflow-y:auto; line-height:1.6; white-space:pre-wrap; border:1px solid #1e293b;">
+                                        <span style="color:#64748b;">Cargando historial de logs del Bridge...</span>
+                                    </div>
+                                </div>
                             </div>
                         </div>
 
@@ -853,8 +873,47 @@ export default {
                     if (tab.dataset.tab === 'security') {
                         load2faSecurityStatus();
                     }
+                    if (tab.dataset.tab === 'integrations') {
+                        loadBridgeLogs();
+                    }
                 });
             });
+
+            // Consola de Logs de BillsBridge
+            const loadBridgeLogs = async () => {
+                const logsBox = document.getElementById('bridge-logs-container');
+                if (!logsBox) return;
+
+                try {
+                    const res = await window.App.api('pos/bridge/logs');
+                    const logs = res.logs || [];
+
+                    if (logs.length === 0) {
+                        logsBox.innerHTML = '<span style="color:#64748b;">No hay registros de transacciones del Bridge aún. Los eventos de cobro aparecerán aquí en tiempo real.</span>';
+                        return;
+                    }
+
+                    logsBox.innerHTML = logs.map(l => {
+                        const statusColor = l.status === 'approved' ? '#34d399' : '#f87171';
+                        let details = '';
+                        if (l.target_url) details += `\n   📍 Target URL: ${l.target_url}`;
+                        if (l.sent_payload) details += `\n   📤 Sent Payload: ${typeof l.sent_payload === 'object' ? JSON.stringify(l.sent_payload) : l.sent_payload}`;
+                        if (l.raw_response) details += `\n   📥 Raw Response: ${typeof l.raw_response === 'object' ? JSON.stringify(l.raw_response) : l.raw_response}`;
+
+                        return `<div style="margin-bottom:12px; border-bottom:1px dashed #1e293b; padding-bottom:8px;">` +
+                            `<span style="color:#94a3b8;">[${l.created_at || 'Info'}]</span> ` +
+                            `<span style="color:${statusColor}; font-weight:700;">[${(l.status || 'LOG').toUpperCase()}]</span> ` +
+                            `<span style="color:#f1f5f9; font-weight:600;">Factura #${l.invoice_id || 'N/A'}: ${l.message || ''}</span>` +
+                            `<span style="color:#cbd5e1;">${details}</span>` +
+                            `</div>`;
+                    }).join('');
+                } catch(e) {
+                    logsBox.innerHTML = '<span style="color:#ef4444;">Error al cargar logs del Bridge: ' + e.message + '</span>';
+                }
+            };
+
+            document.getElementById('btn-refresh-bridge-logs')?.addEventListener('click', loadBridgeLogs);
+            loadBridgeLogs();
 
             // 2FA Security Management
             const load2faSecurityStatus = async () => {

@@ -43,6 +43,7 @@ Route::get('/pos/status/{invoice_id}', [POSController::class, 'status']);
 Route::post('/pos/update-status', [POSController::class, 'updateStatus']);
 Route::get('/pos/bridge/poll', [POSController::class, 'bridgePoll']);
 Route::post('/pos/bridge/respond', [POSController::class, 'bridgeRespond']);
+Route::get('/pos/bridge/logs', [POSController::class, 'getBridgeLogs']);
 
 // WhatsApp Webhooks (must be public for Meta to access)
 Route::get('/whatsapp/webhook', [WhatsAppWebhookController::class, 'verify']);

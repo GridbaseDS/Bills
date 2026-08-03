@@ -592,17 +592,46 @@ class POSController extends Controller
             'auth_code' => $request->input('auth_code', '000000'),
             'card_number' => $request->input('card_number', '************0000'),
             'card_type' => $request->input('card_type', 'Tarjeta'),
-            'message' => $request->input('message', ($status === 'approved' ? 'Aprobada' : 'Declinada'))
+            'message' => $request->input('message', ($status === 'approved' ? 'Aprobada' : 'Declinada')),
+            'raw_response' => $request->input('raw_response', null),
+            'sent_payload' => $request->input('sent_payload', null),
+            'target_url' => $request->input('target_url', null),
+            'timestamp' => date('Y-m-d H:i:s')
         ]);
 
         Cache::put($cacheKey, $updatedTx, 600); // 10 minutos
         Cache::forget('bridge_pending_tx'); // Limpiar cola
+
+        // Guardar entrada en historial de logs para inspección en la app
+        $historyLogs = Cache::get('pos_bridge_history_logs', []);
+        array_unshift($historyLogs, [
+            'invoice_id' => $invoiceId,
+            'status' => $status,
+            'message' => $updatedTx['message'],
+            'raw_response' => $request->input('raw_response', null),
+            'sent_payload' => $request->input('sent_payload', null),
+            'target_url' => $request->input('target_url', null),
+            'driver' => $currentTx['driver'] ?? 'cardnet_android',
+            'created_at' => date('Y-m-d H:i:s')
+        ]);
+        Cache::put('pos_bridge_history_logs', array_slice($historyLogs, 0, 30), 604800);
 
         Log::info("POS (Bridge): Estado de transacción de Factura {$invoiceId} actualizado a '{$status}'");
 
         return response()->json([
             'success' => true,
             'message' => 'Transacción actualizada en el servidor.'
+        ]);
+    }
+
+    /**
+     * Retorna los últimos logs registrados por el bridge.
+     */
+    public function getBridgeLogs()
+    {
+        return response()->json([
+            'success' => true,
+            'logs' => Cache::get('pos_bridge_history_logs', [])
         ]);
     }
 }

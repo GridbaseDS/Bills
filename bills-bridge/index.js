@@ -222,8 +222,7 @@ function startServer() {
               return;
           }
 
-          const statusCode = result.success ? 200 : 402;
-          res.writeHead(statusCode, { 'Content-Type': 'application/json' });
+          res.writeHead(200, { 'Content-Type': 'application/json' });
           res.end(JSON.stringify(result));
 
         } catch (err) {

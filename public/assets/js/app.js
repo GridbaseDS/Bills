@@ -31,6 +31,16 @@ window.App = {
     isMobile() { return window.innerWidth <= 640; },
 
     init() {
+        // Automatic cache purge when version changes
+        if (window.APP_VERSION && localStorage.getItem('app_version') !== window.APP_VERSION) {
+            localStorage.setItem('app_version', window.APP_VERSION);
+            if ('caches' in window) {
+                caches.keys().then(names => {
+                    names.forEach(name => caches.delete(name));
+                });
+            }
+        }
+
         // Test CI pipeline deploy: stable verification checked successfully
         // Load cached favicon immediately for instant branding load
         const cachedFavicon = localStorage.getItem('company_favicon');

@@ -21,7 +21,7 @@ class SettingController extends Controller
         $user = $request->user();
         $isGerente = $user && $user->role === 'gerente';
         $restrictedKeys = [
-            'company_logo', 'login_logo', 'company_favicon', 'sidebar_logo_height', 'login_logo_height', 'pdf_primary_color', 'pdf_footer_text',
+            'company_logo', 'login_logo', 'company_favicon', 'sidebar_logo_height', 'login_logo_height',
             'smtp_host', 'smtp_port', 'smtp_username', 'smtp_password', 'smtp_encryption', 'smtp_from_email', 'smtp_from_name',
             'dgii_rnc', 'dgii_environment', 'dgii_certificate_path', 'dgii_certificate_password',
             'dgii_next_e_ncf_31', 'dgii_next_e_ncf_32', 'dgii_next_e_ncf_33', 'dgii_next_e_ncf_34',

@@ -42,6 +42,7 @@ class POSController extends Controller
             $timeout = (int) Setting::get('pos_timeout', '60');
 
             Log::info("POS: Iniciando cargo de {$amount} para Factura ID {$invoiceId} usando driver '{$driver}'");
+            $this->logBridgeEvent($invoiceId, 'pending', "Iniciando cargo de {$amount} DOP con driver '{$driver}'", $driver);
             
             // Si se usa el bridge local y el driver no es el simulador virtual en la nube,
             // encolamos la transacción para que el bridge la consulte mediante polling
@@ -64,6 +65,7 @@ class POSController extends Controller
                 Cache::put('pos_tx_' . $invoiceId, $tx, 600); // 10 minutos de validez en el estado
 
                 Log::info("POS: Transacción encolada para bridge en la nube. Factura {$invoiceId}");
+                $this->logBridgeEvent($invoiceId, 'queued', "Transacción encolada en la nube para BillsBridge.exe", $driver, ['sent_payload' => $tx]);
 
                 return response()->json([
                     'success' => true,
@@ -496,6 +498,12 @@ class POSController extends Controller
             ]);
 
             Log::debug("POS (Cardnet Android): Respuesta recibida. Status: " . $response->status() . " - Body: " . $response->body());
+            
+            $this->logBridgeEvent('N/A', $response->successful() ? 'response' : 'error', "Respuesta de CardNET HTTP " . $response->status(), 'cardnet_android', [
+                'target_url' => "{$url}?amount={$amountVal}",
+                'sent_payload' => ['amount' => $amountVal],
+                'raw_response' => $response->body()
+            ]);
 
             if ($response->successful()) {
                 $data = $response->json();
@@ -567,32 +575,27 @@ class POSController extends Controller
     {
         $request->validate([
             'invoice_id' => 'required',
-            'status' => 'required|in:approved,declined',
-            'auth_code' => 'nullable|string',
-            'card_number' => 'nullable|string',
-            'card_type' => 'nullable|string',
-            'message' => 'nullable|string'
+            'status' => 'required|string',
+            'auth_code' => 'nullable',
+            'card_number' => 'nullable',
+            'card_type' => 'nullable',
+            'message' => 'nullable'
         ]);
 
         $invoiceId = $request->input('invoice_id');
-        $status = $request->input('status');
+        $rawStatus = $request->input('status');
+        $status = strtolower($rawStatus) === 'approved' ? 'approved' : 'declined';
+        $message = $request->input('message', ($status === 'approved' ? 'Aprobada' : 'Declinada'));
 
         $cacheKey = 'pos_tx_' . $invoiceId;
-        $currentTx = Cache::get($cacheKey);
-
-        if (!$currentTx) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Transacción no encontrada o expirada.'
-            ], 404);
-        }
+        $currentTx = Cache::get($cacheKey) ?? ['invoice_id' => $invoiceId, 'driver' => 'cardnet_android'];
 
         $updatedTx = array_merge($currentTx, [
             'status' => $status,
             'auth_code' => $request->input('auth_code', '000000'),
             'card_number' => $request->input('card_number', '************0000'),
             'card_type' => $request->input('card_type', 'Tarjeta'),
-            'message' => $request->input('message', ($status === 'approved' ? 'Aprobada' : 'Declinada')),
+            'message' => $message,
             'raw_response' => $request->input('raw_response', null),
             'sent_payload' => $request->input('sent_payload', null),
             'target_url' => $request->input('target_url', null),
@@ -602,19 +605,11 @@ class POSController extends Controller
         Cache::put($cacheKey, $updatedTx, 600); // 10 minutos
         Cache::forget('bridge_pending_tx'); // Limpiar cola
 
-        // Guardar entrada en historial de logs para inspección en la app
-        $historyLogs = Cache::get('pos_bridge_history_logs', []);
-        array_unshift($historyLogs, [
-            'invoice_id' => $invoiceId,
-            'status' => $status,
-            'message' => $updatedTx['message'],
-            'raw_response' => $request->input('raw_response', null),
-            'sent_payload' => $request->input('sent_payload', null),
-            'target_url' => $request->input('target_url', null),
-            'driver' => $currentTx['driver'] ?? 'cardnet_android',
-            'created_at' => date('Y-m-d H:i:s')
+        $this->logBridgeEvent($invoiceId, $status, $message, $currentTx['driver'] ?? 'cardnet_android', [
+            'target_url' => $request->input('target_url'),
+            'sent_payload' => $request->input('sent_payload'),
+            'raw_response' => $request->input('raw_response')
         ]);
-        Cache::put('pos_bridge_history_logs', array_slice($historyLogs, 0, 30), 604800);
 
         Log::info("POS (Bridge): Estado de transacción de Factura {$invoiceId} actualizado a '{$status}'");
 
@@ -622,6 +617,25 @@ class POSController extends Controller
             'success' => true,
             'message' => 'Transacción actualizada en el servidor.'
         ]);
+    }
+
+    /**
+     * Helper centralizado para registrar eventos de logs del Bridge.
+     */
+    private function logBridgeEvent($invoiceId, $status, $message, $driver = null, $extra = [])
+    {
+        $historyLogs = Cache::get('pos_bridge_history_logs', []);
+        array_unshift($historyLogs, [
+            'invoice_id' => $invoiceId,
+            'status' => $status,
+            'message' => $message,
+            'driver' => $driver ?? Setting::get('pos_driver', 'mock'),
+            'target_url' => $extra['target_url'] ?? null,
+            'sent_payload' => $extra['sent_payload'] ?? null,
+            'raw_response' => $extra['raw_response'] ?? null,
+            'created_at' => date('Y-m-d H:i:s')
+        ]);
+        Cache::put('pos_bridge_history_logs', array_slice($historyLogs, 0, 50), 604800);
     }
 
     /**

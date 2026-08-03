@@ -1597,34 +1597,45 @@ export default {
 
                 try {
                     let pingSuccess = false;
-                    let pingMsg = '';
+                    let inspectData = null;
 
                     try {
-                        const bridgeTest = await fetch('http://localhost:8080/status', { method: 'GET', signal: AbortSignal.timeout(1000) });
-                        if (bridgeTest.ok) {
-                            const bridgePing = await fetch('http://localhost:8080/charge', {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({ driver: 'mock', amount: 0.01, ip, port, timeout: 5 })
-                            });
-                            if (bridgePing.ok) {
+                        const bridgeInspect = await fetch('http://localhost:8080/inspect-pos', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                ip,
+                                port,
+                                amount: 0.01,
+                                merchant_id: document.getElementById('s_pos_merchant_id')?.value || '',
+                                terminal_id: document.getElementById('s_pos_terminal_id')?.value || ''
+                            }),
+                            signal: AbortSignal.timeout(5000)
+                        });
+                        if (bridgeInspect.ok) {
+                            inspectData = await bridgeInspect.json();
+                            if (inspectData && inspectData.success) {
                                 pingSuccess = true;
-                                pingMsg = `El ejecutable local BillsBridge tiene comunicación perfecta con la red.`;
                             }
                         }
                     } catch(bErr) {}
 
-                    if (!pingSuccess) {
+                    if (pingSuccess && inspectData) {
+                        resultEl.style.background = 'rgba(22, 163, 74, 0.08)';
+                        resultEl.style.border = '1px solid rgba(22, 163, 74, 0.4)';
+                        resultEl.style.color = '#16a34a';
+                        resultEl.innerHTML = `🟢 <strong>¡RESPUESTA DIAGNÓSTICA DEL VERIFONE!</strong><br>
+                        <strong>URL Destino:</strong> <code>${inspectData.target_url}</code> (HTTP ${inspectData.status_code})<br>
+                        <strong>Trama JSON de Respuesta del Verifone:</strong>
+                        <pre style="background:#0f172a; color:#38bdf8; padding:8px; border-radius:6px; font-size:12px; margin-top:6px; overflow-x:auto; max-height:160px;">${inspectData.raw_response || '(El Verifone respondió sin cuerpo)'}</pre>`;
+                    } else {
                         const testUrl = `http://${ip}:${port}/`;
                         await fetch(testUrl, { mode: 'no-cors', signal: AbortSignal.timeout(3000) });
-                        pingSuccess = true;
-                        pingMsg = `El dispositivo en ${ip}:${port} respondió a la prueba de conectividad HTTP.`;
+                        resultEl.style.background = 'rgba(22, 163, 74, 0.1)';
+                        resultEl.style.border = '1px solid rgba(22, 163, 74, 0.3)';
+                        resultEl.style.color = '#16a34a';
+                        resultEl.innerHTML = `🟢 <strong>¡CONEXIÓN EXITOSA CON EL VERIFONE (${ip}:${port})!</strong><br>El dispositivo respondió a la prueba de señal HTTP.`;
                     }
-
-                    resultEl.style.background = 'rgba(22, 163, 74, 0.1)';
-                    resultEl.style.border = '1px solid rgba(22, 163, 74, 0.3)';
-                    resultEl.style.color = '#16a34a';
-                    resultEl.innerHTML = `🟢 <strong>¡CONEXIÓN EXITOSA CON EL VERIFONE!</strong><br>${pingMsg}`;
                 } catch (err) {
                     resultEl.style.background = 'rgba(239, 68, 68, 0.1)';
                     resultEl.style.border = '1px solid rgba(239, 68, 68, 0.3)';
@@ -1632,7 +1643,7 @@ export default {
                     resultEl.innerHTML = `🔴 <strong>NO SE PUDO CONECTAR CON EL VERIFONE (${ip}:${port})</strong><br>
                     <strong>Pasos para solucionar:</strong><br>
                     1. Revisa que el Verifone (Cardnet Saturn 1000) esté encendido.<br>
-                    2. Confirma en la pantalla del Verifone cuál es su dirección IP exacta (ej: <code>192.168.1.45</code>) e ingrésala en el campo de arriba.<br>
+                    2. Confirma en la pantalla del Verifone cuál es su dirección IP exacta (ej: <code>10.0.0.18</code>) e ingrésala en el campo de arriba.<br>
                     3. Verifica que la computadora/caja esté en la <strong>misma red Wi-Fi</strong> que el Verifone.`;
                 } finally {
                     target.disabled = false;

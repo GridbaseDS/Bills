@@ -1087,6 +1087,8 @@ const InvoicesModule = {
                     const bridgeUrl = 'http://localhost:8080/status';
                     const ip = window.App.state.settings?.pos_terminal_ip || '';
                     const port = window.App.state.settings?.pos_terminal_port || '';
+                    const merchant_id = window.App.state.settings?.pos_merchant_id || '';
+                    const terminal_id = window.App.state.settings?.pos_terminal_id || '';
                     const timeout = parseInt(window.App.state.settings?.pos_timeout || '60');
 
                     let localBridgeAvailable = false;
@@ -1113,6 +1115,8 @@ const InvoicesModule = {
                                     amount,
                                     ip,
                                     port,
+                                    merchant_id,
+                                    terminal_id,
                                     invoice_id: String(id),
                                     timeout
                                 }),

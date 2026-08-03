@@ -192,7 +192,7 @@ function startServer() {
       req.on('end', async () => {
         try {
           const params = JSON.parse(body);
-          const { driver, amount, ip, port, invoice_id, timeout = 60 } = params;
+          const { driver, amount, ip, port, merchant_id, terminal_id, invoice_id, timeout = 60 } = params;
 
           console.log(`[BillsBridge] Iniciando cobro: ${amount} via ${driver} (Factura #${invoice_id})`);
 
@@ -211,7 +211,7 @@ function startServer() {
               result = await handleCardnetLocalCharge(amount, ip, port, invoice_id, timeout);
               break;
             case 'cardnet_android':
-              result = await handleCardnetAndroidCharge(amount, ip, port, timeout);
+              result = await handleCardnetAndroidCharge(amount, ip, port, merchant_id, terminal_id, invoice_id, timeout);
               break;
             case 'azul_local':
               result = await handleAzulLocalCharge(amount, ip, port, timeout);
@@ -229,6 +229,71 @@ function startServer() {
           console.error('[BillsBridge] Error en transacción:', err);
           res.writeHead(500, { 'Content-Type': 'application/json' });
           res.end(JSON.stringify({ success: false, message: 'Error interno: ' + err.message }));
+        }
+      });
+      return;
+    }
+
+    // Endpoint para inspección diagnóstica avanzada del POS
+    if (parsedUrl.pathname === '/inspect-pos' && req.method === 'POST') {
+      let body = '';
+      req.on('data', chunk => { body += chunk; });
+      req.on('end', async () => {
+        try {
+          const params = JSON.parse(body);
+          const { ip, port = 2001, amount = 0.01, merchant_id, terminal_id } = params;
+
+          if (!ip) {
+            res.writeHead(400, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ success: false, message: 'IP requerida.' }));
+            return;
+          }
+
+          const targetUrl = `http://${ip}:${port}/tx_sale`;
+          const payload = { amount: parseFloat(amount), tax: 0.00 };
+          if (merchant_id) payload.merchantId = merchant_id;
+          if (terminal_id) payload.terminalId = terminal_id;
+          const payloadData = JSON.stringify(payload);
+
+          const req = http.request(targetUrl, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Content-Length': Buffer.byteLength(payloadData)
+            },
+            timeout: 8000
+          }, (posRes) => {
+            let posBody = '';
+            posRes.on('data', chunk => posBody += chunk);
+            posRes.on('end', () => {
+              res.writeHead(200, { 'Content-Type': 'application/json' });
+              res.end(JSON.stringify({
+                success: true,
+                target_url: targetUrl,
+                status_code: posRes.statusCode,
+                headers: posRes.headers,
+                raw_response: posBody,
+                sent_payload: payload
+              }));
+            });
+          });
+
+          req.on('timeout', () => {
+            req.destroy();
+            res.writeHead(200, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ success: false, error: 'TIMEOUT', message: `El dispositivo en ${ip}:${port} no respondió en 8 segundos.` }));
+          });
+
+          req.on('error', (err) => {
+            res.writeHead(200, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ success: false, error: 'CONNECTION_FAILED', message: `Fallo de conexión a ${ip}:${port}: ${err.message}` }));
+          });
+
+          req.write(payloadData);
+          req.end();
+        } catch(e) {
+          res.writeHead(500, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ success: false, message: e.message }));
         }
       });
       return;

@@ -1,11 +1,10 @@
 <?php
 
 return [
-    'version' => '3.7.1',
+    'version' => '3.7.2',
     'date' => '2026-08-03',
     'changes' => [
-        'Diagnóstico de Verifone en Vivo: Agregado botón "Probar Conexión con el Verifone (Ping IP)" en Ajustes > POS para validar instantáneamente si la IP del Cardnet Saturn 1000 es alcanzable en la red Wi-Fi.',
-        'Manejo de Errores POS & Bridge: Corrección de errores 403 y 500 al cobrar, mostrando el mensaje de alerta claro cuando el Bridge local está desvinculado o la IP no responde.',
-        'Indicador de Estado BillsBridge: Corrección en el badge de diagnóstico en Ajustes > POS.'
+        'Diagnóstico Avanzado de POS: Agregada herramienta de inspección diagnóstica profunda en Ajustes > POS que despliega la trama JSON cruda devuelta por la app de Cardnet Saturn 1000.',
+        'Soporte de Merchant & Terminal ID: Inclusión automática de parámetros de comercio en peticiones REST a Cardnet Saturn 1000.'
     ]
 ];

@@ -553,8 +553,10 @@ function handleCardnetAndroidCharge(amount, ip, port, timeoutSec) {
     }
 
     const amountVal = Math.round(parseFloat(amount) * 100) / 100;
-    const postData = JSON.stringify({ amount: amountVal });
+    const postData = JSON.stringify({ amount: amountVal, tax: 0.00 });
     const url = `http://${ip}:${targetPort}/tx_sale?amount=${amountVal}`;
+
+    console.log(`[BillsBridge] Enviando peticion HTTP a Verifone Cardnet: ${url}`);
 
     const req = http.request(url, {
       method: 'POST',
@@ -562,7 +564,7 @@ function handleCardnetAndroidCharge(amount, ip, port, timeoutSec) {
         'Content-Type': 'application/json',
         'Content-Length': Buffer.byteLength(postData)
       },
-      timeout: timeoutSec * 1000
+      timeout: Math.min(timeoutSec, 60) * 1000
     }, (res) => {
       let body = '';
       res.on('data', chunk => { body += chunk; });
@@ -599,11 +601,11 @@ function handleCardnetAndroidCharge(amount, ip, port, timeoutSec) {
 
     req.on('timeout', () => {
       req.destroy();
-      resolve({ success: false, message: 'Tiempo de espera agotado conectando con Verifone Android.' });
+      resolve({ success: false, message: `Tiempo de espera agotado al conectar con la IP ${ip}:${targetPort}. Revisa la IP del Verifone y el Wi-Fi.` });
     });
 
     req.on('error', (err) => {
-      resolve({ success: false, message: `Fallo de comunicación con Verifone Android: ${err.message}` });
+      resolve({ success: false, message: `No se pudo conectar a la IP ${ip}:${targetPort} del Verifone. Revisa que esté en la misma red Wi-Fi. Detalle: ${err.message}` });
     });
 
     req.write(postData);

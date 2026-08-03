@@ -249,8 +249,10 @@ function startServer() {
             return;
           }
 
-          const targetUrl = `http://${ip}:${port}/tx_sale`;
-          const payload = { amount: parseFloat(amount), tax: 0.00 };
+          const amountVal = parseFloat(amount || '1');
+          const amountCents = Math.round(amountVal >= 100 ? amountVal : amountVal * 100);
+          const targetUrl = `http://${ip}:${port}/tx_sale?amount=${amountCents}`;
+          const payload = { amount: amountCents };
           if (merchant_id) payload.merchantId = merchant_id;
           if (terminal_id) payload.terminalId = terminal_id;
           const payloadData = JSON.stringify(payload);

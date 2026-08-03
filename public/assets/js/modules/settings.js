@@ -1606,7 +1606,7 @@ export default {
                             body: JSON.stringify({
                                 ip,
                                 port,
-                                amount: 0.01,
+                                amount: 100,
                                 merchant_id: document.getElementById('s_pos_merchant_id')?.value || '',
                                 terminal_id: document.getElementById('s_pos_terminal_id')?.value || ''
                             }),

@@ -18,79 +18,92 @@ class POSController extends Controller
      */
     public function charge(Request $request)
     {
-        $request->validate([
-            'amount' => 'required|numeric|min:0.01',
-            'invoice_id' => 'required|exists:invoices,id',
-        ]);
-
-        $amount = $request->input('amount');
-        $invoiceId = $request->input('invoice_id');
-
-        $enabled = Setting::get('pos_enabled', '0');
-        if ($enabled !== '1') {
-            Log::warning("POS: Intento de cargo pero la integración de POS está desactivada.");
-            return response()->json([
-                'success' => false,
-                'message' => 'La integración de POS / Verifone está desactivada.'
-            ], 400);
-        }
-
-        $driver = Setting::get('pos_driver', 'mock');
-        $ip = Setting::get('pos_terminal_ip', '');
-        $port = Setting::get('pos_terminal_port', '');
-        $timeout = (int) Setting::get('pos_timeout', '60');
-
-        Log::info("POS: Iniciando cargo de {$amount} para Factura ID {$invoiceId} usando driver '{$driver}'");
-        
-        // Si se usa el bridge local y el driver no es el simulador virtual en la nube,
-        // encolamos la transacción para que el bridge la consulte mediante polling
-        $useBridge = Setting::get('pos_use_bridge', '0');
-        if ($useBridge === '1' && $driver !== 'virtual_pos') {
-            $tx = [
-                'id' => uniqid('tx_'),
-                'status' => 'pending',
-                'amount' => $amount,
-                'invoice_id' => $invoiceId,
-                'driver' => $driver,
-                'ip' => $ip,
-                'port' => $port,
-                'timeout' => $timeout
-            ];
-
-            Cache::put('bridge_pending_tx', $tx, 300); // 5 minutos de validez
-            Cache::put('pos_tx_' . $invoiceId, $tx, 600); // 10 minutos de validez en el estado
-
-            Log::info("POS: Transacción encolada para bridge en la nube. Factura {$invoiceId}");
-
-            return response()->json([
-                'success' => true,
-                'status' => 'pending',
-                'message' => 'Transacción enviada al bridge en la nube.'
+        try {
+            $request->validate([
+                'amount' => 'required|numeric|min:0.01',
+                'invoice_id' => 'required|exists:invoices,id',
             ]);
-        }
 
-        switch ($driver) {
-            case 'mock':
-                return $this->handleMockCharge($amount, $timeout);
+            $amount = $request->input('amount');
+            $invoiceId = $request->input('invoice_id');
 
-            case 'virtual_pos':
-                return $this->handleVirtualPosCharge($amount, $invoiceId);
-
-            case 'azul_local':
-                return $this->handleAzulLocalCharge($amount, $ip, $port, $timeout);
-
-            case 'cardnet_local':
-                return $this->handleCardnetLocalCharge($amount, $ip, $port, $invoiceId, $timeout);
-
-            case 'cardnet_android':
-                return $this->handleCardnetAndroidCharge($amount, $ip, $port, $timeout);
-
-            default:
-                Log::error("POS: Driver de POS '{$driver}' no soportado.");
+            $enabled = Setting::get('pos_enabled', '0');
+            if ($enabled !== '1') {
+                Log::warning("POS: Intento de cargo pero la integración de POS está desactivada.");
                 return response()->json([
                     'success' => false,
-                    'message' => 'Driver de POS no soportado.'
+                    'message' => 'La integración de POS / Verifone está desactivada.'
                 ], 400);
+            }
+
+            $driver = Setting::get('pos_driver', 'mock');
+            $ip = Setting::get('pos_terminal_ip', '');
+            $port = Setting::get('pos_terminal_port', '');
+            $timeout = (int) Setting::get('pos_timeout', '60');
+
+            Log::info("POS: Iniciando cargo de {$amount} para Factura ID {$invoiceId} usando driver '{$driver}'");
+            
+            // Si se usa el bridge local y el driver no es el simulador virtual en la nube,
+            // encolamos la transacción para que el bridge la consulte mediante polling
+            $useBridge = Setting::get('pos_use_bridge', '0');
+            if ($useBridge === '1' && $driver !== 'virtual_pos') {
+                $tx = [
+                    'id' => uniqid('tx_'),
+                    'status' => 'pending',
+                    'amount' => $amount,
+                    'invoice_id' => $invoiceId,
+                    'driver' => $driver,
+                    'ip' => $ip,
+                    'port' => $port,
+                    'timeout' => $timeout
+                ];
+
+                Cache::put('bridge_pending_tx', $tx, 300); // 5 minutos de validez
+                Cache::put('pos_tx_' . $invoiceId, $tx, 600); // 10 minutos de validez en el estado
+
+                Log::info("POS: Transacción encolada para bridge en la nube. Factura {$invoiceId}");
+
+                return response()->json([
+                    'success' => true,
+                    'status' => 'pending',
+                    'message' => 'Transacción enviada al bridge en la nube.'
+                ]);
+            }
+
+            switch ($driver) {
+                case 'mock':
+                    return $this->handleMockCharge($amount, $timeout);
+
+                case 'virtual_pos':
+                    return $this->handleVirtualPosCharge($amount, $invoiceId);
+
+                case 'azul_local':
+                    return $this->handleAzulLocalCharge($amount, $ip, $port, $timeout);
+
+                case 'cardnet_local':
+                    return $this->handleCardnetLocalCharge($amount, $ip, $port, $invoiceId, $timeout);
+
+                case 'cardnet_android':
+                    return $this->handleCardnetAndroidCharge($amount, $ip, $port, $timeout);
+
+                default:
+                    Log::error("POS: Driver de POS '{$driver}' no soportado.");
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Driver de POS no soportado.'
+                    ], 400);
+            }
+        } catch (\Illuminate\Validation\ValidationException $ve) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Datos de cobro inválidos: ' . implode(', ', $ve->validator->errors()->all())
+            ], 422);
+        } catch (\Throwable $e) {
+            Log::error("POS: Error inesperado en cobro: " . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Error de procesamiento en POS: ' . $e->getMessage()
+            ], 500);
         }
     }
 

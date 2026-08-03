@@ -1121,7 +1121,14 @@ const InvoicesModule = {
                             clearTimeout(timeoutId);
 
                             if (!bridgeResponse.ok && bridgeResponse.status !== 402) {
-                                throw new Error(`BillsBridge local error HTTP ${bridgeResponse.status}`);
+                                let errMsg = `Error de BillsBridge local (HTTP ${bridgeResponse.status})`;
+                                try {
+                                    const errBody = await bridgeResponse.json();
+                                    if (errBody && errBody.message) {
+                                        errMsg = errBody.message;
+                                    }
+                                } catch(e) {}
+                                throw new Error(errMsg);
                             }
 
                             res = await bridgeResponse.json();

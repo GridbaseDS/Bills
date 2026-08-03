@@ -618,37 +618,34 @@ function handleCardnetAndroidCharge(amount, ip, port, merchantId, terminalId, in
       return resolve({ success: false, message: 'IP del terminal Android no configurada.' });
     }
 
-    // Según la documentación oficial de CardNET Desarrolladores:
-    // El amount es un Double donde los últimos 2 dígitos son los centavos.
-    // Ejemplo: RD$ 12.00 -> 1200 | RD$ 25.03 -> 2503 | RD$ 100.23 -> 10023 | RD$ 1770.00 -> 177000
-    const amountVal = parseFloat(amount);
+    const amountVal = Math.round(parseFloat(amount) * 100) / 100;
     const amountCents = Math.round(amountVal * 100);
 
-    // Variantes según especificación oficial CardNET POS Android
+    // En CardNET Android SmartPOS REST, el monto se envía en Pesos (ej: 2800) o Centavos (ej: 280000).
     const payloadVariants = [
-      { amount: amountCents },
-      { amount: parseFloat(amountCents) },
       { amount: amountVal },
-      { amount: amountVal.toFixed(2) }
+      { amount: amountVal.toFixed(2) },
+      { amount: amountCents }
     ];
 
     if (merchantId) payloadVariants.forEach(p => p.merchantId = merchantId);
     if (terminalId) payloadVariants.forEach(p => p.terminalId = terminalId);
 
     const endpoints = [
-      `/tx_sale?amount=${amountCents}`,
       `/tx_sale?amount=${amountVal}`,
+      `/tx_sale?amount=${amountCents}`,
       `/tx_sale`
     ];
 
     let endpointIdx = 0;
     let payloadIdx = 0;
+    let pollCount = 0;
 
     function tryNextCombination() {
       if (endpointIdx >= endpoints.length) {
         return resolve({
           success: false,
-          message: `El Verifone Cardnet rechazó el formato. Verifica que la app de Cardnet esté abierta.`
+          message: `El Verifone CardNET no completó la transacción. Revisa la pantalla del Verifone.`
         });
       }
 
@@ -657,7 +654,7 @@ function handleCardnetAndroidCharge(amount, ip, port, merchantId, terminalId, in
       const postData = JSON.stringify(payloadObj);
       const url = `http://${ip}:${targetPort}${endpoint}`;
 
-      console.log(`[BillsBridge CardNET Oficial] Enviando (${url}): ${postData}`);
+      console.log(`[BillsBridge CardNET] Enviando a Verifone (${url}): ${postData}`);
 
       const req = http.request(url, {
         method: 'POST',
@@ -665,23 +662,35 @@ function handleCardnetAndroidCharge(amount, ip, port, merchantId, terminalId, in
           'Content-Type': 'application/json',
           'Content-Length': Buffer.byteLength(postData)
         },
-        timeout: Math.min(timeoutSec, 20) * 1000
+        timeout: Math.min(timeoutSec, 60) * 1000
       }, (res) => {
         let body = '';
         res.on('data', chunk => { body += chunk; });
         res.on('end', () => {
-          console.log(`[BillsBridge CardNET Oficial] HTTP ${res.statusCode} | Respuesta cruda: "${body}"`);
+          console.log(`[BillsBridge CardNET] HTTP ${res.statusCode} | Respuesta: "${body}"`);
 
           if (res.statusCode === 200) {
             try {
               const data = JSON.parse(body || '{}');
               const authCode = data.approbationNumber || data.authCode || data.auth_code || data.approvalCode || '';
-              const txnMessage = data.txnMessage || data.resultMessage || data.message || 'Tarjeta Declinada / Error';
+              const txnMessage = data.txnMessage || data.resultMessage || data.message || data.error || 'Tarjeta Declinada / Error';
               const code = data.code;
 
-              // Si la app responde "code -1" o "formato", probar la siguiente variante de monto
-              if (code === -1 || (typeof txnMessage === 'string' && txnMessage.includes('formato'))) {
-                console.warn(`[BillsBridge CardNET] Variante [${payloadIdx+1}] rechazada por formato (-1). Probando siguiente...`);
+              // 1. SI LA TRANSACCIÓN ESTÁ EN PROGRESO (esperando que el cliente pase la tarjeta en el Verifone)
+              if (body.includes('Transacción en progreso') || (data.error && data.error.includes('progreso'))) {
+                pollCount++;
+                console.log(`[BillsBridge CardNET] ⏳ Transacción activa en la pantalla del Verifone (intento #${pollCount}). Esperando 3s a que pasen la tarjeta...`);
+                if (pollCount < 20) {
+                  setTimeout(() => tryNextCombination(), 3000);
+                } else {
+                  resolve({ success: false, message: 'Tiempo de espera agotado al pasar la tarjeta en el Verifone.' });
+                }
+                return;
+              }
+
+              // 2. SI EL MONTO FUE RECHAZADO POR RANGO O FORMATO (ej: 280000 excedió límite)
+              if (code === -1 && (body.includes('formato') || body.includes('mayor') || body.includes('menor'))) {
+                console.warn(`[BillsBridge CardNET] Formato rechazado (${body}). Probando variante siguiente...`);
                 payloadIdx++;
                 if (payloadIdx >= payloadVariants.length) {
                   payloadIdx = 0;
@@ -695,7 +704,7 @@ function handleCardnetAndroidCharge(amount, ip, port, merchantId, terminalId, in
               const cardSubType = cardInfo.cardSubType || cardInfo.CardType || cardInfo.cardType || 'Tarjeta';
 
               if (authCode && authCode !== '000000' && authCode !== 0) {
-                console.log(`[BillsBridge CardNET] ✅ TRANSACCIÓN APROBADA! Código de Auth: ${authCode}`);
+                console.log(`[BillsBridge CardNET] ✅ APROBADA! Auth: ${authCode}`);
                 return resolve({
                   success: true,
                   status: 'approved',
@@ -709,7 +718,7 @@ function handleCardnetAndroidCharge(amount, ip, port, merchantId, terminalId, in
                 return resolve({ success: false, message: `CardNET: ${txnMessage}` });
               }
             } catch (e) {
-              console.error(`[BillsBridge CardNET] Error al procesar JSON:`, e.message);
+              console.error(`[BillsBridge CardNET] Error parseando JSON:`, e.message);
               return resolve({ success: false, message: 'Error procesando respuesta del POS CardNET.' });
             }
           } else if (res.statusCode === 404) {

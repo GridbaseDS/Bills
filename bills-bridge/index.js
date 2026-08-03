@@ -552,13 +552,9 @@ function handleCardnetAndroidCharge(amount, ip, port, timeoutSec) {
     }
 
     const amountVal = Math.round(parseFloat(amount) * 100) / 100;
-    const amountCents = Math.round(amountVal * 100);
 
-    const postPayload = {
-      amount: amountVal,
-      tax: 0.00,
-      amountCents: amountCents
-    };
+    // Payload oficial estricto Cardnet Saturn 1000 REST API
+    const postPayload = { amount: amountVal };
     const postData = JSON.stringify(postPayload);
 
     // Intentar endpoint principal /tx_sale y luego /sale

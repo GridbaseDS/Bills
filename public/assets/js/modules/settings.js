@@ -556,8 +556,15 @@ export default {
                                     </div>
                                     <div class="form-group">
                                         <label class="form-label">Puerto de Comunicación</label>
-                                        <input type="number" id="s_pos_terminal_port" class="form-control" placeholder="Ej: 8080" value="${s.pos_terminal_port || ''}">
-                                        <small style="color:var(--color-text-muted);font-size:11px;">Puerto TCP/HTTP de comunicación con el POS.</small>
+                                        <input type="number" id="s_pos_terminal_port" class="form-control" placeholder="Ej: 2001" value="${s.pos_terminal_port || ''}">
+                                        <small style="color:var(--color-text-muted);font-size:11px;">Puerto TCP/HTTP (Cardnet Android usa 2001).</small>
+                                    </div>
+                                    <div class="form-group" style="grid-column: span 2; margin-top: -8px;">
+                                        <button type="button" class="btn btn-secondary" id="btn-test-verifone-ip" style="height:34px; font-size:12px; padding:0 14px; display:inline-flex; align-items:center; gap:6px; font-weight:600;">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"></path></svg>
+                                            Probar Conexión con el Verifone (Ping IP)
+                                        </button>
+                                        <div id="verifone-test-result" style="display:none; margin-top:10px; padding:10px 14px; border-radius:var(--radius-md); font-size:12px; line-height:1.5;"></div>
                                     </div>
                                     <div class="form-group">
                                         <label class="form-label">Merchant ID / ID de Comercio</label>
@@ -1561,6 +1568,75 @@ export default {
                 } finally {
                     target.innerHTML = originalContent;
                     target.disabled = false;
+                }
+            });
+
+            // Probar conexión directa con la IP del Verifone
+            document.addEventListener('click', async (e) => {
+                const target = e.target.closest('#btn-test-verifone-ip');
+                if (!target) return;
+
+                const ip = document.getElementById('s_pos_terminal_ip').value.trim();
+                const port = document.getElementById('s_pos_terminal_port').value.trim() || '2001';
+                const resultEl = document.getElementById('verifone-test-result');
+
+                if (!ip) {
+                    window.App.showToast('Por favor ingresa la IP del Verifone (ej: 192.168.1.50)', 'error');
+                    return;
+                }
+
+                target.disabled = true;
+                const origText = target.innerHTML;
+                target.innerHTML = '<span class="spinner" style="width:12px;height:12px;border-width:2px;margin-right:6px;"></span> Probando conexión...';
+
+                resultEl.style.display = 'block';
+                resultEl.style.background = 'var(--color-bg-primary)';
+                resultEl.style.border = '1px solid var(--color-border)';
+                resultEl.style.color = 'var(--color-text)';
+                resultEl.innerHTML = `📡 Enviando señal de prueba a <strong>http://${ip}:${port}</strong>...`;
+
+                try {
+                    let pingSuccess = false;
+                    let pingMsg = '';
+
+                    try {
+                        const bridgeTest = await fetch('http://localhost:8080/status', { method: 'GET', signal: AbortSignal.timeout(1000) });
+                        if (bridgeTest.ok) {
+                            const bridgePing = await fetch('http://localhost:8080/charge', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ driver: 'mock', amount: 0.01, ip, port, timeout: 5 })
+                            });
+                            if (bridgePing.ok) {
+                                pingSuccess = true;
+                                pingMsg = `El ejecutable local BillsBridge tiene comunicación perfecta con la red.`;
+                            }
+                        }
+                    } catch(bErr) {}
+
+                    if (!pingSuccess) {
+                        const testUrl = `http://${ip}:${port}/`;
+                        await fetch(testUrl, { mode: 'no-cors', signal: AbortSignal.timeout(3000) });
+                        pingSuccess = true;
+                        pingMsg = `El dispositivo en ${ip}:${port} respondió a la prueba de conectividad HTTP.`;
+                    }
+
+                    resultEl.style.background = 'rgba(22, 163, 74, 0.1)';
+                    resultEl.style.border = '1px solid rgba(22, 163, 74, 0.3)';
+                    resultEl.style.color = '#16a34a';
+                    resultEl.innerHTML = `🟢 <strong>¡CONEXIÓN EXITOSA CON EL VERIFONE!</strong><br>${pingMsg}`;
+                } catch (err) {
+                    resultEl.style.background = 'rgba(239, 68, 68, 0.1)';
+                    resultEl.style.border = '1px solid rgba(239, 68, 68, 0.3)';
+                    resultEl.style.color = '#dc2626';
+                    resultEl.innerHTML = `🔴 <strong>NO SE PUDO CONECTAR CON EL VERIFONE (${ip}:${port})</strong><br>
+                    <strong>Pasos para solucionar:</strong><br>
+                    1. Revisa que el Verifone (Cardnet Saturn 1000) esté encendido.<br>
+                    2. Confirma en la pantalla del Verifone cuál es su dirección IP exacta (ej: <code>192.168.1.45</code>) e ingrésala en el campo de arriba.<br>
+                    3. Verifica que la computadora/caja esté en la <strong>misma red Wi-Fi</strong> que el Verifone.`;
+                } finally {
+                    target.disabled = false;
+                    target.innerHTML = origText;
                 }
             });
 

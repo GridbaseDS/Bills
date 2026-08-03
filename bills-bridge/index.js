@@ -616,30 +616,28 @@ function handleCardnetAndroidCharge(amount, ip, port, merchantId, terminalId, in
       return resolve({ success: false, message: 'IP del terminal Android no configurada.' });
     }
 
-    const amountVal = Math.round(parseFloat(amount) * 100) / 100;
-    const amountStr = amountVal.toFixed(2);
-    const amountCentsStr = Math.round(amountVal * 100).toString();
-    const amountCentsInt = Math.round(amountVal * 100);
+    // Según la documentación oficial de CardNET Desarrolladores:
+    // El amount es un Double donde los últimos 2 dígitos son los centavos.
+    // Ejemplo: RD$ 12.00 -> 1200 | RD$ 25.03 -> 2503 | RD$ 100.23 -> 10023 | RD$ 1770.00 -> 177000
+    const amountVal = parseFloat(amount);
+    const amountCents = Math.round(amountVal * 100);
 
+    // Variantes según especificación oficial CardNET POS Android
     const payloadVariants = [
-      { amount: amountStr, tax: "0.00" },
-      { amount: amountVal, tax: 0.00 },
-      { amount: amountCentsStr, tax: "0" },
-      { amount: amountCentsInt, tax: 0 },
-      { amount: amountStr, tax: "0.00", ticket: String(invoiceId || '1') },
-      { txnAmount: amountStr, taxAmount: "0.00" },
-      { saleAmount: amountStr },
-      { amount: amountVal }
+      { amount: amountCents },
+      { amount: parseFloat(amountCents) },
+      { amount: amountVal },
+      { amount: amountVal.toFixed(2) }
     ];
 
-    if (merchantId) {
-      payloadVariants.forEach(p => p.merchantId = merchantId);
-    }
-    if (terminalId) {
-      payloadVariants.forEach(p => p.terminalId = terminalId);
-    }
+    if (merchantId) payloadVariants.forEach(p => p.merchantId = merchantId);
+    if (terminalId) payloadVariants.forEach(p => p.terminalId = terminalId);
 
-    const endpoints = [`/tx_sale?amount=${amountStr}`, `/tx_sale`, `/sale`, `/` ];
+    const endpoints = [
+      `/tx_sale?amount=${amountCents}`,
+      `/tx_sale?amount=${amountVal}`,
+      `/tx_sale`
+    ];
 
     let endpointIdx = 0;
     let payloadIdx = 0;
@@ -648,7 +646,7 @@ function handleCardnetAndroidCharge(amount, ip, port, merchantId, terminalId, in
       if (endpointIdx >= endpoints.length) {
         return resolve({
           success: false,
-          message: `El Verifone Cardnet rechazó el formato de parámetros. Revisa la app de Cardnet en el Saturn 1000.`
+          message: `El Verifone Cardnet rechazó el formato. Verifica que la app de Cardnet esté abierta.`
         });
       }
 
@@ -657,7 +655,7 @@ function handleCardnetAndroidCharge(amount, ip, port, merchantId, terminalId, in
       const postData = JSON.stringify(payloadObj);
       const url = `http://${ip}:${targetPort}${endpoint}`;
 
-      console.log(`[BillsBridge] Probando formato [${payloadIdx+1}/${payloadVariants.length}] en (${url}): ${postData}`);
+      console.log(`[BillsBridge CardNET Oficial] Enviando (${url}): ${postData}`);
 
       const req = http.request(url, {
         method: 'POST',
@@ -665,23 +663,23 @@ function handleCardnetAndroidCharge(amount, ip, port, merchantId, terminalId, in
           'Content-Type': 'application/json',
           'Content-Length': Buffer.byteLength(postData)
         },
-        timeout: Math.min(timeoutSec, 15) * 1000
+        timeout: Math.min(timeoutSec, 20) * 1000
       }, (res) => {
         let body = '';
         res.on('data', chunk => { body += chunk; });
         res.on('end', () => {
-          console.log(`[BillsBridge Cardnet Saturn] HTTP ${res.statusCode} | Respuesta: "${body}"`);
+          console.log(`[BillsBridge CardNET Oficial] HTTP ${res.statusCode} | Respuesta cruda: "${body}"`);
 
           if (res.statusCode === 200) {
             try {
               const data = JSON.parse(body || '{}');
-              const authCode = data.approbationNumber || data.auth_code || data.approvalCode || data.authorizationCode || '';
-              const txnMessage = data.txnMessage || data.message || data.responseMessage || 'Tarjeta Declinada / Error';
+              const authCode = data.approbationNumber || data.authCode || data.auth_code || data.approvalCode || '';
+              const txnMessage = data.txnMessage || data.resultMessage || data.message || 'Tarjeta Declinada / Error';
               const code = data.code;
 
-              // Si devuelve code -1 "Los parametros no tienen el formato correcto", probar el siguiente formato!
-              if (code === -1 || txnMessage.includes('formato') || body.includes('formato')) {
-                console.warn(`[BillsBridge Cardnet Saturn] Formato rechazado (-1), probando variante siguiente...`);
+              // Si la app responde "code -1" o "formato", probar la siguiente variante de monto
+              if (code === -1 || (typeof txnMessage === 'string' && txnMessage.includes('formato'))) {
+                console.warn(`[BillsBridge CardNET] Variante [${payloadIdx+1}] rechazada por formato (-1). Probando siguiente...`);
                 payloadIdx++;
                 if (payloadIdx >= payloadVariants.length) {
                   payloadIdx = 0;
@@ -690,27 +688,27 @@ function handleCardnetAndroidCharge(amount, ip, port, merchantId, terminalId, in
                 return tryNextCombination();
               }
 
-              const cardInfo = data.cardInformation || data.cardInfo || data.card || {};
-              const maskedPan = cardInfo.maskedPAN || cardInfo.cardNumber || cardInfo.pan || '************0000';
-              const cardSubType = cardInfo.cardSubType || cardInfo.cardType || cardInfo.type || 'Tarjeta';
+              const cardInfo = data.cardInformation || data.ticket || data.cardInfo || {};
+              const maskedPan = cardInfo.maskedPAN || cardInfo.CardNumber || cardInfo.cardNumber || '************0000';
+              const cardSubType = cardInfo.cardSubType || cardInfo.CardType || cardInfo.cardType || 'Tarjeta';
 
-              if (authCode && authCode !== '000000') {
-                console.log(`[BillsBridge Cardnet Saturn] ✅ APROBADA! Auth: ${authCode}`);
+              if (authCode && authCode !== '000000' && authCode !== 0) {
+                console.log(`[BillsBridge CardNET] ✅ TRANSACCIÓN APROBADA! Código de Auth: ${authCode}`);
                 return resolve({
                   success: true,
                   status: 'approved',
-                  auth_code: authCode,
+                  auth_code: String(authCode),
                   card_number: maskedPan,
                   card_type: cardSubType,
                   message: txnMessage
                 });
               } else {
-                console.warn(`[BillsBridge Cardnet Saturn] ❌ DECLINADA / RECHAZADA por el Verifone: ${txnMessage}`);
-                return resolve({ success: false, message: `Verifone: ${txnMessage}` });
+                console.warn(`[BillsBridge CardNET] ❌ DECLINADA / RECHAZADA: ${txnMessage}`);
+                return resolve({ success: false, message: `CardNET: ${txnMessage}` });
               }
             } catch (e) {
-              console.error(`[BillsBridge Cardnet Saturn] Error parseando JSON:`, e.message);
-              return resolve({ success: false, message: 'Error procesando la respuesta del POS Cardnet Saturn.' });
+              console.error(`[BillsBridge CardNET] Error al procesar JSON:`, e.message);
+              return resolve({ success: false, message: 'Error procesando respuesta del POS CardNET.' });
             }
           } else if (res.statusCode === 404) {
             endpointIdx++;

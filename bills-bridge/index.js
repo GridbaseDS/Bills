@@ -609,7 +609,7 @@ function handleCardnetLocalCharge(amount, ip, port, invoiceId, timeoutSec) {
   });
 }
 
-function handleCardnetAndroidCharge(amount, ip, port, timeoutSec) {
+function handleCardnetAndroidCharge(amount, ip, port, merchantId, terminalId, invoiceId, timeoutSec) {
   return new Promise((resolve) => {
     const targetPort = port || 2001;
     if (!ip) {
@@ -617,27 +617,47 @@ function handleCardnetAndroidCharge(amount, ip, port, timeoutSec) {
     }
 
     const amountVal = Math.round(parseFloat(amount) * 100) / 100;
+    const amountStr = amountVal.toFixed(2);
+    const amountCentsStr = Math.round(amountVal * 100).toString();
+    const amountCentsInt = Math.round(amountVal * 100);
 
-    // Payload oficial estricto Cardnet Saturn 1000 REST API
-    const postPayload = { amount: amountVal };
-    const postData = JSON.stringify(postPayload);
+    const payloadVariants = [
+      { amount: amountStr, tax: "0.00" },
+      { amount: amountVal, tax: 0.00 },
+      { amount: amountCentsStr, tax: "0" },
+      { amount: amountCentsInt, tax: 0 },
+      { amount: amountStr, tax: "0.00", ticket: String(invoiceId || '1') },
+      { txnAmount: amountStr, taxAmount: "0.00" },
+      { saleAmount: amountStr },
+      { amount: amountVal }
+    ];
 
-    // Intentar endpoint principal /tx_sale y luego /sale
-    const endpoints = [`/tx_sale?amount=${amountVal}`, `/sale`, `/` ];
+    if (merchantId) {
+      payloadVariants.forEach(p => p.merchantId = merchantId);
+    }
+    if (terminalId) {
+      payloadVariants.forEach(p => p.terminalId = terminalId);
+    }
 
-    let attemptIndex = 0;
+    const endpoints = [`/tx_sale?amount=${amountStr}`, `/tx_sale`, `/sale`, `/` ];
 
-    function tryNextEndpoint() {
-      if (attemptIndex >= endpoints.length) {
+    let endpointIdx = 0;
+    let payloadIdx = 0;
+
+    function tryNextCombination() {
+      if (endpointIdx >= endpoints.length) {
         return resolve({
           success: false,
-          message: `No se pudo conectar a la IP ${ip}:${targetPort} del Verifone. Revisa que el Verifone esté encendido, con la app de Cardnet abierta y en la misma red Wi-Fi.`
+          message: `El Verifone Cardnet rechazó el formato de parámetros. Revisa la app de Cardnet en el Saturn 1000.`
         });
       }
 
-      const endpoint = endpoints[attemptIndex++];
+      const endpoint = endpoints[endpointIdx];
+      const payloadObj = payloadVariants[payloadIdx];
+      const postData = JSON.stringify(payloadObj);
       const url = `http://${ip}:${targetPort}${endpoint}`;
-      console.log(`[BillsBridge] Intentando conexión con Cardnet Saturn 1000 (${url})...`);
+
+      console.log(`[BillsBridge] Probando formato [${payloadIdx+1}/${payloadVariants.length}] en (${url}): ${postData}`);
 
       const req = http.request(url, {
         method: 'POST',
@@ -650,12 +670,26 @@ function handleCardnetAndroidCharge(amount, ip, port, timeoutSec) {
         let body = '';
         res.on('data', chunk => { body += chunk; });
         res.on('end', () => {
-          console.log(`[BillsBridge Cardnet Saturn] HTTP ${res.statusCode} | Respuesta cruda del Verifone: "${body}"`);
+          console.log(`[BillsBridge Cardnet Saturn] HTTP ${res.statusCode} | Respuesta: "${body}"`);
+
           if (res.statusCode === 200) {
             try {
               const data = JSON.parse(body || '{}');
               const authCode = data.approbationNumber || data.auth_code || data.approvalCode || data.authorizationCode || '';
               const txnMessage = data.txnMessage || data.message || data.responseMessage || 'Tarjeta Declinada / Error';
+              const code = data.code;
+
+              // Si devuelve code -1 "Los parametros no tienen el formato correcto", probar el siguiente formato!
+              if (code === -1 || txnMessage.includes('formato') || body.includes('formato')) {
+                console.warn(`[BillsBridge Cardnet Saturn] Formato rechazado (-1), probando variante siguiente...`);
+                payloadIdx++;
+                if (payloadIdx >= payloadVariants.length) {
+                  payloadIdx = 0;
+                  endpointIdx++;
+                }
+                return tryNextCombination();
+              }
+
               const cardInfo = data.cardInformation || data.cardInfo || data.card || {};
               const maskedPan = cardInfo.maskedPAN || cardInfo.cardNumber || cardInfo.pan || '************0000';
               const cardSubType = cardInfo.cardSubType || cardInfo.cardType || cardInfo.type || 'Tarjeta';
@@ -678,9 +712,10 @@ function handleCardnetAndroidCharge(amount, ip, port, timeoutSec) {
               console.error(`[BillsBridge Cardnet Saturn] Error parseando JSON:`, e.message);
               return resolve({ success: false, message: 'Error procesando la respuesta del POS Cardnet Saturn.' });
             }
-          } else if (res.statusCode === 404 && attemptIndex < endpoints.length) {
-            // Probar siguiente endpoint en 404
-            return tryNextEndpoint();
+          } else if (res.statusCode === 404) {
+            endpointIdx++;
+            payloadIdx = 0;
+            return tryNextCombination();
           } else {
             return resolve({ success: false, message: `El Verifone Cardnet respondió con error HTTP ${res.statusCode}` });
           }
@@ -689,18 +724,22 @@ function handleCardnetAndroidCharge(amount, ip, port, timeoutSec) {
 
       req.on('timeout', () => {
         req.destroy();
-        if (attemptIndex < endpoints.length) {
-          tryNextEndpoint();
+        endpointIdx++;
+        payloadIdx = 0;
+        if (endpointIdx < endpoints.length) {
+          tryNextCombination();
         } else {
-          resolve({ success: false, message: `Tiempo de espera agotado conectando con el Verifone (${ip}:${targetPort}). Revisa la red Wi-Fi.` });
+          resolve({ success: false, message: `Tiempo de espera agotado conectando con el Verifone (${ip}:${targetPort}).` });
         }
       });
 
       req.on('error', (err) => {
-        if (attemptIndex < endpoints.length) {
-          tryNextEndpoint();
+        endpointIdx++;
+        payloadIdx = 0;
+        if (endpointIdx < endpoints.length) {
+          tryNextCombination();
         } else {
-          resolve({ success: false, message: `No se pudo conectar a la IP ${ip}:${targetPort} del Verifone (${err.message}). Verifica que el Verifone esté encendido y en la misma red Wi-Fi.` });
+          resolve({ success: false, message: `No se pudo conectar a la IP ${ip}:${targetPort} del Verifone (${err.message}).` });
         }
       });
 
@@ -708,7 +747,7 @@ function handleCardnetAndroidCharge(amount, ip, port, timeoutSec) {
       req.end();
     }
 
-    tryNextEndpoint();
+    tryNextCombination();
   });
 }
 

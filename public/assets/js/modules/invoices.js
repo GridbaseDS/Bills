@@ -1093,7 +1093,7 @@ const InvoicesModule = {
 
                     let localBridgeAvailable = false;
                     try {
-                        const check = await fetch(bridgeUrl, { method: 'GET', signal: AbortSignal.timeout(1500) });
+                        const check = await fetch(bridgeUrl, { method: 'GET', signal: AbortSignal.timeout(1500), targetAddressSpace: 'local' });
                         if (check.ok) {
                             localBridgeAvailable = true;
                         }
@@ -1110,6 +1110,7 @@ const InvoicesModule = {
                             const bridgeResponse = await fetch('http://localhost:8080/charge', {
                                 method: 'POST',
                                 headers: { 'Content-Type': 'application/json' },
+                                targetAddressSpace: 'local',
                                 body: JSON.stringify({
                                     driver,
                                     amount,
@@ -1327,7 +1328,7 @@ const InvoicesModule = {
 
         for (const host of bridgeHosts) {
             try {
-                const check = await fetch(`${host}/status`, { method: 'GET', signal: AbortSignal.timeout(600) });
+                const check = await fetch(`${host}/status`, { method: 'GET', signal: AbortSignal.timeout(600), targetAddressSpace: 'local' });
                 if (check.ok) {
                     App.showToast(`🖨️ Descargando PDF y enviando a ${printerName || 'impresora predeterminada'}...`, 'info');
 
@@ -1350,6 +1351,7 @@ const InvoicesModule = {
                     const bridgeRes = await fetch(`${host}/print-ticket`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
+                        targetAddressSpace: 'local',
                         body: JSON.stringify({ pdf_data: pdfBase64, printer_name: printerName })
                     });
                     const resData = await bridgeRes.json();

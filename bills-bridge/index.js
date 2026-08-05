@@ -1,19 +1,70 @@
-process.on('uncaughtException', (err) => {
-  console.error('[!] Excepción no capturada en BillsBridge:', err.message);
+// ─────────────────────────────────────────────────────────────
+// BILLSBRIDGE v1.5.0 - ARRANQUE SEGURO (ES5 PURO PARA PKG)
+// ─────────────────────────────────────────────────────────────
+var http = require('http');
+var https = require('https');
+var net = require('net');
+var url = require('url');
+var path = require('path');
+var fs = require('fs');
+var os = require('os');
+var child_process = require('child_process');
+var exec = child_process.exec;
+var URL = url.URL;
+
+// Directorio del ejecutable
+var isPackaged = (typeof process.pkg !== 'undefined');
+var exeDir = isPackaged ? path.dirname(process.execPath) : __dirname;
+var logFilePath = path.join(exeDir, 'billsbridge-debug.log');
+
+// Función para escribir al archivo de log (diagnóstico de crashes)
+function writeLogFile(msg) {
+  try {
+    var ts = new Date().toISOString();
+    fs.appendFileSync(logFilePath, '[' + ts + '] ' + msg + '\n');
+  } catch(e) {}
+}
+
+writeLogFile('=== BillsBridge v1.5.0 INICIANDO ===');
+writeLogFile('Platform: ' + process.platform + ' | Arch: ' + process.arch);
+writeLogFile('ExeDir: ' + exeDir);
+writeLogFile('Node version: ' + process.version);
+writeLogFile('isPackaged: ' + isPackaged);
+
+// Captura global de errores
+process.on('uncaughtException', function(err) {
+  writeLogFile('UNCAUGHT EXCEPTION: ' + (err && err.stack ? err.stack : String(err)));
+  console.error('[!] Excepcion no capturada en BillsBridge:', err.message);
 });
 
-process.on('unhandledRejection', (reason) => {
+process.on('unhandledRejection', function(reason) {
+  writeLogFile('UNHANDLED REJECTION: ' + String(reason));
   console.error('[!] Promesa rechazada no capturada:', reason);
 });
 
-if (process.stdin && process.stdin.resume) {
-  process.stdin.resume();
+// Log de salida del proceso
+process.on('exit', function(code) {
+  writeLogFile('PROCESS EXIT con codigo: ' + code);
+});
+
+// Mantener el proceso vivo con keepalive
+setInterval(function() {}, 30000);
+
+// Mantener stdin abierto si es posible
+try {
+  if (process.stdin && process.stdin.resume) {
+    process.stdin.resume();
+  }
+} catch(e) {
+  writeLogFile('stdin.resume fallo: ' + e.message);
 }
+
+writeLogFile('Fase 1 completa: modulos cargados, handlers registrados');
 
 // ─────────────────────────────────────────────────────────────
 // CAPTURA DE LOGS EN MEMORIA PARA LA CONSOLA WEB EN VIVO
 // ─────────────────────────────────────────────────────────────
-const logsMemory = [];
+var logsMemory = [];
 function addLog(msg) {
   var timestamp = new Date().toLocaleTimeString();
   var line = '[' + timestamp + '] ' + msg;
@@ -21,74 +72,85 @@ function addLog(msg) {
   if (logsMemory.length > 200) logsMemory.shift();
 }
 
-const origLog = console.log;
-const origErr = console.error;
-const origWarn = console.warn;
+var origLog = console.log;
+var origErr = console.error;
+var origWarn = console.warn;
 
-console.log = function(...args) {
+console.log = function() {
+  var args = Array.prototype.slice.call(arguments);
   origLog.apply(console, args);
   addLog(args.join(' '));
 };
 
-console.error = function(...args) {
+console.error = function() {
+  var args = Array.prototype.slice.call(arguments);
   origErr.apply(console, args);
-  addLog('❌ ERROR: ' + args.join(' '));
+  addLog('ERROR: ' + args.join(' '));
+  writeLogFile('CONSOLE.ERROR: ' + args.join(' '));
 };
 
-console.warn = function(...args) {
+console.warn = function() {
+  var args = Array.prototype.slice.call(arguments);
   origWarn.apply(console, args);
-  addLog('⚠️ WARN: ' + args.join(' '));
+  addLog('WARN: ' + args.join(' '));
 };
 
-const http = require('http');
-const https = require('https');
-const net = require('net');
-const { URL } = require('url');
-const path = require('path');
-const fs = require('fs');
-const os = require('os');
-const { exec } = require('child_process');
+writeLogFile('Fase 2 completa: logging interceptado');
 
-const PORT = 8080;
+var PORT = 8080;
 
+// Cargar HTML del dashboard desde archivo externo
 var HTML_DASHBOARD = '';
 try {
-  HTML_DASHBOARD = fs.readFileSync(path.join(__dirname, 'dashboard.html'), 'utf8');
+  var dashboardPath = path.join(__dirname, 'dashboard.html');
+  writeLogFile('Cargando dashboard desde: ' + dashboardPath);
+  HTML_DASHBOARD = fs.readFileSync(dashboardPath, 'utf8');
+  writeLogFile('Dashboard cargado OK (' + HTML_DASHBOARD.length + ' bytes)');
 } catch (e) {
-  HTML_DASHBOARD = '<html><body><h1>BillsBridge v1.5.0</h1><p>Dashboard file not found. Service is running on port 8080.</p></body></html>';
+  writeLogFile('Dashboard NO encontrado, usando fallback: ' + e.message);
+  HTML_DASHBOARD = '<html><body style="background:#111;color:#fff;font-family:sans-serif;padding:40px;"><h1>BillsBridge v1.5.0</h1><p>Dashboard file not found. Service is running on port ' + PORT + '.</p><p>Error: ' + (e && e.message || 'unknown') + '</p></body></html>';
 }
 
 // Caracteres especiales del protocolo Cardnet (SPDH/Sockets)
-const SYN = 0x16;
-const EOM = 0x19;
-const ENQ = 0x05;
-const ACK = 0x06;
-const STX = 0x02;
-const ETX = 0x03;
-const FS = '\x1C'; // File Separator (0x1C)
+var SYN = 0x16;
+var EOM = 0x19;
+var ENQ = 0x05;
+var ACK = 0x06;
+var STX = 0x02;
+var ETX = 0x03;
+var FS = '\x1C'; // File Separator (0x1C)
 
-// Determinar el directorio del ejecutable real
-const isPackaged = process.pkg !== undefined;
-const exeDir = isPackaged ? path.dirname(process.execPath) : __dirname;
-const configPath = path.join(exeDir, 'config.json');
+// Directorio del ejecutable y config
+var configPath = path.join(exeDir, 'config.json');
 
-let currentConfig = null;
-let allowedDomain = '*';
-let isPollingStarted = false;
+var currentConfig = null;
+var allowedDomain = '*';
+var isPollingStarted = false;
 
 // Cargar configuración inicial si existe
 if (fs.existsSync(configPath)) {
   try {
-    const raw = fs.readFileSync(configPath, 'utf8');
+    var raw = fs.readFileSync(configPath, 'utf8');
     currentConfig = JSON.parse(raw);
     allowedDomain = currentConfig.domain || '*';
+    writeLogFile('Config cargada: dominio=' + allowedDomain);
   } catch (err) {
+    writeLogFile('Error leyendo config.json: ' + err.message);
     console.error('[!] Error leyendo config.json:', err.message);
   }
+} else {
+  writeLogFile('config.json no existe aun (normal en primera ejecucion)');
 }
 
+writeLogFile('Fase 3 completa: config cargada, iniciando servidor HTTP...');
+
 // Iniciar servidor HTTP
-startServer();
+try {
+  startServer();
+  writeLogFile('startServer() invocado OK');
+} catch(e) {
+  writeLogFile('ERROR CRITICO en startServer(): ' + (e && e.stack ? e.stack : String(e)));
+}
 
 // ─────────────────────────────────────────────────────────────
 // FUNCIÓN PARA INSTALAR EL SERVICIO EN SEGUNDO PLANO

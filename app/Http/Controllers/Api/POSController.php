@@ -648,4 +648,16 @@ class POSController extends Controller
             'logs' => Cache::get('pos_bridge_history_logs', [])
         ]);
     }
+
+    /**
+     * Retorna la versión actual del ejecutable BillsBridge para Auto-Update.
+     */
+    public function getBridgeVersion()
+    {
+        return response()->json([
+            'success' => true,
+            'version' => '1.3.0',
+            'download_url' => url('/billsbridge.exe')
+        ]);
+    }
 }

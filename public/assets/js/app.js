@@ -4,7 +4,7 @@
  */
 
 import DashboardModule from './modules/dashboard.js?v=201';
-import InvoicesModule from './modules/invoices.js?v=203';
+import InvoicesModule from './modules/invoices.js?v=204';
 import QuotesModule from './modules/quotes.js?v=201';
 import ClientsModule from './modules/clients.js?v=201';
 import ItemsModule from './modules/items.js?v=201';

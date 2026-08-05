@@ -1316,23 +1316,30 @@ const InvoicesModule = {
         const printerName = settings.thermal_printer_name || '2Connect POS80-01 V7';
 
         // 1. Intentar impresión silenciosa directa de 0 clics vía BillsBridge local
-        try {
-            const check = await fetch('http://localhost:8080/status', { method: 'GET', signal: AbortSignal.timeout(1000) });
-            if (check.ok) {
-                App.showToast(`Enviando ticket a ${printerName}...`, 'info');
-                const bridgeRes = await fetch('http://localhost:8080/print-ticket', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ pdf_url: fullPdfUrl, printer_name: printerName })
-                });
-                const resData = await bridgeRes.json();
-                if (resData.success) {
-                    App.showToast(`✓ Ticket impreso automáticamente en ${printerName}`, 'success');
-                    return;
+        const bridgeHosts = [
+            'http://localhost:8080',
+            'http://127.0.0.1:8080',
+            'http://localhost:3000',
+            'http://127.0.0.1:3000'
+        ];
+
+        for (const host of bridgeHosts) {
+            try {
+                const check = await fetch(`${host}/status`, { method: 'GET', signal: AbortSignal.timeout(600) });
+                if (check.ok) {
+                    App.showToast(`🖨️ Enviando ticket directo a ${printerName}...`, 'info');
+                    const bridgeRes = await fetch(`${host}/print-ticket`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ pdf_url: fullPdfUrl, printer_name: printerName })
+                    });
+                    const resData = await bridgeRes.json();
+                    if (resData.success) {
+                        App.showToast(`✓ Ticket impreso automáticamente en ${printerName}`, 'success');
+                        return;
+                    }
                 }
-            }
-        } catch(e) {
-            console.log('[Impresión] BillsBridge local no activo. Usando impresión en navegador.');
+            } catch(e) {}
         }
 
         // 2. Fallback a cuadro de diálogo de navegador

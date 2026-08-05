@@ -15,8 +15,8 @@ if (process.stdin && process.stdin.resume) {
 // ─────────────────────────────────────────────────────────────
 const logsMemory = [];
 function addLog(msg) {
-  const timestamp = new Date().toLocaleTimeString();
-  const line = `[${timestamp}] ${msg}`;
+  var timestamp = new Date().toLocaleTimeString();
+  var line = '[' + timestamp + '] ' + msg;
   logsMemory.push(line);
   if (logsMemory.length > 200) logsMemory.shift();
 }
@@ -51,164 +51,12 @@ const { exec } = require('child_process');
 
 const PORT = 8080;
 
-const HTML_DASHBOARD = `<!DOCTYPE html>
-<html lang="es">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Gridbase BillsBridge Control Panel</title>
-  <style>
-    :root {
-      --bg: #0b0f19;
-      --card-bg: #151c2c;
-      --border: #26334d;
-      --text: #f8fafc;
-      --text-muted: #94a3b8;
-      --primary: #3b82f6;
-      --success: #22c55e;
-      --warning: #eab308;
-      --danger: #ef4444;
-    }
-    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 24px; font-size: 14px; }
-    .container { max-width: 960px; margin: 0 auto; }
-    .header { display: flex; align-items: center; justify-content: space-between; padding-bottom: 20px; border-bottom: 1px solid var(--border); margin-bottom: 24px; }
-    .title-group { display: flex; align-items: center; gap: 14px; }
-    .logo { width: 42px; height: 42px; background: linear-gradient(135deg, #3b82f6, #8b5cf6); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 20px; color: #fff; box-shadow: 0 4px 12px rgba(59,130,246,0.3); }
-    .badge { padding: 6px 14px; border-radius: 20px; font-size: 13px; font-weight: 600; display: inline-flex; align-items: center; gap: 6px; }
-    .badge-success { background: rgba(34,197,94,0.15); color: var(--success); border: 1px solid rgba(34,197,94,0.3); }
-    .badge-warning { background: rgba(234,179,8,0.15); color: var(--warning); border: 1px solid rgba(234,179,8,0.3); }
-    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 24px; }
-    .card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 14px; padding: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.2); }
-    .card-title { font-size: 16px; font-weight: 700; margin-top: 0; margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between; color: #fff; }
-    .btn { background: var(--primary); color: #fff; border: none; border-radius: 8px; padding: 10px 16px; font-weight: 600; font-size: 13px; cursor: pointer; transition: all 0.2s; }
-    .btn:hover { opacity: 0.9; transform: translateY(-1px); }
-    .btn-secondary { background: #26334d; color: var(--text); }
-    .form-group { margin-bottom: 14px; }
-    label { display: block; font-size: 12px; color: var(--text-muted); margin-bottom: 6px; font-weight: 600; }
-    input, select { width: 100%; box-sizing: border-box; background: #0b0f19; border: 1px solid var(--border); color: var(--text); padding: 10px 12px; border-radius: 8px; font-size: 13px; outline: none; }
-    input:focus, select:focus { border-color: var(--primary); }
-    .terminal { background: #050811; border: 1px solid var(--border); border-radius: 12px; padding: 16px; font-family: "JetBrains Mono", Consolas, monospace; font-size: 12px; height: 280px; overflow-y: auto; color: #cbd5e1; }
-    .log-line { margin-bottom: 6px; line-height: 1.5; word-break: break-all; }
-    .log-error { color: #f87171; font-weight: 600; }
-    .log-success { color: #4ade80; font-weight: 600; }
-    .log-warn { color: #facc15; }
-  </style>
-</head>
-<body>
-  <div class="container">
-    <div class="header">
-      <div class="title-group">
-        <div class="logo">B</div>
-        <div>
-          <h2 style="margin:0; font-size:20px;">Gridbase BillsBridge Dashboard</h2>
-          <span style="font-size:13px; color:var(--text-muted);">Servicio de Comunicación POS & Impresión Silent v1.4.0 GUI Edition</span>
-        </div>
-      </div>
-      <div id="status-badge" class="badge badge-warning">Consultando estado...</div>
-    </div>
-
-    <div class="grid">
-      <div class="card">
-        <div class="card-title">⚙️ Dominio y Vinculación</div>
-        <div class="form-group">
-          <label>Dominio Autorizado de Bills</label>
-          <input type="text" id="input-domain" placeholder="bills.floristeriabraulio.com.do">
-        </div>
-        <button class="btn" onclick="saveDomain()">Guardar y Vincular Dominio</button>
-      </div>
-
-      <div class="card">
-        <div class="card-title">🖨️ Impresoras del Sistema</div>
-        <div class="form-group">
-          <label>Impresora de Caja Detectada</label>
-          <select id="select-printer"><option>Buscando impresoras del sistema...</option></select>
-        </div>
-        <button class="btn btn-secondary" onclick="loadPrinters()">Refrescar Impresoras</button>
-      </div>
-    </div>
-
-    <div class="card">
-      <div class="card-title">
-        <span>📝 Consola de Debug en Vivo</span>
-        <button class="btn btn-secondary" onclick="clearTerminal()" style="font-size:11px; padding:6px 12px;">Limpiar Pantalla</button>
-      </div>
-      <div class="terminal" id="terminal">
-        <div class="log-line">[BillsBridge] Servidor iniciado correctamente en http://localhost:8080</div>
-      </div>
-    </div>
-  </div>
-
-  <script>
-    async function updateStatus() {
-      try {
-        const res = await fetch('/status');
-        const data = await res.json();
-        const badge = document.getElementById('status-badge');
-        if (data.linked) {
-          badge.className = 'badge badge-success';
-          badge.innerHTML = '✓ Vinculado: ' + data.allowed_domain;
-          document.getElementById('input-domain').value = data.allowed_domain;
-        } else {
-          badge.className = 'badge badge-warning';
-          badge.innerHTML = '⚠️ Sin Vincular';
-        }
-      } catch(e){}
-    }
-
-    async function loadPrinters() {
-      try {
-        const res = await fetch('/printers');
-        const data = await res.json();
-        const sel = document.getElementById('select-printer');
-        if (data.success && data.printers && data.printers.length > 0) {
-          sel.innerHTML = data.printers.map(function(p) { return '<option value="' + p + '">' + p + '</option>'; }).join('');
-        } else {
-          sel.innerHTML = '<option>No se detectaron impresoras instaladas</option>';
-        }
-      } catch(e){}
-    }
-
-    async function saveDomain() {
-      const domain = document.getElementById('input-domain').value;
-      if (!domain) return alert('Por favor ingresa un dominio válido');
-      const res = await fetch('/configure', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({ domain: domain })
-      });
-      const data = await res.json();
-      alert(data.message);
-      updateStatus();
-    }
-
-    function clearTerminal() {
-      document.getElementById('terminal').innerHTML = '';
-    }
-
-    async function pollLogs() {
-      try {
-        const res = await fetch('/logs');
-        const data = await res.json();
-        if (data.success && data.logs) {
-          const term = document.getElementById('terminal');
-          term.innerHTML = data.logs.map(function(l) {
-            let cls = 'log-line';
-            if (l.indexOf('ERROR') !== -1 || l.indexOf('Error') !== -1 || l.indexOf('❌') !== -1) cls += ' log-error';
-            if (l.indexOf('APROBADA') !== -1 || l.indexOf('✅') !== -1 || l.indexOf('✓') !== -1) cls += ' log-success';
-            if (l.indexOf('⚠️') !== -1 || l.indexOf('WARN') !== -1) cls += ' log-warn';
-            return '<div class="' + cls + '">' + l + '</div>';
-          }).join('');
-          term.scrollTop = term.scrollHeight;
-        }
-      } catch(e){}
-    }
-
-    updateStatus();
-    loadPrinters();
-    setInterval(pollLogs, 1500);
-  </script>
-</body>
-</html>\`;
+var HTML_DASHBOARD = '';
+try {
+  HTML_DASHBOARD = fs.readFileSync(path.join(__dirname, 'dashboard.html'), 'utf8');
+} catch (e) {
+  HTML_DASHBOARD = '<html><body><h1>BillsBridge v1.4.0</h1><p>Dashboard file not found. Service is running on port 8080.</p></body></html>';
+}
 
 // Caracteres especiales del protocolo Cardnet (SPDH/Sockets)
 const SYN = 0x16;
@@ -445,25 +293,25 @@ function startServer() {
             return;
           }
 
-          const amountVal = parseFloat(amount || '1');
-          const amountCents = Math.round(amountVal >= 100 ? amountVal : amountVal * 100);
-          const targetUrl = `http://${ip}:${port}/tx_sale?amount=${amountCents}`;
-          const payload = { amount: amountCents };
+          var amountVal = parseFloat(amount || '1');
+          var amountCents = Math.round(amountVal >= 100 ? amountVal : amountVal * 100);
+          var targetUrl = 'http://' + ip + ':' + port + '/tx_sale?amount=' + amountCents;
+          var payload = { amount: amountCents };
           if (merchant_id) payload.merchantId = merchant_id;
           if (terminal_id) payload.terminalId = terminal_id;
-          const payloadData = JSON.stringify(payload);
+          var payloadData = JSON.stringify(payload);
 
-          const req = http.request(targetUrl, {
+          var posReq = http.request(targetUrl, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
               'Content-Length': Buffer.byteLength(payloadData)
             },
             timeout: 8000
-          }, (posRes) => {
-            let posBody = '';
-            posRes.on('data', chunk => posBody += chunk);
-            posRes.on('end', () => {
+          }, function(posRes) {
+            var posBody = '';
+            posRes.on('data', function(chunk) { posBody += chunk; });
+            posRes.on('end', function() {
               res.writeHead(200, { 'Content-Type': 'application/json' });
               res.end(JSON.stringify({
                 success: true,
@@ -476,19 +324,19 @@ function startServer() {
             });
           });
 
-          req.on('timeout', () => {
-            req.destroy();
+          posReq.on('timeout', function() {
+            posReq.destroy();
             res.writeHead(200, { 'Content-Type': 'application/json' });
-            res.end(JSON.stringify({ success: false, error: 'TIMEOUT', message: `El dispositivo en ${ip}:${port} no respondió en 8 segundos.` }));
+            res.end(JSON.stringify({ success: false, error: 'TIMEOUT', message: 'El dispositivo en ' + ip + ':' + port + ' no respondió en 8 segundos.' }));
           });
 
-          req.on('error', (err) => {
+          posReq.on('error', function(err) {
             res.writeHead(200, { 'Content-Type': 'application/json' });
-            res.end(JSON.stringify({ success: false, error: 'CONNECTION_FAILED', message: `Fallo de conexión a ${ip}:${port}: ${err.message}` }));
+            res.end(JSON.stringify({ success: false, error: 'CONNECTION_FAILED', message: 'Fallo de conexión a ' + ip + ':' + port + ': ' + err.message }));
           });
 
-          req.write(payloadData);
-          req.end();
+          posReq.write(payloadData);
+          posReq.end();
         } catch(e) {
           res.writeHead(500, { 'Content-Type': 'application/json' });
           res.end(JSON.stringify({ success: false, message: e.message }));
@@ -500,26 +348,26 @@ function startServer() {
     // Endpoint para listar las impresoras instaladas en el sistema (Windows / Mac / Linux)
     if (parsedUrl.pathname === '/printers' && req.method === 'GET') {
       try {
-        let cmd = '';
+        var cmd = '';
         if (process.platform === 'win32') {
-          cmd = `powershell -Command "Get-CimInstance -ClassName Win32_Printer | Select-Object -ExpandProperty Name"`;
+          cmd = 'powershell -Command "Get-CimInstance -ClassName Win32_Printer | Select-Object -ExpandProperty Name"';
         } else {
-          cmd = `lpstat -e`;
+          cmd = 'lpstat -e';
         }
 
-        exec(cmd, (err, stdout, stderr) => {
+        exec(cmd, function(err, stdout, stderr) {
           if (err) {
             res.writeHead(500, { 'Content-Type': 'application/json' });
             res.end(JSON.stringify({ success: false, message: 'Error listando impresoras: ' + err.message, printers: [] }));
             return;
           }
 
-          const printers = stdout.split(/\r?\n/)
-            .map(p => p.trim())
-            .filter(p => p.length > 0);
+          var printersList = stdout.split(/\r?\n/)
+            .map(function(p) { return p.trim(); })
+            .filter(function(p) { return p.length > 0; });
 
           res.writeHead(200, { 'Content-Type': 'application/json' });
-          res.end(JSON.stringify({ success: true, printers }));
+          res.end(JSON.stringify({ success: true, printers: printersList }));
         });
       } catch (err) {
         res.writeHead(500, { 'Content-Type': 'application/json' });
@@ -543,7 +391,7 @@ function startServer() {
             return;
           }
 
-          console.log(`[BillsBridge Print] Petición de impresión silenciosa enviada a: ${printer_name || 'Impresora Predeterminada'}`);
+          console.log('[BillsBridge Print] Petición de impresión silenciosa enviada a: ' + (printer_name || 'Impresora Predeterminada'));
           const result = await handleSilentPrint(pdf_url, printer_name);
 
           const statusCode = result.success ? 200 : 500;
@@ -565,8 +413,8 @@ function startServer() {
 
   server.on('error', (err) => {
     if (err.code === 'EADDRINUSE') {
-      console.error(`[!] El puerto ${PORT} está ocupado por otra instancia o aplicación.`);
-      console.error(`[!] Reintentando en puerto alternativo 8081...`);
+      console.error('[!] El puerto ' + PORT + ' está ocupado por otra instancia o aplicación.');
+      console.error('[!] Reintentando en puerto alternativo 8081...');
       setTimeout(() => {
         try { server.listen(8081, '0.0.0.0'); } catch(e) {}
       }, 1000);
@@ -576,18 +424,18 @@ function startServer() {
   });
 
   server.listen(PORT, '0.0.0.0', () => {
-    console.log(`==================================================`);
-    console.log(` BillsBridge v1.4.0 (GUI Edition) - Iniciado en puerto ${PORT}`);
+    console.log('==================================================');
+    console.log(' BillsBridge v1.4.0 (GUI Edition) - Iniciado en puerto ' + PORT);
     if (allowedDomain === '*') {
-      console.log(` [⚠️] ESTADO: Sin vincular.`);
-      console.log(` Abre el panel de Bills y haz clic en "Vincular"`);
+      console.log(' [WARNING] ESTADO: Sin vincular.');
+      console.log(' Abre el panel de Bills y haz clic en "Vincular"');
     } else {
-      console.log(` [✓] ESTADO: Vinculado.`);
-      console.log(` Dominio autorizado: https://${allowedDomain}`);
+      console.log(' [OK] ESTADO: Vinculado.');
+      console.log(' Dominio autorizado: https://' + allowedDomain);
       // Iniciar el polling de nube al arrancar
       startCloudPolling();
     }
-    console.log(`==================================================`);
+    console.log('==================================================');
 
     try {
       if (process.platform === 'win32') {
@@ -608,19 +456,19 @@ function startCloudPolling() {
   if (allowedDomain === '*' || isPollingStarted) return;
   isPollingStarted = true;
 
-  console.log(`[BillsBridge] Iniciando sondeo de nube en https://${allowedDomain} ...`);
+  console.log('[BillsBridge] Iniciando sondeo de nube en https://' + allowedDomain + ' ...');
 
   setInterval(async () => {
     if (isPollingActive) return;
     isPollingActive = true;
 
     try {
-      const url = `https://${allowedDomain}/api/pos/bridge/poll`;
-      const response = await makeGetRequest(url);
+      var pollUrl = 'https://' + allowedDomain + '/api/pos/bridge/poll';
+      var response = await makeGetRequest(pollUrl);
       
       if (response && response.success && response.pending && response.transaction) {
         const tx = response.transaction;
-        console.log(`[BillsBridge] [Nube] Transacción recibida para Factura #${tx.invoice_id} (RD$ ${tx.amount})`);
+        console.log('[BillsBridge] [Nube] Transacción recibida para Factura #' + tx.invoice_id + ' (RD$ ' + tx.amount + ')');
 
         let result;
         switch (tx.driver) {
@@ -637,12 +485,12 @@ function startCloudPolling() {
             result = await handleAzulLocalCharge(tx.amount, tx.ip, tx.port, tx.timeout);
             break;
           default:
-            result = { success: false, message: `Driver '${tx.driver}' no soportado.` };
+            result = { success: false, message: "Driver '" + tx.driver + "' no soportado." };
         }
 
         // Reportar respuesta a la nube
-        console.log(`[BillsBridge] [Nube] Enviando resultado al servidor...`);
-        const reportUrl = `https://${allowedDomain}/api/pos/bridge/respond`;
+        console.log('[BillsBridge] [Nube] Enviando resultado al servidor...');
+        var reportUrl = 'https://' + allowedDomain + '/api/pos/bridge/respond';
         await makePostRequest(reportUrl, {
           invoice_id: String(tx.invoice_id),
           status: result.success ? 'approved' : 'declined',
@@ -652,7 +500,7 @@ function startCloudPolling() {
           message: result.message || (result.success ? 'Aprobada' : 'Declinada')
         });
 
-        console.log(`[BillsBridge] [Nube] Resultado reportado con éxito.`);
+        console.log('[BillsBridge] [Nube] Resultado reportado con exito.');
       }
     } catch (err) {
       // Ignorar errores silenciosamente para no inundar consola por fallos temporales de red
@@ -764,7 +612,7 @@ function handleCardnetLocalCharge(amount, ip, port, invoiceId, timeoutSec) {
       return resolve({ success: false, message: 'IP del terminal no configurada.' });
     }
 
-    console.log(`[BillsBridge] Conectando a Cardnet por socket TCP en ${ip}:${targetPort}...`);
+    console.log('[BillsBridge] Conectando a Cardnet por socket TCP en ' + ip + ':' + targetPort + '...');
     const socket = new net.Socket();
     let state = 0;
     let responseBuffer = Buffer.alloc(0);
@@ -855,7 +703,7 @@ function handleCardnetLocalCharge(amount, ip, port, invoiceId, timeoutSec) {
     socket.on('error', (err) => {
       console.error('[BillsBridge] Error en socket:', err.message);
       cleanUp();
-      resolve({ success: false, message: `Error de conexión física con Verifone: ${err.message}` });
+      resolve({ success: false, message: 'Error de conexion fisica con Verifone: ' + err.message });
     });
 
     function sendPayload() {
@@ -865,7 +713,7 @@ function handleCardnetLocalCharge(amount, ip, port, invoiceId, timeoutSec) {
       const otherTaxesStr = '000000000000';
       const ticketStr = (invoiceId || '000000').slice(-6).padStart(6, '0');
 
-      const txMessage = `CN00${FS}${amountStr}${FS}${taxStr}${FS}${otherTaxesStr}${FS}${ticketStr}${FS}`;
+      var txMessage = 'CN00' + FS + amountStr + FS + taxStr + FS + otherTaxesStr + FS + ticketStr + FS;
       socket.write(Buffer.from(txMessage, 'ascii'));
     }
   });
@@ -892,10 +740,10 @@ function handleCardnetAndroidCharge(amount, ip, port, merchantId, terminalId, in
     if (actualMerchantId) payloadVariants.forEach(p => p.merchantId = actualMerchantId);
     if (terminalId) payloadVariants.forEach(p => p.terminalId = terminalId);
 
-    const endpoints = [
-      `/tx_sale?amount=${amountVal}`,
-      `/tx_sale?amount=${amountCents}`,
-      `/tx_sale`
+    var endpoints = [
+      '/tx_sale?amount=' + amountVal,
+      '/tx_sale?amount=' + amountCents,
+      '/tx_sale'
     ];
 
     let endpointIdx = 0;
@@ -906,41 +754,41 @@ function handleCardnetAndroidCharge(amount, ip, port, merchantId, terminalId, in
       if (endpointIdx >= endpoints.length) {
         return resolve({
           success: false,
-          message: `El Verifone CardNET no completó la transacción. Revisa la pantalla del Verifone.`
+          message: 'El Verifone CardNET no completo la transaccion. Revisa la pantalla del Verifone.'
         });
       }
 
       const endpoint = endpoints[endpointIdx];
       const payloadObj = payloadVariants[payloadIdx];
       const postData = JSON.stringify(payloadObj);
-      const url = `http://${ip}:${targetPort}${endpoint}`;
+      var reqUrl = 'http://' + ip + ':' + targetPort + endpoint;
 
-      console.log(`[BillsBridge CardNET] Enviando a Verifone (${url}): ${postData}`);
+      console.log('[BillsBridge CardNET] Enviando a Verifone (' + reqUrl + '): ' + postData);
 
-      const req = http.request(url, {
+      var cardReq = http.request(reqUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Content-Length': Buffer.byteLength(postData)
         },
         timeout: Math.min(timeoutSec, 60) * 1000
-      }, (res) => {
-        let body = '';
-        res.on('data', chunk => { body += chunk; });
-        res.on('end', () => {
-          console.log(`[BillsBridge CardNET] HTTP ${res.statusCode} | Respuesta: "${body}"`);
+      }, function(cardRes) {
+        var respBody = '';
+        cardRes.on('data', function(chunk) { respBody += chunk; });
+        cardRes.on('end', function() {
+          console.log('[BillsBridge CardNET] HTTP ' + cardRes.statusCode + ' | Respuesta: "' + respBody + '"');
 
-          if (res.statusCode === 200) {
+          if (cardRes.statusCode === 200) {
             try {
-              const data = JSON.parse(body || '{}');
+              var data = JSON.parse(respBody || '{}');
               const authCode = data.approbationNumber || data.authCode || data.auth_code || data.approvalCode || '';
               const txnMessage = data.txnMessage || data.resultMessage || data.message || data.error || 'Tarjeta Declinada / Error';
               const code = data.code;
 
               // 1. SI LA TRANSACCIÓN ESTÁ EN PROGRESO (esperando que el cliente pase la tarjeta en el Verifone)
-              if (body.includes('Transacción en progreso') || (data.error && data.error.includes('progreso'))) {
+              if (respBody.indexOf('Transaccion en progreso') !== -1 || respBody.indexOf('Transacción en progreso') !== -1 || (data.error && data.error.indexOf('progreso') !== -1)) {
                 pollCount++;
-                console.log(`[BillsBridge CardNET] ⏳ Transacción activa en la pantalla del Verifone (intento #${pollCount}). Esperando 3s a que pasen la tarjeta...`);
+                console.log('[BillsBridge CardNET] Transaccion activa en pantalla del Verifone (intento #' + pollCount + '). Esperando 3s...');
                 if (pollCount < 20) {
                   setTimeout(() => tryNextCombination(), 3000);
                 } else {
@@ -950,8 +798,8 @@ function handleCardnetAndroidCharge(amount, ip, port, merchantId, terminalId, in
               }
 
               // 2. SI EL MONTO FUE RECHAZADO POR RANGO O FORMATO (ej: 280000 excedió límite)
-              if (code === -1 && (body.includes('formato') || body.includes('mayor') || body.includes('menor'))) {
-                console.warn(`[BillsBridge CardNET] Formato rechazado (${body}). Probando variante siguiente...`);
+              if (code === -1 && (respBody.indexOf('formato') !== -1 || respBody.indexOf('mayor') !== -1 || respBody.indexOf('menor') !== -1)) {
+                console.warn('[BillsBridge CardNET] Formato rechazado (' + respBody + '). Probando variante siguiente...');
                 payloadIdx++;
                 if (payloadIdx >= payloadVariants.length) {
                   payloadIdx = 0;
@@ -965,7 +813,7 @@ function handleCardnetAndroidCharge(amount, ip, port, merchantId, terminalId, in
               const cardSubType = cardInfo.cardSubType || cardInfo.CardType || cardInfo.cardType || 'Tarjeta';
 
               if (authCode && authCode !== '000000' && authCode !== 0) {
-                console.log(`[BillsBridge CardNET] ✅ APROBADA! Auth: ${authCode}`);
+                console.log('[BillsBridge CardNET] APROBADA! Auth: ' + authCode);
                 return resolve({
                   success: true,
                   status: 'approved',
@@ -975,46 +823,46 @@ function handleCardnetAndroidCharge(amount, ip, port, merchantId, terminalId, in
                   message: txnMessage
                 });
               } else {
-                console.warn(`[BillsBridge CardNET] ❌ DECLINADA / RECHAZADA: ${txnMessage}`);
-                return resolve({ success: false, message: `CardNET: ${txnMessage}` });
+                console.warn('[BillsBridge CardNET] DECLINADA / RECHAZADA: ' + txnMessage);
+                return resolve({ success: false, message: 'CardNET: ' + txnMessage });
               }
             } catch (e) {
-              console.error(`[BillsBridge CardNET] Error parseando JSON:`, e.message);
+              console.error('[BillsBridge CardNET] Error parseando JSON:', e.message);
               return resolve({ success: false, message: 'Error procesando respuesta del POS CardNET.' });
             }
-          } else if (res.statusCode === 404) {
+          } else if (cardRes.statusCode === 404) {
             endpointIdx++;
             payloadIdx = 0;
             return tryNextCombination();
           } else {
-            return resolve({ success: false, message: `El Verifone Cardnet respondió con error HTTP ${res.statusCode}` });
+            return resolve({ success: false, message: 'El Verifone Cardnet respondio con error HTTP ' + cardRes.statusCode });
           }
         });
       });
 
-      req.on('timeout', () => {
-        req.destroy();
+      cardReq.on('timeout', function() {
+        cardReq.destroy();
         endpointIdx++;
         payloadIdx = 0;
         if (endpointIdx < endpoints.length) {
           tryNextCombination();
         } else {
-          resolve({ success: false, message: `Tiempo de espera agotado conectando con el Verifone (${ip}:${targetPort}).` });
+          resolve({ success: false, message: 'Tiempo de espera agotado conectando con el Verifone (' + ip + ':' + targetPort + ').' });
         }
       });
 
-      req.on('error', (err) => {
+      cardReq.on('error', function(err) {
         endpointIdx++;
         payloadIdx = 0;
         if (endpointIdx < endpoints.length) {
           tryNextCombination();
         } else {
-          resolve({ success: false, message: `No se pudo conectar a la IP ${ip}:${targetPort} del Verifone (${err.message}).` });
+          resolve({ success: false, message: 'No se pudo conectar a la IP ' + ip + ':' + targetPort + ' del Verifone (' + err.message + ').' });
         }
       });
 
-      req.write(postData);
-      req.end();
+      cardReq.write(postData);
+      cardReq.end();
     }
 
     tryNextCombination();
@@ -1028,23 +876,23 @@ function handleAzulLocalCharge(amount, ip, port, timeoutSec) {
       return resolve({ success: false, message: 'IP del Bridge de Azul no configurada.' });
     }
 
-    const url = `http://${ip}:${targetPort}/azul/charge`;
+    var azulUrl = 'http://' + ip + ':' + targetPort + '/azul/charge';
     const postData = JSON.stringify({ amount: parseFloat(amount), tax: 0.00 });
 
-    const req = http.request(url, {
+    var azulReq = http.request(azulUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Content-Length': Buffer.byteLength(postData)
       },
       timeout: timeoutSec * 1000
-    }, (res) => {
-      let body = '';
-      res.on('data', chunk => { body += chunk; });
-      res.on('end', () => {
-        if (res.statusCode === 200) {
+    }, function(azulRes) {
+      var azulBody = '';
+      azulRes.on('data', function(chunk) { azulBody += chunk; });
+      azulRes.on('end', function() {
+        if (azulRes.statusCode === 200) {
           try {
-            const data = JSON.parse(body);
+            var data = JSON.parse(azulBody);
             resolve({
               success: true,
               status: data.status || 'approved',
@@ -1062,17 +910,17 @@ function handleAzulLocalCharge(amount, ip, port, timeoutSec) {
       });
     });
 
-    req.on('timeout', () => {
-      req.destroy();
+    azulReq.on('timeout', function() {
+      azulReq.destroy();
       resolve({ success: false, message: 'Tiempo de espera agotado conectando con Azul.' });
     });
 
-    req.on('error', (err) => {
-      resolve({ success: false, message: `Fallo de comunicación con Azul: ${err.message}` });
+    azulReq.on('error', function(err) {
+      resolve({ success: false, message: 'Fallo de comunicacion con Azul: ' + err.message });
     });
 
-    req.write(postData);
-    req.end();
+    azulReq.write(postData);
+    azulReq.end();
   });
 }
 
@@ -1080,7 +928,7 @@ function handleSilentPrint(pdfUrl, printerName) {
   return new Promise((resolve) => {
     try {
       const httpLib = pdfUrl.startsWith('https') ? https : http;
-      const tempPath = path.join(os.tmpdir(), `ticket_${Date.now()}.pdf`);
+      var tempPath = path.join(os.tmpdir(), 'ticket_' + Date.now() + '.pdf');
       const file = fs.createWriteStream(tempPath);
 
       httpLib.get(pdfUrl, (res) => {
@@ -1110,17 +958,17 @@ function handleSilentPrint(pdfUrl, printerName) {
               let browserExe = edgeCandidates.find(p => p && fs.existsSync(p)) || chromeCandidates.find(p => p && fs.existsSync(p));
 
               if (browserExe) {
-                const printFlag = printerName ? `--print-to-printer="${printerName}"` : '--print-to-default';
-                cmd = `"${browserExe}" --headless ${printFlag} "${tempPath}"`;
+                var printFlag = printerName ? '--print-to-printer="' + printerName + '"' : '--print-to-default';
+                cmd = '"' + browserExe + '" --headless ' + printFlag + ' "' + tempPath + '"';
               } else {
-                const printFlag = printerName ? `--print-to-printer="${printerName}"` : '--print-to-default';
-                cmd = `cmd /c msedge --headless ${printFlag} "${tempPath}"`;
+                var printFlag2 = printerName ? '--print-to-printer="' + printerName + '"' : '--print-to-default';
+                cmd = 'cmd /c msedge --headless ' + printFlag2 + ' "' + tempPath + '"';
               }
             } else {
               if (printerName) {
-                cmd = `lp -d "${printerName}" "${tempPath}"`;
+                cmd = 'lp -d "' + printerName + '" "' + tempPath + '"';
               } else {
-                cmd = `lp "${tempPath}"`;
+                cmd = 'lp "' + tempPath + '"';
               }
             }
 

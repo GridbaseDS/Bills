@@ -11,7 +11,7 @@
     "build:mac": "npx pkg . --targets node18-macos-x64,node18-macos-arm64 --out-path dist"
   },
   "pkg": {
-    "assets": []
+    "assets": ["dashboard.html"]
   },
   "dependencies": {}
 }

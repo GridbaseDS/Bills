@@ -945,7 +945,7 @@ export default {
                 let detected = false;
                 for (const host of hosts) {
                     try {
-                        const res = await fetch(`${host}/printers`, { signal: AbortSignal.timeout(1200), targetAddressSpace: 'local' });
+                        const res = await fetch(`${host}/printers`, { signal: AbortSignal.timeout(1200), targetAddressSpace: 'loopback' });
                         const data = await res.json();
                         if (data.success && Array.isArray(data.printers)) {
                             const datalistThermal = document.getElementById('list_thermal_printers');
@@ -1657,7 +1657,7 @@ export default {
                     const res = await fetch('http://localhost:8080/configure', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        targetAddressSpace: 'local',
+                        targetAddressSpace: 'loopback',
                         body: JSON.stringify({ domain: window.location.hostname })
                     });
                     const data = await res.json();
@@ -1709,7 +1709,7 @@ export default {
                         const bridgeInspect = await fetch('http://localhost:8080/inspect-pos', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
-                            targetAddressSpace: 'local',
+                            targetAddressSpace: 'loopback',
                             body: JSON.stringify({
                                 ip,
                                 port,
@@ -2256,7 +2256,7 @@ export default {
                 }
 
                 try {
-                    const check = await fetch('http://localhost:8080/status', { method: 'GET', signal: AbortSignal.timeout(1500), targetAddressSpace: 'local' });
+                    const check = await fetch('http://localhost:8080/status', { method: 'GET', signal: AbortSignal.timeout(1500), targetAddressSpace: 'loopback' });
                     if (check.ok) {
                         const data = await check.json();
                         if (data.success && data.service === 'BillsBridge') {

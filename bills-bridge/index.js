@@ -1,3 +1,16 @@
+process.on('uncaughtException', (err) => {
+  console.error('[!] Excepción no capturada en BillsBridge:', err.message);
+});
+
+process.on('unhandledRejection', (reason) => {
+  console.error('[!] Promesa rechazada no capturada:', reason);
+});
+
+// Evitar que el proceso de Node se cierre abruptamente
+if (process.stdin && process.stdin.resume) {
+  process.stdin.resume();
+}
+
 const http = require('http');
 const https = require('https');
 const net = require('net');
@@ -359,9 +372,21 @@ function startServer() {
     res.end(JSON.stringify({ success: false, message: 'Ruta no encontrada.' }));
   });
 
+  server.on('error', (err) => {
+    if (err.code === 'EADDRINUSE') {
+      console.error(`[!] El puerto ${PORT} está ocupado por otra instancia o aplicación.`);
+      console.error(`[!] Reintentando en puerto alternativo 8081...`);
+      setTimeout(() => {
+        try { server.listen(8081, '0.0.0.0'); } catch(e) {}
+      }, 1000);
+    } else {
+      console.error('[!] Error en el servidor HTTP:', err.message);
+    }
+  });
+
   server.listen(PORT, '0.0.0.0', () => {
     console.log(`==================================================`);
-    console.log(` BillsBridge v1.2.0 - Iniciado en puerto ${PORT}`);
+    console.log(` BillsBridge v1.3.0 - Iniciado en puerto ${PORT}`);
     if (allowedDomain === '*') {
       console.log(` [⚠️] ESTADO: Sin vincular.`);
       console.log(` Abre el panel de Bills y haz clic en "Vincular"`);

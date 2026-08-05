@@ -6,10 +6,39 @@ process.on('unhandledRejection', (reason) => {
   console.error('[!] Promesa rechazada no capturada:', reason);
 });
 
-// Evitar que el proceso de Node se cierre abruptamente
 if (process.stdin && process.stdin.resume) {
   process.stdin.resume();
 }
+
+// ─────────────────────────────────────────────────────────────
+// CAPTURA DE LOGS EN MEMORIA PARA LA CONSOLA WEB EN VIVO
+// ─────────────────────────────────────────────────────────────
+const logsMemory = [];
+function addLog(msg) {
+  const timestamp = new Date().toLocaleTimeString();
+  const line = `[${timestamp}] ${msg}`;
+  logsMemory.push(line);
+  if (logsMemory.length > 200) logsMemory.shift();
+}
+
+const origLog = console.log;
+const origErr = console.error;
+const origWarn = console.warn;
+
+console.log = function(...args) {
+  origLog.apply(console, args);
+  addLog(args.join(' '));
+};
+
+console.error = function(...args) {
+  origErr.apply(console, args);
+  addLog('❌ ERROR: ' + args.join(' '));
+};
+
+console.warn = function(...args) {
+  origWarn.apply(console, args);
+  addLog('⚠️ WARN: ' + args.join(' '));
+};
 
 const http = require('http');
 const https = require('https');
@@ -21,6 +50,165 @@ const os = require('os');
 const { exec } = require('child_process');
 
 const PORT = 8080;
+
+const HTML_DASHBOARD = `<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gridbase BillsBridge Control Panel</title>
+  <style>
+    :root {
+      --bg: #0b0f19;
+      --card-bg: #151c2c;
+      --border: #26334d;
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+      --primary: #3b82f6;
+      --success: #22c55e;
+      --warning: #eab308;
+      --danger: #ef4444;
+    }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 24px; font-size: 14px; }
+    .container { max-width: 960px; margin: 0 auto; }
+    .header { display: flex; align-items: center; justify-content: space-between; padding-bottom: 20px; border-bottom: 1px solid var(--border); margin-bottom: 24px; }
+    .title-group { display: flex; align-items: center; gap: 14px; }
+    .logo { width: 42px; height: 42px; background: linear-gradient(135deg, #3b82f6, #8b5cf6); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 20px; color: #fff; box-shadow: 0 4px 12px rgba(59,130,246,0.3); }
+    .badge { padding: 6px 14px; border-radius: 20px; font-size: 13px; font-weight: 600; display: inline-flex; align-items: center; gap: 6px; }
+    .badge-success { background: rgba(34,197,94,0.15); color: var(--success); border: 1px solid rgba(34,197,94,0.3); }
+    .badge-warning { background: rgba(234,179,8,0.15); color: var(--warning); border: 1px solid rgba(234,179,8,0.3); }
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 24px; }
+    .card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 14px; padding: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.2); }
+    .card-title { font-size: 16px; font-weight: 700; margin-top: 0; margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between; color: #fff; }
+    .btn { background: var(--primary); color: #fff; border: none; border-radius: 8px; padding: 10px 16px; font-weight: 600; font-size: 13px; cursor: pointer; transition: all 0.2s; }
+    .btn:hover { opacity: 0.9; transform: translateY(-1px); }
+    .btn-secondary { background: #26334d; color: var(--text); }
+    .form-group { margin-bottom: 14px; }
+    label { display: block; font-size: 12px; color: var(--text-muted); margin-bottom: 6px; font-weight: 600; }
+    input, select { width: 100%; box-sizing: border-box; background: #0b0f19; border: 1px solid var(--border); color: var(--text); padding: 10px 12px; border-radius: 8px; font-size: 13px; outline: none; }
+    input:focus, select:focus { border-color: var(--primary); }
+    .terminal { background: #050811; border: 1px solid var(--border); border-radius: 12px; padding: 16px; font-family: "JetBrains Mono", Consolas, monospace; font-size: 12px; height: 280px; overflow-y: auto; color: #cbd5e1; }
+    .log-line { margin-bottom: 6px; line-height: 1.5; word-break: break-all; }
+    .log-error { color: #f87171; font-weight: 600; }
+    .log-success { color: #4ade80; font-weight: 600; }
+    .log-warn { color: #facc15; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="title-group">
+        <div class="logo">B</div>
+        <div>
+          <h2 style="margin:0; font-size:20px;">Gridbase BillsBridge Dashboard</h2>
+          <span style="font-size:13px; color:var(--text-muted);">Servicio de Comunicación POS & Impresión Silent v1.3.0</span>
+        </div>
+      </div>
+      <div id="status-badge" class="badge badge-warning">Consultando estado...</div>
+    </div>
+
+    <div class="grid">
+      <div class="card">
+        <div class="card-title">⚙️ Dominio y Vinculación</div>
+        <div class="form-group">
+          <label>Dominio Autorizado de Bills</label>
+          <input type="text" id="input-domain" placeholder="bills.floristeriabraulio.com.do">
+        </div>
+        <button class="btn" onclick="saveDomain()">Guardar y Vincular Dominio</button>
+      </div>
+
+      <div class="card">
+        <div class="card-title">🖨️ Impresoras del Sistema</div>
+        <div class="form-group">
+          <label>Impresora de Caja Detectada</label>
+          <select id="select-printer"><option>Buscando impresoras del sistema...</option></select>
+        </div>
+        <button class="btn btn-secondary" onclick="loadPrinters()">Refrescar Impresoras</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">
+        <span>📝 Consola de Debug en Vivo</span>
+        <button class="btn btn-secondary" onclick="clearTerminal()" style="font-size:11px; padding:6px 12px;">Limpiar Pantalla</button>
+      </div>
+      <div class="terminal" id="terminal">
+        <div class="log-line">[BillsBridge] Servidor iniciado correctamente en http://localhost:8080</div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    async function updateStatus() {
+      try {
+        const res = await fetch('/status');
+        const data = await res.json();
+        const badge = document.getElementById('status-badge');
+        if (data.linked) {
+          badge.className = 'badge badge-success';
+          badge.innerHTML = '✓ Vinculado: ' + data.allowed_domain;
+          document.getElementById('input-domain').value = data.allowed_domain;
+        } else {
+          badge.className = 'badge badge-warning';
+          badge.innerHTML = '⚠️ Sin Vincular';
+        }
+      } catch(e){}
+    }
+
+    async function loadPrinters() {
+      try {
+        const res = await fetch('/printers');
+        const data = await res.json();
+        const sel = document.getElementById('select-printer');
+        if (data.success && data.printers && data.printers.length > 0) {
+          sel.innerHTML = data.printers.map(function(p) { return '<option value="' + p + '">' + p + '</option>'; }).join('');
+        } else {
+          sel.innerHTML = '<option>No se detectaron impresoras instaladas</option>';
+        }
+      } catch(e){}
+    }
+
+    async function saveDomain() {
+      const domain = document.getElementById('input-domain').value;
+      if (!domain) return alert('Por favor ingresa un dominio válido');
+      const res = await fetch('/configure', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ domain: domain })
+      });
+      const data = await res.json();
+      alert(data.message);
+      updateStatus();
+    }
+
+    function clearTerminal() {
+      document.getElementById('terminal').innerHTML = '';
+    }
+
+    async function pollLogs() {
+      try {
+        const res = await fetch('/logs');
+        const data = await res.json();
+        if (data.success && data.logs) {
+          const term = document.getElementById('terminal');
+          term.innerHTML = data.logs.map(function(l) {
+            let cls = 'log-line';
+            if (l.indexOf('ERROR') !== -1 || l.indexOf('Error') !== -1 || l.indexOf('❌') !== -1) cls += ' log-error';
+            if (l.indexOf('APROBADA') !== -1 || l.indexOf('✅') !== -1 || l.indexOf('✓') !== -1) cls += ' log-success';
+            if (l.indexOf('⚠️') !== -1 || l.indexOf('WARN') !== -1) cls += ' log-warn';
+            return '<div class="' + cls + '">' + l + '</div>';
+          }).join('');
+          term.scrollTop = term.scrollHeight;
+        }
+      } catch(e){}
+    }
+
+    updateStatus();
+    loadPrinters();
+    setInterval(pollLogs, 1500);
+  </script>
+</body>
+</html>\`;
 
 // Caracteres especiales del protocolo Cardnet (SPDH/Sockets)
 const SYN = 0x16;
@@ -67,13 +255,13 @@ function installScheduledTask() {
 
     let psCommand;
     if (isPackaged) {
-      psCommand = `Register-ScheduledTask -TaskName '${taskName}' -Trigger (New-ScheduledTaskTrigger -AtStartup) -Action (New-ScheduledTaskAction -Execute '${exePath}' -WorkingDirectory '${workingDir}') -Settings (New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries) -Force`;
+      psCommand = 'Register-ScheduledTask -TaskName \'' + taskName + '\' -Trigger (New-ScheduledTaskTrigger -AtStartup) -Action (New-ScheduledTaskAction -Execute \'' + exePath + '\' -WorkingDirectory \'' + workingDir + '\') -Settings (New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries) -Force';
     } else {
       const nodeExe = process.execPath;
-      psCommand = `Register-ScheduledTask -TaskName '${taskName}' -Trigger (New-ScheduledTaskTrigger -AtStartup) -Action (New-ScheduledTaskAction -Execute '${nodeExe}' -Argument '${exePath}' -WorkingDirectory '${workingDir}') -Settings (New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries) -Force`;
+      psCommand = 'Register-ScheduledTask -TaskName \'' + taskName + '\' -Trigger (New-ScheduledTaskTrigger -AtStartup) -Action (New-ScheduledTaskAction -Execute \'' + nodeExe + '\' -Argument \'' + exePath + '\' -WorkingDirectory \'' + workingDir + '\') -Settings (New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries) -Force';
     }
 
-    exec(`powershell -NoProfile -ExecutionPolicy Bypass -Command "${psCommand}"`, () => {});
+    exec('powershell -NoProfile -ExecutionPolicy Bypass -Command "' + psCommand + '"', function() {});
   } catch (err) {}
 }
 
@@ -101,7 +289,21 @@ function startServer() {
       return;
     }
 
-    const parsedUrl = new URL(req.url, `http://${req.headers.host}`);
+    const parsedUrl = new URL(req.url, 'http://' + (req.headers.host || 'localhost:8080'));
+
+    // Dashboard UI principal
+    if (parsedUrl.pathname === '/' && req.method === 'GET') {
+      res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+      res.end(HTML_DASHBOARD);
+      return;
+    }
+
+    // Endpoint de logs en vivo
+    if (parsedUrl.pathname === '/logs' && req.method === 'GET') {
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ success: true, logs: logsMemory }));
+      return;
+    }
 
     // Endpoint de diagnóstico
     if (parsedUrl.pathname === '/status' && req.method === 'GET') {
@@ -141,19 +343,19 @@ function startServer() {
           }
 
           // Guardar configuración (en disco y memoria)
-          const config = { domain };
+          const config = { domain: domain };
           try {
             fs.writeFileSync(configPath, JSON.stringify(config, null, 2));
           } catch (fsErr) {
-            console.warn('[!] Advertencia: No se pudo escribir config.json en disco, pero se mantendrá en memoria:', fsErr.message);
+            console.warn('[!] Advertencia: No se pudo escribir config.json en disco:', fsErr.message);
           }
           currentConfig = config;
           allowedDomain = domain;
 
-          console.log(`==================================================`);
-          console.log(`[BillsBridge] VINCULACIÓN EXITOSA`);
-          console.log(`Dominio autorizado: https://${domain}`);
-          console.log(`==================================================`);
+          console.log('==================================================');
+          console.log('[BillsBridge] VINCULACIÓN EXITOSA');
+          console.log('Dominio autorizado: https://' + domain);
+          console.log('==================================================');
 
           // Intentar registrar el servicio de Windows
           installScheduledTask();
@@ -162,7 +364,7 @@ function startServer() {
           startCloudPolling();
 
           res.writeHead(200, { 'Content-Type': 'application/json' });
-          res.end(JSON.stringify({ success: true, message: `Bridge vinculado a ${domain} con éxito.` }));
+          res.end(JSON.stringify({ success: true, message: 'Bridge vinculado a ' + domain + ' con éxito.' }));
 
         } catch (err) {
           res.writeHead(500, { 'Content-Type': 'application/json' });
@@ -386,6 +588,14 @@ function startServer() {
       startCloudPolling();
     }
     console.log(`==================================================`);
+
+    try {
+      if (process.platform === 'win32') {
+        exec('start http://localhost:8080');
+      } else if (process.platform === 'darwin') {
+        exec('open http://localhost:8080');
+      }
+    } catch(e){}
   });
 }
 

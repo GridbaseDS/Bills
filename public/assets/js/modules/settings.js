@@ -937,26 +937,38 @@ export default {
                 btn.disabled = true;
                 btn.innerText = 'Detectando...';
 
-                try {
-                    const res = await fetch('http://localhost:8080/printers', { signal: AbortSignal.timeout(2000) });
-                    const data = await res.json();
-                    if (data.success && Array.isArray(data.printers)) {
-                        const datalistThermal = document.getElementById('list_thermal_printers');
-                        const datalistA4 = document.getElementById('list_a4_printers');
-                        const optionsHtml = data.printers.map(p => `<option value="${p}">`).join('');
-                        if (datalistThermal) datalistThermal.innerHTML = optionsHtml;
-                        if (datalistA4) datalistA4.innerHTML = optionsHtml;
+                const hosts = [
+                    'http://localhost:8080',
+                    'http://127.0.0.1:8080',
+                    'http://localhost:3000',
+                    'http://127.0.0.1:3000'
+                ];
 
-                        window.App.showToast(`✓ Se detectaron ${data.printers.length} impresoras instaladas`, 'success');
-                    } else {
-                        window.App.showToast('No se pudo obtener la lista de impresoras. Asegúrate de tener BillsBridge abierto.', 'warning');
-                    }
-                } catch(e) {
-                    window.App.showToast('Error al conectar con BillsBridge en puerto 8080.', 'error');
-                } finally {
-                    btn.disabled = false;
-                    btn.innerText = 'Detectar Impresoras del Sistema';
+                let detected = false;
+                for (const host of hosts) {
+                    try {
+                        const res = await fetch(`${host}/printers`, { signal: AbortSignal.timeout(1200) });
+                        const data = await res.json();
+                        if (data.success && Array.isArray(data.printers)) {
+                            const datalistThermal = document.getElementById('list_thermal_printers');
+                            const datalistA4 = document.getElementById('list_a4_printers');
+                            const optionsHtml = data.printers.map(p => `<option value="${p}">`).join('');
+                            if (datalistThermal) datalistThermal.innerHTML = optionsHtml;
+                            if (datalistA4) datalistA4.innerHTML = optionsHtml;
+
+                            window.App.showToast(`✓ Se detectaron ${data.printers.length} impresoras instaladas`, 'success');
+                            detected = true;
+                            break;
+                        }
+                    } catch(e) {}
                 }
+
+                if (!detected) {
+                    window.App.showToast('No se pudo detectar automáticamente. Puedes escribir el nombre de tu impresora directamente (Ej: 2Connect POS80-01 V7).', 'warning');
+                }
+
+                btn.disabled = false;
+                btn.innerText = 'Detectar Impresoras del Sistema';
             });
 
             // 2FA Security Management

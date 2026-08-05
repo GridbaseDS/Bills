@@ -82,24 +82,16 @@ function startServer() {
   const server = http.createServer((req, res) => {
     const origin = req.headers.origin;
 
-    // CORS dinámico según configuración
+    // CORS dinámico y permisivo para peticiones de la app y puente local
     if (origin) {
-      try {
-        const originUrl = new URL(origin);
-        if (allowedDomain === '*' || originUrl.hostname === allowedDomain) {
-          res.setHeader('Access-Control-Allow-Origin', origin);
-        } else {
-          console.warn(`[BillsBridge] Origen bloqueado: ${origin}`);
-        }
-      } catch (e) {
-        // Formato de origen inválido
-      }
-    } else if (allowedDomain === '*') {
+      res.setHeader('Access-Control-Allow-Origin', origin);
+    } else {
       res.setHeader('Access-Control-Allow-Origin', '*');
     }
 
-    res.setHeader('Access-Control-Allow-Methods', 'POST, GET, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT, DELETE');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
 
     if (req.method === 'OPTIONS') {
       res.writeHead(204);

@@ -829,10 +829,28 @@ function handleSilentPrint(pdfUrl, printerName) {
           file.close(() => {
             let cmd = '';
             if (process.platform === 'win32') {
-              if (printerName) {
-                cmd = `powershell -Command "Start-Process -FilePath '${tempPath}' -Verb PrintTo -ArgumentList '${printerName}'"`;
+              const edgePath = 'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe';
+              const edgePath64 = 'C:\\Program Files\\Microsoft\\Edge\\Application\\msedge.exe';
+              const chromePath = 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe';
+              const chromePathx86 = 'C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe';
+              const sumatraPath = 'C:\\Program Files\\SumatraPDF\\SumatraPDF.exe';
+
+              if (fs.existsSync(edgePath)) {
+                cmd = `"${edgePath}" --headless ${printerName ? `--print-to-printer="${printerName}"` : '--print-to-default'} "${tempPath}"`;
+              } else if (fs.existsSync(edgePath64)) {
+                cmd = `"${edgePath64}" --headless ${printerName ? `--print-to-printer="${printerName}"` : '--print-to-default'} "${tempPath}"`;
+              } else if (fs.existsSync(chromePath)) {
+                cmd = `"${chromePath}" --headless ${printerName ? `--print-to-printer="${printerName}"` : '--print-to-default'} "${tempPath}"`;
+              } else if (fs.existsSync(chromePathx86)) {
+                cmd = `"${chromePathx86}" --headless ${printerName ? `--print-to-printer="${printerName}"` : '--print-to-default'} "${tempPath}"`;
+              } else if (fs.existsSync(sumatraPath)) {
+                cmd = `"${sumatraPath}" -silent ${printerName ? `-print-to "${printerName}"` : '-print-to-default'} "${tempPath}"`;
               } else {
-                cmd = `powershell -Command "Start-Process -FilePath '${tempPath}' -Verb Print"`;
+                if (printerName) {
+                  cmd = `powershell -Command "Start-Process -FilePath '${tempPath}' -Verb PrintTo -ArgumentList '${printerName}'"`;
+                } else {
+                  cmd = `powershell -Command "Start-Process -FilePath '${tempPath}' -Verb Print"`;
+                }
               }
             } else {
               if (printerName) {

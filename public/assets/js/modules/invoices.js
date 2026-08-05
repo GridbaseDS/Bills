@@ -1312,8 +1312,10 @@ const InvoicesModule = {
                 : 'thermal';
         }
         
-        const fullPdfUrl = `${window.location.origin}/api/invoices/${id}/pdf?template=${template}`;
-        const printerName = settings.thermal_printer_name || '2Connect POS80-01 V7';
+        const isThermal = (type === 'thermal');
+        const printerName = isThermal 
+            ? (settings.thermal_printer_name || '2Connect POS80-01 V7') 
+            : (settings.a4_printer_name || '');
 
         // 1. Intentar impresión silenciosa directa de 0 clics vía BillsBridge local
         const bridgeHosts = [
@@ -1327,7 +1329,7 @@ const InvoicesModule = {
             try {
                 const check = await fetch(`${host}/status`, { method: 'GET', signal: AbortSignal.timeout(600) });
                 if (check.ok) {
-                    App.showToast(`🖨️ Enviando ticket directo a ${printerName}...`, 'info');
+                    App.showToast(`🖨️ Enviando ${isThermal ? 'ticket' : 'documento A4'} a ${printerName || 'impresora predeterminada'}...`, 'info');
                     const bridgeRes = await fetch(`${host}/print-ticket`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
@@ -1335,7 +1337,7 @@ const InvoicesModule = {
                     });
                     const resData = await bridgeRes.json();
                     if (resData.success) {
-                        App.showToast(`✓ Ticket impreso automáticamente en ${printerName}`, 'success');
+                        App.showToast(`✓ Documento impreso automáticamente en ${printerName || 'impresora del sistema'}`, 'success');
                         return;
                     }
                 }

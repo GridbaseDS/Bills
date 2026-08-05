@@ -311,10 +311,26 @@ export default {
                                     </select>
                                     <div style="font-size:11px;color:var(--color-text-muted);margin-top:4px;">Dispara automáticamente la impresión del ticket térmico tan pronto se registra un pago.</div>
                                 </div>
+                                <div class="form-group" style="grid-column: span 2; margin-top:8px;">
+                                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                                        <label class="form-label" style="margin:0; font-weight:700;">Configuración de Impresoras (Bills Print Service)</label>
+                                        <button type="button" id="btn-detect-printers" class="btn btn-secondary" style="height:30px; font-size:12px; font-weight:600; padding:0 12px; display:inline-flex; align-items:center; gap:6px;">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                                            Detectar Impresoras del Sistema
+                                        </button>
+                                    </div>
+                                </div>
                                 <div class="form-group">
-                                    <label class="form-label">Impresora Térmica por Defecto (Nombre de Sistema)</label>
-                                    <input type="text" id="s_thermal_printer_name" class="form-control" placeholder="Ej: 2Connect POS80-01 V7, 2Connect POS58, 2C-POS58-USB" value="${s.thermal_printer_name || '2Connect POS80-01 V7'}">
-                                    <div style="font-size:11px;color:var(--color-text-muted);margin-top:4px;">Nombre de la impresora predeterminada 2Connect para que el sistema mande los tickets directo al pagar.</div>
+                                    <label class="form-label">Impresora de Tickets Térmicos (80mm / 58mm)</label>
+                                    <input type="text" id="s_thermal_printer_name" class="form-control" list="list_thermal_printers" placeholder="Ej: 2Connect POS80-01 V7" value="${s.thermal_printer_name || '2Connect POS80-01 V7'}">
+                                    <datalist id="list_thermal_printers"></datalist>
+                                    <div style="font-size:11px;color:var(--color-text-muted);margin-top:4px;">Impresora objetivo para la emisión silenciosa de tickets de caja.</div>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Impresora de Documentos (A4 / Carta)</label>
+                                    <input type="text" id="s_a4_printer_name" class="form-control" list="list_a4_printers" placeholder="Ej: HP LaserJet Pro, Epson L3150" value="${s.a4_printer_name || ''}">
+                                    <datalist id="list_a4_printers"></datalist>
+                                    <div style="font-size:11px;color:var(--color-text-muted);margin-top:4px;">Impresora objetivo para facturas completas, reportes y cotizaciones.</div>
                                 </div>
                             </div>
 
@@ -914,6 +930,34 @@ export default {
 
             document.getElementById('btn-refresh-bridge-logs')?.addEventListener('click', loadBridgeLogs);
             loadBridgeLogs();
+
+            // Detección de Impresoras del Sistema vía BillsBridge
+            document.getElementById('btn-detect-printers')?.addEventListener('click', async () => {
+                const btn = document.getElementById('btn-detect-printers');
+                btn.disabled = true;
+                btn.innerText = 'Detectando...';
+
+                try {
+                    const res = await fetch('http://localhost:8080/printers', { signal: AbortSignal.timeout(2000) });
+                    const data = await res.json();
+                    if (data.success && Array.isArray(data.printers)) {
+                        const datalistThermal = document.getElementById('list_thermal_printers');
+                        const datalistA4 = document.getElementById('list_a4_printers');
+                        const optionsHtml = data.printers.map(p => `<option value="${p}">`).join('');
+                        if (datalistThermal) datalistThermal.innerHTML = optionsHtml;
+                        if (datalistA4) datalistA4.innerHTML = optionsHtml;
+
+                        window.App.showToast(`✓ Se detectaron ${data.printers.length} impresoras instaladas`, 'success');
+                    } else {
+                        window.App.showToast('No se pudo obtener la lista de impresoras. Asegúrate de tener BillsBridge abierto.', 'warning');
+                    }
+                } catch(e) {
+                    window.App.showToast('Error al conectar con BillsBridge en puerto 8080.', 'error');
+                } finally {
+                    btn.disabled = false;
+                    btn.innerText = 'Detectar Impresoras del Sistema';
+                }
+            });
 
             // 2FA Security Management
             const load2faSecurityStatus = async () => {
@@ -1540,6 +1584,7 @@ export default {
                     invoice_pdf_template: getValue('s_invoice_pdf_template'),
                     auto_print_thermal_on_pay: getValue('s_auto_print_thermal_on_pay'),
                     thermal_printer_name: getValue('s_thermal_printer_name'),
+                    a4_printer_name: getValue('s_a4_printer_name'),
                 };
 
                 const settingsToUpdate = Object.fromEntries(

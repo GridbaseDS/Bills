@@ -301,6 +301,37 @@ function startServer() {
       return;
     }
 
+    // Endpoint para listar las impresoras instaladas en el sistema (Windows / Mac / Linux)
+    if (parsedUrl.pathname === '/printers' && req.method === 'GET') {
+      try {
+        let cmd = '';
+        if (process.platform === 'win32') {
+          cmd = `powershell -Command "Get-CimInstance -ClassName Win32_Printer | Select-Object -ExpandProperty Name"`;
+        } else {
+          cmd = `lpstat -e`;
+        }
+
+        exec(cmd, (err, stdout, stderr) => {
+          if (err) {
+            res.writeHead(500, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ success: false, message: 'Error listando impresoras: ' + err.message, printers: [] }));
+            return;
+          }
+
+          const printers = stdout.split(/\r?\n/)
+            .map(p => p.trim())
+            .filter(p => p.length > 0);
+
+          res.writeHead(200, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ success: true, printers }));
+        });
+      } catch (err) {
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: false, message: err.message, printers: [] }));
+      }
+      return;
+    }
+
     // Endpoint para impresión silenciosa directa en la impresora de caja
     if (parsedUrl.pathname === '/print-ticket' && req.method === 'POST') {
       let body = '';

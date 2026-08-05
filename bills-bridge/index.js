@@ -61,31 +61,20 @@ function installScheduledTask() {
   if (process.platform !== 'win32') return;
   console.log('[BillsBridge] Intentando registrar servicio de Windows en segundo plano...');
   try {
-    const { execSync } = require('child_process');
     const exePath = isPackaged ? process.execPath : path.join(__dirname, 'index.js');
     const workingDir = exeDir;
     const taskName = "BillsBridge";
 
-    // Comando PowerShell usando comillas simples para soportar rutas con espacios
     let psCommand;
     if (isPackaged) {
-      psCommand = `Register-ScheduledTask -TaskName '${taskName}' -Trigger (New-ScheduledTaskTrigger -AtStartup) -Action (New-ScheduledTaskAction -Execute '${exePath}' -WorkingDirectory '${workingDir}') -Settings (New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries) -User 'SYSTEM' -Force`;
+      psCommand = `Register-ScheduledTask -TaskName '${taskName}' -Trigger (New-ScheduledTaskTrigger -AtStartup) -Action (New-ScheduledTaskAction -Execute '${exePath}' -WorkingDirectory '${workingDir}') -Settings (New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries) -Force`;
     } else {
       const nodeExe = process.execPath;
-      psCommand = `Register-ScheduledTask -TaskName '${taskName}' -Trigger (New-ScheduledTaskTrigger -AtStartup) -Action (New-ScheduledTaskAction -Execute '${nodeExe}' -Argument '${exePath}' -WorkingDirectory '${workingDir}') -Settings (New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries) -User 'SYSTEM' -Force`;
+      psCommand = `Register-ScheduledTask -TaskName '${taskName}' -Trigger (New-ScheduledTaskTrigger -AtStartup) -Action (New-ScheduledTaskAction -Execute '${nodeExe}' -Argument '${exePath}' -WorkingDirectory '${workingDir}') -Settings (New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries) -Force`;
     }
 
-    execSync(`powershell -NoProfile -ExecutionPolicy Bypass -Command "${psCommand}"`, { stdio: 'pipe' });
-    console.log('✅ ¡BillsBridge registrado en el Programador de Tareas de Windows (arrancará al iniciar la PC)!');
-  } catch (err) {
-    console.log(`\n[⚠️] Nota: No se pudo registrar la tarea automáticamente en Windows.`);
-    if (err.stderr) {
-      console.log(`Detalle del error:\n${err.stderr.toString().trim()}`);
-    } else {
-      console.log(`Detalle del error: ${err.message}`);
-    }
-    console.log(`--------------------------------------------------`);
-  }
+    exec(`powershell -NoProfile -ExecutionPolicy Bypass -Command "${psCommand}"`, () => {});
+  } catch (err) {}
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -536,52 +525,65 @@ function startCloudPolling() {
 // CLIENTE HTTP LIVIANO INTEGRADO (SIN DEPENDENCIAS)
 // ─────────────────────────────────────────────────────────────
 function makeGetRequest(urlStr) {
-  return new Promise((resolve, reject) => {
-    const req = https.get(urlStr, (res) => {
-      let data = '';
-      res.on('data', chunk => data += chunk);
-      res.on('end', () => {
-        try {
-          resolve(JSON.parse(data));
-        } catch (e) {
-          reject(new Error('Formato JSON inválido.'));
-        }
+  return new Promise((resolve) => {
+    try {
+      const u = new URL(urlStr);
+      const httpLib = u.protocol === 'https:' ? https : http;
+      const req = httpLib.get(urlStr, (res) => {
+        let data = '';
+        res.on('data', chunk => data += chunk);
+        res.on('end', () => {
+          try {
+            resolve(JSON.parse(data));
+          } catch (e) {
+            resolve({ success: false, message: 'JSON inválido' });
+          }
+        });
       });
-    });
-    req.on('error', reject);
+      req.on('error', (err) => resolve({ success: false, message: err.message }));
+      req.setTimeout(8000, () => { try { req.destroy(); } catch(e){} resolve({ success: false, message: 'Timeout' }); });
+    } catch(e) {
+      resolve({ success: false, message: e.message });
+    }
   });
 }
 
 function makePostRequest(urlStr, body) {
-  return new Promise((resolve, reject) => {
-    const urlObj = new URL(urlStr);
-    const postData = JSON.stringify(body);
+  return new Promise((resolve) => {
+    try {
+      const u = new URL(urlStr);
+      const httpLib = u.protocol === 'https:' ? https : http;
+      const postData = typeof body === 'string' ? body : JSON.stringify(body);
 
-    const options = {
-      hostname: urlObj.hostname,
-      port: 443,
-      path: urlObj.pathname,
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Content-Length': Buffer.byteLength(postData)
-      }
-    };
-
-    const req = https.request(options, (res) => {
-      let data = '';
-      res.on('data', chunk => data += chunk);
-      res.on('end', () => {
-        try {
-          resolve(JSON.parse(data));
-        } catch (e) {
-          reject(new Error('Formato JSON inválido.'));
+      const options = {
+        hostname: u.hostname,
+        port: u.port || (u.protocol === 'https:' ? 443 : 80),
+        path: u.pathname + u.search,
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Content-Length': Buffer.byteLength(postData)
         }
+      };
+
+      const req = httpLib.request(options, (res) => {
+        let data = '';
+        res.on('data', chunk => data += chunk);
+        res.on('end', () => {
+          try {
+            resolve(JSON.parse(data));
+          } catch (e) {
+            resolve({ success: false, message: 'JSON inválido' });
+          }
+        });
       });
-    });
-    req.on('error', reject);
-    req.write(postData);
-    req.end();
+      req.on('error', (err) => resolve({ success: false, message: err.message }));
+      req.setTimeout(8000, () => { try { req.destroy(); } catch(e){} resolve({ success: false, message: 'Timeout' }); });
+      req.write(postData);
+      req.end();
+    } catch(e) {
+      resolve({ success: false, message: e.message });
+    }
   });
 }
 

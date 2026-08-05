@@ -1,6 +1,6 @@
 {
   "name": "billsbridge",
-  "version": "1.4.0",
+  "version": "1.5.0",
   "description": "Local bridge for Verifone integration - Gridbase Bills",
   "main": "index.js",
   "bin": "index.js",

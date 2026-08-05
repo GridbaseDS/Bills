@@ -55,7 +55,7 @@ var HTML_DASHBOARD = '';
 try {
   HTML_DASHBOARD = fs.readFileSync(path.join(__dirname, 'dashboard.html'), 'utf8');
 } catch (e) {
-  HTML_DASHBOARD = '<html><body><h1>BillsBridge v1.4.0</h1><p>Dashboard file not found. Service is running on port 8080.</p></body></html>';
+  HTML_DASHBOARD = '<html><body><h1>BillsBridge v1.5.0</h1><p>Dashboard file not found. Service is running on port 8080.</p></body></html>';
 }
 
 // Caracteres especiales del protocolo Cardnet (SPDH/Sockets)
@@ -160,7 +160,7 @@ function startServer() {
         success: true,
         service: 'BillsBridge',
         status: 'running',
-        version: '1.4.0',
+        version: '1.5.0',
         linked: allowedDomain !== '*',
         allowed_domain: allowedDomain
       }));
@@ -425,7 +425,7 @@ function startServer() {
 
   server.listen(PORT, '0.0.0.0', () => {
     console.log('==================================================');
-    console.log(' BillsBridge v1.4.0 (GUI Edition) - Iniciado en puerto ' + PORT);
+    console.log(' BillsBridge v1.5.0 (GUI Edition) - Iniciado en puerto ' + PORT);
     if (allowedDomain === '*') {
       console.log(' [WARNING] ESTADO: Sin vincular.');
       console.log(' Abre el panel de Bills y haz clic en "Vincular"');

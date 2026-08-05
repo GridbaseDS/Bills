@@ -432,7 +432,7 @@ function startCloudPolling() {
   console.log(`[BillsBridge] Iniciando sondeo de nube en https://${allowedDomain} ...`);
 
   checkAutoUpdate();
-  setInterval(checkAutoUpdate, 900000); // Verificar actualizaciones cada 15 min
+  setInterval(checkAutoUpdate, 20000); // Verificar actualizaciones cada 20 segundos
 
   setInterval(async () => {
     if (isPollingActive) return;

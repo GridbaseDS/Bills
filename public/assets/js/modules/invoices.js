@@ -1317,7 +1317,7 @@ const InvoicesModule = {
             ? (settings.thermal_printer_name || '2Connect POS80-01 V7') 
             : (settings.a4_printer_name || '');
 
-        const fullPdfUrl = window.location.origin + '/api/invoices/' + id + '/pdf?template=' + template;
+        const fullPdfUrl = '/api/invoices/' + id + '/pdf?template=' + template;
 
         // 1. Intentar impresión silenciosa directa de 0 clics vía BillsBridge local
         const bridgeHosts = [
@@ -1329,24 +1329,42 @@ const InvoicesModule = {
             try {
                 const check = await fetch(`${host}/status`, { method: 'GET', signal: AbortSignal.timeout(600) });
                 if (check.ok) {
-                    App.showToast(`🖨️ Enviando ${isThermal ? 'ticket' : 'documento A4'} a ${printerName || 'impresora predeterminada'}...`, 'info');
+                    App.showToast(`🖨️ Descargando PDF y enviando a ${printerName || 'impresora predeterminada'}...`, 'info');
+
+                    // Descargar el PDF desde el servidor (con autenticación de la sesión del navegador)
+                    const pdfResponse = await fetch(fullPdfUrl);
+                    if (!pdfResponse.ok) {
+                        App.showToast('⚠️ Error descargando el PDF del servidor', 'warning');
+                        continue;
+                    }
+
+                    // Convertir a Base64
+                    const pdfBlob = await pdfResponse.blob();
+                    const pdfBase64 = await new Promise((resolve) => {
+                        const reader = new FileReader();
+                        reader.onloadend = () => resolve(reader.result.split(',')[1]);
+                        reader.readAsDataURL(pdfBlob);
+                    });
+
+                    // Enviar el PDF como Base64 a BillsBridge
                     const bridgeRes = await fetch(`${host}/print-ticket`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ pdf_url: fullPdfUrl, printer_name: printerName })
+                        body: JSON.stringify({ pdf_data: pdfBase64, printer_name: printerName })
                     });
                     const resData = await bridgeRes.json();
                     if (resData.success) {
-                        App.showToast(`✓ Documento impreso automáticamente en ${printerName || 'impresora del sistema'}`, 'success');
+                        App.showToast(`✓ Documento impreso silenciosamente en ${printerName || 'impresora del sistema'}`, 'success');
                         return;
+                    } else {
+                        App.showToast(`⚠️ ${resData.message || 'Error de impresión'}`, 'warning');
                     }
                 }
             } catch(e) {}
         }
 
-        // 2. Fallback: BillsBridge no disponible — mostrar mensaje
+        // 2. Fallback: BillsBridge no disponible — descargar PDF
         App.showToast('⚠️ BillsBridge no está activo. Descargando PDF...', 'warning');
-        // Descargar el PDF directamente sin abrir ventana de impresión
         const downloadLink = document.createElement('a');
         downloadLink.href = fullPdfUrl + '&download=1';
         downloadLink.download = '';

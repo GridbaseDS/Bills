@@ -236,13 +236,13 @@ const InvoicesModule = {
                             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
                             Imprimir A4
                         </button>
-                        <a href="/api/invoices/${id}/pdf?template=normal" target="_blank" class="btn btn-secondary btn-sm" style="display:inline-flex; align-items:center; gap:6px;">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
-                            Ver PDF (Carta)
+                        <a href="/api/invoices/${id}/pdf?template=normal&download=1" download class="btn btn-secondary btn-sm" style="display:inline-flex; align-items:center; gap:6px; text-decoration:none;">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                            Descargar PDF
                         </a>
-                        <a href="/api/invoices/${id}/pdf?template=${window.App.state.settings?.invoice_pdf_template?.startsWith('thermal') ? window.App.state.settings.invoice_pdf_template : 'thermal'}" target="_blank" class="btn btn-secondary btn-sm" style="display:inline-flex; align-items:center; gap:6px;">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
-                            Ver Ticket
+                        <a href="/api/invoices/${id}/pdf?template=${window.App.state.settings?.invoice_pdf_template?.startsWith('thermal') ? window.App.state.settings.invoice_pdf_template : 'thermal'}&download=1" download class="btn btn-secondary btn-sm" style="display:inline-flex; align-items:center; gap:6px; text-decoration:none;">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                            Descargar Ticket
                         </a>
                         ${inv.status !== 'cancelled' ? `
                             <button class="btn btn-secondary btn-sm" onclick="InvoicesModule.sendEmail(${id})">
@@ -1344,30 +1344,16 @@ const InvoicesModule = {
             } catch(e) {}
         }
 
-        // 2. Fallback a cuadro de diálogo de navegador
-        let iframe = document.getElementById('invoice-print-iframe');
-        if (!iframe) {
-            iframe = document.createElement('iframe');
-            iframe.id = 'invoice-print-iframe';
-            iframe.style.position = 'fixed';
-            iframe.style.right = '0';
-            iframe.style.bottom = '0';
-            iframe.style.width = '0';
-            iframe.style.height = '0';
-            iframe.style.border = '0';
-            document.body.appendChild(iframe);
-        }
-
-        App.showToast(`Abriendo vista de impresión (${type === 'thermal' ? 'Ticket Térmico 2Connect' : 'Carta A4'})...`, 'info');
-        iframe.src = fullPdfUrl;
-        iframe.onload = () => {
-            try {
-                iframe.contentWindow.focus();
-                iframe.contentWindow.print();
-            } catch(e) {
-                window.open(fullPdfUrl, '_blank');
-            }
-        };
+        // 2. Fallback: BillsBridge no disponible — mostrar mensaje
+        App.showToast('⚠️ BillsBridge no está activo. Descargando PDF...', 'warning');
+        // Descargar el PDF directamente sin abrir ventana de impresión
+        const downloadLink = document.createElement('a');
+        downloadLink.href = fullPdfUrl + '&download=1';
+        downloadLink.download = '';
+        downloadLink.style.display = 'none';
+        document.body.appendChild(downloadLink);
+        downloadLink.click();
+        document.body.removeChild(downloadLink);
     },
 
     autoPrintThermal(id) {

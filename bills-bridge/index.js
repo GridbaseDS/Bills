@@ -101,7 +101,7 @@ const HTML_DASHBOARD = `<!DOCTYPE html>
         <div class="logo">B</div>
         <div>
           <h2 style="margin:0; font-size:20px;">Gridbase BillsBridge Dashboard</h2>
-          <span style="font-size:13px; color:var(--text-muted);">Servicio de Comunicación POS & Impresión Silent v1.3.0</span>
+          <span style="font-size:13px; color:var(--text-muted);">Servicio de Comunicación POS & Impresión Silent v1.4.0 GUI Edition</span>
         </div>
       </div>
       <div id="status-badge" class="badge badge-warning">Consultando estado...</div>
@@ -312,7 +312,7 @@ function startServer() {
         success: true,
         service: 'BillsBridge',
         status: 'running',
-        version: '1.2.0',
+        version: '1.4.0',
         linked: allowedDomain !== '*',
         allowed_domain: allowedDomain
       }));
@@ -390,7 +390,7 @@ function startServer() {
           const params = JSON.parse(body);
           const { driver, amount, ip, port, merchant_id, terminal_id, invoice_id, timeout = 60 } = params;
 
-          console.log(`[BillsBridge] Iniciando cobro: ${amount} via ${driver} (Factura #${invoice_id})`);
+          console.log('[BillsBridge] Iniciando cobro: ' + amount + ' via ' + driver + ' (Factura #' + invoice_id + ')');
 
           if (!driver || !amount) {
             res.writeHead(400, { 'Content-Type': 'application/json' });
@@ -414,7 +414,7 @@ function startServer() {
               break;
             default:
               res.writeHead(400, { 'Content-Type': 'application/json' });
-              res.end(JSON.stringify({ success: false, message: `Driver '${driver}' no soportado.` }));
+              res.end(JSON.stringify({ success: false, message: "Driver '" + driver + "' no soportado." }));
               return;
           }
 
@@ -577,7 +577,7 @@ function startServer() {
 
   server.listen(PORT, '0.0.0.0', () => {
     console.log(`==================================================`);
-    console.log(` BillsBridge v1.3.0 - Iniciado en puerto ${PORT}`);
+    console.log(` BillsBridge v1.4.0 (GUI Edition) - Iniciado en puerto ${PORT}`);
     if (allowedDomain === '*') {
       console.log(` [⚠️] ESTADO: Sin vincular.`);
       console.log(` Abre el panel de Bills y haz clic en "Vincular"`);

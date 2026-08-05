@@ -525,17 +525,17 @@ export default {
                                              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>
                                              Vincular esta PC con el Bridge
                                          </button>
-                                         <a href="/billsbridge-v1.3.0.exe" download class="btn btn-secondary" style="height:32px; font-size:12px; padding:0 12px; display:flex; align-items:center; gap:6px; font-weight:600; text-decoration:none; background:var(--color-bg-primary); border:1px solid var(--color-border); color:var(--color-text);">
+                                         <a href="/billsbridge-v1.4.0.exe" download class="btn btn-secondary" style="height:32px; font-size:12px; padding:0 12px; display:flex; align-items:center; gap:6px; font-weight:600; text-decoration:none; background:var(--color-bg-primary); border:1px solid var(--color-border); color:var(--color-text);">
                                              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
-                                             Descargar Windows v1.3.0 (.exe)
+                                             Descargar Windows v1.4.0 (.exe)
                                          </a>
-                                         <a href="/BillsBridge-v1.3.0-Mac-AppleSilicon.zip" download class="btn btn-secondary" style="height:32px; font-size:12px; padding:0 12px; display:flex; align-items:center; gap:6px; font-weight:600; text-decoration:none; background:var(--color-bg-primary); border:1px solid var(--color-border); color:var(--color-text);">
+                                         <a href="/BillsBridge-v1.4.0-Mac-AppleSilicon.zip" download class="btn btn-secondary" style="height:32px; font-size:12px; padding:0 12px; display:flex; align-items:center; gap:6px; font-weight:600; text-decoration:none; background:var(--color-bg-primary); border:1px solid var(--color-border); color:var(--color-text);">
                                              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
-                                             Descargar Mac Apple Silicon v1.3.0 (.zip)
+                                             Descargar Mac Apple Silicon v1.4.0 (.zip)
                                          </a>
-                                         <a href="/BillsBridge-v1.3.0-Mac-Intel.zip" download class="btn btn-secondary" style="height:32px; font-size:12px; padding:0 12px; display:flex; align-items:center; gap:6px; font-weight:600; text-decoration:none; background:var(--color-bg-primary); border:1px solid var(--color-border); color:var(--color-text);">
+                                         <a href="/BillsBridge-v1.4.0-Mac-Intel.zip" download class="btn btn-secondary" style="height:32px; font-size:12px; padding:0 12px; display:flex; align-items:center; gap:6px; font-weight:600; text-decoration:none; background:var(--color-bg-primary); border:1px solid var(--color-border); color:var(--color-text);">
                                              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
-                                             Descargar Mac Intel v1.3.0 (.zip)
+                                             Descargar Mac Intel v1.4.0 (.zip)
                                          </a>
                                      </div>
                                      <div id="bridge-status-container" style="margin-top:12px; padding:12px; border-radius:var(--radius-md); border:1px solid var(--color-border); background:var(--color-bg-primary); display:none;">

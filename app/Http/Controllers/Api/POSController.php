@@ -656,8 +656,8 @@ class POSController extends Controller
     {
         return response()->json([
             'success' => true,
-            'version' => '1.3.0',
-            'download_url' => url('/billsbridge.exe')
+            'version' => '1.4.0',
+            'download_url' => url('/billsbridge-v1.4.0.exe')
         ]);
     }
 }

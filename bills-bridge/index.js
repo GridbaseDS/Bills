@@ -829,28 +829,32 @@ function handleSilentPrint(pdfUrl, printerName) {
           file.close(() => {
             let cmd = '';
             if (process.platform === 'win32') {
-              const edgePath = 'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe';
-              const edgePath64 = 'C:\\Program Files\\Microsoft\\Edge\\Application\\msedge.exe';
-              const chromePath = 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe';
-              const chromePathx86 = 'C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe';
-              const sumatraPath = 'C:\\Program Files\\SumatraPDF\\SumatraPDF.exe';
+              const programFilesX86 = process.env['ProgramFiles(x86)'] || 'C:\\Program Files (x86)';
+              const programFiles = process.env['ProgramFiles'] || 'C:\\Program Files';
+              const localAppData = process.env['LOCALAPPDATA'] || '';
 
-              if (fs.existsSync(edgePath)) {
-                cmd = `"${edgePath}" --headless ${printerName ? `--print-to-printer="${printerName}"` : '--print-to-default'} "${tempPath}"`;
-              } else if (fs.existsSync(edgePath64)) {
-                cmd = `"${edgePath64}" --headless ${printerName ? `--print-to-printer="${printerName}"` : '--print-to-default'} "${tempPath}"`;
-              } else if (fs.existsSync(chromePath)) {
-                cmd = `"${chromePath}" --headless ${printerName ? `--print-to-printer="${printerName}"` : '--print-to-default'} "${tempPath}"`;
-              } else if (fs.existsSync(chromePathx86)) {
-                cmd = `"${chromePathx86}" --headless ${printerName ? `--print-to-printer="${printerName}"` : '--print-to-default'} "${tempPath}"`;
-              } else if (fs.existsSync(sumatraPath)) {
-                cmd = `"${sumatraPath}" -silent ${printerName ? `-print-to "${printerName}"` : '-print-to-default'} "${tempPath}"`;
+              const edgeCandidates = [
+                path.join(programFilesX86, 'Microsoft', 'Edge', 'Application', 'msedge.exe'),
+                path.join(programFiles, 'Microsoft', 'Edge', 'Application', 'msedge.exe'),
+                path.join(localAppData, 'Microsoft', 'Edge', 'Application', 'msedge.exe'),
+                'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe',
+                'C:\\Program Files\\Microsoft\\Edge\\Application\\msedge.exe'
+              ];
+
+              const chromeCandidates = [
+                path.join(programFiles, 'Google', 'Chrome', 'Application', 'chrome.exe'),
+                path.join(programFilesX86, 'Google', 'Chrome', 'Application', 'chrome.exe'),
+                path.join(localAppData, 'Google', 'Chrome', 'Application', 'chrome.exe')
+              ];
+
+              let browserExe = edgeCandidates.find(p => p && fs.existsSync(p)) || chromeCandidates.find(p => p && fs.existsSync(p));
+
+              if (browserExe) {
+                const printFlag = printerName ? `--print-to-printer="${printerName}"` : '--print-to-default';
+                cmd = `"${browserExe}" --headless ${printFlag} "${tempPath}"`;
               } else {
-                if (printerName) {
-                  cmd = `powershell -Command "Start-Process -FilePath '${tempPath}' -Verb PrintTo -ArgumentList '${printerName}'"`;
-                } else {
-                  cmd = `powershell -Command "Start-Process -FilePath '${tempPath}' -Verb Print"`;
-                }
+                const printFlag = printerName ? `--print-to-printer="${printerName}"` : '--print-to-default';
+                cmd = `cmd /c msedge --headless ${printFlag} "${tempPath}"`;
               }
             } else {
               if (printerName) {

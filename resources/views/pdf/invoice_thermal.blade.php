@@ -120,8 +120,10 @@ if (!empty($invoice['terms'])) {
 
 $templateQuery = request()->query('template', $settings['invoice_pdf_template'] ?? 'thermal');
 $is58mm = (str_contains($templateQuery, '58mm') || (isset($paper_size) && $paper_size === '58mm'));
-$paperWidth = $is58mm ? 58 : 80;
-$marginSide = $is58mm ? 2.5 : 3.5;
+
+// 72mm es el ancho imprimible real del cabezal de impresoras térmicas de 80mm (48mm para 58mm)
+$paperWidth = $is58mm ? 48 : 72;
+$marginSide = $is58mm ? 1.0 : 1.5;
 $cutterClearance = $is58mm ? 10 : 14; // 14mm bottom feed clearance for 2Connect POS80 auto-cutter
 
 // Calculate page height dynamically in mm with cutter clearance for 2Connect POS80-01 V7 & Saturn 1000
@@ -131,7 +133,7 @@ $baseHeight = 85;
 $itemsHeight = 0;
 foreach (($invoice['items'] ?? $items ?? []) as $item) {
     $descLength = strlen($item['description'] ?? '');
-    $charsPerLine = $is58mm ? 14 : 22;
+    $charsPerLine = $is58mm ? 14 : 24;
     $lines = max(1, ceil($descLength / $charsPerLine));
     $itemsHeight += $lines * 4.5 + 4;
 }
@@ -171,6 +173,17 @@ $pageHeight = max(120, $pageHeight);
             size: {{ $paperWidth }}mm {{ $pageHeight }}mm;
             margin: 0;
         }
+        @media print {
+            @page {
+                size: {{ $paperWidth }}mm auto;
+                margin: 0;
+            }
+            html, body {
+                width: 100% !important;
+                margin: 0 !important;
+                padding: 1mm {{ $marginSide }}mm 10mm {{ $marginSide }}mm !important;
+            }
+        }
         * {
             margin: 0;
             padding: 0;
@@ -178,11 +191,11 @@ $pageHeight = max(120, $pageHeight);
         }
         body {
             font-family: 'Courier', 'DejaVu Sans Mono', monospace, sans-serif;
-            font-size: {{ $is58mm ? '7.5pt' : '8.5pt' }};
+            font-size: {{ $is58mm ? '7pt' : '8pt' }};
             color: #000000;
             background: #FFFFFF;
             line-height: 1.3;
-            margin: 3mm {{ $marginSide }}mm 12mm {{ $marginSide }}mm;
+            margin: 2mm {{ $marginSide }}mm 12mm {{ $marginSide }}mm;
             -webkit-print-color-adjust: exact;
         }
         .text-center { text-align: center; }

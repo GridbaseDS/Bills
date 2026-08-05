@@ -1317,12 +1317,12 @@ const InvoicesModule = {
             ? (settings.thermal_printer_name || '2Connect POS80-01 V7') 
             : (settings.a4_printer_name || '');
 
+        const fullPdfUrl = window.location.origin + '/api/invoices/' + id + '/pdf?template=' + template;
+
         // 1. Intentar impresión silenciosa directa de 0 clics vía BillsBridge local
         const bridgeHosts = [
             'http://localhost:8080',
-            'http://127.0.0.1:8080',
-            'http://localhost:3000',
-            'http://127.0.0.1:3000'
+            'http://127.0.0.1:8080'
         ];
 
         for (const host of bridgeHosts) {

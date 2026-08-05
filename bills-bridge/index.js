@@ -392,82 +392,13 @@ function startServer() {
 // ─────────────────────────────────────────────────────────────
 // SISTEMA DE SONDEO (POLLING) DE LA NUBE PARA MULTI-DISPOSITIVO
 // ─────────────────────────────────────────────────────────────
-const CURRENT_VERSION = '1.3.0';
-
 let isPollingActive = false;
-let isUpdating = false;
-
-function isNewerVersion(remote, current) {
-  if (!remote || !current) return false;
-  const r = remote.split('.').map(Number);
-  const c = current.split('.').map(Number);
-  for (let i = 0; i < Math.max(r.length, c.length); i++) {
-    const rv = r[i] || 0;
-    const cv = c[i] || 0;
-    if (rv > cv) return true;
-    if (rv < cv) return false;
-  }
-  return false;
-}
-
-function checkAutoUpdate() {
-  if (allowedDomain === '*' || isUpdating) return;
-
-  const versionUrl = `https://${allowedDomain}/api/pos/bridge/version`;
-  makeGetRequest(versionUrl).then(res => {
-    if (res && res.success && res.version && isNewerVersion(res.version, CURRENT_VERSION)) {
-      console.log(`[BillsBridge AutoUpdate] Nueva versión detectada: v${res.version} (Actual: v${CURRENT_VERSION}). Descargando...`);
-      isUpdating = true;
-      downloadAndApplyUpdate(res.download_url || `https://${allowedDomain}/billsbridge.exe`);
-    }
-  }).catch(() => {});
-}
-
-function downloadAndApplyUpdate(downloadUrl) {
-  try {
-    const exePath = process.execPath;
-    const dirPath = path.dirname(exePath);
-
-    if (process.platform === 'win32' && exePath.endsWith('.exe')) {
-      const newExePath = path.join(dirPath, 'billsbridge_new.exe');
-      const file = fs.createWriteStream(newExePath);
-      const httpLib = downloadUrl.startsWith('https') ? https : http;
-
-      httpLib.get(downloadUrl, (res) => {
-        if (res.statusCode !== 200) {
-          isUpdating = false;
-          return;
-        }
-        res.pipe(file);
-        file.on('finish', () => {
-          file.close(() => {
-            console.log(`[BillsBridge AutoUpdate] Actualización descargada. Reiniciando servicio...`);
-            const batPath = path.join(dirPath, 'update_bridge.bat');
-            const batScript = `@echo off\r\ntaskkill /f /im billsbridge.exe > nul 2>&1\r\ntimeout /t 1 /nobreak > nul\r\nmove /y "${newExePath}" "${exePath}" > nul\r\nstart "" "${exePath}"\r\ndel /f /q "%~f0" > nul\r\n`;
-            fs.writeFileSync(batPath, batScript);
-
-            exec(`cmd /c start "" "${batPath}"`, () => {});
-            setTimeout(() => { process.exit(0); }, 500);
-          });
-        });
-      }).on('error', () => { isUpdating = false; });
-    } else {
-      isUpdating = false;
-    }
-  } catch (e) {
-    console.error('[BillsBridge AutoUpdate] Error:', e.message);
-    isUpdating = false;
-  }
-}
 
 function startCloudPolling() {
   if (allowedDomain === '*' || isPollingStarted) return;
   isPollingStarted = true;
 
   console.log(`[BillsBridge] Iniciando sondeo de nube en https://${allowedDomain} ...`);
-
-  checkAutoUpdate();
-  setInterval(checkAutoUpdate, 20000); // Verificar actualizaciones cada 20 segundos
 
   setInterval(async () => {
     if (isPollingActive) return;

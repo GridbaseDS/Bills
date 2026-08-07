@@ -92,26 +92,31 @@ Route::get('/api-docs', function () {
 // POS Mobile Simulator View
 Route::get('/pos-simulator/{invoice_id}', [App\Http\Controllers\Api\POSController::class, 'simulatorView'])->name('pos.simulator');
 
-// BillsBridge direct binary download routes
-Route::get('/billsbridge.exe', function () {
-    $path = public_path('billsbridge.exe');
+// BillsBridge direct binary download routes (.exe & .zip)
+Route::get('/{filename}.exe', function ($filename) {
+    $file = $filename . '.exe';
+    $path = public_path($file);
     if (!file_exists($path)) {
-        $path = base_path('bills-bridge/dist/billsbridge-win-x64.exe');
+        $path = base_path('bills-bridge/dist/' . $file);
+    }
+    if (!file_exists($path)) {
+        $path = public_path('billsbridge.exe');
     }
     if (!file_exists($path)) abort(404);
-    return response()->download($path, 'billsbridge.exe');
+    return response()->download($path, $file, [
+        'Content-Type' => 'application/octet-stream',
+        'Cache-Control' => 'no-cache, no-store, must-revalidate'
+    ]);
 });
 
-Route::get('/BillsBridge-Mac-AppleSilicon.zip', function () {
-    $path = public_path('BillsBridge-Mac-AppleSilicon.zip');
+Route::get('/{filename}.zip', function ($filename) {
+    $file = $filename . '.zip';
+    $path = public_path($file);
     if (!file_exists($path)) abort(404);
-    return response()->download($path, 'BillsBridge-Mac-AppleSilicon.zip');
-});
-
-Route::get('/BillsBridge-Mac-Intel.zip', function () {
-    $path = public_path('BillsBridge-Mac-Intel.zip');
-    if (!file_exists($path)) abort(404);
-    return response()->download($path, 'BillsBridge-Mac-Intel.zip');
+    return response()->download($path, $file, [
+        'Content-Type' => 'application/zip',
+        'Cache-Control' => 'no-cache, no-store, must-revalidate'
+    ]);
 });
 
 Route::get('/{any}', function () {

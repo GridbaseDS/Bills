@@ -402,7 +402,7 @@ window.App = {
             if (!link) return;
             const href = link.getAttribute('href');
             const target = link.getAttribute('target');
-            if (!href || href.startsWith('http') || href.startsWith('mailto:') || href.startsWith('tel:') || target === '_blank' || href.includes('/api/')) return;
+            if (!href || href.startsWith('http') || href.startsWith('mailto:') || href.startsWith('tel:') || target === '_blank' || href.includes('/api/') || link.hasAttribute('download') || href.endsWith('.exe') || href.endsWith('.zip') || href.endsWith('.pdf')) return;
             e.preventDefault();
             let route = href;
             if (route.startsWith('#')) route = route.substring(1);
@@ -489,7 +489,10 @@ window.App = {
                 case 'auditoria-dgii': case 'dgii-logs': DgiiLogsModule.render(appContent); break;
                 case 'facturas-recibidas': case 'received-invoices': ReceivedInvoicesModule.render(appContent); break;
                 case 'reportes': case 'reports': ReportsModule.render(appContent); break;
-                default: appContent.innerHTML = '<h2>404 No Encontrado</h2>';
+                default:
+                    history.replaceState(null, '', '/inicio');
+                    DashboardModule.render(appContent);
+                    break;
             }
         }, 50);
     },

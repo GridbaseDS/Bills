@@ -30,7 +30,7 @@ use App\Http\Controllers\Api\POSController;
 Route::post('/auth/login', [AuthController::class, 'login']);
 Route::post('/auth/verify-2fa', [AuthController::class, 'verify2fa']);
 Route::post('/auth/pin-login', [AuthController::class, 'pinLogin']);
-Route::post('/auth/webauthn/login-options', [AuthController::class, 'webauthnLoginOptions']);
+Route::match(['get', 'post'], '/auth/webauthn/login-options', [AuthController::class, 'webauthnLoginOptions']);
 Route::post('/auth/webauthn/login', [AuthController::class, 'webauthnLogin']);
 Route::get('/settings/public', [SettingController::class, 'publicSettings']);
 

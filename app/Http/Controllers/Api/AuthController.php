@@ -503,6 +503,10 @@ class AuthController extends Controller
 
     public function webauthnLoginOptions(Request $request, WebAuthnService $webAuthn)
     {
+        if ($request->isMethod('get') && !$request->has('email')) {
+            return response()->json(['success' => true, 'webauthn_supported' => true]);
+        }
+
         $request->validate([
             'email' => 'required|email',
             'device_token' => 'nullable|string',

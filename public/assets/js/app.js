@@ -148,7 +148,7 @@ window.App = {
 
         try {
             const res = await this.api('auth/session', { silent: true });
-            if (res.authenticated) {
+            if (res && res.authenticated) {
                 this.state.user = res.user;
                 
                 // Fetch settings to check if installed
@@ -172,6 +172,14 @@ window.App = {
                     this.renderAppShell();
                     const currentRoute = window.location.pathname.substring(1) || 'inicio';
                     this.navigate(currentRoute);
+                }
+            } else {
+                const deviceToken = localStorage.getItem('device_token');
+                const savedEmail = localStorage.getItem('saved_email');
+                if (deviceToken && savedEmail) {
+                    this.renderPinLogin(savedEmail);
+                } else {
+                    this.renderLogin();
                 }
             }
         } catch (error) {

@@ -815,17 +815,17 @@ window.App = {
                         <img src="${cachedLogo}" alt="Logo" style="height: ${loginLogoHeight}px; object-fit: contain;">
                     </div>
                     <div class="login-form-wrap">
-                        <div class="quick-user-card" style="display:flex; align-items:center; justify-content:space-between; padding:12px 16px; background:var(--color-bg-secondary); border:1px solid var(--color-border); border-radius:12px; margin-bottom:20px;">
+                        <div class="quick-user-card" style="display:flex; align-items:center; justify-content:space-between; padding:14px 16px; background:#F8FAFC; border:1px solid #E2E8F0; border-radius:12px; margin-bottom:20px; box-shadow:0 1px 3px rgba(0,0,0,0.03);">
                             <div style="display:flex; align-items:center; gap:12px; min-width:0; flex:1;">
-                                <div style="width:38px; height:38px; border-radius:50%; background:linear-gradient(135deg, var(--color-primary, #0B484C) 0%, #16696e 100%); color:#ffffff; display:flex; align-items:center; justify-content:center; font-size:15px; font-weight:700; flex-shrink:0; box-shadow:0 2px 8px rgba(11,72,76,0.22);">
+                                <div style="width:38px; height:38px; border-radius:50%; background:linear-gradient(135deg, #0B484C 0%, #16696e 100%); color:#ffffff; display:flex; align-items:center; justify-content:center; font-size:15px; font-weight:700; flex-shrink:0; box-shadow:0 2px 8px rgba(11,72,76,0.22);">
                                     ${email.charAt(0).toUpperCase()}
                                 </div>
                                 <div style="min-width:0; flex:1;">
-                                    <div style="font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:0.04em; color:var(--color-text-muted); line-height:1.2;">Hola de nuevo</div>
-                                    <div style="font-size:13px; font-weight:600; color:var(--color-text-primary); text-overflow:ellipsis; overflow:hidden; white-space:nowrap; margin-top:2px;">${email}</div>
+                                    <div style="font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:0.05em; color:#6B7280; line-height:1.2;">Hola de nuevo</div>
+                                    <div style="font-size:13px; font-weight:600; color:#111827 !important; text-overflow:ellipsis; overflow:hidden; white-space:nowrap; margin-top:2px;">${email}</div>
                                 </div>
                             </div>
-                            <button type="button" id="btn-quick-logout-top" style="background:transparent; border:none; color:var(--color-text-muted); padding:6px 10px; border-radius:6px; font-size:12px; font-weight:500; cursor:pointer; display:inline-flex; align-items:center; gap:5px; transition:all 0.15s ease; flex-shrink:0;" title="Cambiar de cuenta">
+                            <button type="button" id="btn-quick-logout-top" style="background:#FFFFFF; border:1px solid #E2E8F0; color:#4B5563; padding:5px 10px; border-radius:6px; font-size:12px; font-weight:500; cursor:pointer; display:inline-flex; align-items:center; gap:5px; transition:all 0.15s ease; flex-shrink:0; box-shadow:0 1px 2px rgba(0,0,0,0.03);" title="Cambiar de cuenta">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
                                 <span>Cambiar</span>
                             </button>
@@ -834,8 +834,8 @@ window.App = {
                         <div id="login-error" class="login-error"></div>
 
                         <div id="biometric-login-wrap" style="display:none; margin-bottom:20px;">
-                            <button type="button" id="btn-webauthn-login" style="width:100%; padding:12px 18px; border:1px solid var(--color-border); border-radius:10px; font-size:14px; font-weight:600; color:var(--color-text-primary); background:var(--color-bg-secondary); display:inline-flex; align-items:center; justify-content:center; gap:10px; cursor:pointer; transition:all 0.2s ease;">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--color-primary, #0B484C)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;">
+                            <button type="button" id="btn-webauthn-login" style="width:100%; padding:12px 18px; border:1.5px solid #E5E7EB; border-radius:10px; font-size:14px; font-weight:600; color:#111827; background:#FFFFFF; display:inline-flex; align-items:center; justify-content:center; gap:10px; cursor:pointer; transition:all 0.2s ease; box-shadow:0 1px 2px rgba(0,0,0,0.03);">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0B484C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;">
                                     <path d="M12 10a2 2 0 0 0-2 2c0 1.02-.1 2.51-.26 4"/>
                                     <path d="M14 13.12c0 2.38 0 3.88-.26 5.88"/>
                                     <path d="M17.29 21.02c.12-.6.43-2.3.43-5.02 0-2.28-.56-4.17-1.73-5.67"/>
@@ -846,17 +846,17 @@ window.App = {
                                 </svg>
                                 Ingresar con Face ID / Touch ID
                             </button>
-                            <div style="display:flex; align-items:center; margin:16px 0 12px; color:var(--color-text-muted); font-size:12px;">
-                                <div style="flex:1; height:1px; background:var(--color-border);"></div>
+                            <div style="display:flex; align-items:center; margin:16px 0 12px; color:#9CA3AF; font-size:12px;">
+                                <div style="flex:1; height:1px; background:#E5E7EB;"></div>
                                 <span style="padding:0 12px; font-weight:500;">o ingresa tu PIN</span>
-                                <div style="flex:1; height:1px; background:var(--color-border);"></div>
+                                <div style="flex:1; height:1px; background:#E5E7EB;"></div>
                             </div>
                         </div>
 
                         <form id="pin-login-form">
                             <div class="login-field" style="margin-bottom:16px;">
-                                <label style="display:block; font-size:12px; font-weight:600; text-transform:uppercase; letter-spacing:0.04em; color:var(--color-text-muted); text-align:center; margin-bottom:10px;">Ingresa tu PIN</label>
-                                <input type="password" id="login-pin-code" placeholder="••••••" pattern="[0-9]*" inputmode="numeric" maxlength="6" required autofocus autocomplete="off" style="text-align:center; font-size:24px; letter-spacing:0.25em; font-weight:700; height:50px; border-radius:10px; background:var(--color-bg-secondary); border:1px solid var(--color-border); color:var(--color-text-primary); transition:all 0.2s ease;">
+                                <label style="display:block; font-size:12px; font-weight:600; text-transform:uppercase; letter-spacing:0.04em; color:#4B5563; text-align:center; margin-bottom:10px;">Ingresa tu PIN</label>
+                                <input type="password" id="login-pin-code" placeholder="••••••" pattern="[0-9]*" inputmode="numeric" maxlength="6" required autofocus autocomplete="off" style="text-align:center; font-size:24px; letter-spacing:0.25em; font-weight:700; height:50px; border-radius:10px; background:#FFFFFF; border:1.5px solid #E5E7EB; color:#111827; transition:all 0.2s ease;">
                             </div>
                             <button type="submit" class="login-submit" style="width:100%; height:44px; font-size:14px; font-weight:600; border-radius:10px;">Ingresar</button>
                         </form>

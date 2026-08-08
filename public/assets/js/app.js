@@ -815,26 +815,27 @@ window.App = {
                         <img src="${cachedLogo}" alt="Logo" style="height: ${loginLogoHeight}px; object-fit: contain;">
                     </div>
                     <div class="login-form-wrap">
-                        <div style="display:flex; align-items:center; justify-space:space-between; margin-bottom:24px; background:var(--color-bg-secondary); border:1px solid var(--color-border); border-radius:12px; padding:12px 16px;">
-                            <div style="display:flex; align-items:center; gap:14px; min-width:0;">
-                                <div style="width:42px;height:42px;border-radius:50%;background:var(--color-primary);color:#fff;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;flex-shrink:0;">
+                        <div class="quick-user-card" style="display:flex; align-items:center; justify-content:space-between; padding:12px 16px; background:var(--color-bg-secondary); border:1px solid var(--color-border); border-radius:12px; margin-bottom:20px;">
+                            <div style="display:flex; align-items:center; gap:12px; min-width:0; flex:1;">
+                                <div style="width:38px; height:38px; border-radius:50%; background:linear-gradient(135deg, var(--color-primary, #0B484C) 0%, #16696e 100%); color:#ffffff; display:flex; align-items:center; justify-content:center; font-size:15px; font-weight:700; flex-shrink:0; box-shadow:0 2px 8px rgba(11,72,76,0.22);">
                                     ${email.charAt(0).toUpperCase()}
                                 </div>
-                                <div style="overflow:hidden;">
-                                    <h1 class="login-title" style="margin-bottom:2px; font-size:18px;">Hola de nuevo</h1>
-                                    <p class="login-subtitle" style="margin-bottom:0; font-size:13px; text-overflow:ellipsis; overflow:hidden; white-space:nowrap;">${email}</p>
+                                <div style="min-width:0; flex:1;">
+                                    <div style="font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:0.04em; color:var(--color-text-muted); line-height:1.2;">Hola de nuevo</div>
+                                    <div style="font-size:13px; font-weight:600; color:var(--color-text-primary); text-overflow:ellipsis; overflow:hidden; white-space:nowrap; margin-top:2px;">${email}</div>
                                 </div>
                             </div>
-                            <button type="button" id="btn-quick-logout-top" class="btn btn-secondary btn-sm" style="font-size:12px; font-weight:600; padding:6px 10px; display:inline-flex; align-items:center; gap:4px; color:var(--color-danger-icon); border-color:rgba(239,68,68,0.3); background:var(--color-bg-primary); flex-shrink:0;" title="Cerrar sesión e iniciar con otra cuenta">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
-                                Cerrar sesión
+                            <button type="button" id="btn-quick-logout-top" style="background:transparent; border:none; color:var(--color-text-muted); padding:6px 10px; border-radius:6px; font-size:12px; font-weight:500; cursor:pointer; display:inline-flex; align-items:center; gap:5px; transition:all 0.15s ease; flex-shrink:0;" title="Cambiar de cuenta">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+                                <span>Cambiar</span>
                             </button>
                         </div>
+
                         <div id="login-error" class="login-error"></div>
 
-                        <div id="biometric-login-wrap" style="display:none; margin-bottom:16px;">
-                            <button type="button" id="btn-webauthn-login" style="width:100%; padding:13px 20px; border:none; border-radius:10px; font-size:15px; font-weight:600; color:#ffffff; background:linear-gradient(135deg, #0B484C 0%, #16696e 100%); display:inline-flex; align-items:center; justify-content:center; gap:10px; cursor:pointer; box-shadow:0 4px 14px rgba(11,72,76,0.22); transition:all 0.2s ease;">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;">
+                        <div id="biometric-login-wrap" style="display:none; margin-bottom:20px;">
+                            <button type="button" id="btn-webauthn-login" style="width:100%; padding:12px 18px; border:1px solid var(--color-border); border-radius:10px; font-size:14px; font-weight:600; color:var(--color-text-primary); background:var(--color-bg-secondary); display:inline-flex; align-items:center; justify-content:center; gap:10px; cursor:pointer; transition:all 0.2s ease;">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--color-primary, #0B484C)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;">
                                     <path d="M12 10a2 2 0 0 0-2 2c0 1.02-.1 2.51-.26 4"/>
                                     <path d="M14 13.12c0 2.38 0 3.88-.26 5.88"/>
                                     <path d="M17.29 21.02c.12-.6.43-2.3.43-5.02 0-2.28-.56-4.17-1.73-5.67"/>
@@ -843,28 +844,22 @@ window.App = {
                                     <path d="M7 11c0-1.7 1.3-3 3-3s3 1.3 3 3c0 2.22 0 3.72-.26 5.72"/>
                                     <path d="M9 18a6 6 0 0 1-2-4.5"/>
                                 </svg>
-                                Ingresar con Face ID / Touch ID / Huella
+                                Ingresar con Face ID / Touch ID
                             </button>
-                            <div style="display:flex; align-items:center; margin:16px 0; color:var(--color-text-muted); font-size:12px;">
+                            <div style="display:flex; align-items:center; margin:16px 0 12px; color:var(--color-text-muted); font-size:12px;">
                                 <div style="flex:1; height:1px; background:var(--color-border);"></div>
-                                <span style="padding:0 12px;">o ingresa con tu PIN</span>
+                                <span style="padding:0 12px; font-weight:500;">o ingresa tu PIN</span>
                                 <div style="flex:1; height:1px; background:var(--color-border);"></div>
                             </div>
                         </div>
 
                         <form id="pin-login-form">
-                            <div class="login-field">
-                                <label>Ingresa tu PIN</label>
-                                <input type="password" id="login-pin-code" placeholder="••••••" pattern="[0-9]*" inputmode="numeric" maxlength="6" required autofocus autocomplete="off" style="text-align:center; font-size:24px; letter-spacing:0.15em; font-weight:700;">
+                            <div class="login-field" style="margin-bottom:16px;">
+                                <label style="display:block; font-size:12px; font-weight:600; text-transform:uppercase; letter-spacing:0.04em; color:var(--color-text-muted); text-align:center; margin-bottom:10px;">Ingresa tu PIN</label>
+                                <input type="password" id="login-pin-code" placeholder="••••••" pattern="[0-9]*" inputmode="numeric" maxlength="6" required autofocus autocomplete="off" style="text-align:center; font-size:24px; letter-spacing:0.25em; font-weight:700; height:50px; border-radius:10px; background:var(--color-bg-secondary); border:1px solid var(--color-border); color:var(--color-text-primary); transition:all 0.2s ease;">
                             </div>
-                            <button type="submit" class="login-submit">Ingresar</button>
+                            <button type="submit" class="login-submit" style="width:100%; height:44px; font-size:14px; font-weight:600; border-radius:10px;">Ingresar</button>
                         </form>
-                        <div style="margin-top:20px; text-align:center; display:flex; flex-direction:column; gap:10px;">
-                            <button type="button" id="btn-fallback-login" class="btn btn-secondary" style="width:100%; padding:12px; font-size:14px; font-weight:600; display:inline-flex; align-items:center; justify-content:center; gap:8px;">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
-                                Cerrar sesión / Iniciar con otra cuenta
-                            </button>
-                        </div>
                     </div>
                 </div>
                 <div class="login-right">
@@ -879,19 +874,21 @@ window.App = {
         WebAuthnHelper.isSupported().then(supported => {
             if (supported) {
                 const wrap = document.getElementById('biometric-login-wrap');
-                if (wrap) wrap.style.display = 'block';
-
                 const btnWebAuthn = document.getElementById('btn-webauthn-login');
-                const triggerBiometricLogin = async () => {
+
+                const triggerBiometricLogin = async (isAuto = false) => {
                     const errorEl = document.getElementById('login-error');
-                    if (errorEl) errorEl.style.display = 'none';
+                    if (errorEl && !isAuto) errorEl.style.display = 'none';
                     if (!btnWebAuthn) return;
-                    btnWebAuthn.disabled = true;
-                    btnWebAuthn.innerHTML = '<span class="spinner"></span> Verificando biometría...';
+
+                    if (!isAuto) {
+                        btnWebAuthn.disabled = true;
+                        btnWebAuthn.innerHTML = '<span class="spinner"></span> Verificando biometría...';
+                    }
 
                     try {
                         const res = await WebAuthnHelper.login(email);
-                        if (res.success) {
+                        if (res && res.success) {
                             this.state.user = res.user;
                             const settings = await this.api('settings');
                             this.state.settings = settings;
@@ -902,7 +899,7 @@ window.App = {
                         if (!btnWebAuthn) return;
                         btnWebAuthn.disabled = false;
                         btnWebAuthn.innerHTML = `
-                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--color-primary, #0B484C)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;">
                                 <path d="M12 10a2 2 0 0 0-2 2c0 1.02-.1 2.51-.26 4"/>
                                 <path d="M14 13.12c0 2.38 0 3.88-.26 5.88"/>
                                 <path d="M17.29 21.02c.12-.6.43-2.3.43-5.02 0-2.28-.56-4.17-1.73-5.67"/>
@@ -911,23 +908,34 @@ window.App = {
                                 <path d="M7 11c0-1.7 1.3-3 3-3s3 1.3 3 3c0 2.22 0 3.72-.26 5.72"/>
                                 <path d="M9 18a6 6 0 0 1-2-4.5"/>
                             </svg>
-                            Ingresar con Face ID / Touch ID / Huella
+                            Ingresar con Face ID / Touch ID
                         `;
-                        if (errorEl && err.message && !err.message.includes('canceló')) {
+
+                        // Silent check: if biometrics are NOT registered for this email, keep button hidden quietly
+                        if (err.message && err.message.includes('No hay sensores biométricos')) {
+                            if (wrap) wrap.style.display = 'none';
+                            return;
+                        }
+
+                        // Biometrics ARE registered! Show wrap button
+                        if (wrap) wrap.style.display = 'block';
+
+                        // Show error alert only if user manually clicked or non-silent failure
+                        if (!isAuto && errorEl && err.message && !err.message.includes('canceló')) {
                             errorEl.textContent = err.message;
                             errorEl.style.display = 'block';
                         }
                     }
                 };
 
-                btnWebAuthn?.addEventListener('click', triggerBiometricLogin);
+                btnWebAuthn?.addEventListener('click', () => triggerBiometricLogin(false));
 
-                // Zero-click Auto-Launch: Launch Face ID / Touch ID prompt immediately on page load
+                // Silent auto-launch check on load
                 setTimeout(() => {
                     if (document.getElementById('btn-webauthn-login')) {
-                        triggerBiometricLogin();
+                        triggerBiometricLogin(true);
                     }
-                }, 250);
+                }, 200);
             }
         });
         
@@ -938,7 +946,6 @@ window.App = {
             this.renderLogin();
         };
 
-        document.getElementById('btn-fallback-login')?.addEventListener('click', handleFullLogout);
         document.getElementById('btn-quick-logout-top')?.addEventListener('click', handleFullLogout);
         
         document.getElementById('pin-login-form').addEventListener('submit', async (e) => {

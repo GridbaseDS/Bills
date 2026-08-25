@@ -404,8 +404,8 @@ const QuotesModule = {
                 exchange_rate: parseFloat(document.getElementById('q_exchange_rate')?.value) || 1.0,
                 issue_date: document.getElementById('q_issue_date').value,
                 expiry_date: document.getElementById('q_expiry_date').value,
-                discount_type: 'percentage', discount_value: document.getElementById('q_discount').value,
-                tax_rate: document.getElementById('q_tax').value, notes: document.getElementById('q_notes').value,
+                discount_type: 'percentage', discount_value: parseFloat(document.getElementById('q_discount')?.value) || 0,
+                tax_rate: parseFloat(document.getElementById('q_tax')?.value) || 0, notes: document.getElementById('q_notes').value,
                 items: itemsToSave
             };
             try {

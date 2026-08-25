@@ -61,7 +61,7 @@ class RecurringController extends Controller
             return $i['quantity'] * $i['unit_price'];
         });
 
-        $taxRate = $request->tax_rate ?? 0;
+        $taxRate = (isset($request->tax_rate) && $request->tax_rate !== '' && $request->tax_rate !== null) ? max(0, (float)$request->tax_rate) : 0.0;
         $taxAmount = $subtotal * ($taxRate / 100);
         $total = $subtotal + $taxAmount;
 

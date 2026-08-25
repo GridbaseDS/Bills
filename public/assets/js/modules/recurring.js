@@ -329,7 +329,7 @@ const RecurringModule = {
                 start_date: document.getElementById('r_start_date').value,
                 next_issue_date: document.getElementById('r_start_date').value,
                 occurrences_limit: document.getElementById('r_limit').value || null,
-                tax_rate: document.getElementById('r_tax').value || 0,
+                tax_rate: parseFloat(document.getElementById('r_tax')?.value) || 0,
                 ecf_type: ecfType ? parseInt(ecfType) : null,
                 tipo_ingresos: ecfType ? (document.getElementById('r_tipo_ingresos').value || '01') : null,
                 auto_send: action !== 'draft' ? 1 : 0,

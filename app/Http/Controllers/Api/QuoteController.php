@@ -37,15 +37,17 @@ class QuoteController extends Controller
         Setting::where('setting_key', 'quote_next_number')->update(['setting_value' => $nextNum + 1]);
         
         $subtotal = collect($data['items'])->sum(function($i) { return $i['quantity'] * $i['unit_price']; });
-        $discountValue = $data['discount_value'] ?? 0;
+        $discountValue = (isset($data['discount_value']) && $data['discount_value'] !== '' && $data['discount_value'] !== null) ? max(0, (float)$data['discount_value']) : 0.0;
         $discountType = $data['discount_type'] ?? 'percentage';
         $discountAmount = $discountType === 'percentage' ? ($subtotal * ($discountValue/100)) : $discountValue;
-        $taxRate = $data['tax_rate'] ?? 0;
+        $taxRate = (isset($data['tax_rate']) && $data['tax_rate'] !== '' && $data['tax_rate'] !== null) ? max(0, (float)$data['tax_rate']) : 0.0;
         $taxAmount = ($subtotal - $discountAmount) * ($taxRate/100);
         $total = $subtotal - $discountAmount + $taxAmount;
         
         $data['subtotal'] = $subtotal;
+        $data['discount_value'] = $discountValue;
         $data['discount_amount'] = $discountAmount;
+        $data['tax_rate'] = $taxRate;
         $data['tax_amount'] = $taxAmount;
         $data['total'] = $total;
         if ($request->user()) { $data['created_by'] = $request->user()->id; }
@@ -67,11 +69,14 @@ class QuoteController extends Controller
         $data = $request->all();
 
         $subtotal = collect($data['items'] ?? [])->sum(function($i) { return $i['quantity'] * $i['unit_price']; });
-        $discountValue = $data['discount_value'] ?? 0;
+        $discountValue = (isset($data['discount_value']) && $data['discount_value'] !== '' && $data['discount_value'] !== null) ? max(0, (float)$data['discount_value']) : 0.0;
         $discountAmount = ($data['discount_type'] ?? 'percentage') === 'percentage' ? ($subtotal * ($discountValue/100)) : $discountValue;
-        $taxRate = $data['tax_rate'] ?? 0;
+        $taxRate = (isset($data['tax_rate']) && $data['tax_rate'] !== '' && $data['tax_rate'] !== null) ? max(0, (float)$data['tax_rate']) : 0.0;
         $taxAmount = ($subtotal - $discountAmount) * ($taxRate/100);
         $total = $subtotal - $discountAmount + $taxAmount;
+        
+        $data['discount_value'] = $discountValue;
+        $data['tax_rate'] = $taxRate;
 
         $data['subtotal'] = $subtotal;
         $data['discount_amount'] = $discountAmount;

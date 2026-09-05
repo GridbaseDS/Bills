@@ -502,7 +502,7 @@ class DgiiReportController extends Controller
     }
 
     /**
-     * Export Formato 607 to official DGII Excel Template (.xlsx)
+     * Export Formato 607 to official DGII Excel Template (.xls)
      */
     public function export607Excel(Request $request, DgiiExcelService $excelService)
     {
@@ -517,19 +517,19 @@ class DgiiReportController extends Controller
         $companyTaxId = preg_replace('/[^0-9]/', '', $companyTaxId);
 
         $spreadsheet = $excelService->generate607Excel($companyTaxId, $period, $records);
-        $filename = "DGII_607_{$companyTaxId}_{$period}.xlsx";
+        $filename = "DGII_607_{$companyTaxId}_{$period}.xls";
 
         return response()->streamDownload(function () use ($spreadsheet) {
-            $writer = new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($spreadsheet);
+            $writer = new \PhpOffice\PhpSpreadsheet\Writer\Xls($spreadsheet);
             $writer->save('php://output');
         }, $filename, [
-            'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'Content-Type' => 'application/vnd.ms-excel',
             'Cache-Control' => 'max-age=0',
         ]);
     }
 
     /**
-     * Export Formato 606 to official DGII Excel Template (.xlsx)
+     * Export Formato 606 to official DGII Excel Template (.xls)
      */
     public function export606Excel(Request $request, DgiiExcelService $excelService)
     {
@@ -544,19 +544,19 @@ class DgiiReportController extends Controller
         $companyTaxId = preg_replace('/[^0-9]/', '', $companyTaxId);
 
         $spreadsheet = $excelService->generate606Excel($companyTaxId, $period, $records);
-        $filename = "DGII_606_{$companyTaxId}_{$period}.xlsx";
+        $filename = "DGII_606_{$companyTaxId}_{$period}.xls";
 
         return response()->streamDownload(function () use ($spreadsheet) {
-            $writer = new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($spreadsheet);
+            $writer = new \PhpOffice\PhpSpreadsheet\Writer\Xls($spreadsheet);
             $writer->save('php://output');
         }, $filename, [
-            'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'Content-Type' => 'application/vnd.ms-excel',
             'Cache-Control' => 'max-age=0',
         ]);
     }
 
     /**
-     * Export Formato 608 to official DGII Excel Template (.xlsx)
+     * Export Formato 608 to official DGII Excel Template (.xls)
      */
     public function export608Excel(Request $request, DgiiExcelService $excelService)
     {
@@ -571,13 +571,13 @@ class DgiiReportController extends Controller
         $companyTaxId = preg_replace('/[^0-9]/', '', $companyTaxId);
 
         $spreadsheet = $excelService->generate608Excel($companyTaxId, $period, $records);
-        $filename = "DGII_608_{$companyTaxId}_{$period}.xlsx";
+        $filename = "DGII_608_{$companyTaxId}_{$period}.xls";
 
         return response()->streamDownload(function () use ($spreadsheet) {
-            $writer = new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($spreadsheet);
+            $writer = new \PhpOffice\PhpSpreadsheet\Writer\Xls($spreadsheet);
             $writer->save('php://output');
         }, $filename, [
-            'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'Content-Type' => 'application/vnd.ms-excel',
             'Cache-Control' => 'max-age=0',
         ]);
     }

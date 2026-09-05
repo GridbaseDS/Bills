@@ -60,7 +60,7 @@ const ReportsModule = {
                 <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
                     <button class="btn" id="btn-export-excel" style="display:flex;align-items:center;gap:8px;background:#107c41;border-color:#107c41;color:#fff;font-weight:600;">
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="8" y1="13" x2="16" y2="13"></line><line x1="8" y1="17" x2="16" y2="17"></line><line x1="10" y1="9" x2="8" y2="9"></line></svg>
-                        Descargar Plantilla Excel (.xlsx)
+                        Descargar Plantilla Excel (.xls)
                     </button>
                     <button class="btn btn-secondary" id="btn-export-txt" style="display:flex;align-items:center;gap:8px;">
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
@@ -414,7 +414,7 @@ const ReportsModule = {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Accept': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/octet-stream',
+                    'Accept': 'application/vnd.ms-excel, application/octet-stream',
                     'X-Requested-With': 'XMLHttpRequest',
                     'Authorization': `Bearer ${token}`
                 },
@@ -440,13 +440,13 @@ const ReportsModule = {
                 ? App.state.settings.company_tax_id.replace(/[^0-9]/g, '')
                 : '131000000';
 
-            a.download = `DGII_${this._currentTab}_${rnc}_${periodStr}.xlsx`;
+            a.download = `DGII_${this._currentTab}_${rnc}_${periodStr}.xls`;
             document.body.appendChild(a);
             a.click();
             a.remove();
             URL.revokeObjectURL(url);
 
-            App.showToast(`¡Plantilla Excel DGII ${this._currentTab} descargada con éxito!`, 'success');
+            App.showToast(`¡Plantilla Excel oficial DGII ${this._currentTab} descargada con éxito!`, 'success');
         } catch (e) {
             console.error('Excel Export error:', e);
             App.showToast('Error al generar la plantilla Excel DGII', 'error');

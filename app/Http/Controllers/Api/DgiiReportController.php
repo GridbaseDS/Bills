@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use App\Models\Invoice;
 use App\Models\ReceivedInvoice;
 use App\Models\Setting;
+use App\Services\DgiiExcelService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Carbon;
 
@@ -417,5 +418,167 @@ class DgiiReportController extends Controller
         return response($content, 200)
             ->header('Content-Type', 'text/plain')
             ->header('Content-Disposition', "attachment; filename=\"{$filename}\"");
+    }
+
+    /**
+     * Fetch records for the 608 Report (Comprobantes Anulados) for a given month.
+     */
+    public function report608(Request $request)
+    {
+        $year = $request->query('year', date('Y'));
+        $month = str_pad($request->query('month', date('m')), 2, '0', STR_PAD_LEFT);
+
+        $startDate = "{$year}-{$month}-01";
+        $endDate = Carbon::parse($startDate)->endOfMonth()->toDateString();
+
+        // Invoices with status cancelled within the period
+        $invoices = Invoice::with('client')
+            ->where('status', 'cancelled')
+            ->where(function ($q) use ($startDate, $endDate) {
+                $q->whereBetween('issue_date', [$startDate, $endDate])
+                  ->orWhereBetween('cancelled_at', [$startDate . ' 00:00:00', $endDate . ' 23:59:59']);
+            })
+            ->orderBy('issue_date', 'asc')
+            ->get();
+
+        $records = $invoices->map(function ($inv) {
+            $ncf = $inv->is_ecf ? ($inv->encf ?: $inv->invoice_number) : $inv->invoice_number;
+            $anulationCode = str_pad($inv->anulation_type ?: '05', 2, '0', STR_PAD_LEFT);
+            $reasonDesc = DgiiExcelService::ANULATION_TYPES[$anulationCode] ?? ($inv->cancellation_reason ?: 'Corrección de la Información');
+
+            return [
+                'id' => $inv->id,
+                'ncf' => $ncf,
+                'fecha_comprobante' => Carbon::parse($inv->issue_date)->format('Ymd'),
+                'tipo_anulacion' => $anulationCode,
+                'motivo_descripcion' => $reasonDesc,
+                'fecha_anulacion' => $inv->cancelled_at ? Carbon::parse($inv->cancelled_at)->format('Ymd') : Carbon::parse($inv->updated_at)->format('Ymd'),
+                'monto' => round((float)$inv->total, 2),
+                'cliente_nombre' => $inv->client ? ($inv->client->company_name ?: $inv->client->contact_name) : 'General',
+            ];
+        });
+
+        return response()->json([
+            'success' => true,
+            'period' => "{$year}{$month}",
+            'data' => $records
+        ]);
+    }
+
+    /**
+     * Export the 608 Report records to a downloadable pipe-separated text file (.txt)
+     */
+    public function export608(Request $request)
+    {
+        $request->validate([
+            'period' => 'required|string|size:6',
+            'records' => 'required|array',
+        ]);
+
+        $period = $request->input('period');
+        $records = $request->input('records');
+        $companyTaxId = Setting::where('setting_key', 'company_tax_id')->value('setting_value') ?? '131000000';
+        $companyTaxId = preg_replace('/[^0-9]/', '', $companyTaxId);
+
+        // Header: 608|RNC|PERIODO|CANTIDAD_REGISTROS
+        $header = "608|{$companyTaxId}|{$period}|" . count($records);
+        $lines = [$header];
+
+        foreach ($records as $r) {
+            $ncf = $r['ncf'] ?? '';
+            $dateComp = $r['fecha_comprobante'] ?? '';
+            $anulationType = str_pad($r['tipo_anulacion'] ?? '05', 2, '0', STR_PAD_LEFT);
+
+            // Detail line per DGII 608 standard: NCF|FECHA|TIPO_ANULACION (3 columns)
+            $lines[] = "{$ncf}|{$dateComp}|{$anulationType}";
+        }
+
+        $content = implode("\r\n", $lines);
+        $filename = "DGII_608_{$companyTaxId}_{$period}.txt";
+
+        return response($content, 200)
+            ->header('Content-Type', 'text/plain')
+            ->header('Content-Disposition', "attachment; filename=\"{$filename}\"");
+    }
+
+    /**
+     * Export Formato 607 to official DGII Excel Template (.xlsx)
+     */
+    public function export607Excel(Request $request, DgiiExcelService $excelService)
+    {
+        $request->validate([
+            'period' => 'required|string|size:6',
+            'records' => 'required|array',
+        ]);
+
+        $period = $request->input('period');
+        $records = $request->input('records');
+        $companyTaxId = Setting::where('setting_key', 'company_tax_id')->value('setting_value') ?? '131000000';
+        $companyTaxId = preg_replace('/[^0-9]/', '', $companyTaxId);
+
+        $spreadsheet = $excelService->generate607Excel($companyTaxId, $period, $records);
+        $filename = "DGII_607_{$companyTaxId}_{$period}.xlsx";
+
+        return response()->streamDownload(function () use ($spreadsheet) {
+            $writer = new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($spreadsheet);
+            $writer->save('php://output');
+        }, $filename, [
+            'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'Cache-Control' => 'max-age=0',
+        ]);
+    }
+
+    /**
+     * Export Formato 606 to official DGII Excel Template (.xlsx)
+     */
+    public function export606Excel(Request $request, DgiiExcelService $excelService)
+    {
+        $request->validate([
+            'period' => 'required|string|size:6',
+            'records' => 'required|array',
+        ]);
+
+        $period = $request->input('period');
+        $records = $request->input('records');
+        $companyTaxId = Setting::where('setting_key', 'company_tax_id')->value('setting_value') ?? '131000000';
+        $companyTaxId = preg_replace('/[^0-9]/', '', $companyTaxId);
+
+        $spreadsheet = $excelService->generate606Excel($companyTaxId, $period, $records);
+        $filename = "DGII_606_{$companyTaxId}_{$period}.xlsx";
+
+        return response()->streamDownload(function () use ($spreadsheet) {
+            $writer = new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($spreadsheet);
+            $writer->save('php://output');
+        }, $filename, [
+            'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'Cache-Control' => 'max-age=0',
+        ]);
+    }
+
+    /**
+     * Export Formato 608 to official DGII Excel Template (.xlsx)
+     */
+    public function export608Excel(Request $request, DgiiExcelService $excelService)
+    {
+        $request->validate([
+            'period' => 'required|string|size:6',
+            'records' => 'required|array',
+        ]);
+
+        $period = $request->input('period');
+        $records = $request->input('records');
+        $companyTaxId = Setting::where('setting_key', 'company_tax_id')->value('setting_value') ?? '131000000';
+        $companyTaxId = preg_replace('/[^0-9]/', '', $companyTaxId);
+
+        $spreadsheet = $excelService->generate608Excel($companyTaxId, $period, $records);
+        $filename = "DGII_608_{$companyTaxId}_{$period}.xlsx";
+
+        return response()->streamDownload(function () use ($spreadsheet) {
+            $writer = new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($spreadsheet);
+            $writer->save('php://output');
+        }, $filename, [
+            'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'Cache-Control' => 'max-age=0',
+        ]);
     }
 }

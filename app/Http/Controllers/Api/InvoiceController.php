@@ -829,7 +829,15 @@ class InvoiceController extends Controller
         }
 
         $invoice = Invoice::findOrFail($id);
-        $invoice->update(['status' => 'cancelled']);
+        $anulationType = $request->input('anulation_type', '05');
+        $cancellationReason = $request->input('cancellation_reason', null);
+
+        $invoice->update([
+            'status' => 'cancelled',
+            'anulation_type' => $anulationType,
+            'cancellation_reason' => $cancellationReason,
+            'cancelled_at' => now(),
+        ]);
         return response()->json(['success' => true, 'message' => 'Factura anulada con éxito.', 'invoice' => $invoice->fresh()]);
     }
 

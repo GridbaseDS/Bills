@@ -413,7 +413,7 @@ class DemoDataSeeder extends Seeder
             'tax_amount' => 900.00,
             'total' => 5900.00,
             'expense_type' => '02', // Gastos de operaciones
-            'payment_method' => 'transfer',
+            'payment_method' => '02',
             'notes' => 'Suministros de oficina y cartuchos de tóner',
             'created_by' => 1,
         ]);
@@ -428,7 +428,7 @@ class DemoDataSeeder extends Seeder
             'tax_amount' => 1800.00,
             'total' => 11800.00,
             'expense_type' => '01',
-            'payment_method' => 'transfer',
+            'payment_method' => '02',
             'notes' => 'Registro manual duplicado de Claro (debe ser filtrado en 606)',
             'created_by' => 1,
         ]);

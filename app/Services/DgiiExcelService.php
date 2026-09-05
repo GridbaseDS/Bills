@@ -40,13 +40,17 @@ class DgiiExcelService
     ];
 
     /**
-     * Generate Formato 606 using the original DGII / Mónica 11 template (Formato_Monica.xls)
+     * Generate Formato 606 using the official DGII template (Formato_DGII_606.xls)
      */
     public function generate606Excel(string $companyTaxId, string $period, array $records): Spreadsheet
     {
-        $templatePath = resource_path('templates/dgii/Formato_Monica.xls');
+        $templatePath = resource_path('templates/dgii/Formato_DGII_606.xls');
         if (!file_exists($templatePath)) {
-            throw new \RuntimeException("Template Formato_Monica.xls no encontrado en: {$templatePath}");
+            // Fallback if named Formato_Monica.xls
+            $templatePath = resource_path('templates/dgii/Formato_Monica.xls');
+        }
+        if (!file_exists($templatePath)) {
+            throw new \RuntimeException("Template Formato 606 no encontrado en: {$templatePath}");
         }
 
         $recordCount = count($records);
@@ -56,6 +60,14 @@ class DgiiExcelService
         $reader->setReadFilter(new DgiiChunkFilter($maxRow));
         $spreadsheet = $reader->load($templatePath);
         $sheet = $spreadsheet->getActiveSheet();
+
+        // Branding: Ensure B3 and document properties are Gridbase Bills
+        $sheet->setCellValue('B3', 'Gridbase Bills');
+        $spreadsheet->getProperties()
+            ->setCreator('Gridbase Bills')
+            ->setLastModifiedBy('Gridbase Bills')
+            ->setTitle("DGII 606 {$companyTaxId} {$period}")
+            ->setCompany('Gridbase');
 
         // 1. Fill Header Metadata (Rows 4 - 7)
         $sheet->setCellValueExplicit('B4', $companyTaxId, DataType::TYPE_STRING);
@@ -102,13 +114,16 @@ class DgiiExcelService
     }
 
     /**
-     * Generate Formato 607 using the original DGII / Mónica 11 template (Formato_Monica_607.xls)
+     * Generate Formato 607 using the official DGII template (Formato_DGII_607.xls)
      */
     public function generate607Excel(string $companyTaxId, string $period, array $records): Spreadsheet
     {
-        $templatePath = resource_path('templates/dgii/Formato_Monica_607.xls');
+        $templatePath = resource_path('templates/dgii/Formato_DGII_607.xls');
         if (!file_exists($templatePath)) {
-            throw new \RuntimeException("Template Formato_Monica_607.xls no encontrado en: {$templatePath}");
+            $templatePath = resource_path('templates/dgii/Formato_Monica_607.xls');
+        }
+        if (!file_exists($templatePath)) {
+            throw new \RuntimeException("Template Formato 607 no encontrado en: {$templatePath}");
         }
 
         $recordCount = count($records);
@@ -118,6 +133,14 @@ class DgiiExcelService
         $reader->setReadFilter(new DgiiChunkFilter($maxRow));
         $spreadsheet = $reader->load($templatePath);
         $sheet = $spreadsheet->getActiveSheet();
+
+        // Branding: Ensure B3 and document properties are Gridbase Bills
+        $sheet->setCellValue('B3', 'Gridbase Bills');
+        $spreadsheet->getProperties()
+            ->setCreator('Gridbase Bills')
+            ->setLastModifiedBy('Gridbase Bills')
+            ->setTitle("DGII 607 {$companyTaxId} {$period}")
+            ->setCompany('Gridbase');
 
         // 1. Fill Header Metadata (Rows 4 - 7)
         $sheet->setCellValueExplicit('B4', $companyTaxId, DataType::TYPE_STRING);
@@ -185,13 +208,16 @@ class DgiiExcelService
     }
 
     /**
-     * Generate Formato 608 using the original DGII / Mónica 11 template (Formato_Monica_608.xls)
+     * Generate Formato 608 using the official DGII template (Formato_DGII_608.xls)
      */
     public function generate608Excel(string $companyTaxId, string $period, array $records): Spreadsheet
     {
-        $templatePath = resource_path('templates/dgii/Formato_Monica_608.xls');
+        $templatePath = resource_path('templates/dgii/Formato_DGII_608.xls');
         if (!file_exists($templatePath)) {
-            throw new \RuntimeException("Template Formato_Monica_608.xls no encontrado en: {$templatePath}");
+            $templatePath = resource_path('templates/dgii/Formato_Monica_608.xls');
+        }
+        if (!file_exists($templatePath)) {
+            throw new \RuntimeException("Template Formato 608 no encontrado en: {$templatePath}");
         }
 
         $recordCount = count($records);
@@ -201,6 +227,14 @@ class DgiiExcelService
         $reader->setReadFilter(new DgiiChunkFilter($maxRow));
         $spreadsheet = $reader->load($templatePath);
         $sheet = $spreadsheet->getActiveSheet();
+
+        // Branding: Ensure B3 and document properties are Gridbase Bills
+        $sheet->setCellValue('B3', 'Gridbase Bills');
+        $spreadsheet->getProperties()
+            ->setCreator('Gridbase Bills')
+            ->setLastModifiedBy('Gridbase Bills')
+            ->setTitle("DGII 608 {$companyTaxId} {$period}")
+            ->setCompany('Gridbase');
 
         // 1. Fill Header Metadata (Rows 5 - 7)
         $sheet->setCellValueExplicit('B5', $companyTaxId, DataType::TYPE_STRING);

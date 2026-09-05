@@ -40,6 +40,16 @@ class Invoice extends Model {
     }
     
     /**
+     * Check if this invoice is a Credit Note (Nota de Crédito)
+     */
+    public function isCreditNote(): bool {
+        return (int)$this->ecf_type === 34 ||
+               (int)$this->nota_credito_indicator === 1 ||
+               str_starts_with((string)$this->encf, 'E34') ||
+               str_starts_with((string)$this->invoice_number, 'B04');
+    }
+
+    /**
      * Get the remaining balance
      */
     public function getRemainingBalance() {

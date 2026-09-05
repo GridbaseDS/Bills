@@ -299,6 +299,8 @@ const DashboardModule = {
                     }
                     .db-amount-pos { color: var(--color-success-icon); }
                     .db-amount-neg { color: var(--color-text-primary); }
+                    .db-amount-danger { color: #dc2626; font-weight: 700; }
+                    .db-amount-zero { color: var(--color-text-muted); font-weight: 600; }
 
                     /* ── Cashflow / Chart Card ── */
                     .db-chart-info {
@@ -720,31 +722,31 @@ const DashboardModule = {
                                         <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>
                                     </svg>
                                 </div>
-                                ITBIS Recaudado
+                                ITBIS Facturado Neto
                             </div>
-                            <span class="db-tax-badge">18% ITBIS</span>
+                            <span class="db-tax-badge">18% ITBIS (607)</span>
                         </div>
                         <div class="db-tax-grid">
                             <div class="db-tax-cell">
                                 <div class="db-tax-cell-label">Este Mes</div>
                                 <div class="db-tax-cell-amount highlight">${App.formatCurrency(stats.tax_collected_this_month || 0)}</div>
-                                <div class="db-tax-cell-sub">A declarar en 607</div>
+                                <div class="db-tax-cell-sub">A declarar en 607 (Neto de NC)</div>
                             </div>
                             <div class="db-tax-cell">
                                 <div class="db-tax-cell-label">Mes Pasado</div>
                                 <div class="db-tax-cell-amount">${App.formatCurrency(stats.tax_collected_last_month || 0)}</div>
-                                <div class="db-tax-cell-sub">Período anterior</div>
+                                <div class="db-tax-cell-sub">Período anterior (Neto de NC)</div>
                             </div>
                             <div class="db-tax-cell">
                                 <div class="db-tax-cell-label">Total Acumulado</div>
                                 <div class="db-tax-cell-amount">${App.formatCurrency(stats.tax_collected_total || 0)}</div>
-                                <div class="db-tax-cell-sub">Historial completo</div>
+                                <div class="db-tax-cell-sub">Historial fiscal emitido</div>
                             </div>
                         </div>
                         ${(stats.tax_pending || 0) > 0 ? `
                         <div class="db-tax-footer">
                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-                            ${App.formatCurrency(stats.tax_pending || 0)} en ITBIS de facturas aún no cobradas (pendientes de pago del cliente)
+                            ${App.formatCurrency(stats.tax_pending || 0)} en ITBIS facturado aún pendiente de cobro
                         </div>
                         ` : ''}
                     </div>
@@ -770,18 +772,56 @@ const DashboardModule = {
                                         const avColor = avatarColors[idx % avatarColors.length];
                                         const name = inv.company_name || inv.contact_name || '?';
                                         const initial = name.charAt(0).toUpperCase();
+
+                                        const statusClasses = {
+                                            'paid': 'badge-paid', 'accepted': 'badge-paid',
+                                            'sent': 'badge-sent', 'viewed': 'badge-viewed',
+                                            'partial': 'badge-partial', 'overdue': 'badge-overdue',
+                                            'draft': 'badge-draft', 'cancelled': 'badge-cancelled'
+                                        };
+                                        const statusLabels = {
+                                            'paid': 'Pagada', 'accepted': 'Aceptada',
+                                            'sent': 'Enviada', 'viewed': 'Vista',
+                                            'partial': 'Parcial', 'overdue': 'Vencida',
+                                            'draft': 'Borrador', 'cancelled': 'Anulada'
+                                        };
+
+                                        const isCN = !!inv.is_credit_note;
+                                        const totalNum = parseFloat(inv.total || 0);
+                                        const isZero = Math.abs(totalNum) < 0.001;
                                         const isPaid = inv.status === 'paid' || inv.status === 'accepted';
+
+                                        let amountClass = 'db-amount-neg';
+                                        let amountPrefix = '';
+
+                                        if (isCN) {
+                                            amountClass = 'db-amount-danger';
+                                            amountPrefix = '-';
+                                        } else if (isZero) {
+                                            amountClass = 'db-amount-zero';
+                                            amountPrefix = '';
+                                        } else if (isPaid) {
+                                            amountClass = 'db-amount-pos';
+                                            amountPrefix = '+';
+                                        }
+
+                                        const badgeClass = isCN ? 'badge-cancelled' : (statusClasses[inv.status] || 'badge-draft');
+                                        const badgeText = isCN ? 'Nota de Crédito' : (statusLabels[inv.status] || inv.status);
+
                                         return `
                                         <a href="#facturas/${inv.id}" class="db-activity-row">
                                             <div class="db-activity-who">
                                                 <div class="db-activity-avatar ${avColor}">${initial}</div>
                                                 <div>
                                                     <div class="db-activity-name">${name}</div>
-                                                    <div class="db-activity-sub">${inv.invoice_number}</div>
+                                                    <div class="db-activity-sub" style="display:flex; align-items:center; gap:6px;">
+                                                        <span>${inv.invoice_number}</span>
+                                                        <span class="badge ${badgeClass}" style="font-size:10px; padding:1px 5px; line-height:1.2;">${badgeText}</span>
+                                                    </div>
                                                 </div>
                                             </div>
                                             <div class="db-activity-date">${App.formatDate(inv.issue_date)}</div>
-                                            <div class="db-activity-amount ${isPaid ? 'db-amount-pos' : 'db-amount-neg'}">${isPaid ? '+' : ''}${App.formatCurrency(inv.total, inv.currency)}</div>
+                                            <div class="db-activity-amount ${amountClass}">${amountPrefix}${App.formatCurrency(inv.total, inv.currency)}</div>
                                         </a>`;
                                     }).join('') : '<div class="db-empty">No hay actividad reciente</div>'}
                                 </div>
@@ -792,17 +832,55 @@ const DashboardModule = {
                                         const avColor = avatarColors[idx % avatarColors.length];
                                         const name = inv.company_name || inv.contact_name || '?';
                                         const initial = name.charAt(0).toUpperCase();
+
+                                        const statusClasses = {
+                                            'paid': 'badge-paid', 'accepted': 'badge-paid',
+                                            'sent': 'badge-sent', 'viewed': 'badge-viewed',
+                                            'partial': 'badge-partial', 'overdue': 'badge-overdue',
+                                            'draft': 'badge-draft', 'cancelled': 'badge-cancelled'
+                                        };
+                                        const statusLabels = {
+                                            'paid': 'Pagada', 'accepted': 'Aceptada',
+                                            'sent': 'Enviada', 'viewed': 'Vista',
+                                            'partial': 'Parcial', 'overdue': 'Vencida',
+                                            'draft': 'Borrador', 'cancelled': 'Anulada'
+                                        };
+
+                                        const isCN = !!inv.is_credit_note;
+                                        const totalNum = parseFloat(inv.total || 0);
+                                        const isZero = Math.abs(totalNum) < 0.001;
                                         const isPaid = inv.status === 'paid' || inv.status === 'accepted';
+
+                                        let amountClass = 'db-amount-neg';
+                                        let amountPrefix = '';
+
+                                        if (isCN) {
+                                            amountClass = 'db-amount-danger';
+                                            amountPrefix = '-';
+                                        } else if (isZero) {
+                                            amountClass = 'db-amount-zero';
+                                            amountPrefix = '';
+                                        } else if (isPaid) {
+                                            amountClass = 'db-amount-pos';
+                                            amountPrefix = '+';
+                                        }
+
+                                        const badgeClass = isCN ? 'badge-cancelled' : (statusClasses[inv.status] || 'badge-draft');
+                                        const badgeText = isCN ? 'Nota de Crédito' : (statusLabels[inv.status] || inv.status);
+
                                         return `
                                         <a href="#facturas/${inv.id}" class="db-activity-row">
                                             <div class="db-activity-who">
                                                 <div class="db-activity-avatar ${avColor}">${initial}</div>
                                                 <div>
                                                     <div class="db-activity-name">${name}</div>
-                                                    <div class="db-activity-sub">${inv.invoice_number}</div>
+                                                    <div class="db-activity-sub" style="display:flex; align-items:center; gap:6px;">
+                                                        <span>${inv.invoice_number}</span>
+                                                        <span class="badge ${badgeClass}" style="font-size:10px; padding:1px 5px; line-height:1.2;">${badgeText}</span>
+                                                    </div>
                                                 </div>
                                             </div>
-                                            <div class="db-activity-amount ${isPaid ? 'db-amount-pos' : 'db-amount-neg'}" style="margin-left:auto">${isPaid ? '+' : ''}${App.formatCurrency(inv.total, inv.currency)}</div>
+                                            <div class="db-activity-amount ${amountClass}" style="margin-left:auto">${amountPrefix}${App.formatCurrency(inv.total, inv.currency)}</div>
                                         </a>`;
                                     }).join('') : '<div class="db-empty">No hay actividad reciente</div>'}
                                 </div>

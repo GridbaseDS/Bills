@@ -23,13 +23,16 @@ class DashboardController extends Controller
         $dateLastMonthStart  = $startOfLastMonth->toDateString();  // e.g. 2026-05-01
         $dateLastMonthEnd    = $endOfLastMonth->toDateString();     // e.g. 2026-05-31
 
+        // ── Helper: Credit Note sign multiplier (-1 for credit notes, 1 for normal invoices) ──
+        $creditNoteMultiplier = '(CASE WHEN ecf_type = 34 OR nota_credito_indicator = 1 OR encf LIKE "E34%" OR invoice_number LIKE "B04%" THEN -1 ELSE 1 END)';
+
         // ── Helper: revenue = amount collected MINUS the tax portion ──────────
         // tax_amount is ITBIS collected on behalf of the government — not profit.
         // We compute: net_paid = amount_paid * (subtotal / total)  when total > 0.
         // Simplified as: amount_paid - (tax_amount * amount_paid / total)
         // Using a DB expression for performance:
         $netPaidExpr = DB::raw(
-            'SUM(amount_paid - IF(total > 0, tax_amount * amount_paid / total, 0))'
+            "SUM((amount_paid - IF(total > 0, tax_amount * amount_paid / total, 0)) * {$creditNoteMultiplier})"
         );
 
         // Core stats
@@ -39,20 +42,20 @@ class DashboardController extends Controller
             ->where(function($q) {
                 $q->whereNull('ecf_type')->orWhereNotIn('ecf_type', [41, 43, 47]);
             })
-            ->selectRaw('SUM((amount_paid - IF(total > 0, tax_amount * amount_paid / total, 0)) * exchange_rate) as net')
+            ->selectRaw("SUM((amount_paid - IF(total > 0, tax_amount * amount_paid / total, 0)) * {$creditNoteMultiplier} * exchange_rate) as net")
             ->value('net') ?? 0;
 
         $pending = Invoice::whereIn('status', ['sent', 'viewed', 'partial', 'overdue'])
             ->where(function($q) {
                 $q->whereNull('ecf_type')->orWhereNotIn('ecf_type', [41, 43, 47]);
             })
-            ->sum(DB::raw('(total - amount_paid) * exchange_rate'));
+            ->sum(DB::raw("(total - amount_paid) * {$creditNoteMultiplier} * exchange_rate"));
 
         $overdue = Invoice::where('status', 'overdue')
             ->where(function($q) {
                 $q->whereNull('ecf_type')->orWhereNotIn('ecf_type', [41, 43, 47]);
             })
-            ->sum(DB::raw('(total - amount_paid) * exchange_rate'));
+            ->sum(DB::raw("(total - amount_paid) * exchange_rate"));
 
         $overdueCount = Invoice::where('status', 'overdue')
             ->where(function($q) {
@@ -66,7 +69,7 @@ class DashboardController extends Controller
             ->where(function($q) {
                 $q->whereNull('ecf_type')->orWhereNotIn('ecf_type', [41, 43, 47]);
             })
-            ->selectRaw('SUM((amount_paid - IF(total > 0, tax_amount * amount_paid / total, 0)) * exchange_rate) as net')
+            ->selectRaw("SUM((amount_paid - IF(total > 0, tax_amount * amount_paid / total, 0)) * {$creditNoteMultiplier} * exchange_rate) as net")
             ->value('net') ?? 0;
 
         $revenueLastMonth = Invoice::whereIn('status', ['paid', 'partial'])
@@ -74,18 +77,18 @@ class DashboardController extends Controller
             ->where(function($q) {
                 $q->whereNull('ecf_type')->orWhereNotIn('ecf_type', [41, 43, 47]);
             })
-            ->selectRaw('SUM((amount_paid - IF(total > 0, tax_amount * amount_paid / total, 0)) * exchange_rate) as net')
+            ->selectRaw("SUM((amount_paid - IF(total > 0, tax_amount * amount_paid / total, 0)) * {$creditNoteMultiplier} * exchange_rate) as net")
             ->value('net') ?? 0;
 
-        // Count invoices issued this / last month using issue_date as plain date string
-        $invoicesThisMonth = Invoice::where('status', '!=', 'cancelled')
+        // Count invoices issued this / last month using issue_date as plain date string (excluding drafts and cancelled)
+        $invoicesThisMonth = Invoice::whereNotIn('status', ['draft', 'cancelled'])
             ->where('issue_date', '>=', $dateThisMonthStart)
             ->where(function($q) {
                 $q->whereNull('ecf_type')->orWhereNotIn('ecf_type', [41, 43, 47]);
             })
             ->count();
 
-        $invoicesLastMonth = Invoice::where('status', '!=', 'cancelled')
+        $invoicesLastMonth = Invoice::whereNotIn('status', ['draft', 'cancelled'])
             ->whereBetween('issue_date', [$dateLastMonthStart, $dateLastMonthEnd])
             ->where(function($q) {
                 $q->whereNull('ecf_type')->orWhereNotIn('ecf_type', [41, 43, 47]);
@@ -98,42 +101,42 @@ class DashboardController extends Controller
             ->where(function($q) {
                 $q->whereNull('ecf_type')->orWhereNotIn('ecf_type', [41, 43, 47]);
             })
-            ->sum(DB::raw('total * exchange_rate'));
+            ->sum(DB::raw("total * {$creditNoteMultiplier} * exchange_rate"));
 
         $invoicedAmountLastMonth = (float) Invoice::whereIn('status', ['paid', 'partial'])
             ->whereBetween('issue_date', [$dateLastMonthStart, $dateLastMonthEnd])
             ->where(function($q) {
                 $q->whereNull('ecf_type')->orWhereNotIn('ecf_type', [41, 43, 47]);
             })
-            ->sum(DB::raw('total * exchange_rate'));
+            ->sum(DB::raw("total * {$creditNoteMultiplier} * exchange_rate"));
 
         // ── ITBIS / Tax summary ─────────────────────────────────────────────
-        // Tax collected this month (from issued invoices, regardless of payment)
-        $taxCollectedThisMonth = (float) Invoice::where('status', '!=', 'cancelled')
+        // Fiscal Net ITBIS (Facturas emitidas menos Notas de Crédito; excluye borradores y canceladas)
+        $taxBaseQuery = Invoice::whereNotIn('status', ['draft', 'cancelled'])
+            ->where(function($q) {
+                $q->whereNull('ecf_type')->orWhereNotIn('ecf_type', [41, 43, 47]);
+            });
+
+        // Tax this month (Net of Credit Notes)
+        $taxCollectedThisMonth = (float) (clone $taxBaseQuery)
             ->where('issue_date', '>=', $dateThisMonthStart)
-            ->where(function($q) {
-                $q->whereNull('ecf_type')->orWhereNotIn('ecf_type', [41, 43, 47]);
-            })
-            ->sum(DB::raw('tax_amount * exchange_rate'));
-        // Tax collected last month
-        $taxCollectedLastMonth = (float) Invoice::where('status', '!=', 'cancelled')
+            ->sum(DB::raw("tax_amount * {$creditNoteMultiplier} * exchange_rate"));
+
+        // Tax last month (Net of Credit Notes)
+        $taxCollectedLastMonth = (float) (clone $taxBaseQuery)
             ->whereBetween('issue_date', [$dateLastMonthStart, $dateLastMonthEnd])
-            ->where(function($q) {
-                $q->whereNull('ecf_type')->orWhereNotIn('ecf_type', [41, 43, 47]);
-            })
-            ->sum(DB::raw('tax_amount * exchange_rate'));
-        // Total tax collected all time (pending to declare/pay to DGII)
-        $taxCollectedTotal = (float) Invoice::where('status', '!=', 'cancelled')
-            ->where(function($q) {
-                $q->whereNull('ecf_type')->orWhereNotIn('ecf_type', [41, 43, 47]);
-            })
-            ->sum(DB::raw('tax_amount * exchange_rate'));
-        // Tax from unpaid invoices (not yet received by the business)
+            ->sum(DB::raw("tax_amount * {$creditNoteMultiplier} * exchange_rate"));
+
+        // Total tax collected all time (Net of Credit Notes)
+        $taxCollectedTotal = (float) (clone $taxBaseQuery)
+            ->sum(DB::raw("tax_amount * {$creditNoteMultiplier} * exchange_rate"));
+
+        // Tax from unpaid invoices (issued but pending payment)
         $taxPending = (float) Invoice::whereIn('status', ['sent', 'viewed', 'partial', 'overdue'])
             ->where(function($q) {
                 $q->whereNull('ecf_type')->orWhereNotIn('ecf_type', [41, 43, 47]);
             })
-            ->sum(DB::raw('tax_amount * exchange_rate'));
+            ->sum(DB::raw("tax_amount * {$creditNoteMultiplier} * exchange_rate"));
 
         // Quotes stats
         $totalQuotes     = Quote::count();
@@ -141,7 +144,7 @@ class DashboardController extends Controller
         $conversionRate  = $totalQuotes > 0 ? round(($quotesConverted / $totalQuotes) * 100) : 0;
         $quotesPending   = Quote::whereIn('status', ['draft', 'sent'])->sum('total');
 
-        // Monthly stats chart (last 12 months) — net revenue excl. tax
+        // Monthly stats chart (last 12 months) — net revenue excl. tax (net of credit notes)
         $monthlyData = [];
         for ($i = 11; $i >= 0; $i--) {
             $month = $now->copy()->subMonths($i);
@@ -153,7 +156,7 @@ class DashboardController extends Controller
                 ->where(function($q) {
                     $q->whereNull('ecf_type')->orWhereNotIn('ecf_type', [41, 43, 47]);
                 })
-                ->selectRaw('SUM((amount_paid - IF(total > 0, tax_amount * amount_paid / total, 0)) * exchange_rate) as net')
+                ->selectRaw("SUM((amount_paid - IF(total > 0, tax_amount * amount_paid / total, 0)) * {$creditNoteMultiplier} * exchange_rate) as net")
                 ->value('net');
 
             $expense = (float) \App\Models\Expense::whereBetween('expense_date', [$monthStart, $monthEnd])
@@ -178,25 +181,34 @@ class DashboardController extends Controller
             ];
         }
 
-        // Recent invoices (sales only)
+        // Recent invoices (sales only, excluding cancelled, sorted chronologically by issue_date)
         $recentInvoices = Invoice::with('client')
+            ->where('status', '!=', 'cancelled')
             ->where(function($q) {
                 $q->whereNull('ecf_type')->orWhereNotIn('ecf_type', [41, 43, 47]);
             })
-            ->orderBy('created_at', 'desc')
+            ->orderBy('issue_date', 'desc')
+            ->orderBy('id', 'desc')
             ->take(5)
             ->get()
             ->map(function($inv) {
+                $isCreditNote = (int)$inv->ecf_type === 34 || 
+                                (int)$inv->nota_credito_indicator === 1 || 
+                                str_starts_with((string)$inv->encf, 'E34') || 
+                                str_starts_with((string)$inv->invoice_number, 'B04');
+
                 return [
-                    'id'           => $inv->id,
+                    'id'             => $inv->id,
                     'invoice_number' => $inv->invoice_number,
-                    'company_name' => $inv->client->company_name ?? '',
-                    'contact_name' => $inv->client->contact_name ?? '',
-                    'total'        => $inv->total,
-                    'currency'     => $inv->currency,
-                    'status'       => $inv->status,
-                    'issue_date'   => $inv->issue_date ? $inv->issue_date->format('Y-m-d') : null,
-                    'sent_at'      => $inv->sent_at,
+                    'encf'           => $inv->encf,
+                    'company_name'   => $inv->client->company_name ?? '',
+                    'contact_name'   => $inv->client->contact_name ?? '',
+                    'total'          => (float)$inv->total,
+                    'currency'       => $inv->currency,
+                    'status'         => $inv->status,
+                    'is_credit_note' => $isCreditNote,
+                    'issue_date'     => $inv->issue_date ? $inv->issue_date->format('Y-m-d') : null,
+                    'sent_at'        => $inv->sent_at,
                 ];
             });
 

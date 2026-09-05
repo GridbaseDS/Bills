@@ -420,6 +420,7 @@ const ReportsModule = {
                 },
                 body: JSON.stringify({
                     period: periodStr,
+                    rnc: App.state.settings?.company_tax_id ? App.state.settings.company_tax_id.replace(/[^0-9]/g, '') : undefined,
                     records: records
                 }),
                 credentials: 'same-origin'

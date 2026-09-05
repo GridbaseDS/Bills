@@ -70,7 +70,10 @@ class DgiiExcelService
             ->setCompany('Gridbase');
 
         // 1. Fill Header Metadata (Rows 4 - 7)
+        // Column C is the official white input box with border; Column B is also populated for compatibility
+        $sheet->setCellValueExplicit('C4', $companyTaxId, DataType::TYPE_STRING);
         $sheet->setCellValueExplicit('B4', $companyTaxId, DataType::TYPE_STRING);
+        $sheet->setCellValueExplicit('C5', $period, DataType::TYPE_STRING);
         $sheet->setCellValueExplicit('B5', $period, DataType::TYPE_STRING);
         $sheet->setCellValue('C6', $recordCount);
         $sheet->setCellValue('K7', 0); // Total de líneas de error
@@ -143,7 +146,10 @@ class DgiiExcelService
             ->setCompany('Gridbase');
 
         // 1. Fill Header Metadata (Rows 4 - 7)
+        // A4:B4 and A5:B5 are merged label cells; Column C is the official white input box with border
+        $sheet->setCellValueExplicit('C4', $companyTaxId, DataType::TYPE_STRING);
         $sheet->setCellValueExplicit('B4', $companyTaxId, DataType::TYPE_STRING);
+        $sheet->setCellValueExplicit('C5', $period, DataType::TYPE_STRING);
         $sheet->setCellValueExplicit('B5', $period, DataType::TYPE_STRING);
         $sheet->setCellValue('C6', $recordCount);
         $sheet->setCellValue('G7', 0); // Total de Errores
@@ -237,7 +243,10 @@ class DgiiExcelService
             ->setCompany('Gridbase');
 
         // 1. Fill Header Metadata (Rows 5 - 7)
+        // Column C is the official white input box with border; Column B is also populated for compatibility
+        $sheet->setCellValueExplicit('C5', $companyTaxId, DataType::TYPE_STRING);
         $sheet->setCellValueExplicit('B5', $companyTaxId, DataType::TYPE_STRING);
+        $sheet->setCellValueExplicit('C6', $period, DataType::TYPE_STRING);
         $sheet->setCellValueExplicit('B6', $period, DataType::TYPE_STRING);
         $sheet->setCellValue('C7', $recordCount);
         $sheet->setCellValue('E7', 0); // Total Errores

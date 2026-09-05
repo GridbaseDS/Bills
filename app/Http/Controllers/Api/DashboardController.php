@@ -51,17 +51,24 @@ class DashboardController extends Controller
             })
             ->sum(DB::raw("(total - amount_paid) * {$creditNoteMultiplier} * exchange_rate"));
 
-        $overdue = Invoice::where('status', 'overdue')
-            ->where(function($q) {
-                $q->whereNull('ecf_type')->orWhereNotIn('ecf_type', [41, 43, 47]);
-            })
-            ->sum(DB::raw("(total - amount_paid) * exchange_rate"));
+        $todayStr = $now->toDateString();
+        $overdueScope = function($q) use ($todayStr) {
+            $q->where(function($sub) use ($todayStr) {
+                $sub->where('status', 'overdue')
+                    ->orWhere(function($due) use ($todayStr) {
+                        $due->whereIn('status', ['sent', 'viewed', 'partial'])
+                            ->where('due_date', '<', $todayStr)
+                            ->whereRaw('total > amount_paid');
+                    });
+            })->where(function($sub) {
+                $sub->whereNull('ecf_type')->orWhereNotIn('ecf_type', [41, 43, 47]);
+            });
+        };
 
-        $overdueCount = Invoice::where('status', 'overdue')
-            ->where(function($q) {
-                $q->whereNull('ecf_type')->orWhereNotIn('ecf_type', [41, 43, 47]);
-            })
-            ->count();
+        $overdue = (float) Invoice::where($overdueScope)
+            ->sum(DB::raw('(total - amount_paid) * exchange_rate'));
+
+        $overdueCount = Invoice::where($overdueScope)->count();
 
         // This month vs last month — net revenue (excl. tax) + count
         $revenueThisMonth = Invoice::whereIn('status', ['paid', 'partial'])
@@ -214,10 +221,7 @@ class DashboardController extends Controller
 
         // Overdue invoices (sales only)
         $overdueInvoices = Invoice::with('client')
-            ->where('status', 'overdue')
-            ->where(function($q) {
-                $q->whereNull('ecf_type')->orWhereNotIn('ecf_type', [41, 43, 47]);
-            })
+            ->where($overdueScope)
             ->orderBy('due_date', 'asc')
             ->take(5)
             ->get()

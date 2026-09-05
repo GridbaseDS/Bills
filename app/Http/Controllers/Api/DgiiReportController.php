@@ -25,14 +25,14 @@ class DgiiReportController extends Controller
         $endDate = Carbon::parse($startDate)->endOfMonth()->toDateString();
         
         // Fetch all invoices issued during this period
-        // Exclude drafts and e-CF tipo 32 (Consumo goes to RFCE, not 607)
-        // 607 only accepts e-NCF types: 31, 33, 44, 45
+        // Exclude drafts and cancelled invoices
+        // Includes sales e-CFs (31, 32, 33, 34, 44, 45) and traditional sales
         $invoices = Invoice::with(['client', 'payments'])
             ->whereBetween('issue_date', [$startDate, $endDate])
             ->whereNotIn('status', ['draft', 'cancelled'])
             ->where(function ($q) {
                 $q->whereNull('ecf_type')
-                  ->orWhereNotIn('ecf_type', [32]);
+                  ->orWhereNotIn('ecf_type', [41, 43, 47]);
             })
             ->orderBy('issue_date', 'asc')
             ->get();
@@ -53,6 +53,12 @@ class DgiiReportController extends Controller
             
             // e-NCF / NCF
             $ncf = $inv->is_ecf ? ($inv->encf ?: $inv->invoice_number) : $inv->invoice_number;
+
+            // Currency conversion: All DGII reports must be presented in DOP at official exchange rate
+            $rate = ($inv->currency && $inv->currency !== 'DOP') ? (float)($inv->exchange_rate ?? 1.0) : 1.0;
+            if ($rate <= 0) {
+                $rate = 1.0;
+            }
             
             // Payment methods split
             $cash = 0;
@@ -63,23 +69,23 @@ class DgiiReportController extends Controller
             foreach ($inv->payments as $pay) {
                 switch ($pay->payment_method) {
                     case 'cash':
-                        $cash += $pay->amount;
+                        $cash += (float)$pay->amount;
                         break;
                     case 'bank_transfer':
                     case 'paypal':
-                        $bank += $pay->amount;
+                        $bank += (float)$pay->amount;
                         break;
                     case 'credit_card':
-                        $card += $pay->amount;
+                        $card += (float)$pay->amount;
                         break;
                     default:
-                        $other += $pay->amount;
+                        $other += (float)$pay->amount;
                         break;
                 }
             }
             
             // Remaining balance is Credit
-            $credit = max(0, $inv->total - $inv->amount_paid);
+            $credit = max(0, (float)$inv->total - (float)$inv->amount_paid);
             
             return [
                 'id' => $inv->id,
@@ -90,8 +96,8 @@ class DgiiReportController extends Controller
                 'tipo_ingreso' => $inv->tipo_ingresos ?? '01',
                 'fecha_comprobante' => Carbon::parse($inv->issue_date)->format('Ymd'),
                 'fecha_pago' => $inv->paid_at ? Carbon::parse($inv->paid_at)->format('Ymd') : '',
-                'monto_facturado' => round((float)($inv->subtotal - ($inv->discount_amount ?? 0)), 2),
-                'itbis_facturado' => round((float)$inv->tax_amount, 2),
+                'monto_facturado' => round((float)($inv->subtotal - ($inv->discount_amount ?? 0)) * $rate, 2),
+                'itbis_facturado' => round((float)$inv->tax_amount * $rate, 2),
                 'itbis_retenido' => 0.00,
                 'itbis_percibido' => '',  // Must be EMPTY per DGII prevalidator (not 0.00)
                 'retencion_isr' => 0.00,
@@ -99,13 +105,13 @@ class DgiiReportController extends Controller
                 'isc' => 0.00,
                 'otros_impuestos' => 0.00,
                 'propina_legal' => 0.00,
-                'efectivo' => round($cash, 2),
-                'bancos' => round($bank, 2),
-                'tarjeta' => round($card, 2),
-                'credito' => round($credit, 2),
+                'efectivo' => round($cash * $rate, 2),
+                'bancos' => round($bank * $rate, 2),
+                'tarjeta' => round($card * $rate, 2),
+                'credito' => round($credit * $rate, 2),
                 'bonos' => 0.00,
                 'permuta' => 0.00,
-                'otras_formas' => round($other, 2),
+                'otras_formas' => round($other * $rate, 2),
                 'cliente_nombre' => $inv->client ? ($inv->client->company_name ?: $inv->client->contact_name) : 'Cliente General',
             ];
         });
@@ -140,12 +146,18 @@ class DgiiReportController extends Controller
             ->get();
             
         $records = collect();
+        $seenNcfs = [];
         
         // Process Received Invoices
         foreach ($receivedInvoices as $ri) {
             $taxId = preg_replace('/[^0-9]/', '', $ri->rnc_emisor);
             $len = strlen($taxId);
             $typeId = ($len === 9) ? '1' : (($len === 11) ? '2' : '3');
+            
+            $encfClean = strtoupper(trim($ri->encf ?? ''));
+            if (!empty($encfClean)) {
+                $seenNcfs[$encfClean] = true;
+            }
             
             // Try to parse XML if available to extract accurate ITBIS and Subtotal
             $subtotal = (float)$ri->monto_total;
@@ -213,6 +225,10 @@ class DgiiReportController extends Controller
             $typeId = ($len === 9) ? '1' : (($len === 11) ? '2' : '3');
             
             $ncf = $si->is_ecf ? ($si->encf ?: $si->invoice_number) : $si->invoice_number;
+            $ncfClean = strtoupper(trim($ncf));
+            if (!empty($ncfClean)) {
+                $seenNcfs[$ncfClean] = true;
+            }
             
             $records->push([
                 'id' => "si_{$si->id}",
@@ -250,6 +266,17 @@ class DgiiReportController extends Controller
             
         // Process Manual Expenses
         foreach ($expenses as $exp) {
+            $ncf = trim($exp->ncf ?? '');
+            $ncfClean = strtoupper($ncf);
+
+            // Deduplication: if this NCF was already registered electronically via ReceivedInvoice or SelfIssued, skip it
+            if (!empty($ncfClean) && isset($seenNcfs[$ncfClean])) {
+                continue;
+            }
+            if (!empty($ncfClean)) {
+                $seenNcfs[$ncfClean] = true;
+            }
+
             $taxId = preg_replace('/[^0-9]/', '', $exp->provider_tax_id ?? '');
             $len = strlen($taxId);
             $typeId = ($len === 9) ? '1' : (($len === 11) ? '2' : '3');
@@ -431,7 +458,7 @@ class DgiiReportController extends Controller
         $startDate = "{$year}-{$month}-01";
         $endDate = Carbon::parse($startDate)->endOfMonth()->toDateString();
 
-        // Invoices with status cancelled within the period
+        // Invoices with status cancelled within the period that have an official DGII NCF
         $invoices = Invoice::with('client')
             ->where('status', 'cancelled')
             ->where(function ($q) use ($startDate, $endDate) {
@@ -439,7 +466,12 @@ class DgiiReportController extends Controller
                   ->orWhereBetween('cancelled_at', [$startDate . ' 00:00:00', $endDate . ' 23:59:59']);
             })
             ->orderBy('issue_date', 'asc')
-            ->get();
+            ->get()
+            ->filter(function ($inv) {
+                $ncf = $inv->is_ecf ? ($inv->encf ?: $inv->invoice_number) : $inv->invoice_number;
+                return !empty($ncf) && preg_match('/^[BE][0-9]{10,12}$/i', $ncf);
+            })
+            ->values();
 
         $records = $invoices->map(function ($inv) {
             $ncf = $inv->is_ecf ? ($inv->encf ?: $inv->invoice_number) : $inv->invoice_number;

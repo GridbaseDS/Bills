@@ -60,6 +60,7 @@ const ReportsModule = {
                     <button class="segment-item ${this._currentTab === 'ir2' ? 'active' : ''}" data-tab="ir2" style="display:flex;align-items:center;gap:6px;"><span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#8b5cf6;"></span>Declaración IR-2</button>
                     <button class="segment-item ${this._currentTab === 'itc' ? 'active' : ''}" data-tab="itc" style="display:flex;align-items:center;gap:6px;"><span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#0284c7;"></span>ISC Telecom (ITC-01)</button>
                     <button class="segment-item ${this._currentTab === 'dss' ? 'active' : ''}" data-tab="dss" style="display:flex;align-items:center;gap:6px;"><span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#ea580c;"></span>Seguros (DSS-07)</button>
+                    <button class="segment-item ${this._currentTab === 'daf' ? 'active' : ''}" data-tab="daf" style="display:flex;align-items:center;gap:6px;"><span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#0d9488;"></span>Activos Financieros (DAF)</button>
                 </div>
                 <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
                     <button class="btn" id="btn-prevalidate" style="display:flex;align-items:center;gap:8px;background:#0284c7;border-color:#0284c7;color:#fff;font-weight:600;">
@@ -137,14 +138,15 @@ const ReportsModule = {
         if (tbody) tbody.innerHTML = `<tr><td colspan="100" class="text-center py-24"><span class="spinner mx-auto"></span><br><small style="color:var(--color-text-muted)">Cargando registros fiscales del período...</small></td></tr>`;
 
         try {
-            const [res607, res606, res608, resIt1, resIr2, resItc, resDss] = await Promise.all([
+            const [res607, res606, res608, resIt1, resIr2, resItc, resDss, resDaf] = await Promise.all([
                 App.api(`dgii/reports/607?year=${this._year}&month=${this._month}`),
                 App.api(`dgii/reports/606?year=${this._year}&month=${this._month}`),
                 App.api(`dgii/reports/608?year=${this._year}&month=${this._month}`),
                 App.api(`dgii/reports/it1/summary?year=${this._year}&month=${this._month}`),
                 App.api(`dgii/reports/ir2/summary?year=${this._year}`),
                 App.api(`dgii/reports/itc/summary?year=${this._year}&month=${this._month}`),
-                App.api(`dgii/reports/dss/summary?year=${this._year}&month=${this._month}`)
+                App.api(`dgii/reports/dss/summary?year=${this._year}&month=${this._month}`),
+                App.api(`dgii/reports/daf/summary?year=${this._year}`)
             ]);
 
             this._records607 = res607.data || [];
@@ -154,6 +156,7 @@ const ReportsModule = {
             this._dataIr2 = resIr2.data || null;
             this._dataItc = resItc.data || null;
             this._dataDss = resDss.data || null;
+            this._dataDaf = resDaf.data || null;
 
             this.renderGrid();
         } catch (e) {
@@ -208,6 +211,15 @@ const ReportsModule = {
                 btnExportExcel.innerHTML = `
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="8" y1="13" x2="16" y2="13"></line><line x1="8" y1="17" x2="16" y2="17"></line><line x1="10" y1="9" x2="8" y2="9"></line></svg>
                     Descargar Formulario Oficial DSS-07 (.xls)
+                `;
+            }
+        } else if (this._currentTab === 'daf') {
+            if (btnPrevalidate) btnPrevalidate.style.display = 'none';
+            if (btnExportTxt) btnExportTxt.style.display = 'none';
+            if (btnExportExcel) {
+                btnExportExcel.innerHTML = `
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="8" y1="13" x2="16" y2="13"></line><line x1="8" y1="17" x2="16" y2="17"></line><line x1="10" y1="9" x2="8" y2="9"></line></svg>
+                    Descargar Formulario Oficial DAF (.xls)
                 `;
             }
         } else {
@@ -421,6 +433,8 @@ const ReportsModule = {
             this.renderItcDeclaration(headers, tbody, summary, refBox);
         } else if (this._currentTab === 'dss') {
             this.renderDssDeclaration(headers, tbody, summary, refBox);
+        } else if (this._currentTab === 'daf') {
+            this.renderDafDeclaration(headers, tbody, summary, refBox);
         }
     },
 
@@ -992,6 +1006,9 @@ const ReportsModule = {
         if (this._currentTab === 'dss') {
             return this.exportDssExcel();
         }
+        if (this._currentTab === 'daf') {
+            return this.exportDafExcel();
+        }
 
         const periodStr = `${this._year}${String(this._month).padStart(2, '0')}`;
         const records = this.getCurrentRecords();
@@ -1423,6 +1440,113 @@ const ReportsModule = {
         } catch (e) {
             console.error('DSS-07 Excel Export error:', e);
             App.showToast('Error al generar el formulario oficial DSS-07', 'error');
+        }
+    },
+
+    renderDafDeclaration(headers, tbody, summary, refBox) {
+        const d = this._dataDaf;
+        if (!d) {
+            tbody.innerHTML = `<tr><td colspan="4" class="text-center text-muted py-24">No se pudo cargar la declaración DAF para este ejercicio fiscal.</td></tr>`;
+            return;
+        }
+
+        const daf = d.daf || {};
+
+        headers.innerHTML = `
+            <th style="width:130px;">Casilla Oficial</th>
+            <th>Descripción / Concepto Legal (Ley 139-2011)</th>
+            <th class="text-right" style="width:200px;">Monto Declarado (DOP)</th>
+            <th style="width:280px;">Fórmula DGII / Origen</th>
+        `;
+
+        const row = (casilla, desc, val, formula, isHeader = false, isBold = false, isHighlight = false) => `
+            <tr style="${isHighlight ? 'background:rgba(13,148,136,0.08);' : ''}">
+                <td style="font-family:'JetBrains Mono',monospace;font-weight:700;color:var(--color-primary);">${casilla}</td>
+                <td style="${isBold ? 'font-weight:700;' : ''}">${desc}</td>
+                <td class="text-right ${isBold ? 'font-bold' : ''}" style="font-family:'JetBrains Mono',monospace;${isHighlight ? 'color:#0d9488;font-size:15px;' : ''}">${App.formatCurrency(val || 0, 'DOP')}</td>
+                <td style="font-size:12px;color:var(--color-text-muted);">${formula}</td>
+            </tr>
+        `;
+
+        tbody.innerHTML = `
+            ${row('Casilla 1', 'Total Activos Financieros Productivos Netos (Norma 09-2011)', daf.casilla_1_activos_financieros, 'Celda AC13 (Caja/Bancos y Cuentas por Cobrar)', false, true)}
+            ${row('Casilla 2', 'Exención Legal (Párrafo 2 Art. 12 Ley 139-2011)', daf.casilla_2_exencion, 'Fórmula Nativa DGII: =ABS(IF((AC13+AI31)>=0,700000000,0))', false, false)}
+            ${row('Casilla 3', 'Total Activos Financieros después de la Exención', daf.casilla_3_activos_despues_exencion, 'Fórmula Nativa DGII: =IF(AC13>700000000,(AC13-AC14),0)', false, true)}
+            ${row('Casilla 4', 'Impuesto Liquidado sobre Activos (Tasa 0.48%)', daf.casilla_4_impuesto_liquidado, 'Fórmula Nativa DGII: =+IF(AC15>0,AC15*0.48%,0)', false, true, true)}
+            ${row('Casilla 5', 'Renta Neta Imponible antes de Pérdida', daf.casilla_5_renta_neta_imponible, 'Celda AC17 (Vinculado a Casilla 7 de IR-2)', false, true)}
+            ${row('Casilla 6', 'Gastos Deducibles según Ley 139-2011', daf.casilla_6_gastos_deducibles, 'Celda AC18', false, false)}
+            ${row('Casilla 7', 'Renta Neta Imponible después de Gasto Deducible', daf.casilla_7_renta_despues_gasto, 'Fórmula Nativa DGII: =IF((AC17-AC18)>0,AC17-AC18,0)', false, true)}
+            ${row('Casilla 8', 'Impuesto Determinado a Pagar (Menor entre Casilla 4 y 7)', daf.casilla_8_impuesto_a_pagar, 'Fórmula Nativa DGII: =IF(AC16<AC19,AC16,...)', false, true, true)}
+            ${row('Casilla 13', 'Diferencia a Pagar', daf.casilla_13_diferencia_a_pagar, 'Fórmula Nativa DGII: =ABS(IF(AC20-U21-...))', false, true)}
+            ${row('Casilla 17', 'TOTAL A PAGAR AL FISCO (DGII)', daf.casilla_17_total_a_pagar, 'Fórmula Nativa DGII: =IF((AC25+U27+U28)>0,...)', false, true, true)}
+        `;
+
+        summary.innerHTML = `
+            <div>
+                <span>Ejercicio Fiscal: <strong>${d.year}</strong> (${d.period_formatted})</span> &bull; 
+                <span>Fecha Límite: <strong style="color:var(--color-danger-icon);">${d.deadline}</strong></span> &bull; 
+                <span>Contribuyente: <strong>${d.company_name}</strong> (RNC: ${d.tax_id})</span>
+            </div>
+            <div>
+                Total Impuesto a Pagar (DAF): <strong style="color:#0d9488;font-size:18px;margin-left:8px;">${App.formatCurrency(daf.casilla_17_total_a_pagar || 0, 'DOP')}</strong>
+            </div>
+        `;
+
+        if (refBox) {
+            refBox.innerHTML = `
+                <div class="table-outer" style="padding:18px;background:var(--bg-card);border:1px solid var(--color-border);border-radius:8px;">
+                    <h4 style="font-size:13px;font-weight:700;margin-bottom:10px;color:var(--color-text-primary);display:flex;align-items:center;justify-content:space-between;">
+                        <span>Marco Legal: Impuesto a los Activos Financieros Productivos Netos (Ley 139-2011)</span>
+                        <span class="badge" style="background:#0d9488;color:#fff;font-size:10px;">Formulario Oficial DAF</span>
+                    </h4>
+                    <p style="font-size:12px;color:var(--color-text-muted);margin:0;line-height:1.6;">
+                        El Formulario DAF liquida el impuesto anual sobre activos financieros netos de entidades financieras y comerciales con inversiones productivas, contando con una exención legal de RD$ 700,000,000.00 y vinculación directa con la Renta Neta Imponible declarada en el Formulario IR-2. La plantilla oficial de Excel prellenada por Bills preserva el 100% de las fórmulas nativas de la DGII.
+                    </p>
+                </div>
+            `;
+        }
+    },
+
+    async exportDafExcel() {
+        App.showToast('Generando Formulario Oficial DAF en Excel DGII...', 'info');
+
+        try {
+            const token = App.state.token || localStorage.getItem('token');
+            const response = await fetch(`/api/dgii/reports/daf/export-excel?year=${this._year}`, {
+                method: 'GET',
+                headers: {
+                    'Accept': 'application/vnd.ms-excel, application/octet-stream',
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Authorization': `Bearer ${token}`
+                },
+                credentials: 'same-origin'
+            });
+
+            if (!response.ok) {
+                const errText = await response.text();
+                throw new Error(`Error del servidor (${response.status}): ${errText}`);
+            }
+
+            const blob = await response.blob();
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.target = '_blank';
+
+            const rnc = (this._dataDaf && this._dataDaf.tax_id)
+                ? this._dataDaf.tax_id
+                : (App.state.settings?.company_tax_id ? App.state.settings.company_tax_id.replace(/[^0-9]/g, '') : '131000000');
+
+            a.download = `DGII_DAF_${rnc}_${this._year}.xls`;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            URL.revokeObjectURL(url);
+
+            App.showToast('¡Formulario Oficial DAF (Excel DGII) descargado con éxito!', 'success');
+        } catch (e) {
+            console.error('DAF Excel Export error:', e);
+            App.showToast('Error al generar el formulario oficial DAF', 'error');
         }
     }
 };

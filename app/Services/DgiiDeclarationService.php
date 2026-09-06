@@ -1134,5 +1134,117 @@ class DgiiDeclarationService
 
         return $spreadsheet;
     }
+
+    /**
+     * Compute the official Formulario DAF (Impuesto a los Activos Financieros Productivos Netos) summary data.
+     */
+    public function calculateDafData(string $year): array
+    {
+        $year = (int)$year;
+        $deadlineDate = "30/04/" . ($year + 1);
+
+        // Fetch company settings
+        $settings = Setting::all()->pluck('setting_value', 'setting_key')->toArray();
+        $taxId = preg_replace('/[^0-9]/', '', $settings['company_tax_id'] ?? '132456785');
+        $companyName = $settings['company_name'] ?? 'Gridbase';
+        $commercialName = $settings['company_commercial_name'] ?? $companyName;
+        $phone = $settings['company_phone'] ?? '';
+        $email = $settings['company_email'] ?? '';
+
+        // Connect with annual IR-2 calculation for the same fiscal year
+        $ir2Data = $this->calculateIr2Data((string)$year);
+        $rentaNetaImponible = (float)($ir2Data['ir2']['casilla_7_renta_imponible'] ?? 0.0);
+        $cuentasPorCobrar = (float)($ir2Data['a1']['cuentas_por_cobrar'] ?? 0.0);
+        $cajaBancos = (float)($ir2Data['a1']['caja_bancos'] ?? 0.0);
+
+        // Activos Financieros Productivos Netos (Caja, Bancos e Inversiones y Cuentas por Cobrar)
+        $activosFinancieros = round($cajaBancos + $cuentasPorCobrar, 2);
+
+        $exencion = 700000000.0; // RD$ 700,000,000 legal exemption under Ley 139-2011
+        $activosNetosImponibles = max(0.0, $activosFinancieros - $exencion);
+        $impuestoLiquidadoActivos = round($activosNetosImponibles * 0.0048, 2); // 0.48%
+
+        $gastosDeducibles = 0.0;
+        $rentaDespuesGasto = max(0.0, $rentaNetaImponible - $gastosDeducibles);
+
+        // Casilla 8: Menor entre impuesto sobre activos (Casilla 4) y renta imponible (Casilla 7)
+        $impuestoAPagar = min($impuestoLiquidadoActivos, $rentaDespuesGasto);
+
+        return [
+            'year' => (string)$year,
+            'period_formatted' => "01/01/{$year} - 31/12/{$year}",
+            'deadline' => $deadlineDate,
+            'tax_id' => $taxId,
+            'company_name' => $companyName,
+            'commercial_name' => $commercialName,
+            'phone' => $phone,
+            'email' => $email,
+            'daf' => [
+                'casilla_1_activos_financieros' => $activosFinancieros,
+                'casilla_2_exencion' => $exencion,
+                'casilla_3_activos_despues_exencion' => $activosNetosImponibles,
+                'casilla_4_impuesto_liquidado' => $impuestoLiquidadoActivos,
+                'casilla_5_renta_neta_imponible' => $rentaNetaImponible,
+                'casilla_6_gastos_deducibles' => $gastosDeducibles,
+                'casilla_7_renta_despues_gasto' => $rentaDespuesGasto,
+                'casilla_8_impuesto_a_pagar' => $impuestoAPagar,
+                'casilla_9_anticipos' => 0.0,
+                'casilla_10_compensaciones' => 0.0,
+                'casilla_11_otros_pagos' => 0.0,
+                'casilla_12_saldo_favor_anterior' => 0.0,
+                'casilla_13_diferencia_a_pagar' => $impuestoAPagar,
+                'casilla_14_saldo_a_favor' => 0.0,
+                'casilla_15_mora' => 0.0,
+                'casilla_16_interes' => 0.0,
+                'casilla_17_total_a_pagar' => $impuestoAPagar,
+            ],
+        ];
+    }
+
+    /**
+     * Generate the official Formulario DAF Excel workbook.
+     */
+    public function generateDafExcel(string $year): Spreadsheet
+    {
+        $data = $this->calculateDafData($year);
+        $templatePath = resource_path('templates/dgii/DAF.xls');
+
+        if (!file_exists($templatePath)) {
+            throw new \RuntimeException("La plantilla oficial DAF.xls no fue encontrada en: {$templatePath}");
+        }
+
+        $reader = new XlsReader();
+        $spreadsheet = $reader->load($templatePath);
+        $sheet = $spreadsheet->getSheetByName('DAF') ?: $spreadsheet->getActiveSheet();
+
+        // Encabezados
+        $sheet->setCellValue('AA4', (int)$data['year']);
+        $sheet->setCellValue('H7', 'X'); // Normal
+        $sheet->setCellValue('E8', $data['tax_id']);
+        $sheet->setCellValue('N8', $data['company_name']);
+        $sheet->setCellValue('H9', $data['commercial_name']);
+        $sheet->setCellValue('I10', $data['phone']);
+        $sheet->setCellValue('U10', $data['email']);
+
+        // Fechas del período (01/01/YYYY - 31/12/YYYY)
+        $sheet->setCellValue('P12', '01');
+        $sheet->setCellValue('Q12', '01');
+        $sheet->setCellValue('R12', $data['year']);
+        $sheet->setCellValue('U12', '31');
+        $sheet->setCellValue('W12', '12');
+        $sheet->setCellValue('Y12', $data['year']);
+
+        // Casillas Oficiales
+        $daf = $data['daf'];
+        $sheet->setCellValue('AC13', $daf['casilla_1_activos_financieros']);
+        $sheet->setCellValue('AC17', $daf['casilla_5_renta_neta_imponible']);
+        if ($daf['casilla_6_gastos_deducibles'] > 0) {
+            $sheet->setCellValue('AC18', $daf['casilla_6_gastos_deducibles']);
+        }
+
+        // Fórmulas nativas en AC14, AC15, AC16, AC19, AC20, AC25, AC26, AC29 se preservan intactas
+
+        return $spreadsheet;
+    }
 }
 

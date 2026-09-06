@@ -863,5 +863,52 @@ class DgiiReportController extends Controller
             'Cache-Control' => 'max-age=0',
         ]);
     }
+
+    /**
+     * Get Formulario DAF summary calculation for the fiscal year
+     */
+    public function getDafSummary(Request $request, ?\App\Services\DgiiDeclarationService $declarationService = null)
+    {
+        $declarationService = $declarationService ?? app(\App\Services\DgiiDeclarationService::class);
+        $year = $request->query('year') ?: $request->input('year');
+        if ($request->filled('period')) {
+            $p = str_replace('-', '', $request->input('period'));
+            $year = substr($p, 0, 4);
+        }
+        $year = $year ?: date('Y');
+
+        $summary = $declarationService->calculateDafData((string)$year);
+
+        return response()->json([
+            'success' => true,
+            'data' => $summary,
+        ]);
+    }
+
+    /**
+     * Export Formulario Oficial DAF prefilled in official DGII Excel (.xls)
+     */
+    public function exportDafExcel(Request $request, ?\App\Services\DgiiDeclarationService $declarationService = null)
+    {
+        $declarationService = $declarationService ?? app(\App\Services\DgiiDeclarationService::class);
+        $year = $request->input('year') ?: $request->query('year');
+        if ($request->filled('period')) {
+            $p = str_replace('-', '', $request->input('period'));
+            $year = substr($p, 0, 4);
+        }
+        $year = $year ?: date('Y');
+
+        $spreadsheet = $declarationService->generateDafExcel((string)$year);
+        $companyTaxId = preg_replace('/[^0-9]/', '', Setting::where('setting_key', 'company_tax_id')->value('setting_value') ?? '132456785');
+        $filename = "DGII_DAF_{$companyTaxId}_{$year}.xls";
+
+        return response()->streamDownload(function () use ($spreadsheet) {
+            $writer = new \PhpOffice\PhpSpreadsheet\Writer\Xls($spreadsheet);
+            $writer->save('php://output');
+        }, $filename, [
+            'Content-Type' => 'application/vnd.ms-excel',
+            'Cache-Control' => 'max-age=0',
+        ]);
+    }
 }
 

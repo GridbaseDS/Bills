@@ -17,7 +17,7 @@ return [
 
     'stateful' => explode(',', env('SANCTUM_STATEFUL_DOMAINS', sprintf(
         '%s%s',
-        'localhost,localhost:3000,127.0.0.1,127.0.0.1:8000,::1,bills.gridbase.com.do,',
+        'localhost,localhost:3000,127.0.0.1,127.0.0.1:8000,::1,bills.gridbase.com.do,bdemo.gridbase.com.do,beta.gridbase.com.do,',
         Sanctum::currentApplicationUrlWithPort(),
         // Sanctum::currentRequestHost(),
     ))),

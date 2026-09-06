@@ -1,17 +1,79 @@
 const ReportsModule = {
+    _currentCategory: 'general',
     _currentTab: '607',
     _year: new Date().getFullYear(),
     _month: new Date().getMonth() + 1,
     _records606: [],
     _records607: [],
     _records608: [],
+    _dataIt1: null,
+    _dataIr2: null,
+    _dataDss: null,
+    _dataDaf: null,
+    _dataRs1: null,
+    _dataRs2: null,
+    _dataRs3: null,
+    _dataRs4: null,
+
+    _categories: {
+        general: {
+            id: 'general',
+            label: 'Régimen General / Obligatorios',
+            count: 5,
+            badgeColor: '#16a34a',
+            defaultTab: '607',
+            description: 'Formatos universales de envío (606, 607, 608) y declaraciones juradas mensuales (IT-1) y anuales (IR-2) requeridos para el 95% de las empresas en RD.',
+            tabs: [
+                { id: '607', label: 'Ventas (607)' },
+                { id: '606', label: 'Compras / Gastos (606)' },
+                { id: '608', label: 'Anulaciones (608)' },
+                { id: 'it1', label: 'Declaración IT-1', dot: '#16a34a' },
+                { id: 'ir2', label: 'Declaración IR-2', dot: '#8b5cf6' }
+            ]
+        },
+        rst: {
+            id: 'rst',
+            label: 'Régimen Simplificado (RST)',
+            count: 4,
+            badgeColor: '#7c3aed',
+            defaultTab: 'rs2',
+            description: 'Declaraciones juradas anuales para personas físicas o jurídicas formalmente acogidas al Régimen Simplificado de Tributación (RST).',
+            tabs: [
+                { id: 'rs2', label: 'RST Jurídicas (RS2)', dot: '#7c3aed' },
+                { id: 'rs1', label: 'RST Físicas (RS1)', dot: '#4f46e5' },
+                { id: 'rs3', label: 'RST Compras (RS3)', dot: '#d97706' },
+                { id: 'rs4', label: 'RST Agropecuario (RS4)', dot: '#65a30d' }
+            ]
+        },
+        sectoriales: {
+            id: 'sectoriales',
+            label: 'Sectoriales Especiales',
+            count: 2,
+            badgeColor: '#0d9488',
+            defaultTab: 'dss',
+            description: 'Declaraciones de impuestos exclusivos para sectores regulados específicos (Seguros y Activos Financieros).',
+            tabs: [
+                { id: 'dss', label: 'Seguros (DSS-07)', dot: '#ea580c' },
+                { id: 'daf', label: 'Activos Financieros (DAF)', dot: '#0d9488' }
+            ]
+        }
+    },
+
+    renderTabsHtml() {
+        const cat = this._categories[this._currentCategory] || this._categories.general;
+        return cat.tabs.map(t => `
+            <button class="segment-item ${this._currentTab === t.id ? 'active' : ''}" data-tab="${t.id}" style="${t.dot ? 'display:flex;align-items:center;gap:6px;' : ''}">
+                ${t.dot ? `<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${t.dot};"></span>` : ''}${t.label}
+            </button>
+        `).join('');
+    },
 
     async render(container) {
         container.innerHTML = `
             <div class="page-header">
                 <div>
                     <h1 class="page-title">Reportes Fiscales DGII</h1>
-                    <p class="page-subtitle">Genera y descarga las plantillas oficiales en Excel (.xlsx) y archivos TXT para Formatos 606, 607 y 608</p>
+                    <p class="page-subtitle">Genera y descarga las plantillas oficiales en Excel (.xls / .xlsx) y archivos TXT para Formatos de Envío y Declaraciones Juradas</p>
                 </div>
             </div>
 
@@ -50,21 +112,37 @@ const ReportsModule = {
                 </div>
             </div>
 
+            <!-- Régimen Fiscal Category Selector Bar -->
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:10px;padding-bottom:12px;border-bottom:1px solid var(--color-border);">
+                <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+                    <span style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--color-text-muted);display:flex;align-items:center;gap:5px;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2Zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2"/><path d="M18 14h-8"/><path d="M15 18h-5"/><path d="M10 6h8v4h-8V6Z"/></svg>
+                        Régimen / Categoría:
+                    </span>
+                    <div class="report-category-group" style="display:inline-flex;background:var(--bg-card);border:1px solid var(--color-border);padding:3px;border-radius:var(--radius-md);gap:3px;box-shadow:0 1px 2px rgba(0,0,0,0.03);">
+                        <button type="button" class="btn-category-pill ${this._currentCategory === 'general' ? 'active' : ''}" data-category="general" style="padding:5px 12px;font-size:12px;font-weight:${this._currentCategory === 'general' ? '600' : '500'};border-radius:var(--radius-sm);border:none;background:${this._currentCategory === 'general' ? 'var(--color-primary)' : 'transparent'};color:${this._currentCategory === 'general' ? '#fff' : 'var(--color-text-secondary)'};cursor:pointer;display:inline-flex;align-items:center;gap:6px;transition:all 0.15s ease;">
+                            <span class="cat-dot" data-orig-color="#16a34a" style="width:7px;height:7px;border-radius:50%;background:${this._currentCategory === 'general' ? '#fff' : '#16a34a'};"></span>
+                            Régimen General / Obligatorios (5)
+                        </button>
+                        <button type="button" class="btn-category-pill ${this._currentCategory === 'rst' ? 'active' : ''}" data-category="rst" style="padding:5px 12px;font-size:12px;font-weight:${this._currentCategory === 'rst' ? '600' : '500'};border-radius:var(--radius-sm);border:none;background:${this._currentCategory === 'rst' ? 'var(--color-primary)' : 'transparent'};color:${this._currentCategory === 'rst' ? '#fff' : 'var(--color-text-secondary)'};cursor:pointer;display:inline-flex;align-items:center;gap:6px;transition:all 0.15s ease;">
+                            <span class="cat-dot" data-orig-color="#7c3aed" style="width:7px;height:7px;border-radius:50%;background:${this._currentCategory === 'rst' ? '#fff' : '#7c3aed'};"></span>
+                            Régimen Simplificado - RST (4)
+                        </button>
+                        <button type="button" class="btn-category-pill ${this._currentCategory === 'sectoriales' ? 'active' : ''}" data-category="sectoriales" style="padding:5px 12px;font-size:12px;font-weight:${this._currentCategory === 'sectoriales' ? '600' : '500'};border-radius:var(--radius-sm);border:none;background:${this._currentCategory === 'sectoriales' ? 'var(--color-primary)' : 'transparent'};color:${this._currentCategory === 'sectoriales' ? '#fff' : 'var(--color-text-secondary)'};cursor:pointer;display:inline-flex;align-items:center;gap:6px;transition:all 0.15s ease;">
+                            <span class="cat-dot" data-orig-color="#0d9488" style="width:7px;height:7px;border-radius:50%;background:${this._currentCategory === 'sectoriales' ? '#fff' : '#0d9488'};"></span>
+                            Sectoriales Especiales (2)
+                        </button>
+                    </div>
+                </div>
+                <div id="category-description-hint" style="font-size:11.5px;color:var(--color-text-muted);font-style:italic;">
+                    ${this._categories[this._currentCategory].description}
+                </div>
+            </div>
+
             <!-- Tabs and Action Area -->
             <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:var(--spacing-lg);flex-wrap:wrap;gap:12px;">
-                <div class="segmented-control" id="report-type-tabs">
-                    <button class="segment-item ${this._currentTab === '607' ? 'active' : ''}" data-tab="607">Ventas (607)</button>
-                    <button class="segment-item ${this._currentTab === '606' ? 'active' : ''}" data-tab="606">Compras / Gastos (606)</button>
-                    <button class="segment-item ${this._currentTab === '608' ? 'active' : ''}" data-tab="608">Anulaciones (608)</button>
-                    <button class="segment-item ${this._currentTab === 'it1' ? 'active' : ''}" data-tab="it1" style="display:flex;align-items:center;gap:6px;"><span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#16a34a;"></span>Declaración IT-1</button>
-                    <button class="segment-item ${this._currentTab === 'ir2' ? 'active' : ''}" data-tab="ir2" style="display:flex;align-items:center;gap:6px;"><span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#8b5cf6;"></span>Declaración IR-2</button>
-                    <button class="segment-item ${this._currentTab === 'itc' ? 'active' : ''}" data-tab="itc" style="display:flex;align-items:center;gap:6px;"><span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#0284c7;"></span>ISC Telecom (ITC-01)</button>
-                    <button class="segment-item ${this._currentTab === 'dss' ? 'active' : ''}" data-tab="dss" style="display:flex;align-items:center;gap:6px;"><span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#ea580c;"></span>Seguros (DSS-07)</button>
-                    <button class="segment-item ${this._currentTab === 'daf' ? 'active' : ''}" data-tab="daf" style="display:flex;align-items:center;gap:6px;"><span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#0d9488;"></span>Activos Financieros (DAF)</button>
-                    <button class="segment-item ${this._currentTab === 'rs1' ? 'active' : ''}" data-tab="rs1" style="display:flex;align-items:center;gap:6px;"><span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#4f46e5;"></span>RST Físicas (RS1)</button>
-                    <button class="segment-item ${this._currentTab === 'rs2' ? 'active' : ''}" data-tab="rs2" style="display:flex;align-items:center;gap:6px;"><span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#7c3aed;"></span>RST Jurídicas (RS2)</button>
-                    <button class="segment-item ${this._currentTab === 'rs3' ? 'active' : ''}" data-tab="rs3" style="display:flex;align-items:center;gap:6px;"><span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#d97706;"></span>RST Compras (RS3)</button>
-                    <button class="segment-item ${this._currentTab === 'rs4' ? 'active' : ''}" data-tab="rs4" style="display:flex;align-items:center;gap:6px;"><span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#65a30d;"></span>RST Agropecuario (RS4)</button>
+                <div class="segmented-control" id="report-type-tabs" style="margin-bottom:0;">
+                    ${this.renderTabsHtml()}
                 </div>
                 <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
                     <button class="btn" id="btn-prevalidate" style="display:flex;align-items:center;gap:8px;background:#0284c7;border-color:#0284c7;color:#fff;font-weight:600;">
@@ -111,15 +189,38 @@ const ReportsModule = {
             });
         }
 
-        const tabs = document.querySelectorAll('#report-type-tabs .segment-item');
-        tabs.forEach(tab => {
-            tab.addEventListener('click', () => {
-                tabs.forEach(t => t.classList.remove('active'));
-                tab.classList.add('active');
-                this._currentTab = tab.dataset.tab;
+        const catPills = document.querySelectorAll('.btn-category-pill');
+        catPills.forEach(pill => {
+            pill.addEventListener('click', () => {
+                const category = pill.dataset.category;
+                if (this._currentCategory === category) return;
+                this._currentCategory = category;
+                const catConfig = this._categories[category];
+
+                catPills.forEach(p => {
+                    const isActive = p.dataset.category === category;
+                    p.classList.toggle('active', isActive);
+                    p.style.fontWeight = isActive ? '600' : '500';
+                    p.style.background = isActive ? 'var(--color-primary)' : 'transparent';
+                    p.style.color = isActive ? '#fff' : 'var(--color-text-secondary)';
+                    const dot = p.querySelector('.cat-dot');
+                    if (dot) dot.style.background = isActive ? '#fff' : dot.dataset.origColor;
+                });
+
+                const hint = document.getElementById('category-description-hint');
+                if (hint) hint.textContent = catConfig.description;
+
+                this._currentTab = catConfig.defaultTab;
+                const tabsContainer = document.getElementById('report-type-tabs');
+                if (tabsContainer) {
+                    tabsContainer.innerHTML = this.renderTabsHtml();
+                    this.bindTabEvents();
+                }
                 this.renderGrid();
             });
         });
+
+        this.bindTabEvents();
 
         const btnPrevalidate = document.getElementById('btn-prevalidate');
         if (btnPrevalidate) {
@@ -137,18 +238,29 @@ const ReportsModule = {
         }
     },
 
+    bindTabEvents() {
+        const tabs = document.querySelectorAll('#report-type-tabs .segment-item');
+        tabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                tabs.forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+                this._currentTab = tab.dataset.tab;
+                this.renderGrid();
+            });
+        });
+    },
+
     async loadData() {
         const tbody = document.getElementById('report-tbody');
         if (tbody) tbody.innerHTML = `<tr><td colspan="100" class="text-center py-24"><span class="spinner mx-auto"></span><br><small style="color:var(--color-text-muted)">Cargando registros fiscales del período...</small></td></tr>`;
 
         try {
-            const [res607, res606, res608, resIt1, resIr2, resItc, resDss, resDaf, resRs1, resRs2, resRs3, resRs4] = await Promise.all([
+            const [res607, res606, res608, resIt1, resIr2, resDss, resDaf, resRs1, resRs2, resRs3, resRs4] = await Promise.all([
                 App.api(`dgii/reports/607?year=${this._year}&month=${this._month}`),
                 App.api(`dgii/reports/606?year=${this._year}&month=${this._month}`),
                 App.api(`dgii/reports/608?year=${this._year}&month=${this._month}`),
                 App.api(`dgii/reports/it1/summary?year=${this._year}&month=${this._month}`),
                 App.api(`dgii/reports/ir2/summary?year=${this._year}`),
-                App.api(`dgii/reports/itc/summary?year=${this._year}&month=${this._month}`),
                 App.api(`dgii/reports/dss/summary?year=${this._year}&month=${this._month}`),
                 App.api(`dgii/reports/daf/summary?year=${this._year}`),
                 App.api(`dgii/reports/rs1/summary?year=${this._year}`),
@@ -162,7 +274,6 @@ const ReportsModule = {
             this._records608 = res608.data || [];
             this._dataIt1 = resIt1.data || null;
             this._dataIr2 = resIr2.data || null;
-            this._dataItc = resItc.data || null;
             this._dataDss = resDss.data || null;
             this._dataDaf = resDaf.data || null;
             this._dataRs1 = resRs1.data || null;
@@ -205,15 +316,6 @@ const ReportsModule = {
                 btnExportExcel.innerHTML = `
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="8" y1="13" x2="16" y2="13"></line><line x1="8" y1="17" x2="16" y2="17"></line><line x1="10" y1="9" x2="8" y2="9"></line></svg>
                     Descargar Formulario Oficial IR-2 (.xls)
-                `;
-            }
-        } else if (this._currentTab === 'itc') {
-            if (btnPrevalidate) btnPrevalidate.style.display = 'none';
-            if (btnExportTxt) btnExportTxt.style.display = 'none';
-            if (btnExportExcel) {
-                btnExportExcel.innerHTML = `
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="8" y1="13" x2="16" y2="13"></line><line x1="8" y1="17" x2="16" y2="17"></line><line x1="10" y1="9" x2="8" y2="9"></line></svg>
-                    Descargar Formulario Oficial ITC-01 (.xls)
                 `;
             }
         } else if (this._currentTab === 'dss') {
@@ -477,8 +579,6 @@ const ReportsModule = {
             this.renderIt1Declaration(headers, tbody, summary, refBox);
         } else if (this._currentTab === 'ir2') {
             this.renderIr2Declaration(headers, tbody, summary, refBox);
-        } else if (this._currentTab === 'itc') {
-            this.renderItcDeclaration(headers, tbody, summary, refBox);
         } else if (this._currentTab === 'dss') {
             this.renderDssDeclaration(headers, tbody, summary, refBox);
         } else if (this._currentTab === 'daf') {
@@ -1166,9 +1266,6 @@ const ReportsModule = {
         if (this._currentTab === 'ir2') {
             return this.exportIr2Excel();
         }
-        if (this._currentTab === 'itc') {
-            return this.exportItcExcel();
-        }
         if (this._currentTab === 'dss') {
             return this.exportDssExcel();
         }
@@ -1392,69 +1489,6 @@ const ReportsModule = {
         }
     },
 
-    renderItcDeclaration(headers, tbody, summary, refBox) {
-        const d = this._dataItc;
-        if (!d) {
-            tbody.innerHTML = `<tr><td colspan="4" class="text-center text-muted py-24">No se pudo cargar la declaración ITC-01 para este período.</td></tr>`;
-            return;
-        }
-
-        const itc = d.itc || {};
-
-        headers.innerHTML = `
-            <th style="width:130px;">Casilla Oficial</th>
-            <th>Descripción / Concepto Tributario</th>
-            <th class="text-right" style="width:180px;">Monto Declarado (DOP)</th>
-            <th style="width:280px;">Fórmula DGII / Origen</th>
-        `;
-
-        const row = (casilla, desc, val, formula, isHeader = false, isBold = false, isHighlight = false) => `
-            <tr style="${isHighlight ? 'background:rgba(2,132,199,0.08);' : ''}">
-                <td style="font-family:'JetBrains Mono',monospace;font-weight:700;color:var(--color-primary);">${casilla}</td>
-                <td style="${isBold ? 'font-weight:700;' : ''}">${desc}</td>
-                <td class="text-right ${isBold ? 'font-bold' : ''}" style="font-family:'JetBrains Mono',monospace;${isHighlight ? 'color:#0284c7;font-size:15px;' : ''}">${App.formatCurrency(val || 0, 'DOP')}</td>
-                <td style="font-size:12px;color:var(--color-text-muted);">${formula}</td>
-            </tr>
-        `;
-
-        tbody.innerHTML = `
-            ${row('Casilla 1', 'Total de Operaciones del Período', itc.casilla_1_total_operaciones, 'Celda U24 (Total facturado neto)', false, true)}
-            ${row('Casilla 2', 'Ingresos Gravados por Telecomunicaciones (Ley 253-12)', itc.casilla_2_ingresos_gravados, 'Celda U25 (Base Imponible ISC 10%)', false, true)}
-            ${row('Casilla 3', 'Impuesto Determinado (Tasa 10%)', itc.casilla_3_impuesto_a_pagar, 'Fórmula Nativa DGII: =U25*0.1', false, true, true)}
-            ${row('Casilla 4', 'Saldos Compensables Autorizados (Otros Impuestos)', itc.casilla_4_saldos_compensables, 'Celda U27', false, false)}
-            ${row('Casilla 5', 'Saldo a Favor Anterior', itc.casilla_5_saldo_favor_anterior, 'Celda U28', false, false)}
-            ${row('Casilla 6', 'Pagos Computables a Cuenta', itc.casilla_6_pagos_computables, 'Celda U29', false, false)}
-            ${row('Casilla 7', 'Diferencia a Pagar', itc.casilla_7_diferencia_a_pagar, 'Fórmula Nativa DGII: =IF(U26-U27-U28-U29>0,...)', false, true)}
-            ${row('Casilla 8', 'Nuevo Saldo a Favor', itc.casilla_8_nuevo_saldo_favor, 'Fórmula Nativa DGII: =IF(U26-U27-U28-U29<0,...)', false, false)}
-            ${row('Casilla 12', 'TOTAL A PAGAR AL FISCO (DGII)', itc.casilla_12_total_a_pagar, 'Fórmula Nativa DGII: =U30+U33+U34+U35', false, true, true)}
-        `;
-
-        summary.innerHTML = `
-            <div>
-                <span>Período Fiscal: <strong>${d.period_formatted}</strong></span> &bull; 
-                <span>Fecha Límite: <strong style="color:var(--color-danger-icon);">${d.deadline}</strong></span> &bull; 
-                <span>Contribuyente: <strong>${d.company_name}</strong> (RNC: ${d.tax_id})</span>
-            </div>
-            <div>
-                Total Impuesto a Pagar (ISC 10%): <strong style="color:#0284c7;font-size:18px;margin-left:8px;">${App.formatCurrency(itc.casilla_12_total_a_pagar || 0, 'DOP')}</strong>
-            </div>
-        `;
-
-        if (refBox) {
-            refBox.innerHTML = `
-                <div class="table-outer" style="padding:18px;background:var(--bg-card);border:1px solid var(--color-border);border-radius:8px;">
-                    <h4 style="font-size:13px;font-weight:700;margin-bottom:10px;color:var(--color-text-primary);display:flex;align-items:center;justify-content:space-between;">
-                        <span>Marco Legal: Impuesto Selectivo a las Telecomunicaciones (Ley 253-12)</span>
-                        <span class="badge" style="background:#0284c7;color:#fff;font-size:10px;">Formulario Oficial ITC-01</span>
-                    </h4>
-                    <p style="font-size:12px;color:var(--color-text-muted);margin:0;line-height:1.6;">
-                        Este formulario oficial aplica a prestadores de servicios de telecomunicaciones, transmisión de voz, datos e internet conforme al Art. 21 de la Ley 253-12. La plantilla oficial de Excel prellenada por Bills preserva el 100% de las fórmulas nativas de la DGII.
-                    </p>
-                </div>
-            `;
-        }
-    },
-
     renderDssDeclaration(headers, tbody, summary, refBox) {
         const d = this._dataDss;
         if (!d) {
@@ -1530,57 +1564,6 @@ const ReportsModule = {
                     </p>
                 </div>
             `;
-        }
-    },
-
-    async exportItcExcel() {
-        const periodStr = `${this._year}${String(this._month).padStart(2, '0')}`;
-        App.showToast('Generando Formulario Oficial ITC-01 en Excel DGII...', 'info');
-
-        try {
-            const token = App.state.token || localStorage.getItem('token');
-            const response = await fetch(`/api/dgii/reports/itc/export-excel?year=${this._year}&month=${this._month}`, {
-                method: 'GET',
-                headers: {
-                    'Accept': 'application/vnd.ms-excel, application/octet-stream',
-                    'X-Requested-With': 'XMLHttpRequest',
-                    'Authorization': `Bearer ${token}`
-                },
-                credentials: 'same-origin'
-            });
-
-            if (!response.ok) {
-                const errText = await response.text();
-                throw new Error(`Error del servidor (${response.status}): ${errText}`);
-            }
-
-            const blob = await response.blob();
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.target = '_blank';
-
-            const cd = response.headers.get('content-disposition');
-            let filename = null;
-            if (cd && cd.includes('filename=')) {
-                const match = cd.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
-                if (match && match[1]) filename = match[1].replace(/['"]/g, '');
-            }
-
-            const rnc = (this._dataItc && this._dataItc.tax_id)
-                ? this._dataItc.tax_id
-                : (App.state.settings?.company_tax_id ? App.state.settings.company_tax_id.replace(/[^0-9]/g, '') : '131000000');
-
-            a.download = filename || `DGII_ITC01_${rnc}_${periodStr}.xls`;
-            document.body.appendChild(a);
-            a.click();
-            a.remove();
-            URL.revokeObjectURL(url);
-
-            App.showToast('¡Formulario Oficial ITC-01 (Excel DGII) descargado con éxito!', 'success');
-        } catch (e) {
-            console.error('ITC-01 Excel Export error:', e);
-            App.showToast('Error al generar el formulario oficial ITC-01', 'error');
         }
     },
 

@@ -58,6 +58,8 @@ const ReportsModule = {
                     <button class="segment-item ${this._currentTab === '608' ? 'active' : ''}" data-tab="608">Anulaciones (608)</button>
                     <button class="segment-item ${this._currentTab === 'it1' ? 'active' : ''}" data-tab="it1" style="display:flex;align-items:center;gap:6px;"><span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#16a34a;"></span>Declaración IT-1</button>
                     <button class="segment-item ${this._currentTab === 'ir2' ? 'active' : ''}" data-tab="ir2" style="display:flex;align-items:center;gap:6px;"><span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#8b5cf6;"></span>Declaración IR-2</button>
+                    <button class="segment-item ${this._currentTab === 'itc' ? 'active' : ''}" data-tab="itc" style="display:flex;align-items:center;gap:6px;"><span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#0284c7;"></span>ISC Telecom (ITC-01)</button>
+                    <button class="segment-item ${this._currentTab === 'dss' ? 'active' : ''}" data-tab="dss" style="display:flex;align-items:center;gap:6px;"><span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#ea580c;"></span>Seguros (DSS-07)</button>
                 </div>
                 <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
                     <button class="btn" id="btn-prevalidate" style="display:flex;align-items:center;gap:8px;background:#0284c7;border-color:#0284c7;color:#fff;font-weight:600;">
@@ -135,12 +137,14 @@ const ReportsModule = {
         if (tbody) tbody.innerHTML = `<tr><td colspan="100" class="text-center py-24"><span class="spinner mx-auto"></span><br><small style="color:var(--color-text-muted)">Cargando registros fiscales del período...</small></td></tr>`;
 
         try {
-            const [res607, res606, res608, resIt1, resIr2] = await Promise.all([
+            const [res607, res606, res608, resIt1, resIr2, resItc, resDss] = await Promise.all([
                 App.api(`dgii/reports/607?year=${this._year}&month=${this._month}`),
                 App.api(`dgii/reports/606?year=${this._year}&month=${this._month}`),
                 App.api(`dgii/reports/608?year=${this._year}&month=${this._month}`),
                 App.api(`dgii/reports/it1/summary?year=${this._year}&month=${this._month}`),
-                App.api(`dgii/reports/ir2/summary?year=${this._year}`)
+                App.api(`dgii/reports/ir2/summary?year=${this._year}`),
+                App.api(`dgii/reports/itc/summary?year=${this._year}&month=${this._month}`),
+                App.api(`dgii/reports/dss/summary?year=${this._year}&month=${this._month}`)
             ]);
 
             this._records607 = res607.data || [];
@@ -148,6 +152,8 @@ const ReportsModule = {
             this._records608 = res608.data || [];
             this._dataIt1 = resIt1.data || null;
             this._dataIr2 = resIr2.data || null;
+            this._dataItc = resItc.data || null;
+            this._dataDss = resDss.data || null;
 
             this.renderGrid();
         } catch (e) {
@@ -184,6 +190,24 @@ const ReportsModule = {
                 btnExportExcel.innerHTML = `
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="8" y1="13" x2="16" y2="13"></line><line x1="8" y1="17" x2="16" y2="17"></line><line x1="10" y1="9" x2="8" y2="9"></line></svg>
                     Descargar Formulario Oficial IR-2 (.xls)
+                `;
+            }
+        } else if (this._currentTab === 'itc') {
+            if (btnPrevalidate) btnPrevalidate.style.display = 'none';
+            if (btnExportTxt) btnExportTxt.style.display = 'none';
+            if (btnExportExcel) {
+                btnExportExcel.innerHTML = `
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="8" y1="13" x2="16" y2="13"></line><line x1="8" y1="17" x2="16" y2="17"></line><line x1="10" y1="9" x2="8" y2="9"></line></svg>
+                    Descargar Formulario Oficial ITC-01 (.xls)
+                `;
+            }
+        } else if (this._currentTab === 'dss') {
+            if (btnPrevalidate) btnPrevalidate.style.display = 'none';
+            if (btnExportTxt) btnExportTxt.style.display = 'none';
+            if (btnExportExcel) {
+                btnExportExcel.innerHTML = `
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="8" y1="13" x2="16" y2="13"></line><line x1="8" y1="17" x2="16" y2="17"></line><line x1="10" y1="9" x2="8" y2="9"></line></svg>
+                    Descargar Formulario Oficial DSS-07 (.xls)
                 `;
             }
         } else {
@@ -393,6 +417,10 @@ const ReportsModule = {
             this.renderIt1Declaration(headers, tbody, summary, refBox);
         } else if (this._currentTab === 'ir2') {
             this.renderIr2Declaration(headers, tbody, summary, refBox);
+        } else if (this._currentTab === 'itc') {
+            this.renderItcDeclaration(headers, tbody, summary, refBox);
+        } else if (this._currentTab === 'dss') {
+            this.renderDssDeclaration(headers, tbody, summary, refBox);
         }
     },
 
@@ -958,6 +986,12 @@ const ReportsModule = {
         if (this._currentTab === 'ir2') {
             return this.exportIr2Excel();
         }
+        if (this._currentTab === 'itc') {
+            return this.exportItcExcel();
+        }
+        if (this._currentTab === 'dss') {
+            return this.exportDssExcel();
+        }
 
         const periodStr = `${this._year}${String(this._month).padStart(2, '0')}`;
         const records = this.getCurrentRecords();
@@ -1160,6 +1194,235 @@ const ReportsModule = {
         } catch (e) {
             console.error('IR-2 Excel Export error:', e);
             App.showToast('Error al generar el formulario oficial IR-2', 'error');
+        }
+    },
+
+    renderItcDeclaration(headers, tbody, summary, refBox) {
+        const d = this._dataItc;
+        if (!d) {
+            tbody.innerHTML = `<tr><td colspan="4" class="text-center text-muted py-24">No se pudo cargar la declaración ITC-01 para este período.</td></tr>`;
+            return;
+        }
+
+        const itc = d.itc || {};
+
+        headers.innerHTML = `
+            <th style="width:130px;">Casilla Oficial</th>
+            <th>Descripción / Concepto Tributario</th>
+            <th class="text-right" style="width:180px;">Monto Declarado (DOP)</th>
+            <th style="width:280px;">Fórmula DGII / Origen</th>
+        `;
+
+        const row = (casilla, desc, val, formula, isHeader = false, isBold = false, isHighlight = false) => `
+            <tr style="${isHighlight ? 'background:rgba(2,132,199,0.08);' : ''}">
+                <td style="font-family:'JetBrains Mono',monospace;font-weight:700;color:var(--color-primary);">${casilla}</td>
+                <td style="${isBold ? 'font-weight:700;' : ''}">${desc}</td>
+                <td class="text-right ${isBold ? 'font-bold' : ''}" style="font-family:'JetBrains Mono',monospace;${isHighlight ? 'color:#0284c7;font-size:15px;' : ''}">${App.formatCurrency(val || 0, 'DOP')}</td>
+                <td style="font-size:12px;color:var(--color-text-muted);">${formula}</td>
+            </tr>
+        `;
+
+        tbody.innerHTML = `
+            ${row('Casilla 1', 'Total de Operaciones del Período', itc.casilla_1_total_operaciones, 'Celda U24 (Total facturado neto)', false, true)}
+            ${row('Casilla 2', 'Ingresos Gravados por Telecomunicaciones (Ley 253-12)', itc.casilla_2_ingresos_gravados, 'Celda U25 (Base Imponible ISC 10%)', false, true)}
+            ${row('Casilla 3', 'Impuesto Determinado (Tasa 10%)', itc.casilla_3_impuesto_a_pagar, 'Fórmula Nativa DGII: =U25*0.1', false, true, true)}
+            ${row('Casilla 4', 'Saldos Compensables Autorizados (Otros Impuestos)', itc.casilla_4_saldos_compensables, 'Celda U27', false, false)}
+            ${row('Casilla 5', 'Saldo a Favor Anterior', itc.casilla_5_saldo_favor_anterior, 'Celda U28', false, false)}
+            ${row('Casilla 6', 'Pagos Computables a Cuenta', itc.casilla_6_pagos_computables, 'Celda U29', false, false)}
+            ${row('Casilla 7', 'Diferencia a Pagar', itc.casilla_7_diferencia_a_pagar, 'Fórmula Nativa DGII: =IF(U26-U27-U28-U29>0,...)', false, true)}
+            ${row('Casilla 8', 'Nuevo Saldo a Favor', itc.casilla_8_nuevo_saldo_favor, 'Fórmula Nativa DGII: =IF(U26-U27-U28-U29<0,...)', false, false)}
+            ${row('Casilla 12', 'TOTAL A PAGAR AL FISCO (DGII)', itc.casilla_12_total_a_pagar, 'Fórmula Nativa DGII: =U30+U33+U34+U35', false, true, true)}
+        `;
+
+        summary.innerHTML = `
+            <div>
+                <span>Período Fiscal: <strong>${d.period_formatted}</strong></span> &bull; 
+                <span>Fecha Límite: <strong style="color:var(--color-danger-icon);">${d.deadline}</strong></span> &bull; 
+                <span>Contribuyente: <strong>${d.company_name}</strong> (RNC: ${d.tax_id})</span>
+            </div>
+            <div>
+                Total Impuesto a Pagar (ISC 10%): <strong style="color:#0284c7;font-size:18px;margin-left:8px;">${App.formatCurrency(itc.casilla_12_total_a_pagar || 0, 'DOP')}</strong>
+            </div>
+        `;
+
+        if (refBox) {
+            refBox.innerHTML = `
+                <div class="table-outer" style="padding:18px;background:var(--bg-card);border:1px solid var(--color-border);border-radius:8px;">
+                    <h4 style="font-size:13px;font-weight:700;margin-bottom:10px;color:var(--color-text-primary);display:flex;align-items:center;justify-content:space-between;">
+                        <span>Marco Legal: Impuesto Selectivo a las Telecomunicaciones (Ley 253-12)</span>
+                        <span class="badge" style="background:#0284c7;color:#fff;font-size:10px;">Formulario Oficial ITC-01</span>
+                    </h4>
+                    <p style="font-size:12px;color:var(--color-text-muted);margin:0;line-height:1.6;">
+                        Este formulario oficial aplica a prestadores de servicios de telecomunicaciones, transmisión de voz, datos e internet conforme al Art. 21 de la Ley 253-12. La plantilla oficial de Excel prellenada por Bills preserva el 100% de las fórmulas nativas de la DGII.
+                    </p>
+                </div>
+            `;
+        }
+    },
+
+    renderDssDeclaration(headers, tbody, summary, refBox) {
+        const d = this._dataDss;
+        if (!d) {
+            tbody.innerHTML = `<tr><td colspan="5" class="text-center text-muted py-24">No se pudo cargar la declaración DSS-07 para este período.</td></tr>`;
+            return;
+        }
+
+        const dss = d.dss || {};
+        const categories = d.categories || {};
+
+        headers.innerHTML = `
+            <th style="width:120px;">Casilla Oficial</th>
+            <th>Ramo / Concepto de Seguro</th>
+            <th class="text-right" style="width:120px;">Pólizas / Cant.</th>
+            <th class="text-right" style="width:180px;">Valor Total (DOP)</th>
+            <th style="width:260px;">Fórmula DGII / Origen</th>
+        `;
+
+        let rowsHtml = '';
+        for (let i = 1; i <= 11; i++) {
+            const cat = categories[i] || { label: `Ramo ${i}`, count: 0, amount: 0 };
+            rowsHtml += `
+                <tr>
+                    <td style="font-family:'JetBrains Mono',monospace;font-weight:700;color:var(--color-primary);">Casilla ${i}</td>
+                    <td>${cat.label}</td>
+                    <td class="text-right" style="font-family:'JetBrains Mono',monospace;">${cat.count > 0 ? cat.count : '—'}</td>
+                    <td class="text-right font-semibold" style="font-family:'JetBrains Mono',monospace;">${App.formatCurrency(cat.amount || 0, 'DOP')}</td>
+                    <td style="font-size:12px;color:var(--color-text-muted);">Celdas Y${20+i} / AB${20+i}</td>
+                </tr>
+            `;
+        }
+
+        const totalRow = (casilla, desc, count, val, formula, isHighlight = false) => `
+            <tr style="${isHighlight ? 'background:rgba(234,88,12,0.08);' : 'background:var(--bg-hover);'}">
+                <td style="font-family:'JetBrains Mono',monospace;font-weight:700;color:var(--color-primary);">${casilla}</td>
+                <td style="font-weight:700;">${desc}</td>
+                <td class="text-right font-bold" style="font-family:'JetBrains Mono',monospace;">${count !== null ? count : '—'}</td>
+                <td class="text-right font-bold" style="font-family:'JetBrains Mono',monospace;${isHighlight ? 'color:#ea580c;font-size:15px;' : ''}">${App.formatCurrency(val || 0, 'DOP')}</td>
+                <td style="font-size:12px;color:var(--color-text-muted);">${formula}</td>
+            </tr>
+        `;
+
+        tbody.innerHTML = `
+            ${rowsHtml}
+            ${totalRow('Casilla 12', 'TOTAL OPERACIONES DEL PERÍODO', null, dss.casilla_12_total_operaciones, 'Fórmula Nativa DGII: =IF(SUM(AB21:AE31)>0,...)')}
+            ${totalRow('Casilla 13', 'Operaciones Exentas', null, dss.casilla_13_operaciones_exentas, 'Celda AB35')}
+            ${totalRow('Casilla 14', 'Operaciones Gravadas', null, dss.casilla_14_operaciones_gravadas, 'Fórmula Nativa DGII: =IF(AB35>0,(AB32-AB35),(AB32))')}
+            ${totalRow('Casilla 15', 'Impuesto a Pagar (Tasa 16%)', null, dss.casilla_15_impuesto_a_pagar, 'Fórmula Nativa DGII: =AB36*0.16', true)}
+            ${totalRow('Casilla 19', 'Diferencia a Pagar', null, dss.casilla_19_diferencia_a_pagar, 'Fórmula Nativa DGII: =IF((AB37-AB38-AB39-AB40)>0,...)')}
+            ${totalRow('Casilla 24', 'TOTAL A PAGAR AL FISCO (DGII)', null, dss.casilla_24_total_a_pagar, 'Fórmula Nativa DGII: =+AB41+AB45+AB46+AB47', true)}
+        `;
+
+        summary.innerHTML = `
+            <div>
+                <span>Período Fiscal: <strong>${d.period_formatted}</strong></span> &bull; 
+                <span>Fecha Límite: <strong style="color:var(--color-danger-icon);">${d.deadline}</strong></span> &bull; 
+                <span>Contribuyente: <strong>${d.company_name}</strong> (RNC: ${d.tax_id})</span>
+            </div>
+            <div>
+                Total Impuesto a Pagar (Seguros 16%): <strong style="color:#ea580c;font-size:18px;margin-left:8px;">${App.formatCurrency(dss.casilla_24_total_a_pagar || 0, 'DOP')}</strong>
+            </div>
+        `;
+
+        if (refBox) {
+            refBox.innerHTML = `
+                <div class="table-outer" style="padding:18px;background:var(--bg-card);border:1px solid var(--color-border);border-radius:8px;">
+                    <h4 style="font-size:13px;font-weight:700;margin-bottom:10px;color:var(--color-text-primary);display:flex;align-items:center;justify-content:space-between;">
+                        <span>Marco Legal: Impuesto Sobre Seguros en General (Ley 146-02)</span>
+                        <span class="badge" style="background:#ea580c;color:#fff;font-size:10px;">Formulario Oficial DSS-07</span>
+                    </h4>
+                    <p style="font-size:12px;color:var(--color-text-muted);margin:0;line-height:1.6;">
+                        Este formulario oficial aplica a aseguradoras y corredores de pólizas gravadas con el 16% sobre primas suscritas conforme a la Ley 146-02. La plantilla oficial de Excel prellenada por Bills preserva el 100% de las fórmulas nativas de la DGII.
+                    </p>
+                </div>
+            `;
+        }
+    },
+
+    async exportItcExcel() {
+        const periodStr = `${this._year}${String(this._month).padStart(2, '0')}`;
+        App.showToast('Generando Formulario Oficial ITC-01 en Excel DGII...', 'info');
+
+        try {
+            const token = App.state.token || localStorage.getItem('token');
+            const response = await fetch(`/api/dgii/reports/itc/export-excel?year=${this._year}&month=${this._month}`, {
+                method: 'GET',
+                headers: {
+                    'Accept': 'application/vnd.ms-excel, application/octet-stream',
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Authorization': `Bearer ${token}`
+                },
+                credentials: 'same-origin'
+            });
+
+            if (!response.ok) {
+                const errText = await response.text();
+                throw new Error(`Error del servidor (${response.status}): ${errText}`);
+            }
+
+            const blob = await response.blob();
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.target = '_blank';
+
+            const rnc = (this._dataItc && this._dataItc.tax_id)
+                ? this._dataItc.tax_id
+                : (App.state.settings?.company_tax_id ? App.state.settings.company_tax_id.replace(/[^0-9]/g, '') : '131000000');
+
+            a.download = `DGII_ITC01_${rnc}_${periodStr}.xls`;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            URL.revokeObjectURL(url);
+
+            App.showToast('¡Formulario Oficial ITC-01 (Excel DGII) descargado con éxito!', 'success');
+        } catch (e) {
+            console.error('ITC-01 Excel Export error:', e);
+            App.showToast('Error al generar el formulario oficial ITC-01', 'error');
+        }
+    },
+
+    async exportDssExcel() {
+        const periodStr = `${this._year}${String(this._month).padStart(2, '0')}`;
+        App.showToast('Generando Formulario Oficial DSS-07 en Excel DGII...', 'info');
+
+        try {
+            const token = App.state.token || localStorage.getItem('token');
+            const response = await fetch(`/api/dgii/reports/dss/export-excel?year=${this._year}&month=${this._month}`, {
+                method: 'GET',
+                headers: {
+                    'Accept': 'application/vnd.ms-excel, application/octet-stream',
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Authorization': `Bearer ${token}`
+                },
+                credentials: 'same-origin'
+            });
+
+            if (!response.ok) {
+                const errText = await response.text();
+                throw new Error(`Error del servidor (${response.status}): ${errText}`);
+            }
+
+            const blob = await response.blob();
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.target = '_blank';
+
+            const rnc = (this._dataDss && this._dataDss.tax_id)
+                ? this._dataDss.tax_id
+                : (App.state.settings?.company_tax_id ? App.state.settings.company_tax_id.replace(/[^0-9]/g, '') : '131000000');
+
+            a.download = `DGII_DSS07_${rnc}_${periodStr}.xls`;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            URL.revokeObjectURL(url);
+
+            App.showToast('¡Formulario Oficial DSS-07 (Excel DGII) descargado con éxito!', 'success');
+        } catch (e) {
+            console.error('DSS-07 Excel Export error:', e);
+            App.showToast('Error al generar el formulario oficial DSS-07', 'error');
         }
     }
 };

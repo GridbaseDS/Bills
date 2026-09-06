@@ -755,5 +755,113 @@ class DgiiReportController extends Controller
             'Cache-Control' => 'max-age=0',
         ]);
     }
+
+    /**
+     * Get ITC-01 (IST Telecomunicaciones) summary calculation for the period
+     */
+    public function getItcSummary(Request $request, ?\App\Services\DgiiDeclarationService $declarationService = null)
+    {
+        $declarationService = $declarationService ?? app(\App\Services\DgiiDeclarationService::class);
+        $year = $request->query('year') ?: $request->input('year');
+        $month = $request->query('month') ?: $request->input('month');
+        if ($request->filled('period')) {
+            $p = str_replace('-', '', $request->input('period'));
+            $year = substr($p, 0, 4);
+            $month = substr($p, 4, 2);
+        }
+        $year = $year ?: date('Y');
+        $month = str_pad($month ?: date('m'), 2, '0', STR_PAD_LEFT);
+
+        $summary = $declarationService->calculateItcData((string)$year, (string)$month);
+
+        return response()->json([
+            'success' => true,
+            'data' => $summary,
+        ]);
+    }
+
+    /**
+     * Export Formulario Oficial ITC-01 prefilled in official DGII Excel (.xls)
+     */
+    public function exportItcExcel(Request $request, ?\App\Services\DgiiDeclarationService $declarationService = null)
+    {
+        $declarationService = $declarationService ?? app(\App\Services\DgiiDeclarationService::class);
+        $year = $request->input('year') ?: $request->query('year');
+        $month = $request->input('month') ?: $request->query('month');
+        if ($request->filled('period')) {
+            $p = str_replace('-', '', $request->input('period'));
+            $year = substr($p, 0, 4);
+            $month = substr($p, 4, 2);
+        }
+        $year = $year ?: date('Y');
+        $month = str_pad($month ?: date('m'), 2, '0', STR_PAD_LEFT);
+
+        $spreadsheet = $declarationService->generateItcExcel((string)$year, (string)$month);
+        $periodRaw = "{$year}{$month}";
+        $companyTaxId = preg_replace('/[^0-9]/', '', Setting::where('setting_key', 'company_tax_id')->value('setting_value') ?? '132456785');
+        $filename = "DGII_ITC01_{$companyTaxId}_{$periodRaw}.xls";
+
+        return response()->streamDownload(function () use ($spreadsheet) {
+            $writer = new \PhpOffice\PhpSpreadsheet\Writer\Xls($spreadsheet);
+            $writer->save('php://output');
+        }, $filename, [
+            'Content-Type' => 'application/vnd.ms-excel',
+            'Cache-Control' => 'max-age=0',
+        ]);
+    }
+
+    /**
+     * Get DSS-07 (Impuesto Sobre Seguros) summary calculation for the period
+     */
+    public function getDssSummary(Request $request, ?\App\Services\DgiiDeclarationService $declarationService = null)
+    {
+        $declarationService = $declarationService ?? app(\App\Services\DgiiDeclarationService::class);
+        $year = $request->query('year') ?: $request->input('year');
+        $month = $request->query('month') ?: $request->input('month');
+        if ($request->filled('period')) {
+            $p = str_replace('-', '', $request->input('period'));
+            $year = substr($p, 0, 4);
+            $month = substr($p, 4, 2);
+        }
+        $year = $year ?: date('Y');
+        $month = str_pad($month ?: date('m'), 2, '0', STR_PAD_LEFT);
+
+        $summary = $declarationService->calculateDssData((string)$year, (string)$month);
+
+        return response()->json([
+            'success' => true,
+            'data' => $summary,
+        ]);
+    }
+
+    /**
+     * Export Formulario Oficial DSS-07 prefilled in official DGII Excel (.xls)
+     */
+    public function exportDssExcel(Request $request, ?\App\Services\DgiiDeclarationService $declarationService = null)
+    {
+        $declarationService = $declarationService ?? app(\App\Services\DgiiDeclarationService::class);
+        $year = $request->input('year') ?: $request->query('year');
+        $month = $request->input('month') ?: $request->query('month');
+        if ($request->filled('period')) {
+            $p = str_replace('-', '', $request->input('period'));
+            $year = substr($p, 0, 4);
+            $month = substr($p, 4, 2);
+        }
+        $year = $year ?: date('Y');
+        $month = str_pad($month ?: date('m'), 2, '0', STR_PAD_LEFT);
+
+        $spreadsheet = $declarationService->generateDssExcel((string)$year, (string)$month);
+        $periodRaw = "{$year}{$month}";
+        $companyTaxId = preg_replace('/[^0-9]/', '', Setting::where('setting_key', 'company_tax_id')->value('setting_value') ?? '132456785');
+        $filename = "DGII_DSS07_{$companyTaxId}_{$periodRaw}.xls";
+
+        return response()->streamDownload(function () use ($spreadsheet) {
+            $writer = new \PhpOffice\PhpSpreadsheet\Writer\Xls($spreadsheet);
+            $writer->save('php://output');
+        }, $filename, [
+            'Content-Type' => 'application/vnd.ms-excel',
+            'Cache-Control' => 'max-age=0',
+        ]);
+    }
 }
 

@@ -858,4 +858,281 @@ class DgiiDeclarationService
 
         return $spreadsheet;
     }
+
+    /**
+     * Compute the official ITC-01 (Impuesto a las Telecomunicaciones Ley 253-12) summary data.
+     */
+    public function calculateItcData(string $year, string $month): array
+    {
+        $year = (int)$year;
+        $month = str_pad((int)$month, 2, '0', STR_PAD_LEFT);
+        $periodFormatted = "{$month}/{$year}";
+        $periodRaw = "{$year}{$month}";
+
+        $startDate = "{$year}-{$month}-01";
+        $endDate = Carbon::parse($startDate)->endOfMonth()->toDateString();
+        $deadlineDate = Carbon::parse($startDate)->addMonth()->day(20)->format('d/m/Y');
+
+        $settings = Setting::all()->pluck('setting_value', 'setting_key')->toArray();
+        $taxId = preg_replace('/[^0-9]/', '', $settings['company_tax_id'] ?? '132456785');
+        $companyName = $settings['company_name'] ?? 'Gridbase';
+        $commercialName = $settings['company_commercial_name'] ?? $companyName;
+        $phone = $settings['company_phone'] ?? '';
+        $email = $settings['company_email'] ?? '';
+
+        $invoices = Invoice::with(['client', 'items'])
+            ->whereBetween('issue_date', [$startDate, $endDate])
+            ->whereNotIn('status', ['draft', 'cancelled'])
+            ->where(function ($q) {
+                $q->whereNull('ecf_type')
+                  ->orWhereNotIn('ecf_type', [41, 43, 47]);
+            })
+            ->orderBy('issue_date', 'asc')
+            ->get();
+
+        $telecomKeywords = '/(telecom|internet|llamada|voz|datos|telefonia|fibra|enlace|convergencia|broadband|hosting|sms|mensajeria)/i';
+        $telecomAmount = 0.0;
+        $totalSales = 0.0;
+        $creditNotes = 0.0;
+
+        foreach ($invoices as $inv) {
+            $isCN = $inv->isCreditNote();
+            $sub = (float)($inv->subtotal ?? 0.0);
+            if ($isCN) {
+                $creditNotes += $sub;
+            } else {
+                $totalSales += $sub;
+                $hasItemMatch = false;
+                foreach ($inv->items as $item) {
+                    if (preg_match($telecomKeywords, $item->description ?? '')) {
+                        $hasItemMatch = true;
+                        $telecomAmount += (float)$item->amount;
+                    }
+                }
+                if (!$hasItemMatch && preg_match($telecomKeywords, ($inv->notes ?? '') . ' ' . ($inv->terms ?? ''))) {
+                    $telecomAmount += $sub;
+                }
+            }
+        }
+
+        $netOperations = max(0.0, $totalSales - $creditNotes);
+        $ingresosGravados = $telecomAmount > 0 ? min($netOperations, $telecomAmount) : $netOperations;
+        $impuestoPagar = round($ingresosGravados * 0.10, 2);
+
+        return [
+            'period' => $periodRaw,
+            'period_formatted' => $periodFormatted,
+            'year' => (string)$year,
+            'month' => $month,
+            'deadline' => $deadlineDate,
+            'tax_id' => $taxId,
+            'company_name' => $companyName,
+            'commercial_name' => $commercialName,
+            'phone' => $phone,
+            'email' => $email,
+            'itc' => [
+                'casilla_1_total_operaciones' => $netOperations,
+                'casilla_2_ingresos_gravados' => $ingresosGravados,
+                'casilla_3_impuesto_a_pagar' => $impuestoPagar,
+                'casilla_4_saldos_compensables' => 0.0,
+                'casilla_5_saldo_favor_anterior' => 0.0,
+                'casilla_6_pagos_computables' => 0.0,
+                'casilla_7_diferencia_a_pagar' => $impuestoPagar,
+                'casilla_8_nuevo_saldo_favor' => 0.0,
+                'casilla_9_recargos' => 0.0,
+                'casilla_10_interes' => 0.0,
+                'casilla_11_sanciones' => 0.0,
+                'casilla_12_total_a_pagar' => $impuestoPagar,
+            ],
+        ];
+    }
+
+    /**
+     * Generate the official ITC-01 Excel workbook (IST Telecomunicaciones Ley 253-12).
+     */
+    public function generateItcExcel(string $year, string $month): Spreadsheet
+    {
+        $data = $this->calculateItcData($year, $month);
+        $templatePath = resource_path('templates/dgii/IST-Telecomunicaciones-253-12.xls');
+
+        if (!file_exists($templatePath)) {
+            throw new \RuntimeException("La plantilla oficial IST-Telecomunicaciones-253-12.xls no fue encontrada en: {$templatePath}");
+        }
+
+        $reader = new XlsReader();
+        $spreadsheet = $reader->load($templatePath);
+        $sheet = $spreadsheet->getSheetByName('ITC-01') ?: $spreadsheet->getActiveSheet();
+
+        // Encabezados
+        $sheet->setCellValue('E11', $data['period_formatted']);
+        $sheet->setCellValue('M11', $data['deadline']);
+        $sheet->setCellValue('G13', 'X'); // Normal
+        $sheet->setCellValue('F17', $data['tax_id']);
+        $sheet->setCellValue('Q17', $data['company_name']);
+        $sheet->setCellValue('G19', $data['commercial_name']);
+        $sheet->setCellValue('U19', $data['phone']);
+        $sheet->setCellValue('H21', $data['email']);
+
+        // Casillas de Operaciones (Fórmulas nativas en U26, U30, U31, U38 no se tocan)
+        $itc = $data['itc'];
+        $sheet->setCellValue('U24', $itc['casilla_1_total_operaciones']);
+        $sheet->setCellValue('U25', $itc['casilla_2_ingresos_gravados']);
+
+        return $spreadsheet;
+    }
+
+    /**
+     * Compute the official DSS-07 (Impuesto Sobre Seguros Ley 146-02) summary data.
+     */
+    public function calculateDssData(string $year, string $month): array
+    {
+        $year = (int)$year;
+        $month = str_pad((int)$month, 2, '0', STR_PAD_LEFT);
+        $periodFormatted = "{$month}/{$year}";
+        $periodRaw = "{$year}{$month}";
+
+        $startDate = "{$year}-{$month}-01";
+        $endDate = Carbon::parse($startDate)->endOfMonth()->toDateString();
+        $deadlineDate = Carbon::parse($startDate)->addMonth()->day(20)->format('d/m/Y');
+
+        $settings = Setting::all()->pluck('setting_value', 'setting_key')->toArray();
+        $taxId = preg_replace('/[^0-9]/', '', $settings['company_tax_id'] ?? '132456785');
+        $companyName = $settings['company_name'] ?? 'Gridbase';
+        $commercialName = $settings['company_commercial_name'] ?? $companyName;
+        $phone = $settings['company_phone'] ?? '';
+        $email = $settings['company_email'] ?? '';
+
+        $invoices = Invoice::with(['client', 'items'])
+            ->whereBetween('issue_date', [$startDate, $endDate])
+            ->whereNotIn('status', ['draft', 'cancelled'])
+            ->where(function ($q) {
+                $q->whereNull('ecf_type')
+                  ->orWhereNotIn('ecf_type', [41, 43, 47]);
+            })
+            ->orderBy('issue_date', 'asc')
+            ->get();
+
+        $categories = [
+            1 => ['label' => 'Vida Colectivo', 'count' => 0, 'amount' => 0.0, 'regex' => '/(vida\s*colectiv|colectiv)/i'],
+            2 => ['label' => 'Vida Individual', 'count' => 0, 'amount' => 0.0, 'regex' => '/(vida\s*individual|vida)/i'],
+            3 => ['label' => 'Salud', 'count' => 0, 'amount' => 0.0, 'regex' => '/(salud|medico|medica|ars)/i'],
+            4 => ['label' => 'Accidentes Personales y Salud', 'count' => 0, 'amount' => 0.0, 'regex' => '/(accidente)/i'],
+            5 => ['label' => 'Incendios y Aliados', 'count' => 0, 'amount' => 0.0, 'regex' => '/(incendio|aliados)/i'],
+            6 => ['label' => 'Naves Marítimas y Aéreas', 'count' => 0, 'amount' => 0.0, 'regex' => '/(maritim|aere|casco)/i'],
+            7 => ['label' => 'Transporte de Carga', 'count' => 0, 'amount' => 0.0, 'regex' => '/(transporte|carga|embarque)/i'],
+            8 => ['label' => 'Vehículo de Motor', 'count' => 0, 'amount' => 0.0, 'regex' => '/(vehiculo|motor|auto|colision)/i'],
+            9 => ['label' => 'Agrícolas Pecuarias', 'count' => 0, 'amount' => 0.0, 'regex' => '/(agricol|pecuari|cultivo|ganad)/i'],
+            10 => ['label' => 'Fianzas', 'count' => 0, 'amount' => 0.0, 'regex' => '/(fianza|garantia|cumplimiento)/i'],
+            11 => ['label' => 'Otros Seguros', 'count' => 0, 'amount' => 0.0, 'regex' => '/(seguro|poliza|prima)/i'],
+        ];
+
+        foreach ($invoices as $inv) {
+            $isCN = $inv->isCreditNote();
+            $sub = (float)($inv->subtotal ?? 0.0);
+            $multiplier = $isCN ? -1 : 1;
+
+            $assigned = false;
+            foreach ($inv->items as $item) {
+                $desc = $item->description ?? '';
+                foreach ($categories as $catId => $cat) {
+                    if (preg_match($cat['regex'], $desc)) {
+                        $categories[$catId]['count'] += $multiplier;
+                        $categories[$catId]['amount'] += $multiplier * (float)$item->amount;
+                        $assigned = true;
+                        break;
+                    }
+                }
+                if ($assigned) break;
+            }
+
+            if (!$assigned) {
+                // If not matched to a specific insurance keyword, classify into Category 11 (Otros Seguros)
+                $categories[11]['count'] += $multiplier;
+                $categories[11]['amount'] += $multiplier * $sub;
+            }
+        }
+
+        $totalOperaciones = 0.0;
+        foreach ($categories as $catId => &$cat) {
+            $cat['count'] = max(0, $cat['count']);
+            $cat['amount'] = max(0.0, round($cat['amount'], 2));
+            $totalOperaciones += $cat['amount'];
+        }
+        unset($cat);
+
+        $impuestoPagar = round($totalOperaciones * 0.16, 2);
+
+        return [
+            'period' => $periodRaw,
+            'period_formatted' => $periodFormatted,
+            'year' => (string)$year,
+            'month' => $month,
+            'deadline' => $deadlineDate,
+            'tax_id' => $taxId,
+            'company_name' => $companyName,
+            'commercial_name' => $commercialName,
+            'phone' => $phone,
+            'email' => $email,
+            'categories' => $categories,
+            'dss' => [
+                'casilla_12_total_operaciones' => $totalOperaciones,
+                'casilla_13_operaciones_exentas' => 0.0,
+                'casilla_14_operaciones_gravadas' => $totalOperaciones,
+                'casilla_15_impuesto_a_pagar' => $impuestoPagar,
+                'casilla_16_saldo_favor_anterior' => 0.0,
+                'casilla_17_saldos_compensables' => 0.0,
+                'casilla_18_pagos_computables' => 0.0,
+                'casilla_19_diferencia_a_pagar' => $impuestoPagar,
+                'casilla_20_nuevo_saldo_favor' => 0.0,
+                'casilla_21_recargos' => 0.0,
+                'casilla_22_interes' => 0.0,
+                'casilla_23_sanciones' => 0.0,
+                'casilla_24_total_a_pagar' => $impuestoPagar,
+            ],
+        ];
+    }
+
+    /**
+     * Generate the official DSS-07 Excel workbook (Impuesto Sobre Seguros Ley 146-02).
+     */
+    public function generateDssExcel(string $year, string $month): Spreadsheet
+    {
+        $data = $this->calculateDssData($year, $month);
+        $templatePath = resource_path('templates/dgii/DSS-07.xls');
+
+        if (!file_exists($templatePath)) {
+            throw new \RuntimeException("La plantilla oficial DSS-07.xls no fue encontrada en: {$templatePath}");
+        }
+
+        $reader = new XlsReader();
+        $spreadsheet = $reader->load($templatePath);
+        $sheet = $spreadsheet->getSheetByName('DSS') ?: $spreadsheet->getActiveSheet();
+
+        // Encabezados
+        $sheet->setCellValue('D9', $data['month']);
+        $sheet->setCellValue('E9', $data['year']);
+        $sheet->setCellValue('Q9', $data['deadline']);
+        $sheet->setCellValue('I11', 'X'); // Normal
+        $sheet->setCellValue('E13', $data['tax_id']);
+        $sheet->setCellValue('S13', $data['company_name']);
+        $sheet->setCellValue('G15', $data['commercial_name']);
+        $sheet->setCellValue('AB15', $data['phone']);
+        $sheet->setCellValue('W17', $data['email']);
+
+        // Conceptos (Casillas 1 a 11, Filas 21 a 31)
+        foreach ($data['categories'] as $catId => $cat) {
+            $row = 20 + (int)$catId;
+            if ($cat['count'] > 0) {
+                $sheet->setCellValue('Y' . $row, $cat['count']);
+            }
+            if ($cat['amount'] > 0) {
+                $sheet->setCellValue('AB' . $row, $cat['amount']);
+            }
+        }
+
+        // Fórmulas nativas en AB32, AB36, AB37, AB41, AB42, AB48 no se tocan
+
+        return $spreadsheet;
+    }
 }
+

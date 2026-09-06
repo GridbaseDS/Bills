@@ -25,9 +25,9 @@ class DemoDataSeeder extends Seeder
         ReceivedInvoice::truncate();
         DB::statement('SET FOREIGN_KEY_CHECKS=1;');
 
-        // Obtener clientes base o crearlos si no existen
+        // Obtener clientes base o crearlos si no existen (con RNCs válidos por algoritmo oficial DGII)
         $bhd = Client::firstOrCreate(
-            ['tax_id' => '1-01-00789-1'],
+            ['tax_id' => '1-01-00789-3'],
             [
                 'company_name' => 'Banco Múltiple BHD, S.A.',
                 'contact_name' => 'Luis Molina Achécar',
@@ -42,7 +42,7 @@ class DemoDataSeeder extends Seeder
         );
 
         $alejandro = Client::firstOrCreate(
-            ['tax_id' => '001-1234567-8'],
+            ['tax_id' => '001-1234567-3'],
             [
                 'company_name' => 'Ing. Alejandro Ramírez Cedeño',
                 'contact_name' => 'Alejandro Ramírez',
@@ -57,7 +57,7 @@ class DemoDataSeeder extends Seeder
         );
 
         $cnd = Client::firstOrCreate(
-            ['tax_id' => '1-01-00123-4'],
+            ['tax_id' => '1-01-00123-2'],
             [
                 'company_name' => 'Cervecería Nacional Dominicana',
                 'contact_name' => 'Fabián Suárez',
@@ -72,7 +72,7 @@ class DemoDataSeeder extends Seeder
         );
 
         $embajador = Client::firstOrCreate(
-            ['tax_id' => '1-01-54321-9'],
+            ['tax_id' => '1-01-54321-4'],
             [
                 'company_name' => 'Hotel El Embajador Royal Hideaway',
                 'contact_name' => 'El Hassan Zouaoui',
@@ -87,7 +87,7 @@ class DemoDataSeeder extends Seeder
         );
 
         $ramos = Client::firstOrCreate(
-            ['tax_id' => '1-01-00567-8'],
+            ['tax_id' => '1-01-00567-5'],
             [
                 'company_name' => 'Grupo Ramos, S.A.',
                 'contact_name' => 'Mercedes Ramos',
@@ -102,7 +102,7 @@ class DemoDataSeeder extends Seeder
         );
 
         $carol = Client::firstOrCreate(
-            ['tax_id' => '1-30-87654-3'],
+            ['tax_id' => '1-30-87654-7'],
             [
                 'company_name' => 'Farmacias Carol, S.A.S.',
                 'contact_name' => 'Julio César Curiel',
@@ -375,12 +375,12 @@ class DemoDataSeeder extends Seeder
         // 3. COMPRAS Y GASTOS AGOSTO 2026 (606)
         // ==========================================
 
-        // Compra 1: e-CF Recibido Claro Dominicana
-        $xmlClaro = '<?xml version="1.0" encoding="utf-8"?><ECF><Encabezado><IdDoc><TipoeCF>31</TipoeCF><eNCF>E31000049281</eNCF></IdDoc></Encabezado><Totales><MontoGravadoTotal>10000.00</MontoGravadoTotal><TotalITBIS>1800.00</TotalITBIS><MontoTotal>11800.00</MontoTotal></Totales></ECF>';
+        // Compra 1: e-CF Recibido Claro Dominicana (RNC con DV válido: 101000155, 13 caracteres e-NCF)
+        $xmlClaro = '<?xml version="1.0" encoding="utf-8"?><ECF><Encabezado><IdDoc><TipoeCF>31</TipoeCF><eNCF>E310000049281</eNCF></IdDoc></Encabezado><Totales><MontoGravadoTotal>10000.00</MontoGravadoTotal><TotalITBIS>1800.00</TotalITBIS><MontoTotal>11800.00</MontoTotal></Totales></ECF>';
         ReceivedInvoice::create([
-            'rnc_emisor' => '101007891',
+            'rnc_emisor' => '101000155',
             'razon_social_emisor' => 'Claro Dominicana Telecomunicaciones, S.A.',
-            'encf' => 'E31000049281',
+            'encf' => 'E310000049281',
             'ecf_type' => '31',
             'fecha_emision' => '2026-08-04',
             'monto_total' => 11800.00,
@@ -389,12 +389,12 @@ class DemoDataSeeder extends Seeder
             'approved_at' => '2026-08-04 15:00:00',
         ]);
 
-        // Compra 2: e-CF Recibido Edesur Dominicana
-        $xmlEdesur = '<?xml version="1.0" encoding="utf-8"?><ECF><Encabezado><IdDoc><TipoeCF>31</TipoeCF><eNCF>E31000088921</eNCF></IdDoc></Encabezado><Totales><MontoGravadoTotal>20000.00</MontoGravadoTotal><TotalITBIS>3600.00</TotalITBIS><MontoTotal>23600.00</MontoTotal></Totales></ECF>';
+        // Compra 2: e-CF Recibido Edesur Dominicana (RNC con DV válido: 101023454, 13 caracteres e-NCF)
+        $xmlEdesur = '<?xml version="1.0" encoding="utf-8"?><ECF><Encabezado><IdDoc><TipoeCF>31</TipoeCF><eNCF>E310000088921</eNCF></IdDoc></Encabezado><Totales><MontoGravadoTotal>20000.00</MontoGravadoTotal><TotalITBIS>3600.00</TotalITBIS><MontoTotal>23600.00</MontoTotal></Totales></ECF>';
         ReceivedInvoice::create([
-            'rnc_emisor' => '101023456',
+            'rnc_emisor' => '101023454',
             'razon_social_emisor' => 'Edesur Dominicana, S.A.',
-            'encf' => 'E31000088921',
+            'encf' => 'E310000088921',
             'ecf_type' => '31',
             'fecha_emision' => '2026-08-12',
             'monto_total' => 23600.00,
@@ -403,11 +403,11 @@ class DemoDataSeeder extends Seeder
             'approved_at' => '2026-08-12 16:30:00',
         ]);
 
-        // Gasto Manual 1: Papelería CCC (Comprobante B01 tradicional)
+        // Gasto Manual 1: Papelería CCC (Comprobante B01 tradicional con 11 caracteres)
         Expense::create([
             'provider_name' => 'Papelería & Suministros CCC, SRL',
-            'provider_tax_id' => '1-30-87654-3',
-            'ncf' => 'B01000012093',
+            'provider_tax_id' => '1-30-87654-7',
+            'ncf' => 'B0100001209',
             'expense_date' => '2026-08-18',
             'subtotal' => 5000.00,
             'tax_amount' => 900.00,
@@ -421,8 +421,8 @@ class DemoDataSeeder extends Seeder
         // Gasto Manual 2: ¡DUPLICADO A PROPÓSITO CON MISMO NCF DE CLARO PARA VALIDAR DEDUPLICACIÓN EN 606!
         Expense::create([
             'provider_name' => 'Claro Dominicana Telecomunicaciones, S.A.',
-            'provider_tax_id' => '1-01-00789-1',
-            'ncf' => 'E31000049281', // Mismo NCF de Compra 1
+            'provider_tax_id' => '1-01-00015-5',
+            'ncf' => 'E310000049281', // Mismo NCF de Compra 1
             'expense_date' => '2026-08-04',
             'subtotal' => 10000.00,
             'tax_amount' => 1800.00,

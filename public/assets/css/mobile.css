@@ -545,13 +545,15 @@ select.form-control {
   top: calc(12px + env(safe-area-inset-top)) !important;
   right: 12px !important;
   left: 12px !important;
+  transform: none !important;
   width: auto !important;
   max-width: none !important;
+  align-items: center !important;
 }
 
 .toast {
   min-width: 0 !important;
-  width: 100% !important;
+  width: auto !important;
   max-width: 100% !important;
 }
 

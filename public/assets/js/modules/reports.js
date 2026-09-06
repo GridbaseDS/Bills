@@ -56,6 +56,7 @@ const ReportsModule = {
                     <button class="segment-item ${this._currentTab === '607' ? 'active' : ''}" data-tab="607">Ventas (607)</button>
                     <button class="segment-item ${this._currentTab === '606' ? 'active' : ''}" data-tab="606">Compras / Gastos (606)</button>
                     <button class="segment-item ${this._currentTab === '608' ? 'active' : ''}" data-tab="608">Anulaciones (608)</button>
+                    <button class="segment-item ${this._currentTab === 'it1' ? 'active' : ''}" data-tab="it1" style="display:flex;align-items:center;gap:6px;"><span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#16a34a;"></span>Declaración IT-1</button>
                 </div>
                 <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
                     <button class="btn" id="btn-prevalidate" style="display:flex;align-items:center;gap:8px;background:#0284c7;border-color:#0284c7;color:#fff;font-weight:600;">
@@ -133,15 +134,17 @@ const ReportsModule = {
         if (tbody) tbody.innerHTML = `<tr><td colspan="100" class="text-center py-24"><span class="spinner mx-auto"></span><br><small style="color:var(--color-text-muted)">Cargando registros fiscales del período...</small></td></tr>`;
 
         try {
-            const [res607, res606, res608] = await Promise.all([
+            const [res607, res606, res608, resIt1] = await Promise.all([
                 App.api(`dgii/reports/607?year=${this._year}&month=${this._month}`),
                 App.api(`dgii/reports/606?year=${this._year}&month=${this._month}`),
-                App.api(`dgii/reports/608?year=${this._year}&month=${this._month}`)
+                App.api(`dgii/reports/608?year=${this._year}&month=${this._month}`),
+                App.api(`dgii/reports/it1/summary?year=${this._year}&month=${this._month}`)
             ]);
 
             this._records607 = res607.data || [];
             this._records606 = res606.data || [];
             this._records608 = res608.data || [];
+            this._dataIt1 = resIt1.data || null;
 
             this.renderGrid();
         } catch (e) {
@@ -157,6 +160,30 @@ const ReportsModule = {
         if (!headers || !tbody) return;
 
         if (refBox) refBox.innerHTML = '';
+
+        const btnPrevalidate = document.getElementById('btn-prevalidate');
+        const btnExportTxt = document.getElementById('btn-export-txt');
+        const btnExportExcel = document.getElementById('btn-export-excel');
+
+        if (this._currentTab === 'it1') {
+            if (btnPrevalidate) btnPrevalidate.style.display = 'none';
+            if (btnExportTxt) btnExportTxt.style.display = 'none';
+            if (btnExportExcel) {
+                btnExportExcel.innerHTML = `
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="8" y1="13" x2="16" y2="13"></line><line x1="8" y1="17" x2="16" y2="17"></line><line x1="10" y1="9" x2="8" y2="9"></line></svg>
+                    Descargar Formulario Oficial IT-1 (.xls)
+                `;
+            }
+        } else {
+            if (btnPrevalidate) btnPrevalidate.style.display = 'flex';
+            if (btnExportTxt) btnExportTxt.style.display = 'flex';
+            if (btnExportExcel) {
+                btnExportExcel.innerHTML = `
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="8" y1="13" x2="16" y2="13"></line><line x1="8" y1="17" x2="16" y2="17"></line><line x1="10" y1="9" x2="8" y2="9"></line></svg>
+                    Descargar Plantilla Excel (.xls)
+                `;
+            }
+        }
 
         if (this._currentTab === '607') {
             // e-CF informational banner
@@ -350,6 +377,8 @@ const ReportsModule = {
             `;
 
             this.render608CatalogLegend(refBox);
+        } else if (this._currentTab === 'it1') {
+            this.renderIt1Declaration(headers, tbody, summary, refBox);
         }
     },
 
@@ -374,6 +403,179 @@ const ReportsModule = {
                 </div>
             </div>
         `;
+    },
+
+    renderIt1Declaration(headers, tbody, summary, refBox) {
+        const d = this._dataIt1;
+        if (!d) {
+            tbody.innerHTML = `<tr><td colspan="4" class="text-center text-muted py-24">No se pudo cargar la declaración IT-1 para este período.</td></tr>`;
+            return;
+        }
+
+        const it1 = d.it1 || {};
+        const anexoA = d.anexo_a || {};
+        const itbisPag = anexoA.itbis_pagado || {};
+        const ncfC = anexoA.ncf_counts || {};
+        const ncfA = anexoA.ncf_amounts || {};
+        const fp = anexoA.formas_pago || {};
+
+        // Banner informativo
+        const bannerHtml = `
+            <tr><td colspan="4" style="padding:0;border:none;">
+                <div style="background:linear-gradient(135deg,#f0fdf4,#dcfce7);border:1px solid #86efac;border-radius:8px;padding:16px 20px;margin:12px 0;display:flex;align-items:flex-start;gap:14px;">
+                    <div style="width:36px;height:36px;border-radius:8px;background:#16a34a;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:bold;font-size:14px;flex-shrink:0;">
+                        IT-1
+                    </div>
+                    <div style="font-size:13px;color:#166534;line-height:1.5;flex:1;">
+                        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+                            <strong>Declaración Jurada y Pago de ITBIS (Formulario IT-1 y Anexo A Oficial)</strong>
+                            <span class="badge" style="background:#16a34a;color:#fff;font-size:11px;padding:3px 8px;border-radius:4px;">Plantilla Oficial DGII IT-1-2020.xls</span>
+                        </div>
+                        <div style="margin-top:4px;color:#14532d;">
+                            Contribuyente: <strong>${d.company_name}</strong> (RNC: <code>${d.tax_id}</code>) &bull; Período: <strong>${d.period_formatted}</strong> &bull; Fecha Límite de Pago: <strong>${d.deadline}</strong>
+                        </div>
+                    </div>
+                </div>
+            </td></tr>
+        `;
+
+        headers.innerHTML = `
+            <th style="width:140px;">Casilla Oficial</th>
+            <th>Concepto / Descripción del Formulario</th>
+            <th class="text-right" style="width:200px;">Monto Calculado</th>
+            <th style="width:260px;">Fórmula / Base Imponible</th>
+        `;
+
+        const row = (casilla, title, amount, note, isHighlight = false, isFormula = false, isResult = false) => {
+            let bg = isResult ? 'background:rgba(22,163,74,0.08);' : (isHighlight ? 'background:rgba(2,132,199,0.04);' : '');
+            let fontColor = isResult ? 'color:#15803d;' : (isHighlight ? 'color:var(--color-primary);' : '');
+            return `
+                <tr style="${bg}">
+                    <td>
+                        <span class="badge" style="font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:700;${isResult ? 'background:#16a34a;color:#fff;' : 'background:var(--bg-hover);color:var(--color-text-primary);border:1px solid var(--color-border);'}">
+                            ${casilla}
+                        </span>
+                    </td>
+                    <td>
+                        <strong style="${isResult ? 'font-size:14px;color:#15803d;' : ''}">${title}</strong>
+                        ${isFormula ? '<span style="font-size:11px;color:var(--color-text-muted);display:block;margin-top:2px;">Fórmula automática DGII</span>' : ''}
+                    </td>
+                    <td class="text-right font-semibold" style="${fontColor}${isResult ? 'font-size:16px;' : 'font-size:14px;'}">
+                        ${App.formatCurrency(amount || 0, 'DOP')}
+                    </td>
+                    <td style="font-size:12px;color:var(--color-text-muted);">${note}</td>
+                </tr>
+            `;
+        };
+
+        const sectionHeader = (title) => `
+            <tr style="background:var(--bg-hover);">
+                <td colspan="4" style="padding:10px 16px;font-weight:700;font-size:12px;text-transform:uppercase;letter-spacing:0.5px;color:var(--color-text-primary);border-top:2px solid var(--color-border);border-bottom:1px solid var(--color-border);">
+                    ${title}
+                </td>
+            </tr>
+        `;
+
+        tbody.innerHTML = bannerHtml + `
+            ${sectionHeader('I. Operaciones del Período (Ingresos por Ventas 607)')}
+            ${row('Casilla 1', 'Total de Operaciones del Período', it1.casilla_1_total_operaciones, "Fórmula: ='Anexo A'!W25", false, true)}
+            ${row('Casilla 11', 'Operaciones Gravadas al 18% (Base Imponible)', it1.casilla_11_gravadas_18, 'Total facturado en ventas gravadas con 18%', true)}
+            
+            ${sectionHeader('II. Liquidación y Determinación del ITBIS (Ventas vs Compras)')}
+            ${row('Casilla 16 / 21', 'Total ITBIS Cobrado en Ventas (18%)', it1.casilla_21_total_itbis_cobrado, 'Fórmula: =V26*0.18 (Casilla 11 * 18%)', true, true)}
+            ${row('Casilla 22', 'ITBIS Pagado en Compras Locales Deducible (Bienes)', it1.casilla_22_itbis_bienes, "Fórmula: ='Anexo A'!O87 (De formato 606)", false, true)}
+            ${row('Casilla 23', 'ITBIS Pagado por Servicios Deducibles', it1.casilla_23_itbis_servicios, "Fórmula: ='Anexo A'!P87 (De formato 606)", false, true)}
+            ${row('Casilla 25', 'Total ITBIS Deducible en Compras / Gastos', it1.casilla_25_total_itbis_deducible, 'Fórmula: =V39+V40 (Bienes + Servicios)', true, true)}
+            ${row('Casilla 26', 'Impuesto a Pagar (ITBIS Neto)', it1.casilla_26_impuesto_a_pagar, 'Fórmula: =IF(V38-V42>0, V38-V42, 0)', false, true)}
+            ${row('Casilla 27', 'Saldo a Favor del Período', it1.casilla_27_saldo_a_favor, 'Fórmula: =IF(V42-V38>0, V42-V38, 0)', false, true)}
+            ${row('Casilla 38', 'TOTAL A PAGAR AL FISCO (DGII)', it1.casilla_38_total_a_pagar, 'Monto final a liquidar en ventanilla bancaria u Oficina Virtual', false, true, true)}
+        `;
+
+        summary.innerHTML = `
+            <div>
+                <span>Período Fiscal: <strong>${d.period_formatted}</strong></span> &bull; 
+                <span>Fecha Límite: <strong style="color:var(--color-danger-icon);">${d.deadline}</strong></span>
+            </div>
+            <div>
+                Total Impuesto Determinado: <strong style="color:#16a34a;font-size:18px;margin-left:8px;">${App.formatCurrency(it1.casilla_38_total_a_pagar || 0, 'DOP')}</strong>
+            </div>
+        `;
+
+        // Render Anexo A Reference breakdown in refBox
+        if (refBox) {
+            refBox.innerHTML = `
+                <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(320px, 1fr));gap:16px;">
+                    <!-- Card 1: Comprobantes Emitidos (Renglón II) -->
+                    <div class="table-outer" style="padding:18px;background:var(--bg-card);border:1px solid var(--color-border);border-radius:8px;">
+                        <h4 style="font-size:13px;font-weight:700;margin-bottom:12px;color:var(--color-text-primary);display:flex;align-items:center;justify-content:space-between;">
+                            <span>Anexo A: Comprobantes Emitidos (Renglón II)</span>
+                            <span class="badge" style="background:var(--bg-hover);font-size:10px;">Fórmulas T15:W24</span>
+                        </h4>
+                        <table style="width:100%;font-size:12px;border-collapse:collapse;">
+                            <tbody>
+                                <tr style="border-bottom:1px solid var(--color-border);">
+                                    <td style="padding:6px 0;">Crédito Fiscal (B01 / E31):</td>
+                                    <td class="text-right" style="padding:6px 0;font-family:'JetBrains Mono',monospace;"><strong>${ncfC['01_31'] || 0}</strong> doc(s)</td>
+                                    <td class="text-right font-semibold" style="padding:6px 0;">${App.formatCurrency(ncfA['01_31'] || 0, 'DOP')}</td>
+                                </tr>
+                                <tr style="border-bottom:1px solid var(--color-border);">
+                                    <td style="padding:6px 0;">Facturas de Consumo (B02 / E32):</td>
+                                    <td class="text-right" style="padding:6px 0;font-family:'JetBrains Mono',monospace;"><strong>${ncfC['02_32'] || 0}</strong> doc(s)</td>
+                                    <td class="text-right font-semibold" style="padding:6px 0;">${App.formatCurrency(ncfA['02_32'] || 0, 'DOP')}</td>
+                                </tr>
+                                <tr style="border-bottom:1px solid var(--color-border);">
+                                    <td style="padding:6px 0;">Notas de Crédito (B04 / E34):</td>
+                                    <td class="text-right" style="padding:6px 0;font-family:'JetBrains Mono',monospace;color:#dc2626;"><strong>${ncfC['04_34'] || 0}</strong> doc(s)</td>
+                                    <td class="text-right font-semibold" style="padding:6px 0;color:#dc2626;">-${App.formatCurrency(ncfA['04_34'] || 0, 'DOP')}</td>
+                                </tr>
+                                <tr style="border-bottom:1px solid var(--color-border);">
+                                    <td style="padding:6px 0;">Gubernamentales / Reg. Especial:</td>
+                                    <td class="text-right" style="padding:6px 0;font-family:'JetBrains Mono',monospace;"><strong>${(ncfC['14_44'] || 0) + (ncfC['15_45'] || 0)}</strong> doc(s)</td>
+                                    <td class="text-right font-semibold" style="padding:6px 0;">${App.formatCurrency((ncfA['14_44'] || 0) + (ncfA['15_45'] || 0), 'DOP')}</td>
+                                </tr>
+                                <tr style="background:var(--bg-hover);font-weight:700;">
+                                    <td style="padding:8px 0;">Total Operaciones (Casilla 11):</td>
+                                    <td class="text-right" style="padding:8px 0;">—</td>
+                                    <td class="text-right" style="padding:8px 0;color:var(--color-primary);">${App.formatCurrency(anexoA.total_operaciones || 0, 'DOP')}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Card 2: Formas de Pago (Renglón III) -->
+                    <div class="table-outer" style="padding:18px;background:var(--bg-card);border:1px solid var(--color-border);border-radius:8px;">
+                        <h4 style="font-size:13px;font-weight:700;margin-bottom:12px;color:var(--color-text-primary);display:flex;align-items:center;justify-content:space-between;">
+                            <span>Anexo A: Formas de Pago Declaradas (Renglón III)</span>
+                            <span class="badge" style="background:var(--bg-hover);font-size:10px;">W28:W34</span>
+                        </h4>
+                        <table style="width:100%;font-size:12px;border-collapse:collapse;">
+                            <tbody>
+                                <tr style="border-bottom:1px solid var(--color-border);">
+                                    <td style="padding:6px 0;">Efectivo (Casilla 12):</td>
+                                    <td class="text-right font-semibold" style="padding:6px 0;">${App.formatCurrency(fp.efectivo || 0, 'DOP')}</td>
+                                </tr>
+                                <tr style="border-bottom:1px solid var(--color-border);">
+                                    <td style="padding:6px 0;">Cheques / Transferencia (Casilla 13):</td>
+                                    <td class="text-right font-semibold" style="padding:6px 0;">${App.formatCurrency(fp.cheque_transferencia || 0, 'DOP')}</td>
+                                </tr>
+                                <tr style="border-bottom:1px solid var(--color-border);">
+                                    <td style="padding:6px 0;">Tarjeta Débito/Crédito (Casilla 14):</td>
+                                    <td class="text-right font-semibold" style="padding:6px 0;">${App.formatCurrency(fp.tarjeta || 0, 'DOP')}</td>
+                                </tr>
+                                <tr style="border-bottom:1px solid var(--color-border);">
+                                    <td style="padding:6px 0;">Venta a Crédito (Casilla 15):</td>
+                                    <td class="text-right font-semibold" style="padding:6px 0;color:var(--color-danger-icon);">${App.formatCurrency(fp.credito || 0, 'DOP')}</td>
+                                </tr>
+                                <tr style="background:var(--bg-hover);font-weight:700;">
+                                    <td style="padding:8px 0;">Total Recaudado / Percibido:</td>
+                                    <td class="text-right" style="padding:8px 0;color:#059669;">${App.formatCurrency((fp.efectivo || 0) + (fp.cheque_transferencia || 0) + (fp.tarjeta || 0) + (fp.credito || 0) + (fp.bonos || 0) + (fp.permuta || 0) + (fp.otras || 0), 'DOP')}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            `;
+        }
     },
 
     update606Field(idx, field, value) {
@@ -407,6 +609,11 @@ const ReportsModule = {
     },
 
     async prevalidate() {
+        if (this._currentTab === 'it1') {
+            App.showToast('La declaración IT-1 valida sus datos directamente en la planilla oficial de Excel con sus fórmulas matemáticas DGII.', 'info');
+            return;
+        }
+
         const periodStr = `${this._year}${String(this._month).padStart(2, '0')}`;
         const records = this.getCurrentRecords();
 
@@ -537,6 +744,10 @@ const ReportsModule = {
     },
 
     async exportExcel() {
+        if (this._currentTab === 'it1') {
+            return this.exportIt1Excel();
+        }
+
         const periodStr = `${this._year}${String(this._month).padStart(2, '0')}`;
         const records = this.getCurrentRecords();
 
@@ -594,6 +805,11 @@ const ReportsModule = {
     },
 
     async exportTxt() {
+        if (this._currentTab === 'it1') {
+            App.showToast('La declaración IT-1 oficial se presenta en formato Excel (.xls) o directamente en la Oficina Virtual de la DGII.', 'info');
+            return;
+        }
+
         const periodStr = `${this._year}${String(this._month).padStart(2, '0')}`;
         const records = this.getCurrentRecords();
 
@@ -646,6 +862,50 @@ const ReportsModule = {
         } catch (e) {
             console.error('TXT Export error:', e);
             App.showToast('Error al exportar archivo de reporte TXT', 'error');
+        }
+    },
+
+    async exportIt1Excel() {
+        const periodStr = `${this._year}${String(this._month).padStart(2, '0')}`;
+        App.showToast('Generando Formulario Oficial IT-1 y Anexo A en formato Excel DGII...', 'info');
+
+        try {
+            const token = App.state.token || localStorage.getItem('token');
+            const response = await fetch(`/api/dgii/reports/it1/export-excel?year=${this._year}&month=${this._month}`, {
+                method: 'GET',
+                headers: {
+                    'Accept': 'application/vnd.ms-excel, application/octet-stream',
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Authorization': `Bearer ${token}`
+                },
+                credentials: 'same-origin'
+            });
+
+            if (!response.ok) {
+                const errText = await response.text();
+                throw new Error(`Error del servidor (${response.status}): ${errText}`);
+            }
+
+            const blob = await response.blob();
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.target = '_blank';
+
+            const rnc = (this._dataIt1 && this._dataIt1.tax_id)
+                ? this._dataIt1.tax_id
+                : (App.state.settings?.company_tax_id ? App.state.settings.company_tax_id.replace(/[^0-9]/g, '') : '131000000');
+
+            a.download = `DGII_IT1_${rnc}_${periodStr}.xls`;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            URL.revokeObjectURL(url);
+
+            App.showToast('¡Formulario Oficial IT-1 (Excel DGII) descargado con éxito!', 'success');
+        } catch (e) {
+            console.error('IT-1 Excel Export error:', e);
+            App.showToast('Error al generar el formulario oficial IT-1', 'error');
         }
     }
 };

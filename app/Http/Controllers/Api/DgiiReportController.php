@@ -654,4 +654,57 @@ class DgiiReportController extends Controller
 
         return response()->json($result);
     }
+
+    /**
+     * Get IT-1 and Anexo A summary calculation for the period
+     */
+    public function getIt1Summary(Request $request, \App\Services\DgiiDeclarationService $declarationService)
+    {
+        $year = $request->query('year');
+        $month = $request->query('month');
+        if ($request->filled('period')) {
+            $p = str_replace('-', '', $request->input('period'));
+            $year = substr($p, 0, 4);
+            $month = substr($p, 4, 2);
+        }
+        $year = $year ?: date('Y');
+        $month = str_pad($month ?: date('m'), 2, '0', STR_PAD_LEFT);
+
+        $summary = $declarationService->calculateIt1Data($year, $month);
+
+        return response()->json([
+            'success' => true,
+            'data' => $summary,
+        ]);
+    }
+
+    /**
+     * Export Formulario Oficial IT-1 and Anexo A prefilled in official DGII Excel (.xls)
+     */
+    public function exportIt1Excel(Request $request, \App\Services\DgiiDeclarationService $declarationService)
+    {
+        $year = $request->input('year') ?: $request->query('year');
+        $month = $request->input('month') ?: $request->query('month');
+        if ($request->filled('period')) {
+            $p = str_replace('-', '', $request->input('period'));
+            $year = substr($p, 0, 4);
+            $month = substr($p, 4, 2);
+        }
+        $year = $year ?: date('Y');
+        $month = str_pad($month ?: date('m'), 2, '0', STR_PAD_LEFT);
+
+        $spreadsheet = $declarationService->generateIt1Excel($year, $month);
+        $periodRaw = "{$year}{$month}";
+        $companyTaxId = preg_replace('/[^0-9]/', '', Setting::where('setting_key', 'company_tax_id')->value('setting_value') ?? '132456785');
+        $filename = "DGII_IT1_{$companyTaxId}_{$periodRaw}.xls";
+
+        return response()->streamDownload(function () use ($spreadsheet) {
+            $writer = new \PhpOffice\PhpSpreadsheet\Writer\Xls($spreadsheet);
+            $writer->save('php://output');
+        }, $filename, [
+            'Content-Type' => 'application/vnd.ms-excel',
+            'Cache-Control' => 'max-age=0',
+        ]);
+    }
 }
+

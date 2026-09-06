@@ -542,17 +542,17 @@ select.form-control {
    TOAST — Mobile Positioned
    ═══════════════════════════════════════════════════════════ */
 .toast-ambient-backdrop {
-  mask-image: radial-gradient(ellipse 90% 280px at 50% 50%, rgba(0, 0, 0, 1) 25%, rgba(0, 0, 0, 0) 85%) !important;
-  -webkit-mask-image: radial-gradient(ellipse 90% 280px at 50% 50%, rgba(0, 0, 0, 1) 25%, rgba(0, 0, 0, 0) 85%) !important;
-  background: radial-gradient(ellipse 90% 280px at 50% 50%, rgba(0, 0, 0, 0.35) 0%, transparent 85%) !important;
+  mask-image: radial-gradient(ellipse 100% 180px at 50% 0%, rgba(0, 0, 0, 1) 25%, rgba(0, 0, 0, 0) 85%) !important;
+  -webkit-mask-image: radial-gradient(ellipse 100% 180px at 50% 0%, rgba(0, 0, 0, 1) 25%, rgba(0, 0, 0, 0) 85%) !important;
+  background: radial-gradient(ellipse 100% 180px at 50% 0%, rgba(0, 0, 0, 0.35) 0%, transparent 85%) !important;
 }
 
 .toast-container {
-  top: 50% !important;
+  top: calc(14px + env(safe-area-inset-top)) !important;
   left: 50% !important;
   right: auto !important;
   bottom: auto !important;
-  transform: translate(-50%, -50%) !important;
+  transform: translateX(-50%) !important;
   width: calc(100vw - 32px) !important;
   max-width: 380px !important;
   align-items: center !important;

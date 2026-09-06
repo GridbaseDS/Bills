@@ -191,6 +191,8 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/dgii/reports/{type}/prevalidate', [DgiiReportController::class, 'prevalidate']);
         Route::get('/dgii/reports/it1/summary', [DgiiReportController::class, 'getIt1Summary']);
         Route::match(['get', 'post'], '/dgii/reports/it1/export-excel', [DgiiReportController::class, 'exportIt1Excel']);
+        Route::get('/dgii/reports/ir2/summary', [DgiiReportController::class, 'getIr2Summary']);
+        Route::match(['get', 'post'], '/dgii/reports/ir2/export-excel', [DgiiReportController::class, 'exportIr2Excel']);
     });
 
     // Received Invoices (Aprobaciones Comerciales - Admin, Gerente and Contador)

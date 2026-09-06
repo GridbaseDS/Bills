@@ -706,5 +706,50 @@ class DgiiReportController extends Controller
             'Cache-Control' => 'max-age=0',
         ]);
     }
+
+    /**
+     * Get IR-2 and Anexo B-1/J/A-1 summary calculation for the fiscal year
+     */
+    public function getIr2Summary(Request $request, \App\Services\DgiiDeclarationService $declarationService)
+    {
+        $year = $request->query('year') ?: $request->input('year');
+        if ($request->filled('period')) {
+            $p = str_replace('-', '', $request->input('period'));
+            $year = substr($p, 0, 4);
+        }
+        $year = $year ?: date('Y');
+
+        $summary = $declarationService->calculateIr2Data((string)$year);
+
+        return response()->json([
+            'success' => true,
+            'data' => $summary,
+        ]);
+    }
+
+    /**
+     * Export Formulario Oficial IR-2 and Annexes prefilled in official DGII Excel (.xls)
+     */
+    public function exportIr2Excel(Request $request, \App\Services\DgiiDeclarationService $declarationService)
+    {
+        $year = $request->input('year') ?: $request->query('year');
+        if ($request->filled('period')) {
+            $p = str_replace('-', '', $request->input('period'));
+            $year = substr($p, 0, 4);
+        }
+        $year = $year ?: date('Y');
+
+        $spreadsheet = $declarationService->generateIr2Excel((string)$year);
+        $companyTaxId = preg_replace('/[^0-9]/', '', Setting::where('setting_key', 'company_tax_id')->value('setting_value') ?? '132456785');
+        $filename = "DGII_IR2_{$companyTaxId}_{$year}.xls";
+
+        return response()->streamDownload(function () use ($spreadsheet) {
+            $writer = new \PhpOffice\PhpSpreadsheet\Writer\Xls($spreadsheet);
+            $writer->save('php://output');
+        }, $filename, [
+            'Content-Type' => 'application/vnd.ms-excel',
+            'Cache-Control' => 'max-age=0',
+        ]);
+    }
 }
 

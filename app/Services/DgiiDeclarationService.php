@@ -394,4 +394,468 @@ class DgiiDeclarationService
 
         return $spreadsheet;
     }
+
+    /**
+     * Compute the official IR-2, Anexo B-1, Anexo J and Anexo A-1 annual summary data for a given fiscal year.
+     */
+    public function calculateIr2Data(string $year): array
+    {
+        $year = (int)$year;
+        $startDate = "{$year}-01-01";
+        $endDate = "{$year}-12-31";
+        $deadlineDate = Carbon::create($year + 1, 4, 30)->format('d/m/Y');
+
+        // Company settings
+        $settings = Setting::all()->pluck('setting_value', 'setting_key')->toArray();
+        $taxId = preg_replace('/[^0-9]/', '', $settings['company_tax_id'] ?? '132456785');
+        $companyName = $settings['company_name'] ?? 'Gridbase Digital Solutions SRL';
+        $commercialName = $settings['company_commercial_name'] ?? $companyName;
+        $phone = $settings['company_phone'] ?? '';
+        $email = $settings['company_email'] ?? '';
+
+        // 1. Fetch 607 records (Ventas anuales)
+        $invoices = Invoice::with(['client', 'payments'])
+            ->whereBetween('issue_date', [$startDate, $endDate])
+            ->whereNotIn('status', ['draft', 'cancelled'])
+            ->where(function ($q) {
+                $q->whereNull('ecf_type')
+                  ->orWhereNotIn('ecf_type', [41, 43, 47]);
+            })
+            ->orderBy('issue_date', 'asc')
+            ->get();
+
+        // 2. Fetch 606 records (Compras y Gastos anuales)
+        $receivedInvoices = ReceivedInvoice::whereBetween('fecha_emision', [$startDate, $endDate])
+            ->orderBy('fecha_emision', 'asc')
+            ->get();
+
+        $expenses = Expense::whereBetween('expense_date', [$startDate, $endDate])
+            ->orderBy('expense_date', 'asc')
+            ->get();
+
+        // Initialize Anexo J (Resumen 607 Ventas)
+        $jVentasCounts = [
+            '01_31' => 0, '02_32' => 0, '03_33' => 0, '04_34' => 0,
+            '12' => 0, '14_44' => 0, '15_45' => 0, '16_46' => 0, 'otras' => 0,
+        ];
+        $jVentasAmounts = [
+            '01_31' => 0.0, '02_32' => 0.0, '03_33' => 0.0, '04_34' => 0.0,
+            '12' => 0.0, '14_44' => 0.0, '15_45' => 0.0, '16_46' => 0.0, 'otras' => 0.0,
+        ];
+
+        $totalVentasLocales = 0.0;
+        $totalExportaciones = 0.0;
+        $totalDevolucionesVentas = 0.0;
+        $totalRetencionesEstado = 0.0;
+        $totalCobrosRecibidos = 0.0;
+        $totalFacturadoAnual = 0.0;
+
+        foreach ($invoices as $inv) {
+            $ncf = strtoupper(trim($inv->is_ecf ? ($inv->encf ?: $inv->invoice_number) : $inv->invoice_number));
+            $rate = ($inv->currency && $inv->currency !== 'DOP') ? (float)($inv->exchange_rate ?? 1.0) : 1.0;
+            if ($rate <= 0) $rate = 1.0;
+
+            $subtotalDop = round(((float)$inv->subtotal) * $rate, 2);
+            $totalDop = round(((float)$inv->total) * $rate, 2);
+            $prefix = substr($ncf, 0, 3);
+
+            $totalFacturadoAnual += $totalDop;
+
+            // Retenciones de Estado (e-CF 45 o B15 si aplica)
+            if (in_array($prefix, ['B15', 'E45'])) {
+                $totalRetencionesEstado += round($subtotalDop * 0.05, 2);
+            }
+
+            // Anexo J clasificación
+            if (in_array($prefix, ['B01', 'E31'])) {
+                $jVentasCounts['01_31']++;
+                $jVentasAmounts['01_31'] += $subtotalDop;
+                $totalVentasLocales += $subtotalDop;
+            } elseif (in_array($prefix, ['B02', 'E32'])) {
+                $jVentasCounts['02_32']++;
+                $jVentasAmounts['02_32'] += $subtotalDop;
+                $totalVentasLocales += $subtotalDop;
+            } elseif (in_array($prefix, ['B03', 'E33'])) {
+                $jVentasCounts['03_33']++;
+                $jVentasAmounts['03_33'] += $subtotalDop;
+                $totalVentasLocales += $subtotalDop;
+            } elseif (in_array($prefix, ['B04', 'E34'])) {
+                $jVentasCounts['04_34']++;
+                $jVentasAmounts['04_34'] += $subtotalDop;
+                $totalDevolucionesVentas += $subtotalDop;
+            } elseif (in_array($prefix, ['B14', 'E44'])) {
+                $jVentasCounts['14_44']++;
+                $jVentasAmounts['14_44'] += $subtotalDop;
+                $totalVentasLocales += $subtotalDop;
+            } elseif (in_array($prefix, ['B15', 'E45'])) {
+                $jVentasCounts['15_45']++;
+                $jVentasAmounts['15_45'] += $subtotalDop;
+                $totalVentasLocales += $subtotalDop;
+            } elseif (in_array($prefix, ['B16', 'E46'])) {
+                $jVentasCounts['16_46']++;
+                $jVentasAmounts['16_46'] += $subtotalDop;
+                $totalExportaciones += $subtotalDop;
+            } else {
+                $jVentasCounts['01_31']++;
+                $jVentasAmounts['01_31'] += $subtotalDop;
+                $totalVentasLocales += $subtotalDop;
+            }
+
+            // Sum payments received in year
+            foreach ($inv->payments as $p) {
+                $pYear = $p->payment_date ? Carbon::parse($p->payment_date)->year : $year;
+                if ($pYear === $year) {
+                    $totalCobrosRecibidos += round(((float)$p->amount) * $rate, 2);
+                }
+            }
+        }
+
+        // Cuentas por cobrar a clientes al 31 de diciembre
+        $cuentasPorCobrarClientes = max(0.0, round($totalFacturadoAnual - $totalCobrosRecibidos, 2));
+
+        // Anexo B-1: Ingresos de Operaciones Netos
+        $totalIngresosNetosB1 = round($totalVentasLocales + $totalExportaciones - $totalDevolucionesVentas, 2);
+
+        // 3. Compras y Gastos (Anexo B-1 rubros 5 al 13 y Anexo J gastos 606)
+        $gastosRubros = [
+            '01' => 0.0, // Personal (B-1!I39)
+            '02' => 0.0, // Trabajos y Servicios (B-1!I47)
+            '03' => 0.0, // Arrendamientos (B-1!I56)
+            '04' => 0.0, // Gastos Activos Fijos (B-1!I66)
+            '05' => 0.0, // Representación / Publicidad (B-1!I71)
+            '06' => 0.0, // Otras Deducciones / Seguros (B-1!I80)
+            '07' => 0.0, // Financieros (B-1!I90)
+            '08' => 0.0, // Extraordinarios (B-1!I100)
+            '09' => 0.0, // Costo de Venta (B-1!I37)
+        ];
+
+        // Anexo J (Gastos sustentados 606)
+        $jGastosCounts = [
+            '01_31' => 0, '03_33' => 0, '04_34' => 0, '15_45' => 0, '14_44' => 0,
+            '11_41' => 0, '13_43' => 0,
+        ];
+        $jGastosAmounts = [
+            '01_31' => 0.0, '03_33' => 0.0, '04_34' => 0.0, '15_45' => 0.0, '14_44' => 0.0,
+            '11_41' => 0.0, '13_43' => 0.0,
+        ];
+
+        $seenNcfs = [];
+        $totalGastosPagados = 0.0;
+        $totalGastosFacturados = 0.0;
+
+        // Process ReceivedInvoices
+        foreach ($receivedInvoices as $ri) {
+            $encfClean = strtoupper(trim($ri->encf ?? ''));
+            if (!empty($encfClean)) $seenNcfs[$encfClean] = true;
+
+            $montoNeto = (float)($ri->monto_subtotal ?? ($ri->monto_total - ($ri->monto_total / 1.18)));
+            if ($montoNeto <= 0) $montoNeto = (float)$ri->monto_total;
+            $totalGastosFacturados += (float)$ri->monto_total;
+            $totalGastosPagados += (float)$ri->monto_total;
+
+            $tipoGasto = str_pad($ri->tipo_bien_servicio ?? '02', 2, '0', STR_PAD_LEFT);
+            if (isset($gastosRubros[$tipoGasto])) {
+                $gastosRubros[$tipoGasto] += round($montoNeto, 2);
+            } else {
+                $gastosRubros['02'] += round($montoNeto, 2);
+            }
+
+            $prefix = substr($encfClean, 0, 3);
+            if (in_array($prefix, ['B01', 'E31'])) {
+                $jGastosCounts['01_31']++;
+                $jGastosAmounts['01_31'] += round($montoNeto, 2);
+            } elseif (in_array($prefix, ['B03', 'E33'])) {
+                $jGastosCounts['03_33']++;
+                $jGastosAmounts['03_33'] += round($montoNeto, 2);
+            } elseif (in_array($prefix, ['B04', 'E34'])) {
+                $jGastosCounts['04_34']++;
+                $jGastosAmounts['04_34'] += round($montoNeto, 2);
+            } elseif (in_array($prefix, ['B15', 'E45'])) {
+                $jGastosCounts['15_45']++;
+                $jGastosAmounts['15_45'] += round($montoNeto, 2);
+            } elseif (in_array($prefix, ['B14', 'E44'])) {
+                $jGastosCounts['14_44']++;
+                $jGastosAmounts['14_44'] += round($montoNeto, 2);
+            } elseif (in_array($prefix, ['B11', 'E41'])) {
+                $jGastosCounts['11_41']++;
+                $jGastosAmounts['11_41'] += round($montoNeto, 2);
+            } elseif (in_array($prefix, ['B13', 'E43'])) {
+                $jGastosCounts['13_43']++;
+                $jGastosAmounts['13_43'] += round($montoNeto, 2);
+            } else {
+                $jGastosCounts['01_31']++;
+                $jGastosAmounts['01_31'] += round($montoNeto, 2);
+            }
+        }
+
+        // Process Expenses
+        foreach ($expenses as $exp) {
+            $ncfClean = strtoupper(trim($exp->ncf ?? ''));
+            if (!empty($ncfClean) && isset($seenNcfs[$ncfClean])) continue;
+            if (!empty($ncfClean)) $seenNcfs[$ncfClean] = true;
+
+            $montoNeto = (float)($exp->amount ?? 0.0);
+            $totalGastosFacturados += ($montoNeto + (float)($exp->tax_amount ?? 0.0));
+            $totalGastosPagados += ($montoNeto + (float)($exp->tax_amount ?? 0.0));
+
+            $tipoGasto = str_pad($exp->expense_type ?? '02', 2, '0', STR_PAD_LEFT);
+            if (isset($gastosRubros[$tipoGasto])) {
+                $gastosRubros[$tipoGasto] += round($montoNeto, 2);
+            } else {
+                $gastosRubros['02'] += round($montoNeto, 2);
+            }
+
+            $prefix = substr($ncfClean, 0, 3);
+            if (in_array($prefix, ['B01', 'E31'])) {
+                $jGastosCounts['01_31']++;
+                $jGastosAmounts['01_31'] += round($montoNeto, 2);
+            } elseif (in_array($prefix, ['B03', 'E33'])) {
+                $jGastosCounts['03_33']++;
+                $jGastosAmounts['03_33'] += round($montoNeto, 2);
+            } elseif (in_array($prefix, ['B04', 'E34'])) {
+                $jGastosCounts['04_34']++;
+                $jGastosAmounts['04_34'] += round($montoNeto, 2);
+            } elseif (in_array($prefix, ['B15', 'E45'])) {
+                $jGastosCounts['15_45']++;
+                $jGastosAmounts['15_45'] += round($montoNeto, 2);
+            } elseif (in_array($prefix, ['B14', 'E44'])) {
+                $jGastosCounts['14_44']++;
+                $jGastosAmounts['14_44'] += round($montoNeto, 2);
+            } elseif (in_array($prefix, ['B11', 'E41'])) {
+                $jGastosCounts['11_41']++;
+                $jGastosAmounts['11_41'] += round($montoNeto, 2);
+            } elseif (in_array($prefix, ['B13', 'E43'])) {
+                $jGastosCounts['13_43']++;
+                $jGastosAmounts['13_43'] += round($montoNeto, 2);
+            } else {
+                $jGastosCounts['01_31']++;
+                $jGastosAmounts['01_31'] += round($montoNeto, 2);
+            }
+        }
+
+        // Total Costos y Gastos Operativos
+        $totalCostosYGastos = array_sum($gastosRubros);
+
+        // Beneficio o Pérdida neta del ejercicio (Anexo B-1 Renglón 14 / IR-2 Casilla 1)
+        $beneficioNetoAntesImpuesto = round($totalIngresosNetosB1 - $totalCostosYGastos, 2);
+
+        // Renta Neta Imponible (IR-2 Casilla 7 y 11)
+        $rentaNetaImponible = max(0.0, $beneficioNetoAntesImpuesto);
+
+        // Impuesto Liquidado (IR-2 Casilla 12 - 27% sobre renta imponible)
+        $tasaIsr = 0.27;
+        $impuestoLiquidado = round($rentaNetaImponible * $tasaIsr, 2);
+
+        // Total a Pagar (IR-2 Casilla 23 y 31)
+        $diferenciaPagar = max(0.0, round($impuestoLiquidado - $totalRetencionesEstado, 2));
+        $saldoAFavor = ($impuestoLiquidado < $totalRetencionesEstado) ? round($totalRetencionesEstado - $impuestoLiquidado, 2) : 0.0;
+
+        // Cajas y Bancos estimado
+        $cajaYBancos = max(0.0, round($totalCobrosRecibidos - $totalGastosPagados, 2));
+
+        return [
+            'year' => (string)$year,
+            'period_formatted' => "01/01/{$year} - 31/12/{$year}",
+            'deadline' => $deadlineDate,
+            'tax_id' => $taxId,
+            'company_name' => $companyName,
+            'commercial_name' => $commercialName,
+            'phone' => $phone,
+            'email' => $email,
+            'sector' => 'Manufactura, Comercio, Agropecuaria',
+            'b1' => [
+                'ventas_locales' => $totalVentasLocales,
+                'exportaciones' => $totalExportaciones,
+                'devoluciones_ventas' => $totalDevolucionesVentas,
+                'total_ingresos_netos' => $totalIngresosNetosB1,
+                'costo_venta' => $gastosRubros['09'],
+                'gastos_personal' => $gastosRubros['01'],
+                'gastos_servicios' => $gastosRubros['02'],
+                'arrendamientos' => $gastosRubros['03'],
+                'gastos_activos_fijos' => $gastosRubros['04'],
+                'gastos_representacion' => $gastosRubros['05'],
+                'otras_deducciones' => $gastosRubros['06'],
+                'gastos_financieros' => $gastosRubros['07'],
+                'gastos_extraordinarios' => $gastosRubros['08'],
+                'total_costos_gastos' => $totalCostosYGastos,
+                'beneficio_neto' => $beneficioNetoAntesImpuesto,
+            ],
+            'anexo_j' => [
+                'ventas' => [
+                    'counts' => $jVentasCounts,
+                    'amounts' => $jVentasAmounts,
+                    'total' => $totalIngresosNetosB1,
+                ],
+                'gastos' => [
+                    'counts' => $jGastosCounts,
+                    'amounts' => $jGastosAmounts,
+                    'total' => $totalCostosYGastos,
+                ],
+            ],
+            'a1' => [
+                'caja_bancos' => $cajaYBancos,
+                'cuentas_por_cobrar' => $cuentasPorCobrarClientes,
+            ],
+            'ir2' => [
+                'casilla_A_total_ingresos' => $totalIngresosNetosB1,
+                'casilla_1_beneficio_neto' => $beneficioNetoAntesImpuesto,
+                'casilla_7_renta_neta' => $rentaNetaImponible,
+                'casilla_11_renta_imponible' => $rentaNetaImponible,
+                'casilla_12_impuesto_liquidado' => $impuestoLiquidado,
+                'casilla_14_retenciones_estado' => $totalRetencionesEstado,
+                'casilla_23_diferencia_pagar' => $diferenciaPagar,
+                'casilla_24_saldo_favor' => $saldoAFavor,
+                'casilla_31_total_a_pagar' => $diferenciaPagar,
+                'tasa_aplicada' => '27%',
+            ],
+        ];
+    }
+
+    /**
+     * Generate the official IR-2 Excel workbook (Vers. 2026) prefilled with annual numbers.
+     */
+    public function generateIr2Excel(string $year): Spreadsheet
+    {
+        ini_set('memory_limit', '1536M');
+        set_time_limit(300);
+
+        $data = $this->calculateIr2Data($year);
+        $templatePath = resource_path('templates/dgii/IR-2-2026.xls');
+
+        if (!file_exists($templatePath)) {
+            throw new \RuntimeException("La plantilla oficial IR-2-2026.xls no fue encontrada en: {$templatePath}");
+        }
+
+        $reader = new XlsReader();
+        $spreadsheet = $reader->load($templatePath);
+
+        // 1. Llenar Hoja: IR-2
+        $sIR = $spreadsheet->getSheetByName('IR-2');
+        if ($sIR) {
+            // H3: Establecer el sector para que las fórmulas DGII activen Sector1
+            $sIR->setCellValue('H3', 'Manufactura, Comercio, Agropecuaria');
+            $sIR->setCellValue('AA8', (int)$data['year']);
+            $sIR->setCellValue('F13', 'NORMAL');
+            $sIR->setCellValue('D16', $data['tax_id']);
+            $sIR->setCellValue('L16', $data['company_name']);
+            $sIR->setCellValue('F19', $data['commercial_name']);
+            $sIR->setCellValue('F22', $data['phone']);
+            $sIR->setCellValue('Q22', $data['email']);
+            $sIR->setCellValue('S25', '01/01/' . $data['year']);
+            $sIR->setCellValue('W25', '31/12/' . $data['year']);
+
+            // Retenciones de Estado (Casilla 14)
+            if ($data['ir2']['casilla_14_retenciones_estado'] > 0) {
+                $sIR->setCellValue('AB46', $data['ir2']['casilla_14_retenciones_estado']);
+            }
+        }
+
+        // 2. Llenar Hoja: B-1 (Estado de Resultados)
+        $sB1 = $spreadsheet->getSheetByName('B-1');
+        if ($sB1) {
+            $sB1->setCellValue('K7', (int)$data['year']);
+            $sB1->setCellValue('D12', $data['tax_id']);
+            $sB1->setCellValue('G12', $data['company_name']);
+
+            $b1 = $data['b1'];
+            if ($b1['ventas_locales'] > 0) $sB1->setCellValue('I17', $b1['ventas_locales']);
+            if ($b1['exportaciones'] > 0) $sB1->setCellValue('I18', $b1['exportaciones']);
+            if ($b1['devoluciones_ventas'] > 0) $sB1->setCellValue('I19', $b1['devoluciones_ventas']);
+
+            // Costos y Gastos
+            if ($b1['costo_venta'] > 0) $sB1->setCellValue('I37', $b1['costo_venta']);
+            if ($b1['gastos_personal'] > 0) $sB1->setCellValue('I39', $b1['gastos_personal']);
+            if ($b1['gastos_servicios'] > 0) $sB1->setCellValue('I47', $b1['gastos_servicios']);
+            if ($b1['arrendamientos'] > 0) $sB1->setCellValue('I56', $b1['arrendamientos']);
+            if ($b1['gastos_activos_fijos'] > 0) $sB1->setCellValue('I66', $b1['gastos_activos_fijos']);
+            if ($b1['gastos_representacion'] > 0) $sB1->setCellValue('I71', $b1['gastos_representacion']);
+            if ($b1['otras_deducciones'] > 0) $sB1->setCellValue('I80', $b1['otras_deducciones']);
+            if ($b1['gastos_financieros'] > 0) $sB1->setCellValue('I90', $b1['gastos_financieros']);
+            if ($b1['gastos_extraordinarios'] > 0) $sB1->setCellValue('I100', $b1['gastos_extraordinarios']);
+        }
+
+        // 3. Llenar Hoja: J (Datos Informativos Ventas y Gastos)
+        $sJ = $spreadsheet->getSheetByName('J');
+        if ($sJ) {
+            $sJ->setCellValue('L8', (int)$data['year']);
+            $sJ->setCellValue('D13', $data['tax_id']);
+            $sJ->setCellValue('G13', $data['company_name']);
+
+            // Ventas 607
+            $jV = $data['anexo_j']['ventas'];
+            if ($jV['counts']['01_31'] > 0) {
+                $sJ->setCellValue('I18', $jV['counts']['01_31']);
+                $sJ->setCellValue('J18', $jV['amounts']['01_31']);
+            }
+            if ($jV['counts']['02_32'] > 0) {
+                $sJ->setCellValue('I19', $jV['counts']['02_32']);
+                $sJ->setCellValue('J19', $jV['amounts']['02_32']);
+            }
+            if ($jV['counts']['03_33'] > 0) {
+                $sJ->setCellValue('I20', $jV['counts']['03_33']);
+                $sJ->setCellValue('J20', $jV['amounts']['03_33']);
+            }
+            if ($jV['counts']['04_34'] > 0) {
+                $sJ->setCellValue('I21', $jV['counts']['04_34']);
+                $sJ->setCellValue('J21', $jV['amounts']['04_34']);
+            }
+            if ($jV['counts']['14_44'] > 0) {
+                $sJ->setCellValue('I23', $jV['counts']['14_44']);
+                $sJ->setCellValue('J23', $jV['amounts']['14_44']);
+            }
+            if ($jV['counts']['15_45'] > 0) {
+                $sJ->setCellValue('I24', $jV['counts']['15_45']);
+                $sJ->setCellValue('J24', $jV['amounts']['15_45']);
+            }
+
+            // Gastos 606
+            $jG = $data['anexo_j']['gastos'];
+            if ($jG['counts']['01_31'] > 0) {
+                $sJ->setCellValue('I28', $jG['counts']['01_31']);
+                $sJ->setCellValue('J28', $jG['amounts']['01_31']);
+            }
+            if ($jG['counts']['03_33'] > 0) {
+                $sJ->setCellValue('I29', $jG['counts']['03_33']);
+                $sJ->setCellValue('J29', $jG['amounts']['03_33']);
+            }
+            if ($jG['counts']['04_34'] > 0) {
+                $sJ->setCellValue('I30', $jG['counts']['04_34']);
+                $sJ->setCellValue('J30', $jG['amounts']['04_34']);
+            }
+            if ($jG['counts']['15_45'] > 0) {
+                $sJ->setCellValue('I31', $jG['counts']['15_45']);
+                $sJ->setCellValue('J31', $jG['amounts']['15_45']);
+            }
+            if ($jG['counts']['14_44'] > 0) {
+                $sJ->setCellValue('I32', $jG['counts']['14_44']);
+                $sJ->setCellValue('J32', $jG['amounts']['14_44']);
+            }
+            if ($jG['counts']['11_41'] > 0) {
+                $sJ->setCellValue('I34', $jG['counts']['11_41']);
+                $sJ->setCellValue('J34', $jG['amounts']['11_41']);
+            }
+            if ($jG['counts']['13_43'] > 0) {
+                $sJ->setCellValue('I35', $jG['counts']['13_43']);
+                $sJ->setCellValue('J35', $jG['amounts']['13_43']);
+            }
+        }
+
+        // 4. Llenar Hoja: A-1 (Balance General)
+        $sA1 = $spreadsheet->getSheetByName('A-1');
+        if ($sA1) {
+            $sA1->setCellValue('M8', (int)$data['year']);
+            $sA1->setCellValue('D12', $data['tax_id']);
+            $sA1->setCellValue('G12', $data['company_name']);
+
+            $a1 = $data['a1'];
+            if ($a1['caja_bancos'] > 0) {
+                $sA1->setCellValue('I17', $a1['caja_bancos']);
+            }
+            if ($a1['cuentas_por_cobrar'] > 0) {
+                $sA1->setCellValue('I18', $a1['cuentas_por_cobrar']);
+            }
+        }
+
+        return $spreadsheet;
+    }
 }

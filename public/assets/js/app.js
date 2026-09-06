@@ -1110,6 +1110,30 @@ window.App = {
                                             <span class="demo-timer-label">Tiempo Restante:</span>
                                             <span id="demo-countdown-dropdown" class="demo-timer-value">Calculando...</span>
                                         </div>
+                                        <div class="demo-data-mode-box" style="margin:4px 0 2px 0;padding:10px 12px;border-radius:8px;background:var(--bg-hover);border:1px solid var(--color-border);">
+                                            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+                                                <span style="font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--color-text-secondary);">Modo de Instancia</span>
+                                                <span id="demo-data-status-badge" class="badge" style="font-size:10px;font-weight:700;${this.state.has_demo_data ? 'background:rgba(16,185,129,0.15);color:#10b981;' : 'background:rgba(59,130,246,0.15);color:#3b82f6;'}">${this.state.has_demo_data ? 'Con Datos Demo' : 'En Limpio'}</span>
+                                            </div>
+                                            <div style="font-size:11px;color:var(--color-text-muted);margin-bottom:8px;line-height:1.35;">
+                                                ${this.state.has_demo_data
+                                                    ? 'Catálogo de ítems, clientes y facturas e-CF cargados.'
+                                                    : 'Instancia en blanco lista para registrar tus propios datos.'}
+                                            </div>
+                                            <div style="display:flex;gap:6px;">
+                                                ${this.state.has_demo_data ? `
+                                                    <button type="button" class="btn btn-secondary" style="width:100%;padding:5px 8px;font-size:11px;display:flex;align-items:center;justify-content:center;gap:6px;" onclick="App.toggleDemoData(false); App.closeDemoDropdown();">
+                                                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                                                        Dejar en Limpio (En Blanco)
+                                                    </button>
+                                                ` : `
+                                                    <button type="button" class="btn btn-primary" style="width:100%;padding:5px 8px;font-size:11px;display:flex;align-items:center;justify-content:center;gap:6px;" onclick="App.toggleDemoData(true); App.closeDemoDropdown();">
+                                                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                                                        Insertar Datos de Demostración
+                                                    </button>
+                                                `}
+                                            </div>
+                                        </div>
                                         <p class="demo-dropdown-desc">
                                             Entorno de prueba con datos simulados y conexión DGII verificada. Los datos se reinician al expirar.
                                         </p>
@@ -2004,6 +2028,9 @@ window.App = {
             const res = await this.api('demo/status', { silent: true });
             if (res && res.expires_at) {
                 this.state.demo_expires_at = res.expires_at;
+                if (typeof res.has_demo_data !== 'undefined') {
+                    this.state.has_demo_data = Boolean(res.has_demo_data);
+                }
             }
         } catch (e) {}
 
@@ -2171,6 +2198,33 @@ window.App = {
             }
         } catch (e) {
             this.showToast('Error al restablecer demo: ' + e.message, 'error');
+        }
+    },
+
+    async toggleDemoData(loadDemoData) {
+        const actionText = loadDemoData
+            ? '¿Deseas insertar los datos de demostración (clientes, ítems, cotizaciones y facturas e-CF)? Esto reemplazará los datos actuales.'
+            : '¿Deseas vaciar los datos y dejar la instancia en limpio? Podrás empezar desde cero registrando tus propios productos y clientes.';
+
+        if (!confirm(actionText)) return;
+
+        try {
+            this.showToast(loadDemoData ? 'Cargando datos demo...' : 'Limpiando datos de la instancia...', 'info');
+            const endpoint = loadDemoData ? 'demo/seed-data' : 'demo/clear-data';
+            const res = await this.api(endpoint, {
+                method: 'POST',
+                body: { admin_key: this._demoAdminKey || '' }
+            });
+
+            if (res.success) {
+                this.state.has_demo_data = res.has_demo_data;
+                this.showToast(res.message || 'Operación completada con éxito', 'success');
+                setTimeout(() => window.location.reload(), 800);
+            } else {
+                this.showToast(res.error || 'No se pudo completar la operación', 'error');
+            }
+        } catch (err) {
+            this.showToast('Error: ' + err.message, 'error');
         }
     },
 

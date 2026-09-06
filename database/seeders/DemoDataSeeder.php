@@ -33,10 +33,9 @@ class DemoDataSeeder extends Seeder
                 'contact_name' => 'Luis Molina Achécar',
                 'email' => 'corporativo@bhd.com.do',
                 'phone' => '809-243-3232',
-                'address' => 'Av. 27 de Febrero esq. Winston Churchill',
+                'address_line1' => 'Av. 27 de Febrero esq. Winston Churchill',
                 'city' => 'Santo Domingo',
                 'country' => 'DO',
-                'currency' => 'DOP',
                 'is_active' => true,
             ]
         );
@@ -48,10 +47,9 @@ class DemoDataSeeder extends Seeder
                 'contact_name' => 'Alejandro Ramírez',
                 'email' => 'aramirez@gmail.com',
                 'phone' => '809-555-0199',
-                'address' => 'Calle Las Damas #12, Zona Colonial',
+                'address_line1' => 'Calle Las Damas #12, Zona Colonial',
                 'city' => 'Santo Domingo',
                 'country' => 'DO',
-                'currency' => 'DOP',
                 'is_active' => true,
             ]
         );
@@ -63,55 +61,51 @@ class DemoDataSeeder extends Seeder
                 'contact_name' => 'Fabián Suárez',
                 'email' => 'compras@cnd.com.do',
                 'phone' => '809-487-3000',
-                'address' => 'Autopista 30 de Mayo Km 6 1/2',
+                'address_line1' => 'Autopista 30 de Mayo Km 6 1/2',
                 'city' => 'Santo Domingo',
                 'country' => 'DO',
-                'currency' => 'DOP',
                 'is_active' => true,
             ]
         );
 
         $embajador = Client::firstOrCreate(
-            ['tax_id' => '1-01-54321-4'],
+            ['tax_id' => '1-01-54321-3'],
             [
                 'company_name' => 'Hotel El Embajador Royal Hideaway',
                 'contact_name' => 'El Hassan Zouaoui',
                 'email' => 'finanzas@elembajador.com',
                 'phone' => '809-221-2131',
-                'address' => 'Av. Sarasota #65, Bella Vista',
+                'address_line1' => 'Av. Sarasota #65, Bella Vista',
                 'city' => 'Santo Domingo',
                 'country' => 'DO',
-                'currency' => 'USD',
                 'is_active' => true,
             ]
         );
 
         $ramos = Client::firstOrCreate(
-            ['tax_id' => '1-01-00567-5'],
+            ['tax_id' => '1-01-00567-1'],
             [
                 'company_name' => 'Grupo Ramos, S.A.',
                 'contact_name' => 'Mercedes Ramos',
                 'email' => 'cuentasxpagar@gruporamos.com',
                 'phone' => '809-472-4444',
-                'address' => 'Av. Winston Churchill esq. Ángel Severo Cabral',
+                'address_line1' => 'Av. Winston Churchill esq. Ángel Severo Cabral',
                 'city' => 'Santo Domingo',
                 'country' => 'DO',
-                'currency' => 'DOP',
                 'is_active' => true,
             ]
         );
 
         $carol = Client::firstOrCreate(
-            ['tax_id' => '1-30-87654-7'],
+            ['tax_id' => '1-30-87654-1'],
             [
                 'company_name' => 'Farmacias Carol, S.A.S.',
                 'contact_name' => 'Julio César Curiel',
                 'email' => 'administracion@farmaciascarol.com',
                 'phone' => '809-563-2222',
-                'address' => 'Av. Abraham Lincoln #804',
+                'address_line1' => 'Av. Abraham Lincoln #804',
                 'city' => 'Santo Domingo',
                 'country' => 'DO',
-                'currency' => 'DOP',
                 'is_active' => true,
             ]
         );
@@ -389,10 +383,10 @@ class DemoDataSeeder extends Seeder
             'approved_at' => '2026-08-04 15:00:00',
         ]);
 
-        // Compra 2: e-CF Recibido Edesur Dominicana (RNC con DV válido: 101023454, 13 caracteres e-NCF)
+        // Compra 2: e-CF Recibido Edesur Dominicana (RNC con DV válido: 101023457, 13 caracteres e-NCF)
         $xmlEdesur = '<?xml version="1.0" encoding="utf-8"?><ECF><Encabezado><IdDoc><TipoeCF>31</TipoeCF><eNCF>E310000088921</eNCF></IdDoc></Encabezado><Totales><MontoGravadoTotal>20000.00</MontoGravadoTotal><TotalITBIS>3600.00</TotalITBIS><MontoTotal>23600.00</MontoTotal></Totales></ECF>';
         ReceivedInvoice::create([
-            'rnc_emisor' => '101023454',
+            'rnc_emisor' => '101023457',
             'razon_social_emisor' => 'Edesur Dominicana, S.A.',
             'encf' => 'E310000088921',
             'ecf_type' => '31',
@@ -406,7 +400,7 @@ class DemoDataSeeder extends Seeder
         // Gasto Manual 1: Papelería CCC (Comprobante B01 tradicional con 11 caracteres)
         Expense::create([
             'provider_name' => 'Papelería & Suministros CCC, SRL',
-            'provider_tax_id' => '1-30-87654-7',
+            'provider_tax_id' => '1-30-87654-1',
             'ncf' => 'B0100001209',
             'expense_date' => '2026-08-18',
             'subtotal' => 5000.00,

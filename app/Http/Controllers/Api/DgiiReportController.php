@@ -329,7 +329,7 @@ class DgiiReportController extends Controller
         
         $period = $request->input('period');
         $records = $request->input('records');
-        $companyTaxId = Setting::where('setting_key', 'company_tax_id')->value('setting_value') ?? '131000000';
+        $companyTaxId = Setting::where('setting_key', 'company_tax_id')->value('setting_value') ?? '132456785';
         $companyTaxId = preg_replace('/[^0-9]/', '', $companyTaxId);
         
         $totalAmount = 0;
@@ -399,7 +399,7 @@ class DgiiReportController extends Controller
         
         $period = $request->input('period');
         $records = $request->input('records');
-        $companyTaxId = Setting::where('setting_key', 'company_tax_id')->value('setting_value') ?? '131000000';
+        $companyTaxId = Setting::where('setting_key', 'company_tax_id')->value('setting_value') ?? '132456785';
         $companyTaxId = preg_replace('/[^0-9]/', '', $companyTaxId);
         
         // Header: 606|RNC|PERIODO|CANTIDAD_REGISTROS
@@ -509,7 +509,7 @@ class DgiiReportController extends Controller
 
         $period = $request->input('period');
         $records = $request->input('records');
-        $companyTaxId = Setting::where('setting_key', 'company_tax_id')->value('setting_value') ?? '131000000';
+        $companyTaxId = Setting::where('setting_key', 'company_tax_id')->value('setting_value') ?? '132456785';
         $companyTaxId = preg_replace('/[^0-9]/', '', $companyTaxId);
 
         // Header: 608|RNC|PERIODO|CANTIDAD_REGISTROS
@@ -545,7 +545,7 @@ class DgiiReportController extends Controller
 
         $period = $request->input('period');
         $records = $request->input('records');
-        $companyTaxId = $request->input('rnc') ?: (Setting::where('setting_key', 'company_tax_id')->value('setting_value') ?? '131000000');
+        $companyTaxId = $request->input('rnc') ?: (Setting::where('setting_key', 'company_tax_id')->value('setting_value') ?? '132456785');
         $companyTaxId = preg_replace('/[^0-9]/', '', $companyTaxId);
 
         $spreadsheet = $excelService->generate607Excel($companyTaxId, $period, $records);
@@ -572,7 +572,7 @@ class DgiiReportController extends Controller
 
         $period = $request->input('period');
         $records = $request->input('records');
-        $companyTaxId = $request->input('rnc') ?: (Setting::where('setting_key', 'company_tax_id')->value('setting_value') ?? '131000000');
+        $companyTaxId = $request->input('rnc') ?: (Setting::where('setting_key', 'company_tax_id')->value('setting_value') ?? '132456785');
         $companyTaxId = preg_replace('/[^0-9]/', '', $companyTaxId);
 
         $spreadsheet = $excelService->generate606Excel($companyTaxId, $period, $records);
@@ -599,7 +599,7 @@ class DgiiReportController extends Controller
 
         $period = $request->input('period');
         $records = $request->input('records');
-        $companyTaxId = $request->input('rnc') ?: (Setting::where('setting_key', 'company_tax_id')->value('setting_value') ?? '131000000');
+        $companyTaxId = $request->input('rnc') ?: (Setting::where('setting_key', 'company_tax_id')->value('setting_value') ?? '132456785');
         $companyTaxId = preg_replace('/[^0-9]/', '', $companyTaxId);
 
         $spreadsheet = $excelService->generate608Excel($companyTaxId, $period, $records);
@@ -626,7 +626,7 @@ class DgiiReportController extends Controller
 
         $period = $request->input('period');
         $records = $request->input('records');
-        $companyTaxId = $request->input('rnc') ?: (Setting::where('setting_key', 'company_tax_id')->value('setting_value') ?? '131000000');
+        $companyTaxId = $request->input('rnc') ?: (Setting::where('setting_key', 'company_tax_id')->value('setting_value') ?? '132456785');
         $companyTaxId = preg_replace('/[^0-9]/', '', $companyTaxId);
 
         $result = $validator->validateData($type, $companyTaxId, $period, $records);

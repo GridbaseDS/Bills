@@ -1600,6 +1600,18 @@ window.App = {
             </div>
         `;
 
+        // Activate ambient radial blur backdrop around centered area
+        let backdrop = document.getElementById('toast-ambient-backdrop');
+        if (!backdrop) {
+            backdrop = document.createElement('div');
+            backdrop.id = 'toast-ambient-backdrop';
+            backdrop.className = 'toast-ambient-backdrop';
+            document.body.appendChild(backdrop);
+        }
+        requestAnimationFrame(() => {
+            backdrop.classList.add('active');
+        });
+
         let dismissTimer = null;
         let isDismissed = false;
 
@@ -1608,7 +1620,15 @@ window.App = {
             isDismissed = true;
             if (dismissTimer) clearTimeout(dismissTimer);
             toast.classList.add('toast-hiding');
-            setTimeout(() => toast.remove(), 280);
+            setTimeout(() => {
+                toast.remove();
+                // Deactivate ambient backdrop if no other toasts are active
+                const remaining = container.querySelectorAll('.toast:not(.toast-hiding)');
+                if (remaining.length === 0) {
+                    const bd = document.getElementById('toast-ambient-backdrop');
+                    if (bd) bd.classList.remove('active');
+                }
+            }, 220);
         };
 
         const closeBtn = toast.querySelector('.toast-close');

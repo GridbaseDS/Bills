@@ -839,27 +839,20 @@ select.form-control {
   margin-bottom: 24px !important;
 }
 
-.invoice-detail-header .detail-header-top {
+.invoice-detail-header .detail-header-row-1 {
+  flex-direction: column !important;
+  align-items: stretch !important;
+  gap: 8px !important;
+}
+
+.invoice-detail-header .detail-header-row-2 {
   flex-direction: column !important;
   align-items: stretch !important;
   gap: 12px !important;
 }
 
-.invoice-detail-header .detail-left-block {
-  display: contents !important;
-}
-
-.invoice-detail-header .detail-breadcrumb {
-  order: 1 !important;
-}
-
 .invoice-detail-header .detail-title-block {
-  order: 2 !important;
   text-align: left !important;
-}
-
-.invoice-detail-header .detail-issue-date {
-  order: 3 !important;
 }
 
 .detail-actions {

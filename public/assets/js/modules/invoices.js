@@ -218,63 +218,63 @@ const InvoicesModule = {
             const inv = await App.api(`invoices/${id}`);
             container.innerHTML = `
                 <div class="invoice-detail-header">
-                    <div class="detail-header-top">
-                        <div class="detail-left-block">
-                            <div class="detail-breadcrumb" style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
-                                <a href="#facturas" class="btn-back">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                        <line x1="19" y1="12" x2="5" y2="12"></line>
-                                        <polyline points="12 19 5 12 12 5"></polyline>
-                                    </svg>
-                                    Facturas
-                                </a>
-                                <span style="color:var(--color-text-muted);font-size:12px;opacity:0.5;">/</span>
-                                <span style="font-size:12px;font-weight:600;color:var(--color-text-primary);font-family:'JetBrains Mono',monospace;">${inv.invoice_number}</span>
-                            </div>
-                            <p class="page-subtitle detail-issue-date" style="margin:0;font-size:13px;color:var(--color-text-muted);">Emitida el ${App.formatDate(inv.issue_date)}</p>
+                    <div class="detail-header-row-1">
+                        <div class="detail-breadcrumb" style="display:flex;align-items:center;gap:8px;">
+                            <a href="#facturas" class="btn-back">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <line x1="19" y1="12" x2="5" y2="12"></line>
+                                    <polyline points="12 19 5 12 12 5"></polyline>
+                                </svg>
+                                Facturas
+                            </a>
+                            <span style="color:var(--color-text-muted);font-size:12px;opacity:0.5;">/</span>
+                            <span style="font-size:12px;font-weight:600;color:var(--color-text-primary);font-family:'JetBrains Mono',monospace;">${inv.invoice_number}</span>
                         </div>
                         <div class="detail-title-block">
                             <h1 class="page-title" style="margin:0;">${inv.is_ecf ? `e-CF ${inv.encf || inv.invoice_number}` : `Factura ${inv.invoice_number}`}</h1>
                         </div>
                     </div>
-                    <div class="invoice-actions detail-actions">
-                        <button type="button" class="btn btn-primary btn-sm" onclick="InvoicesModule.printInvoice(${id}, 'thermal')" style="display:inline-flex; align-items:center; gap:6px;">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
-                            Imprimir Ticket
-                        </button>
-                        <button type="button" class="btn btn-secondary btn-sm" onclick="InvoicesModule.printInvoice(${id}, 'normal')" style="display:inline-flex; align-items:center; gap:6px;">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
-                            Imprimir A4
-                        </button>
-                        <a href="/api/invoices/${id}/pdf?template=normal&download=1" download class="btn btn-secondary btn-sm" style="display:inline-flex; align-items:center; gap:6px; text-decoration:none;">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
-                            Descargar PDF
-                        </a>
-                        <a href="/api/invoices/${id}/pdf?template=${window.App.state.settings?.invoice_pdf_template?.startsWith('thermal') ? window.App.state.settings.invoice_pdf_template : 'thermal'}&download=1" download class="btn btn-secondary btn-sm" style="display:inline-flex; align-items:center; gap:6px; text-decoration:none;">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
-                            Descargar Ticket
-                        </a>
-                        ${inv.status !== 'cancelled' ? `
-                            <button class="btn btn-secondary btn-sm" onclick="InvoicesModule.sendEmail(${id})">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
-                                Enviar
+                    <div class="detail-header-row-2">
+                        <p class="page-subtitle detail-issue-date" style="margin:0;font-size:13px;color:var(--color-text-muted);white-space:nowrap;">Emitida el ${App.formatDate(inv.issue_date)}</p>
+                        <div class="invoice-actions detail-actions">
+                            <button type="button" class="btn btn-primary btn-sm" onclick="InvoicesModule.printInvoice(${id}, 'thermal')" style="display:inline-flex; align-items:center; gap:6px;">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+                                Imprimir Ticket
                             </button>
-                        ` : ''}
-                        <button class="btn btn-secondary btn-sm" onclick="InvoicesModule.duplicateInvoice(${id})">Duplicar</button>
-                        ${inv.is_ecf && inv.encf && inv.ecf_type != 34 && inv.ecf_type != 33 && inv.status !== 'cancelled' ? `
-                            <button class="btn btn-secondary btn-sm" style="color:var(--color-danger-icon);border-color:rgba(239,68,68,0.2);" onclick="InvoicesModule.issueCreditNote(${id})">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:middle;margin-right:4px;"><path d="M9 14L4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5v0a5.5 5.5 0 0 1-5.5 5.5H11"/></svg>
-                                Nota de Crédito
+                            <button type="button" class="btn btn-secondary btn-sm" onclick="InvoicesModule.printInvoice(${id}, 'normal')" style="display:inline-flex; align-items:center; gap:6px;">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+                                Imprimir A4
                             </button>
-                        ` : ''}
-                        ${inv.status !== 'cancelled' ? `
-                            <a href="#facturas/edit/${id}" class="btn btn-secondary btn-sm">Editar</a>
-                            <button class="btn btn-secondary btn-sm" style="color:var(--color-danger-icon);border-color:rgba(239,68,68,0.2);" onclick="InvoicesModule.cancelInvoice(${id})">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:middle;margin-right:4px;"><circle cx="12" cy="12" r="10"></circle><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line></svg>
-                                Anular
-                            </button>
-                        ` : ''}
-                        ${inv.status !== 'paid' && inv.status !== 'cancelled' ? `<button class="btn btn-primary btn-sm" onclick="InvoicesModule.showPaymentModal(${id}, ${(inv.total || 0) - (inv.amount_paid || 0)})">Registrar Pago</button>` : ''}
+                            <a href="/api/invoices/${id}/pdf?template=normal&download=1" download class="btn btn-secondary btn-sm" style="display:inline-flex; align-items:center; gap:6px; text-decoration:none;">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                                Descargar PDF
+                            </a>
+                            <a href="/api/invoices/${id}/pdf?template=${window.App.state.settings?.invoice_pdf_template?.startsWith('thermal') ? window.App.state.settings.invoice_pdf_template : 'thermal'}&download=1" download class="btn btn-secondary btn-sm" style="display:inline-flex; align-items:center; gap:6px; text-decoration:none;">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                                Descargar Ticket
+                            </a>
+                            ${inv.status !== 'cancelled' ? `
+                                <button class="btn btn-secondary btn-sm" onclick="InvoicesModule.sendEmail(${id})">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
+                                    Enviar
+                                </button>
+                            ` : ''}
+                            <button class="btn btn-secondary btn-sm" onclick="InvoicesModule.duplicateInvoice(${id})">Duplicar</button>
+                            ${inv.is_ecf && inv.encf && inv.ecf_type != 34 && inv.ecf_type != 33 && inv.status !== 'cancelled' ? `
+                                <button class="btn btn-secondary btn-sm" style="color:var(--color-danger-icon);border-color:rgba(239,68,68,0.2);" onclick="InvoicesModule.issueCreditNote(${id})">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:middle;margin-right:4px;"><path d="M9 14L4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5v0a5.5 5.5 0 0 1-5.5 5.5H11"/></svg>
+                                    Nota de Crédito
+                                </button>
+                            ` : ''}
+                            ${inv.status !== 'cancelled' ? `
+                                <a href="#facturas/edit/${id}" class="btn btn-secondary btn-sm">Editar</a>
+                                <button class="btn btn-secondary btn-sm" style="color:var(--color-danger-icon);border-color:rgba(239,68,68,0.2);" onclick="InvoicesModule.cancelInvoice(${id})">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:middle;margin-right:4px;"><circle cx="12" cy="12" r="10"></circle><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line></svg>
+                                    Anular
+                                </button>
+                            ` : ''}
+                            ${inv.status !== 'paid' && inv.status !== 'cancelled' ? `<button class="btn btn-primary btn-sm" onclick="InvoicesModule.showPaymentModal(${id}, ${(inv.total || 0) - (inv.amount_paid || 0)})">Registrar Pago</button>` : ''}
+                        </div>
                     </div>
                 </div>
 

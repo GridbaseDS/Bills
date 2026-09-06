@@ -658,8 +658,9 @@ class DgiiReportController extends Controller
     /**
      * Get IT-1 and Anexo A summary calculation for the period
      */
-    public function getIt1Summary(Request $request, \App\Services\DgiiDeclarationService $declarationService)
+    public function getIt1Summary(Request $request, ?\App\Services\DgiiDeclarationService $declarationService = null)
     {
+        $declarationService = $declarationService ?? app(\App\Services\DgiiDeclarationService::class);
         $year = $request->query('year');
         $month = $request->query('month');
         if ($request->filled('period')) {
@@ -681,8 +682,9 @@ class DgiiReportController extends Controller
     /**
      * Export Formulario Oficial IT-1 and Anexo A prefilled in official DGII Excel (.xls)
      */
-    public function exportIt1Excel(Request $request, \App\Services\DgiiDeclarationService $declarationService)
+    public function exportIt1Excel(Request $request, ?\App\Services\DgiiDeclarationService $declarationService = null)
     {
+        $declarationService = $declarationService ?? app(\App\Services\DgiiDeclarationService::class);
         $year = $request->input('year') ?: $request->query('year');
         $month = $request->input('month') ?: $request->query('month');
         if ($request->filled('period')) {
@@ -710,8 +712,9 @@ class DgiiReportController extends Controller
     /**
      * Get IR-2 and Anexo B-1/J/A-1 summary calculation for the fiscal year
      */
-    public function getIr2Summary(Request $request, \App\Services\DgiiDeclarationService $declarationService)
+    public function getIr2Summary(Request $request, ?\App\Services\DgiiDeclarationService $declarationService = null)
     {
+        $declarationService = $declarationService ?? app(\App\Services\DgiiDeclarationService::class);
         $year = $request->query('year') ?: $request->input('year');
         if ($request->filled('period')) {
             $p = str_replace('-', '', $request->input('period'));
@@ -730,8 +733,9 @@ class DgiiReportController extends Controller
     /**
      * Export Formulario Oficial IR-2 and Annexes prefilled in official DGII Excel (.xls)
      */
-    public function exportIr2Excel(Request $request, \App\Services\DgiiDeclarationService $declarationService)
+    public function exportIr2Excel(Request $request, ?\App\Services\DgiiDeclarationService $declarationService = null)
     {
+        $declarationService = $declarationService ?? app(\App\Services\DgiiDeclarationService::class);
         $year = $request->input('year') ?: $request->query('year');
         if ($request->filled('period')) {
             $p = str_replace('-', '', $request->input('period'));

@@ -1189,6 +1189,25 @@ class DgiiDeclarationService
         $spreadsheet = $reader->load($templatePath);
         $sheet = $spreadsheet->getSheetByName('ITC-01') ?: $spreadsheet->getActiveSheet();
 
+        // Inyectar el banner oficial DGII (Logo ii, Títulos, Líneas y IST-01)
+        // ya que el lector BIFF8 de XLS no preserva objetos OfficeArt de tipo textbox
+        $bannerPath = resource_path('templates/dgii/ist_header_banner.png');
+        if (file_exists($bannerPath)) {
+            $drawing = new \PhpOffice\PhpSpreadsheet\Worksheet\Drawing();
+            $drawing->setName('DGII_IST_Header');
+            $drawing->setDescription('Dirección General de Impuestos Internos - IST-01');
+            $drawing->setPath($bannerPath);
+            $drawing->setCoordinates('B1');
+            $drawing->setOffsetX(8);
+            $drawing->setOffsetY(4);
+            $drawing->setWidth(830);
+            $drawing->setHeight(70);
+            $drawing->setWorksheet($sheet);
+
+            // Limpiar texto plano de C6 para evitar solapamiento
+            $sheet->setCellValue('C6', '');
+        }
+
         // Encabezados
         $sheet->setCellValue('E11', $data['period_formatted']);
         $sheet->setCellValue('M11', $data['deadline']);

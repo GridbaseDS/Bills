@@ -1246,24 +1246,25 @@ class DgiiDeclarationService
         $spreadsheet = $reader->load($templatePath);
         $sheet = $spreadsheet->getSheetByName('ITC-01') ?: $spreadsheet->getActiveSheet();
 
-        // Inyectar el banner oficial DGII (Logo ii, Títulos, Líneas y IST-01)
-        // ya que el lector BIFF8 de XLS no preserva objetos OfficeArt de tipo textbox
-        $bannerPath = resource_path('templates/dgii/ist_header_banner.png');
-        if (file_exists($bannerPath)) {
-            $drawing = new \PhpOffice\PhpSpreadsheet\Worksheet\Drawing();
-            $drawing->setName('DGII_IST_Header');
-            $drawing->setDescription('Dirección General de Impuestos Internos - IST-01');
-            $drawing->setPath($bannerPath);
-            $drawing->setCoordinates('B1');
-            $drawing->setOffsetX(8);
-            $drawing->setOffsetY(4);
-            $drawing->setWidth(830);
-            $drawing->setHeight(70);
-            $drawing->setWorksheet($sheet);
+        // Membrete oficial DGII en celdas nativas (Texto real, sin imágenes)
+        $sheet->mergeCells('D2:V2');
+        $sheet->setCellValue('D2', 'DIRECCION GENERAL DE IMPUESTOS INTERNOS');
+        $sheet->getStyle('D2')->getFont()->setName('Arial')->setSize(13)->setBold(true);
+        $sheet->getStyle('D2:V2')->getBorders()->getBottom()->setBorderStyle(\PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN);
 
-            // Limpiar texto plano de C6 para evitar solapamiento
-            $sheet->setCellValue('C6', '');
-        }
+        $sheet->mergeCells('D3:V3');
+        $sheet->setCellValue('D3', 'DECLARACION JURADA Y/O PAGO DEL IMPUESTO SELECTIVO A LAS TELECOMUNICACIONES');
+        $sheet->getStyle('D3')->getFont()->setName('Arial')->setSize(9.5)->setBold(true);
+        $sheet->getStyle('D3:V3')->getBorders()->getBottom()->setBorderStyle(\PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN);
+
+        $sheet->mergeCells('D4:V4');
+        $sheet->setCellValue('D4', '(Valores en RD$)');
+        $sheet->getStyle('D4')->getFont()->setName('Arial')->setSize(8.5);
+
+        $sheet->mergeCells('W2:AB4');
+        $sheet->setCellValue('W2', 'IST-01');
+        $sheet->getStyle('W2')->getFont()->setName('Arial')->setSize(26)->setBold(true);
+        $sheet->getStyle('W2')->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_RIGHT)->setVertical(\PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER);
 
         // Encabezados
         $sheet->setCellValue('E11', $data['period_formatted']);
@@ -1410,24 +1411,25 @@ class DgiiDeclarationService
         $spreadsheet = $reader->load($templatePath);
         $sheet = $spreadsheet->getSheetByName('DSS') ?: $spreadsheet->getActiveSheet();
 
-        // Inyectar el banner oficial DGII (Logo ii, Títulos, Líneas y DSS)
-        // ya que el lector BIFF8 de XLS no preserva objetos OfficeArt de tipo textbox
-        $bannerPath = resource_path('templates/dgii/dss_header_banner.png');
-        if (file_exists($bannerPath)) {
-            $drawing = new \PhpOffice\PhpSpreadsheet\Worksheet\Drawing();
-            $drawing->setName('DGII_DSS_Header');
-            $drawing->setDescription('Dirección General de Impuestos Internos - DSS-07');
-            $drawing->setPath($bannerPath);
-            $drawing->setCoordinates('B1');
-            $drawing->setOffsetX(8);
-            $drawing->setOffsetY(4);
-            $drawing->setWidth(820);
-            $drawing->setHeight(72);
-            $drawing->setWorksheet($sheet);
+        // Membrete oficial DGII en celdas nativas (Texto real, sin imágenes)
+        $sheet->mergeCells('D2:W2');
+        $sheet->setCellValue('D2', 'DIRECCION GENERAL DE IMPUESTOS INTERNOS');
+        $sheet->getStyle('D2')->getFont()->setName('Arial')->setSize(13)->setBold(true);
+        $sheet->getStyle('D2:W2')->getBorders()->getBottom()->setBorderStyle(\PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN);
 
-            // Limpiar texto plano residual de versión en B5 para evitar solapamiento
-            $sheet->setCellValue('B5', '');
-        }
+        $sheet->mergeCells('D3:W3');
+        $sheet->setCellValue('D3', 'DECLARACION JURADA Y/O PAGO PARA LOS SERVICIOS DE SEGUROS');
+        $sheet->getStyle('D3')->getFont()->setName('Arial')->setSize(9.5)->setBold(true);
+        $sheet->getStyle('D3:W3')->getBorders()->getBottom()->setBorderStyle(\PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN);
+
+        $sheet->mergeCells('D4:W4');
+        $sheet->setCellValue('D4', '(Valores en RD$ )');
+        $sheet->getStyle('D4')->getFont()->setName('Arial')->setSize(8.5);
+
+        $sheet->mergeCells('X2:AB4');
+        $sheet->setCellValue('X2', 'DSS');
+        $sheet->getStyle('X2')->getFont()->setName('Arial')->setSize(26)->setBold(true);
+        $sheet->getStyle('X2')->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_RIGHT)->setVertical(\PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER);
 
         // Encabezados
         $sheet->setCellValue('D9', $data['month']);

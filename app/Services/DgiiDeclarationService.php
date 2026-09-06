@@ -1437,53 +1437,6 @@ class DgiiDeclarationService
         $spreadsheet = $reader->load($templatePath);
         $sheet = $spreadsheet->getSheetByName('DSS') ?: $spreadsheet->getActiveSheet();
 
-        // Asegurar que el logo DGII esté presente (usando el extraído de la plantilla)
-        if (count($sheet->getDrawingCollection()) === 0) {
-            $logoPath = resource_path('templates/dgii/dgii_logo.png');
-            if (file_exists($logoPath)) {
-                $drawing = new \PhpOffice\PhpSpreadsheet\Worksheet\Drawing();
-                $drawing->setName('DGII_Logo');
-                $drawing->setDescription('Logo Oficial DGII');
-                $drawing->setPath($logoPath);
-                $drawing->setCoordinates('B1');
-                $drawing->setOffsetX(2);
-                $drawing->setOffsetY(2);
-                $drawing->setWidth(54);
-                $drawing->setHeight(54);
-                $drawing->setWorksheet($sheet);
-            }
-        }
-
-        // Separador vertical doble entre el logo y el membrete
-        $sheet->getStyle('C2:C4')->getBorders()->getRight()->setBorderStyle(\PhpOffice\PhpSpreadsheet\Style\Border::BORDER_DOUBLE);
-
-        // Altura proporcional de filas para garantizar que el texto respire
-        $sheet->getRowDimension(2)->setRowHeight(16);
-        $sheet->getRowDimension(3)->setRowHeight(15);
-        $sheet->getRowDimension(4)->setRowHeight(14);
-
-        // Membrete oficial DGII en celdas de texto
-        $sheet->mergeCells('D2:V2');
-        $sheet->setCellValue('D2', 'DIRECCION GENERAL DE IMPUESTOS INTERNOS');
-        $sheet->getStyle('D2')->getFont()->setName('Arial')->setSize(12)->setBold(true);
-        $sheet->getStyle('D2')->getAlignment()->setVertical(\PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER);
-        $sheet->getStyle('D2:V2')->getBorders()->getBottom()->setBorderStyle(\PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN);
-
-        $sheet->mergeCells('D3:W3');
-        $sheet->setCellValue('D3', 'DECLARACION JURADA Y/O PAGO PARA LOS SERVICIOS DE SEGUROS');
-        $sheet->getStyle('D3')->getFont()->setName('Arial')->setSize(8.5)->setBold(true);
-        $sheet->getStyle('D3')->getAlignment()->setVertical(\PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER);
-        $sheet->getStyle('D3:W3')->getBorders()->getBottom()->setBorderStyle(\PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN);
-
-        $sheet->mergeCells('D4:W4');
-        $sheet->setCellValue('D4', '(Valores en RD$ )');
-        $sheet->getStyle('D4')->getFont()->setName('Arial')->setSize(8.5);
-
-        $sheet->mergeCells('X2:AE4');
-        $sheet->setCellValue('X2', 'DSS');
-        $sheet->getStyle('X2')->getFont()->setName('Arial')->setSize(22)->setBold(true);
-        $sheet->getStyle('X2')->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_RIGHT)->setVertical(\PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER);
-
         // Encabezados
         $sheet->setCellValue('D9', $data['month']);
         $sheet->setCellValue('E9', $data['year']);

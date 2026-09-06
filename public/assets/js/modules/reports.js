@@ -1560,11 +1560,18 @@ const ReportsModule = {
             a.href = url;
             a.target = '_blank';
 
+            const cd = response.headers.get('content-disposition');
+            let filename = null;
+            if (cd && cd.includes('filename=')) {
+                const match = cd.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
+                if (match && match[1]) filename = match[1].replace(/['"]/g, '');
+            }
+
             const rnc = (this._dataItc && this._dataItc.tax_id)
                 ? this._dataItc.tax_id
                 : (App.state.settings?.company_tax_id ? App.state.settings.company_tax_id.replace(/[^0-9]/g, '') : '131000000');
 
-            a.download = `DGII_ITC01_${rnc}_${periodStr}.xls`;
+            a.download = filename || `DGII_ITC01_${rnc}_${periodStr}.xlsx`;
             document.body.appendChild(a);
             a.click();
             a.remove();

@@ -1236,14 +1236,19 @@ class DgiiDeclarationService
     public function generateItcExcel(string $year, string $month): Spreadsheet
     {
         $data = $this->calculateItcData($year, $month);
-        $templatePath = resource_path('templates/dgii/IST-Telecomunicaciones-253-12.xls');
+        $xlsxTemplate = resource_path('templates/dgii/IST-Telecomunicaciones-253-12.xlsx');
+        $xlsTemplate = resource_path('templates/dgii/IST-Telecomunicaciones-253-12.xls');
 
-        if (!file_exists($templatePath)) {
-            throw new \RuntimeException("La plantilla oficial IST-Telecomunicaciones-253-12.xls no fue encontrada en: {$templatePath}");
+        if (file_exists($xlsxTemplate)) {
+            $reader = new XlsxReader();
+            $spreadsheet = $reader->load($xlsxTemplate);
+        } elseif (file_exists($xlsTemplate)) {
+            $reader = new XlsReader();
+            $spreadsheet = $reader->load($xlsTemplate);
+        } else {
+            throw new \RuntimeException("La plantilla oficial IST-Telecomunicaciones no fue encontrada en: {$xlsxTemplate}");
         }
 
-        $reader = new XlsReader();
-        $spreadsheet = $reader->load($templatePath);
         $sheet = $spreadsheet->getSheetByName('ITC-01') ?: $spreadsheet->getActiveSheet();
 
         // Encabezados

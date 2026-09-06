@@ -799,8 +799,20 @@ class DgiiReportController extends Controller
         $spreadsheet = $declarationService->generateItcExcel((string)$year, (string)$month);
         $periodRaw = "{$year}{$month}";
         $companyTaxId = preg_replace('/[^0-9]/', '', Setting::where('setting_key', 'company_tax_id')->value('setting_value') ?? '132456785');
-        $filename = "DGII_ITC01_{$companyTaxId}_{$periodRaw}.xls";
+        
+        $xlsxTemplate = resource_path('templates/dgii/IST-Telecomunicaciones-253-12.xlsx');
+        if (file_exists($xlsxTemplate)) {
+            $filename = "DGII_ITC01_{$companyTaxId}_{$periodRaw}.xlsx";
+            return response()->streamDownload(function () use ($spreadsheet) {
+                $writer = new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($spreadsheet);
+                $writer->save('php://output');
+            }, $filename, [
+                'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                'Cache-Control' => 'max-age=0',
+            ]);
+        }
 
+        $filename = "DGII_ITC01_{$companyTaxId}_{$periodRaw}.xls";
         return response()->streamDownload(function () use ($spreadsheet) {
             $writer = new \PhpOffice\PhpSpreadsheet\Writer\Xls($spreadsheet);
             $writer->save('php://output');

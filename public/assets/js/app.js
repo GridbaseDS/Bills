@@ -135,6 +135,7 @@ window.App = {
             this.state.is_demo = Boolean(publicSettings.is_demo || window.location.hostname.includes('bdemo'));
             this.state.demo_expires_at = publicSettings.demo_expires_at || null;
             this.state.demo_remaining_seconds = publicSettings.demo_remaining_seconds || 0;
+            this.state.has_demo_data = Boolean(publicSettings.has_demo_data);
             if (publicSettings.company_logo) localStorage.setItem('company_logo', publicSettings.company_logo);
             if (publicSettings.login_logo) localStorage.setItem('login_logo', publicSettings.login_logo);
             if (publicSettings.company_favicon) localStorage.setItem('company_favicon', publicSettings.company_favicon);

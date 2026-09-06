@@ -2930,6 +2930,25 @@ tr:hover .row-actions { opacity: 1; }
   line-height: 1.4;
 }
 
+.demo-mode-choice {
+  border: 1.5px solid var(--color-border) !important;
+  transition: all 0.2s ease;
+}
+
+.demo-mode-choice:hover {
+  border-color: var(--color-primary) !important;
+}
+
+.demo-mode-choice:has(input:checked) {
+  border-color: var(--color-primary) !important;
+  background: rgba(11, 72, 76, 0.06) !important;
+}
+
+[data-theme="dark"] .demo-mode-choice:has(input:checked) {
+  background: rgba(20, 184, 166, 0.12) !important;
+  border-color: #14b8a6 !important;
+}
+
 .demo-dropdown-client-info a {
   color: var(--color-primary);
   font-weight: 600;

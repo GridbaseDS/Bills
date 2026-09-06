@@ -1236,22 +1236,59 @@ class DgiiDeclarationService
     public function generateItcExcel(string $year, string $month): Spreadsheet
     {
         $data = $this->calculateItcData($year, $month);
-        $xlsxTemplate = resource_path('templates/dgii/IST-Telecomunicaciones-253-12.xlsx');
         $xlsTemplate = resource_path('templates/dgii/IST-Telecomunicaciones-253-12.xls');
 
-        if (file_exists($xlsxTemplate)) {
-            $reader = new XlsxReader();
-            $spreadsheet = $reader->load($xlsxTemplate);
-        } elseif (file_exists($xlsTemplate)) {
-            $reader = new XlsReader();
-            $spreadsheet = $reader->load($xlsTemplate);
-        } else {
-            throw new \RuntimeException("La plantilla oficial IST-Telecomunicaciones no fue encontrada en: {$xlsxTemplate}");
+        if (!file_exists($xlsTemplate)) {
+            throw new \RuntimeException("La plantilla oficial IST-Telecomunicaciones no fue encontrada en: {$xlsTemplate}");
         }
 
+        $reader = new XlsReader();
+        $spreadsheet = $reader->load($xlsTemplate);
         $sheet = $spreadsheet->getSheetByName('ITC-01') ?: $spreadsheet->getActiveSheet();
 
-        // Encabezados
+        // 1. Logo DGII nítido en B2 (centrado verticalmente)
+        $logoPath = resource_path('templates/dgii/dgii_logo.png');
+        if (file_exists($logoPath)) {
+            $drawing = new \PhpOffice\PhpSpreadsheet\Worksheet\Drawing();
+            $drawing->setName("DGII_Logo");
+            $drawing->setDescription("Logo DGII");
+            $drawing->setPath($logoPath);
+            $drawing->setCoordinates("B2");
+            $drawing->setOffsetX(3);
+            $drawing->setOffsetY(2);
+            $drawing->setWidth(46);
+            $drawing->setHeight(46);
+            $drawing->setWorksheet($sheet);
+        }
+
+        // 2. Alturas de fila proporcionales para no recortar la tipografía
+        $sheet->getRowDimension(2)->setRowHeight(15.5);
+        $sheet->getRowDimension(3)->setRowHeight(15.0);
+        $sheet->getRowDimension(4)->setRowHeight(14.5);
+
+        // 3. Membrete oficial limpio en celdas de texto (sin bordes invasivos)
+        $sheet->mergeCells("D2:W2");
+        $sheet->setCellValue("D2", "DIRECCIÓN GENERAL DE IMPUESTOS INTERNOS");
+        $sheet->getStyle("D2")->getFont()->setName("Arial")->setSize(11)->setBold(true);
+        $sheet->getStyle("D2")->getAlignment()->setVertical(\PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER);
+
+        $sheet->mergeCells("D3:W3");
+        $sheet->setCellValue("D3", "DECLARACIÓN JURADA Y/O PAGO DEL IMPUESTO SELECTIVO A LAS TELECOMUNICACIONES");
+        $sheet->getStyle("D3")->getFont()->setName("Arial")->setSize(8)->setBold(true);
+        $sheet->getStyle("D3")->getAlignment()->setVertical(\PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER);
+
+        $sheet->mergeCells("D4:W4");
+        $sheet->setCellValue("D4", "(Valores en RD$)");
+        $sheet->getStyle("D4")->getFont()->setName("Arial")->setSize(8);
+        $sheet->getStyle("D4")->getAlignment()->setVertical(\PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER);
+
+        // 4. Código IST-01 a la derecha
+        $sheet->mergeCells("X2:AB4");
+        $sheet->setCellValue("X2", "IST-01");
+        $sheet->getStyle("X2")->getFont()->setName("Arial")->setSize(20)->setBold(true);
+        $sheet->getStyle("X2")->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_RIGHT)->setVertical(\PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER);
+
+        // 5. Datos del Contribuyente y Período
         $sheet->setCellValue('E11', $data['period_formatted']);
         $sheet->setCellValue('M11', $data['deadline']);
         $sheet->setCellValue('G13', 'X'); // Normal
@@ -1261,7 +1298,7 @@ class DgiiDeclarationService
         $sheet->setCellValue('U19', $data['phone']);
         $sheet->setCellValue('H21', $data['email']);
 
-        // Casillas de Operaciones (Fórmulas nativas en U26, U30, U31, U38 no se tocan)
+        // 6. Casillas de Operaciones (Fórmulas nativas en U26, U30, U31, U38 no se tocan)
         $itc = $data['itc'];
         $sheet->setCellValue('U24', $itc['casilla_1_total_operaciones']);
         $sheet->setCellValue('U25', $itc['casilla_2_ingresos_gravados']);

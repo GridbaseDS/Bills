@@ -1571,7 +1571,7 @@ const ReportsModule = {
                 ? this._dataItc.tax_id
                 : (App.state.settings?.company_tax_id ? App.state.settings.company_tax_id.replace(/[^0-9]/g, '') : '131000000');
 
-            a.download = filename || `DGII_ITC01_${rnc}_${periodStr}.xlsx`;
+            a.download = filename || `DGII_ITC01_${rnc}_${periodStr}.xls`;
             document.body.appendChild(a);
             a.click();
             a.remove();

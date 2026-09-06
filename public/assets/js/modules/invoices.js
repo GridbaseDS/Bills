@@ -269,12 +269,7 @@ const InvoicesModule = {
                 </div>
 
                 ${inv.is_ecf ? `
-                <div class="table-outer mb-24 ecf-status-card" style="border-left: 3px solid ${
-                    inv.dgii_status === 'accepted' ? 'var(--color-success-icon)' :
-                    inv.dgii_status === 'rejected' ? 'var(--color-danger-icon)' :
-                    inv.dgii_status === 'contingency' ? 'var(--amber)' :
-                    inv.dgii_status === 'portal_pending' ? '#8b5cf6' : 'var(--color-primary)'
-                };">
+                <div class="table-outer mb-24 ecf-status-card">
                     <div class="ecf-status-card-body" style="padding:var(--spacing-xl);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px;">
                         <div>
                             <div style="font-size:15px;font-weight:600;display:flex;align-items:center;gap:8px;margin-bottom:6px;">
@@ -308,7 +303,16 @@ const InvoicesModule = {
                                 </div>
                             ` : ''}
                         </div>
-                        <div class="ecf-status-actions" style="display:flex;gap:8px;flex-wrap:wrap;">
+                        <div class="ecf-status-actions" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+                            ${inv.dgii_status === 'accepted' ? `
+                                <span class="ecf-cert-badge" style="display:inline-flex;align-items:center;gap:6px;padding:5px 12px;background:var(--color-success-bg);border:1px solid rgba(16,185,129,0.25);border-radius:var(--radius-full);color:var(--color-success-text);font-size:12px;font-weight:600;line-height:1;white-space:nowrap;">
+                                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                                        <polyline points="9 12 11 14 15 10"/>
+                                    </svg>
+                                    Certificado DGII
+                                </span>
+                            ` : ''}
                             ${inv.dgii_status === 'pending' ? `
                                 <button class="btn btn-secondary btn-sm" onclick="InvoicesModule.checkEcfStatus(${inv.id})">
                                     Verificar Estado
@@ -325,12 +329,11 @@ const InvoicesModule = {
                                 </button>
                             ` : ''}
                             ${inv.is_ecf && inv.encf ? `
-                                <a href="/api/invoices/${inv.id}/download-xml" class="btn btn-secondary btn-sm" download>
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                                <a href="/api/invoices/${inv.id}/download-xml" class="btn btn-secondary btn-sm" download style="display:inline-flex;align-items:center;gap:6px;text-decoration:none;">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
                                     Descargar XML
                                 </a>
                             ` : ''}
-                            ${inv.dgii_status === 'accepted' ? `<span style="color:var(--color-success-icon);font-size:13px;font-weight:600;">Certificado DGII</span>` : ''}
                         </div>
                     </div>
                 </div>

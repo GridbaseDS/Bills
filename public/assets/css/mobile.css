@@ -873,7 +873,6 @@ select.form-control {
 /* ECF status card fixes for padding/wrapping on small devices */
 .ecf-status-card {
   border-radius: var(--radius-lg) !important;
-  border-left-width: 4px !important;
 }
 
 .ecf-status-card-body {
@@ -890,7 +889,8 @@ select.form-control {
   width: 100% !important;
 }
 
-.ecf-status-actions .btn {
+.ecf-status-actions .btn,
+.ecf-status-actions .ecf-cert-badge {
   width: 100% !important;
   justify-content: center !important;
 }

@@ -158,15 +158,7 @@ Route::middleware('auth:sanctum')->group(function () {
     });
 
     // DGII Tests & Audit Logs (Restringidos en Modo Demo)
-    Route::middleware(['role:admin,contador', function ($request, $next) {
-        if (config('app.demo_mode')) {
-            return response()->json([
-                'success' => false,
-                'error' => 'Los módulos de Pruebas DGII y Auditoría DGII están deshabilitados en el entorno de demostración.'
-            ], 403);
-        }
-        return $next($request);
-    }])->group(function () {
+    Route::middleware(['role:admin,contador', 'demo.block'])->group(function () {
         Route::post('/dgii/run-tests', [DgiiTestUIController::class, 'runTests']);
         Route::post('/dgii/diagnose', [DgiiTestUIController::class, 'diagnose']);
         Route::post('/dgii/run-aprobaciones', [DgiiTestUIController::class, 'runAprobaciones']);

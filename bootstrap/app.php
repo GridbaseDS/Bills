@@ -17,6 +17,7 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
         $middleware->alias([
             'role' => \App\Http\Middleware\CheckRole::class,
+            'demo.block' => \App\Http\Middleware\BlockInDemoMode::class,
             'api.log' => \App\Http\Middleware\LogApiRequests::class,
             'api.key' => \App\Http\Middleware\AuthenticateApiKey::class,
             'api.permission' => \App\Http\Middleware\CheckApiPermission::class,

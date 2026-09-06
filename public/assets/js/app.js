@@ -2305,7 +2305,7 @@ window.App = {
                             <div style="width:36px;height:36px;border-radius:50%;background:rgba(16,185,129,0.15);color:#10b981;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:bold;">✓</div>
                             <div>
                                 <h3 class="demo-modal-title" style="color:#10b981;">¡Acceso Demo Otorgado con Éxito!</h3>
-                                <div style="font-size:12px;color:var(--color-text-muted);">Empresa: <strong>${this.escapeHtml(resultData.company_name)}</strong> (72 Horas)</div>
+                                <div style="font-size:12px;color:var(--color-text-muted);">Empresa: <strong>${this.escapeHtml(resultData.company_name)}</strong> (72 Horas) · Modo: <strong>${resultData.with_demo_data ? '📊 Con Datos Demo' : '✨ En Limpio'}</strong></div>
                             </div>
                         </div>
                         <button type="button" class="demo-modal-close" onclick="App.closeDemoProvisionModal()">&times;</button>
@@ -2367,6 +2367,29 @@ window.App = {
                     <div class="form-group" style="margin-bottom:0;">
                         <label style="font-size:12px;font-weight:700;color:var(--color-text-primary);margin-bottom:6px;display:block;">Nombre de la Empresa <span style="color:#ef4444;">*</span></label>
                         <input type="text" id="demo-company-name" required placeholder="Ej: Comercial Quisqueyana SRL" style="width:100%;padding:9px 12px;border:1px solid var(--color-border);border-radius:8px;font-size:13px;background:var(--bg-input);color:var(--color-text-primary);">
+                    </div>
+
+                    <div class="form-group" style="margin-bottom:0;">
+                        <label style="font-size:12px;font-weight:700;color:var(--color-text-primary);margin-bottom:6px;display:block;">Datos Iniciales del Sistema</label>
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+                            <label style="display:flex;align-items:flex-start;gap:8px;padding:10px 12px;border-radius:8px;cursor:pointer;background:var(--bg-card);" class="demo-mode-choice">
+                                <input type="radio" name="demo_data_mode" value="demo" checked style="margin-top:2px;">
+                                <div>
+                                    <div style="font-size:12px;font-weight:700;color:var(--color-text-primary);display:flex;align-items:center;gap:4px;">
+                                        📊 Con Datos Demo
+                                        <span class="badge" style="font-size:9px;background:rgba(16,185,129,0.15);color:#10b981;padding:1px 5px;font-weight:700;">Recomendado</span>
+                                    </div>
+                                    <div style="font-size:11px;color:var(--color-text-muted);margin-top:3px;line-height:1.3;">Incluye clientes, catálogo de ítems, cotizaciones y facturas e-CF de prueba.</div>
+                                </div>
+                            </label>
+                            <label style="display:flex;align-items:flex-start;gap:8px;padding:10px 12px;border-radius:8px;cursor:pointer;background:var(--bg-card);" class="demo-mode-choice">
+                                <input type="radio" name="demo_data_mode" value="clean" style="margin-top:2px;">
+                                <div>
+                                    <div style="font-size:12px;font-weight:700;color:var(--color-text-primary);">✨ En Limpio (En Blanco)</div>
+                                    <div style="font-size:11px;color:var(--color-text-muted);margin-top:3px;line-height:1.3;">Comienza desde cero para registrar tus propios productos, clientes y comprobantes.</div>
+                                </div>
+                            </label>
+                        </div>
                     </div>
 
                     <div style="border-top:1px solid var(--color-border);padding-top:14px;">
@@ -2549,17 +2572,21 @@ window.App = {
             submitBtn.innerHTML = '<span class="spinner" style="width:14px;height:14px;"></span> Generando Demo...';
         }
 
+        const withDemoData = document.querySelector('input[name="demo_data_mode"]:checked')?.value !== 'clean';
+
         try {
             const res = await this.api('demo/provision', {
                 method: 'POST',
                 body: {
                     company_name: companyName,
                     users: this._demoUserRows,
+                    with_demo_data: withDemoData,
                     admin_key: this._demoAdminKey || 'SamDP_9903'
                 }
             });
 
             if (res.success) {
+                this.state.has_demo_data = res.with_demo_data;
                 this.renderDemoProvisionContent(res);
                 this.showToast('¡Acceso demo configurado con éxito!', 'success');
             } else {

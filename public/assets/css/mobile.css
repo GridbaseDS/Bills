@@ -845,8 +845,21 @@ select.form-control {
   gap: 12px !important;
 }
 
+.invoice-detail-header .detail-left-block {
+  display: contents !important;
+}
+
+.invoice-detail-header .detail-breadcrumb {
+  order: 1 !important;
+}
+
 .invoice-detail-header .detail-title-block {
+  order: 2 !important;
   text-align: left !important;
+}
+
+.invoice-detail-header .detail-issue-date {
+  order: 3 !important;
 }
 
 .detail-actions {

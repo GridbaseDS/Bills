@@ -219,20 +219,22 @@ const InvoicesModule = {
             container.innerHTML = `
                 <div class="invoice-detail-header">
                     <div class="detail-header-top">
-                        <div class="detail-breadcrumb" style="display:flex;align-items:center;gap:8px;padding-top:2px;">
-                            <a href="#facturas" class="btn-back">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <line x1="19" y1="12" x2="5" y2="12"></line>
-                                    <polyline points="12 19 5 12 12 5"></polyline>
-                                </svg>
-                                Facturas
-                            </a>
-                            <span style="color:var(--color-text-muted);font-size:12px;opacity:0.5;">/</span>
-                            <span style="font-size:12px;font-weight:600;color:var(--color-text-primary);font-family:'JetBrains Mono',monospace;">${inv.invoice_number}</span>
+                        <div class="detail-left-block">
+                            <div class="detail-breadcrumb" style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+                                <a href="#facturas" class="btn-back">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <line x1="19" y1="12" x2="5" y2="12"></line>
+                                        <polyline points="12 19 5 12 12 5"></polyline>
+                                    </svg>
+                                    Facturas
+                                </a>
+                                <span style="color:var(--color-text-muted);font-size:12px;opacity:0.5;">/</span>
+                                <span style="font-size:12px;font-weight:600;color:var(--color-text-primary);font-family:'JetBrains Mono',monospace;">${inv.invoice_number}</span>
+                            </div>
+                            <p class="page-subtitle detail-issue-date" style="margin:0;font-size:13px;color:var(--color-text-muted);">Emitida el ${App.formatDate(inv.issue_date)}</p>
                         </div>
                         <div class="detail-title-block">
                             <h1 class="page-title" style="margin:0;">${inv.is_ecf ? `e-CF ${inv.encf || inv.invoice_number}` : `Factura ${inv.invoice_number}`}</h1>
-                            <p class="page-subtitle" style="margin:4px 0 0;">Emitida el ${App.formatDate(inv.issue_date)}</p>
                         </div>
                     </div>
                     <div class="invoice-actions detail-actions">

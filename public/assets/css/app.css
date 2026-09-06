@@ -977,9 +977,15 @@ hr { border: 0; border-top: 1px solid var(--color-border); margin: var(--spacing
 .invoice-detail-header .detail-header-top {
   display: flex;
   justify-content: space-between;
-  align-items: flex-start;
+  align-items: flex-end;
   gap: 16px;
   width: 100%;
+}
+
+.invoice-detail-header .detail-left-block {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
 }
 
 .invoice-detail-header .detail-title-block {

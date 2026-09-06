@@ -831,11 +831,22 @@ select.form-control {
 /* ═══════════════════════════════════════════════════════════
    DETAIL VIEW PAGE HEADER & ACTIONS — Mobile Adaptations
    ═══════════════════════════════════════════════════════════ */
-.detail-header {
+.detail-header,
+.invoice-detail-header {
   flex-direction: column !important;
   align-items: stretch !important;
   gap: 16px !important;
   margin-bottom: 24px !important;
+}
+
+.invoice-detail-header .detail-header-top {
+  flex-direction: column !important;
+  align-items: stretch !important;
+  gap: 12px !important;
+}
+
+.invoice-detail-header .detail-title-block {
+  text-align: left !important;
 }
 
 .detail-actions {

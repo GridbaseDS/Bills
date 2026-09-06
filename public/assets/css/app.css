@@ -966,6 +966,35 @@ hr { border: 0; border-top: 1px solid var(--color-border); margin: var(--spacing
   box-shadow: none;
 }
 
+/* ── Invoice Detail Header Layout ── */
+.invoice-detail-header {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-bottom: 24px;
+}
+
+.invoice-detail-header .detail-header-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  width: 100%;
+}
+
+.invoice-detail-header .detail-title-block {
+  text-align: right;
+}
+
+.invoice-detail-header .detail-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  align-items: center;
+  width: 100%;
+}
+
 
 
 /* ═══════════════════════════════════════════════════════════

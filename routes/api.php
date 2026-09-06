@@ -39,6 +39,7 @@ Route::get('/settings/public', [SettingController::class, 'publicSettings']);
 Route::get('/demo/status', [DemoController::class, 'status']);
 Route::post('/demo/extend', [DemoController::class, 'extend']);
 Route::post('/demo/reset', [DemoController::class, 'reset']);
+Route::post('/demo/provision', [DemoController::class, 'provision']);
 
 // Lookups (Public or Protected, placing them here as public, but could be protected)
 Route::get('/lookup/rnc/{rnc}', [LookupController::class, 'rnc']);
@@ -156,8 +157,16 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::apiResource('users', UserController::class);
     });
 
-    // DGII Tests & Audit Logs
-    Route::middleware('role:admin,contador')->group(function () {
+    // DGII Tests & Audit Logs (Restringidos en Modo Demo)
+    Route::middleware(['role:admin,contador', function ($request, $next) {
+        if (config('app.demo_mode')) {
+            return response()->json([
+                'success' => false,
+                'error' => 'Los módulos de Pruebas DGII y Auditoría DGII están deshabilitados en el entorno de demostración.'
+            ], 403);
+        }
+        return $next($request);
+    }])->group(function () {
         Route::post('/dgii/run-tests', [DgiiTestUIController::class, 'runTests']);
         Route::post('/dgii/diagnose', [DgiiTestUIController::class, 'diagnose']);
         Route::post('/dgii/run-aprobaciones', [DgiiTestUIController::class, 'runAprobaciones']);

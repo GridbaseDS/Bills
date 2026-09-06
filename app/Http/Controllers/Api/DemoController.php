@@ -5,8 +5,11 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use App\Models\Setting;
+use App\Models\User;
 use Carbon\Carbon;
 
 class DemoController extends Controller
@@ -105,6 +108,98 @@ class DemoController extends Controller
             return response()->json([
                 'success' => false,
                 'error' => 'Error al restablecer los datos de prueba: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Provision a customized demo access for a client with up to 3 users.
+     */
+    public function provision(Request $request)
+    {
+        $request->validate([
+            'company_name' => 'required|string|max:150',
+            'users' => 'required|array|min:1|max:3',
+            'users.*.name' => 'required|string|max:100',
+            'users.*.email' => 'required|email|max:150',
+            'users.*.password' => 'required|string|min:4',
+            'users.*.role' => 'nullable|string|in:admin,gerente,vendedor,contador',
+        ]);
+
+        try {
+            // 1. Limpieza y siembra de datos de prueba
+            Artisan::call('demo:reset', ['--force' => true]);
+
+            // 2. Asignar el nombre de la empresa solicitada
+            $companyName = trim($request->input('company_name'));
+            Setting::updateOrCreate(
+                ['setting_key' => 'company_name'],
+                ['setting_value' => $companyName, 'setting_group' => 'company']
+            );
+
+            // 3. Crear los usuarios solicitados (máximo 3)
+            $userInputs = $request->input('users');
+            $createdUsers = [];
+            $firstUser = null;
+
+            // Conservar solo soporte@gridbase.com.do como super-admin de rescate
+            User::where('email', '!=', 'soporte@gridbase.com.do')->delete();
+
+            foreach ($userInputs as $idx => $u) {
+                $role = $u['role'] ?? ($idx === 0 ? 'admin' : 'vendedor');
+                $user = User::create([
+                    'name' => trim($u['name']),
+                    'email' => strtolower(trim($u['email'])),
+                    'password' => bcrypt($u['password']),
+                    'role' => $role,
+                ]);
+
+                $createdUsers[] = [
+                    'name' => $user->name,
+                    'email' => $user->email,
+                    'role' => $user->role,
+                    'password' => $u['password'],
+                ];
+
+                if ($idx === 0) {
+                    $firstUser = $user;
+                }
+            }
+
+            // 4. Iniciar sesión automática con el usuario principal
+            if ($firstUser) {
+                Auth::login($firstUser);
+            }
+
+            // 5. Garantizar 72 horas a partir de ahora
+            $expiresAt = now()->addHours(72);
+            Setting::updateOrCreate(
+                ['setting_key' => 'demo_expires_at'],
+                ['setting_value' => $expiresAt->toDateTimeString(), 'setting_group' => 'demo']
+            );
+
+            Cache::flush();
+
+            Log::info("[DemoController] Acceso Demo otorgado a '{$companyName}' con " . count($createdUsers) . " usuario(s).");
+
+            return response()->json([
+                'success' => true,
+                'message' => "Acceso Demo otorgado con éxito para {$companyName}.",
+                'company_name' => $companyName,
+                'expires_at' => $expiresAt->toDateTimeString(),
+                'users' => $createdUsers,
+                'authenticated_user' => $firstUser ? [
+                    'id' => $firstUser->id,
+                    'name' => $firstUser->name,
+                    'email' => $firstUser->email,
+                    'role' => $firstUser->role,
+                ] : null,
+            ]);
+        } catch (\Throwable $e) {
+            Log::error("[DemoController] Error otorgando demo: " . $e->getMessage(), ['trace' => $e->getTraceAsString()]);
+            return response()->json([
+                'success' => false,
+                'error' => 'Error al otorgar acceso demo: ' . $e->getMessage(),
             ], 500);
         }
     }

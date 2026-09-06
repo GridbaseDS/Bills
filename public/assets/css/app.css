@@ -2967,9 +2967,76 @@ tr:hover .row-actions { opacity: 1; }
   }
   .demo-banner-actions {
     width: 100%;
-    justify-content: flex-end;
+    justify-content: flex-start;
+    flex-wrap: wrap;
+    gap: 8px;
   }
   .demo-options-grid {
     grid-template-columns: 1fr;
   }
 }
+
+/* Demo Provisioning Form & Buttons */
+.demo-login-buttons {
+  display: flex;
+  gap: 8px;
+  flex-direction: column;
+  margin-top: 10px;
+}
+
+.btn-demo-provision-login {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: transparent;
+  color: #0b484c;
+  border: 1.5px solid #0b484c;
+  padding: 8px 14px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-demo-provision-login:hover {
+  background: rgba(11, 72, 76, 0.08);
+}
+
+.btn-demo-provision-nav {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #ffffff;
+  color: #0b484c;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  padding: 5px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-demo-provision-nav:hover {
+  background: rgba(255, 255, 255, 0.9);
+  color: #09393c;
+  transform: translateY(-1px);
+}
+
+[data-theme='dark'] .btn-demo-provision-login {
+  color: #2dd4bf;
+  border-color: #2dd4bf;
+}
+
+[data-theme='dark'] .btn-demo-provision-login:hover {
+  background: rgba(45, 212, 191, 0.1);
+}
+
+[data-theme='dark'] .btn-demo-provision-nav {
+  background: rgba(255, 255, 255, 0.95);
+  color: #0b484c;
+}
+

@@ -434,24 +434,33 @@ window.App = {
         const parts = route.split('/');
         const view = parts[0];
 
-        // Roles & Permissions Redirection Control
-        const role = this.state.user.role || 'admin';
-        
-        // Restricted views per role
-        const restricted = {
-            vendedor: ['recurrentes', 'recurring', 'gastos', 'expenses', 'usuarios', 'users', 'configuracion', 'settings', 'pruebas-dgii', 'dgii-tests', 'facturas-recibidas', 'received-invoices', 'reportes', 'reports'],
-            contador: ['usuarios', 'users', 'configuracion', 'settings', 'pruebas-dgii', 'dgii-tests'],
-            gerente: ['pruebas-dgii', 'dgii-tests', 'auditoria-dgii', 'dgii-logs']
-        };
-
-        if (restricted[role] && restricted[role].includes(view)) {
-            this.showToast('No tienes permiso para acceder a esta sección.', 'error');
+        // Bloquear módulos DGII en modo demo
+        const isDemo = Boolean(this.state.is_demo || window.location.hostname.includes('bdemo'));
+        if (isDemo && ['pruebas-dgii', 'dgii-tests', 'auditoria-dgii', 'dgii-logs'].includes(view)) {
+            this.showToast('Los módulos de Pruebas DGII y Auditoría DGII están deshabilitados en el entorno demo.', 'info');
             route = 'inicio';
             if (pushToHistory) history.pushState(null, '', '/inicio');
             this.state.currentRoute = 'inicio';
         } else {
-            this.state.currentRoute = route;
-            if (pushToHistory) history.pushState(null, '', '/' + route);
+            // Roles & Permissions Redirection Control
+            const role = this.state.user?.role || 'admin';
+            
+            // Restricted views per role
+            const restricted = {
+                vendedor: ['recurrentes', 'recurring', 'gastos', 'expenses', 'usuarios', 'users', 'configuracion', 'settings', 'pruebas-dgii', 'dgii-tests', 'facturas-recibidas', 'received-invoices', 'reportes', 'reports'],
+                contador: ['usuarios', 'users', 'configuracion', 'settings', 'pruebas-dgii', 'dgii-tests'],
+                gerente: ['pruebas-dgii', 'dgii-tests', 'auditoria-dgii', 'dgii-logs']
+            };
+
+            if (restricted[role] && restricted[role].includes(view)) {
+                this.showToast('No tienes permiso para acceder a esta sección.', 'error');
+                route = 'inicio';
+                if (pushToHistory) history.pushState(null, '', '/inicio');
+                this.state.currentRoute = 'inicio';
+            } else {
+                this.state.currentRoute = route;
+                if (pushToHistory) history.pushState(null, '', '/' + route);
+            }
         }
 
         const activeRoute = route.split('/')[0];
@@ -496,8 +505,12 @@ window.App = {
                 case 'gastos': case 'expenses': ExpensesModule.render(appContent, subId); break;
                 case 'usuarios': case 'users': UsersModule.render(appContent, subId); break;
                 case 'configuracion': case 'settings': SettingsModule.render(appContent); break;
-                case 'pruebas-dgii': case 'dgii-tests': DgiiTestsModule.render(appContent); break;
-                case 'auditoria-dgii': case 'dgii-logs': DgiiLogsModule.render(appContent); break;
+                case 'pruebas-dgii': case 'dgii-tests': 
+                    if (isDemo) { this.navigate('inicio'); } else { DgiiTestsModule.render(appContent); }
+                    break;
+                case 'auditoria-dgii': case 'dgii-logs': 
+                    if (isDemo) { this.navigate('inicio'); } else { DgiiLogsModule.render(appContent); }
+                    break;
                 case 'facturas-recibidas': case 'received-invoices': ReceivedInvoicesModule.render(appContent); break;
                 case 'reportes': case 'reports': ReportsModule.render(appContent); break;
                 default:
@@ -532,10 +545,16 @@ window.App = {
                             <div class="demo-login-callout">
                                 <div class="demo-login-badge"><span class="demo-pulse" style="display:inline-block;margin-right:4px;"></span> ACCESO DEMO</div>
                                 <div class="demo-login-desc">Explora todas las funciones de facturación y facturación electrónica DGII con datos de prueba:</div>
-                                <button type="button" class="btn-demo-quick-login" onclick="App.loginWithDemo()">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
-                                    Ingresar como Demo (1 Clic)
-                                </button>
+                                <div class="demo-login-buttons">
+                                    <button type="button" class="btn-demo-quick-login" onclick="App.loginWithDemo()">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
+                                        Ingreso Rápido Demo (1 Clic)
+                                    </button>
+                                    <button type="button" class="btn-demo-provision-login" onclick="App.openDemoProvisionModal()">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>
+                                        Otorgar Acceso Demo a Cliente
+                                    </button>
+                                </div>
                             </div>
                         ` : ''}
 
@@ -1033,7 +1052,7 @@ window.App = {
                                 <li><a href="/usuarios" class="sidebar-link"><span class="sidebar-link-content"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>Usuarios</span></a></li>
                                 <li><a href="/configuracion" class="sidebar-link"><span class="sidebar-link-content"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>Configuración</span></a></li>
                                 ` : ''}
-                                ${this.state.user.role === 'admin' ? `
+                                ${(!this.state.is_demo && !window.location.hostname.includes('bdemo') && this.state.user.role === 'admin') ? `
                                 <li><a href="/pruebas-dgii" class="sidebar-link"><span class="sidebar-link-content"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"></path><rect x="9" y="3" width="6" height="4" rx="2"></rect><path d="M9 14l2 2 4-4"></path></svg>Pruebas DGII</span></a></li>
                                 <li><a href="/auditoria-dgii" class="sidebar-link"><span class="sidebar-link-content"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>Auditoría DGII</span></a></li>
                                 ` : ''}
@@ -1068,6 +1087,10 @@ window.App = {
                                 </div>
                             </div>
                             <div class="demo-banner-actions">
+                                <button type="button" class="btn-demo-provision-nav" onclick="App.openDemoProvisionModal()" title="Otorgar acceso demo a nuevo cliente">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>
+                                    Otorgar Acceso Demo
+                                </button>
                                 <button type="button" class="btn-demo-extend" onclick="App.openDemoExtendModal()">
                                     <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="16"></line><line x1="8" y1="12" x2="16" y2="12"></line></svg>
                                     Extender Tiempo
@@ -1094,7 +1117,7 @@ window.App = {
                             </div>
                         </div>
                         <div class="topbar-actions">
-                            <div id="dgii-status-pill" style="display:inline-flex;align-items:center;gap:6px;padding:4px 12px;border-radius:var(--radius-full);font-size:11px;font-weight:600;letter-spacing:0.3px;cursor:pointer;transition:all .2s ease;background:var(--color-border);color:var(--color-text-muted);" onclick="App.navigate('pruebas-dgii')" title="Estado de conexión DGII">
+                            <div id="dgii-status-pill" style="display:inline-flex;align-items:center;gap:6px;padding:4px 12px;border-radius:var(--radius-full);font-size:11px;font-weight:600;letter-spacing:0.3px;cursor:pointer;transition:all .2s ease;background:var(--color-border);color:var(--color-text-muted);" onclick="${(this.state.is_demo || window.location.hostname.includes('bdemo')) ? "App.showToast('Conexión con la DGII activa y verificada (Entorno Demo)', 'success')" : "App.navigate('pruebas-dgii')"}" title="Estado de conexión DGII">
                                 <span id="dgii-status-dot" style="width:7px;height:7px;border-radius:50%;background:currentColor;flex-shrink:0;"></span>
                                 <span id="dgii-status-label">DGII...</span>
                             </div>
@@ -1409,10 +1432,12 @@ window.App = {
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
                     Configuración
                 </button>
+                ${(this.state.is_demo || window.location.hostname.includes('bdemo')) ? '' : `
                 <button class="action-sheet-item" onclick="App.closeMoreMenu();App.navigate('pruebas-dgii')">
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"></path><rect x="9" y="3" width="6" height="4" rx="2"></rect><path d="M9 14l2 2 4-4"></path></svg>
                     Pruebas DGII
                 </button>
+                `}
                 <button class="action-sheet-item" onclick="App.closeMoreMenu();App.toggleTheme()">
                     ${themeIcon}
                     ${themeText}
@@ -1790,15 +1815,19 @@ window.App = {
     renderCommandDefaultActions(container) {
         if (!container) return;
 
-        const actions = [
+        let actions = [
             { title: 'Nueva Factura', sub: 'Crear e imprimir comprobante fiscal', icon: '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/>', action: 'route', value: 'invoices/new', badge: 'Acción' },
             { title: 'Nueva Cotización', sub: 'Generar cotización para cliente', icon: '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/>', action: 'route', value: 'cotizaciones/new', badge: 'Acción' },
             { title: 'Nuevo Cliente', sub: 'Registrar un nuevo cliente o empresa', icon: '<path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/>', action: 'route', value: 'clientes/new', badge: 'Acción' },
             { title: 'Registrar Gasto', sub: 'Añadir un egreso o factura de proveedor', icon: '<line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>', action: 'route', value: 'gastos', badge: 'Acción' },
             { title: 'Auditoría & Logs DGII', sub: 'Ver respuestas e-CF y trackId DGII', icon: '<polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>', action: 'route', value: 'auditoria-dgii', badge: 'DGII' },
-            { title: 'Configuración del Sistema', sub: 'Branding, empresa, 2FA y sensores biométricos', icon: '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>', action: 'route', value: 'configuracion', badge: 'Ajustes' },
+            { title: 'Configuración del Sistema', sub: 'Branding, empresa, 2FA y sensores biométricos', icon: '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>', action: 'route', value: 'configuracion', badge: 'Ajustes' },
             { title: 'Cambiar Modo Claro / Oscuro', sub: 'Alternar tema de la interfaz', icon: '<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>', action: 'theme', value: '', badge: 'Tema' }
         ];
+
+        if (this.state.is_demo || window.location.hostname.includes('bdemo')) {
+            actions = actions.filter(a => a.value !== 'auditoria-dgii' && a.value !== 'pruebas-dgii');
+        }
 
         let html = '<div class="cmd-group-title">Acciones Rápidas & Accesos Directos</div>';
         actions.forEach(a => {
@@ -2063,6 +2092,359 @@ window.App = {
         } catch (e) {
             this.showToast('Error al restablecer demo: ' + e.message, 'error');
         }
+    },
+
+    escapeHtml(str) {
+        if (!str) return '';
+        return String(str)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
+    },
+
+    _demoUserRows: [
+        { name: '', email: '', password: '', role: 'admin' }
+    ],
+
+    openDemoProvisionModal() {
+        const randPass = 'Demo' + Math.floor(1000 + Math.random() * 9000) + '!';
+        this._demoUserRows = [
+            { name: '', email: '', password: randPass, role: 'admin' }
+        ];
+
+        let modal = document.getElementById('demo-provision-modal');
+        if (!modal) {
+            modal = document.createElement('div');
+            modal.id = 'demo-provision-modal';
+            modal.className = 'demo-modal-overlay';
+            document.body.appendChild(modal);
+        }
+
+        modal.style.display = 'flex';
+        this.renderDemoProvisionContent();
+    },
+
+    closeDemoProvisionModal() {
+        const modal = document.getElementById('demo-provision-modal');
+        if (modal) modal.style.display = 'none';
+    },
+
+    renderDemoProvisionContent(resultData = null) {
+        const modal = document.getElementById('demo-provision-modal');
+        if (!modal) return;
+
+        if (resultData) {
+            // Render Success view with copy credentials
+            const credsText = [
+                `🏢 ACCESO DEMO GRIDBASE BILLS`,
+                `Empresa: ${resultData.company_name}`,
+                `Portal: ${window.location.origin}`,
+                `Duración: 72 Horas (Vence: ${resultData.expires_at})`,
+                ``,
+                `👤 USUARIOS CREADOS:`,
+                ...resultData.users.map((u, i) => `[Usuario ${i + 1}] ${u.name} (${u.role.toUpperCase()})\n  Email: ${u.email}\n  Contraseña: ${u.password}`),
+                ``,
+                `ℹ️ DGII Conectado: Facturación electrónica simulada y autorizada automáticamente.`
+            ].join('\n');
+
+            window._lastDemoCreds = credsText;
+            window._primaryDemoUser = resultData.users[0];
+
+            modal.innerHTML = `
+                <div class="demo-modal-card" style="max-width: 540px;">
+                    <div class="demo-modal-header">
+                        <div style="display:flex;align-items:center;gap:10px;">
+                            <div style="width:36px;height:36px;border-radius:50%;background:rgba(16,185,129,0.15);color:#10b981;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:bold;">✓</div>
+                            <div>
+                                <h3 class="demo-modal-title" style="color:#10b981;">¡Acceso Demo Otorgado con Éxito!</h3>
+                                <div style="font-size:12px;color:var(--color-text-muted);">Empresa: <strong>${this.escapeHtml(resultData.company_name)}</strong> (72 Horas)</div>
+                            </div>
+                        </div>
+                        <button type="button" class="demo-modal-close" onclick="App.closeDemoProvisionModal()">&times;</button>
+                    </div>
+
+                    <div style="margin:16px 0;background:var(--bg-hover);border:1px solid var(--color-border);border-radius:10px;padding:16px;">
+                        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+                            <span style="font-size:12px;font-weight:700;text-transform:uppercase;color:var(--color-text-primary);letter-spacing:0.5px;">Credenciales para el Cliente</span>
+                            <button type="button" class="btn btn-secondary" style="padding:4px 10px;font-size:12px;display:flex;align-items:center;gap:6px;" onclick="App.copyDemoCredentials()">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                                Copiar Credenciales
+                            </button>
+                        </div>
+                        
+                        <div style="display:flex;flex-direction:column;gap:10px;">
+                            ${resultData.users.map((u, idx) => `
+                                <div style="background:var(--bg-card);border:1px solid var(--color-border);border-radius:8px;padding:10px 12px;display:flex;justify-content:space-between;align-items:center;">
+                                    <div>
+                                        <div style="font-weight:700;font-size:13px;color:var(--color-text-primary);">${this.escapeHtml(u.name)} <span class="badge" style="font-size:10px;text-transform:uppercase;">${u.role}</span></div>
+                                        <div style="font-size:12px;color:var(--color-text-muted);margin-top:2px;">
+                                            <span>Email: <code style="color:var(--color-primary);">${this.escapeHtml(u.email)}</code></span>
+                                            <span style="margin-left:12px;">Clave: <code style="color:var(--color-primary);">${this.escapeHtml(u.password)}</code></span>
+                                        </div>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+
+                    <div style="padding:10px 12px;border-radius:8px;background:rgba(11,72,76,0.06);border:1px solid rgba(11,72,76,0.2);margin-bottom:20px;font-size:12px;color:var(--color-text-secondary);line-height:1.4;">
+                        🔒 <em>Seguridad:</em> Por políticas de demo, los menús de <strong>Pruebas DGII</strong> y <strong>Auditoría DGII</strong> permanecen ocultos. Toda factura emitida mostrará conexión activa con trackId simulado.
+                    </div>
+
+                    <div style="display:flex;justify-content:flex-end;gap:10px;">
+                        <button type="button" class="btn btn-secondary" onclick="App.closeDemoProvisionModal()">Cerrar</button>
+                        <button type="button" class="btn btn-primary" onclick="App.loginWithProvisionedUser()">
+                            Ingresar Ahora como Administrador
+                        </button>
+                    </div>
+                </div>
+            `;
+            return;
+        }
+
+        // Render input form
+        modal.innerHTML = `
+            <div class="demo-modal-card" style="max-width: 560px; max-height: 90vh; display: flex; flex-direction: column;">
+                <div class="demo-modal-header" style="flex-shrink:0;">
+                    <div>
+                        <h3 class="demo-modal-title">Otorgar Acceso Demo</h3>
+                        <p style="font-size:12px;color:var(--color-text-muted);margin-top:2px;">Configura el nombre de la empresa y hasta un máximo de 3 usuarios.</p>
+                    </div>
+                    <button type="button" class="demo-modal-close" onclick="App.closeDemoProvisionModal()">&times;</button>
+                </div>
+
+                <form id="demo-provision-form" onsubmit="App.submitDemoProvision(event)" style="overflow-y:auto;padding-right:4px;flex:1;display:flex;flex-direction:column;gap:16px;">
+                    <div id="demo-provision-error" style="display:none;padding:10px 14px;border-radius:8px;background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);color:#ef4444;font-size:12px;"></div>
+
+                    <div class="form-group" style="margin-bottom:0;">
+                        <label style="font-size:12px;font-weight:700;color:var(--color-text-primary);margin-bottom:6px;display:block;">Nombre de la Empresa <span style="color:#ef4444;">*</span></label>
+                        <input type="text" id="demo-company-name" required placeholder="Ej: Comercial Quisqueyana SRL" style="width:100%;padding:9px 12px;border:1px solid var(--color-border);border-radius:8px;font-size:13px;background:var(--bg-input);color:var(--color-text-primary);">
+                    </div>
+
+                    <div style="border-top:1px solid var(--color-border);padding-top:14px;">
+                        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+                            <div>
+                                <label style="font-size:12px;font-weight:700;color:var(--color-text-primary);display:block;">Usuarios a Crear (Máximo 3) <span style="color:#ef4444;">*</span></label>
+                                <span style="font-size:11px;color:var(--color-text-muted);">Asigna hasta 3 usuarios para el cliente y su personal.</span>
+                            </div>
+                            <button type="button" class="btn btn-secondary" id="btn-add-demo-user" onclick="App.addDemoUserRow()" style="padding:4px 10px;font-size:11px;font-weight:600;display:${this._demoUserRows.length >= 3 ? 'none' : 'inline-flex'};align-items:center;gap:4px;">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                                Agregar Usuario (${this._demoUserRows.length}/3)
+                            </button>
+                        </div>
+
+                        <div id="demo-user-rows-container" style="display:flex;flex-direction:column;gap:12px;">
+                            <!-- Injected user cards -->
+                        </div>
+                    </div>
+
+                    <div style="padding:10px 12px;border-radius:8px;background:rgba(11,72,76,0.05);border:1px solid rgba(11,72,76,0.15);font-size:11px;color:var(--color-text-secondary);line-height:1.4;">
+                        🛡️ <strong>Seguridad DGII:</strong> Los accesos demo tienen restringido el menú técnico de Pruebas y Auditoría DGII para evitar alteraciones. Se simulará la emisión de e-CF exitosa.
+                    </div>
+
+                    <div style="display:flex;justify-content:flex-end;gap:10px;padding-top:10px;border-top:1px solid var(--color-border);flex-shrink:0;">
+                        <button type="button" class="btn btn-secondary" onclick="App.closeDemoProvisionModal()">Cancelar</button>
+                        <button type="submit" id="btn-demo-submit-provision" class="btn btn-primary" style="display:inline-flex;align-items:center;gap:6px;">
+                            <span>Crear Acceso Demo (72h)</span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        `;
+
+        this.renderDemoUserRows();
+    },
+
+    renderDemoUserRows() {
+        const container = document.getElementById('demo-user-rows-container');
+        if (!container) return;
+
+        const addBtn = document.getElementById('btn-add-demo-user');
+        if (addBtn) {
+            addBtn.style.display = this._demoUserRows.length >= 3 ? 'none' : 'inline-flex';
+            addBtn.innerHTML = `
+                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                Agregar Usuario (${this._demoUserRows.length}/3)
+            `;
+        }
+
+        container.innerHTML = this._demoUserRows.map((u, i) => `
+            <div class="demo-user-row-card" style="background:var(--bg-hover);border:1px solid var(--color-border);border-radius:10px;padding:12px;">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+                    <div style="display:flex;align-items:center;gap:6px;">
+                        <span style="font-weight:700;font-size:12px;color:var(--color-text-primary);">Usuario #${i + 1}</span>
+                        ${i === 0 ? '<span class="badge" style="font-size:10px;background:rgba(11,72,76,0.12);color:#0b484c;font-weight:700;">Principal / Admin</span>' : ''}
+                    </div>
+                    ${this._demoUserRows.length > 1 ? `
+                        <button type="button" class="btn-icon text-danger" style="width:24px;height:24px;padding:2px;" onclick="App.removeDemoUserRow(${i})" title="Eliminar usuario">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                        </button>
+                    ` : ''}
+                </div>
+
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
+                    <div>
+                        <label style="font-size:11px;font-weight:600;color:var(--color-text-secondary);display:block;margin-bottom:4px;">Nombre Completo <span style="color:#ef4444;">*</span></label>
+                        <input type="text" class="demo-user-name" data-index="${i}" required value="${this.escapeHtml(u.name || '')}" placeholder="Ej: Juan Pérez" style="width:100%;padding:7px 10px;border:1px solid var(--color-border);border-radius:6px;font-size:12px;background:var(--bg-card);color:var(--color-text-primary);">
+                    </div>
+                    <div>
+                        <label style="font-size:11px;font-weight:600;color:var(--color-text-secondary);display:block;margin-bottom:4px;">Correo Electrónico <span style="color:#ef4444;">*</span></label>
+                        <input type="email" class="demo-user-email" data-index="${i}" required value="${this.escapeHtml(u.email || '')}" placeholder="juan@empresa.com" style="width:100%;padding:7px 10px;border:1px solid var(--color-border);border-radius:6px;font-size:12px;background:var(--bg-card);color:var(--color-text-primary);">
+                    </div>
+                </div>
+
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+                    <div>
+                        <label style="font-size:11px;font-weight:600;color:var(--color-text-secondary);display:block;margin-bottom:4px;">Contraseña <span style="color:#ef4444;">*</span></label>
+                        <input type="text" class="demo-user-password" data-index="${i}" required value="${this.escapeHtml(u.password || '')}" placeholder="Mínimo 4 caracteres" style="width:100%;padding:7px 10px;border:1px solid var(--color-border);border-radius:6px;font-size:12px;background:var(--bg-card);color:var(--color-text-primary);">
+                    </div>
+                    <div>
+                        <label style="font-size:11px;font-weight:600;color:var(--color-text-secondary);display:block;margin-bottom:4px;">Rol en el Sistema</label>
+                        <select class="demo-user-role" data-index="${i}" style="width:100%;padding:7px 10px;border:1px solid var(--color-border);border-radius:6px;font-size:12px;background:var(--bg-card);color:var(--color-text-primary);">
+                            <option value="admin" ${u.role === 'admin' ? 'selected' : ''}>Administrador</option>
+                            <option value="gerente" ${u.role === 'gerente' ? 'selected' : ''}>Gerente</option>
+                            <option value="vendedor" ${u.role === 'vendedor' ? 'selected' : ''}>Vendedor</option>
+                            <option value="contador" ${u.role === 'contador' ? 'selected' : ''}>Contador</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        `).join('');
+
+        // Bind input events to update state
+        container.querySelectorAll('input, select').forEach(input => {
+            input.addEventListener('change', (e) => {
+                const idx = parseInt(e.target.dataset.index, 10);
+                if (this._demoUserRows[idx]) {
+                    if (e.target.classList.contains('demo-user-name')) this._demoUserRows[idx].name = e.target.value;
+                    if (e.target.classList.contains('demo-user-email')) this._demoUserRows[idx].email = e.target.value;
+                    if (e.target.classList.contains('demo-user-password')) this._demoUserRows[idx].password = e.target.value;
+                    if (e.target.classList.contains('demo-user-role')) this._demoUserRows[idx].role = e.target.value;
+                }
+            });
+        });
+    },
+
+    addDemoUserRow() {
+        if (this._demoUserRows.length >= 3) return;
+        this.saveCurrentDemoUserRowsFromDOM();
+        const randPass = 'Demo' + Math.floor(1000 + Math.random() * 9000) + '!';
+        const nextRole = this._demoUserRows.length === 1 ? 'gerente' : 'vendedor';
+        this._demoUserRows.push({ name: '', email: '', password: randPass, role: nextRole });
+        this.renderDemoUserRows();
+    },
+
+    removeDemoUserRow(index) {
+        if (this._demoUserRows.length <= 1) return;
+        this.saveCurrentDemoUserRowsFromDOM();
+        this._demoUserRows.splice(index, 1);
+        this.renderDemoUserRows();
+    },
+
+    saveCurrentDemoUserRowsFromDOM() {
+        const container = document.getElementById('demo-user-rows-container');
+        if (!container) return;
+
+        this._demoUserRows.forEach((row, idx) => {
+            const nameEl = container.querySelector(`.demo-user-name[data-index="${idx}"]`);
+            const emailEl = container.querySelector(`.demo-user-email[data-index="${idx}"]`);
+            const passEl = container.querySelector(`.demo-user-password[data-index="${idx}"]`);
+            const roleEl = container.querySelector(`.demo-user-role[data-index="${idx}"]`);
+
+            if (nameEl) row.name = nameEl.value;
+            if (emailEl) row.email = emailEl.value;
+            if (passEl) row.password = passEl.value;
+            if (roleEl) row.role = roleEl.value;
+        });
+    },
+
+    async submitDemoProvision(e) {
+        if (e) e.preventDefault();
+        this.saveCurrentDemoUserRowsFromDOM();
+
+        const errEl = document.getElementById('demo-provision-error');
+        const companyNameEl = document.getElementById('demo-company-name');
+        const submitBtn = document.getElementById('btn-demo-submit-provision');
+        
+        if (errEl) errEl.style.display = 'none';
+
+        const companyName = companyNameEl?.value?.trim();
+        if (!companyName) {
+            if (errEl) {
+                errEl.textContent = 'Por favor ingresa el nombre de la empresa.';
+                errEl.style.display = 'block';
+            }
+            return;
+        }
+
+        if (!this._demoUserRows.length || this._demoUserRows.length > 3) {
+            if (errEl) {
+                errEl.textContent = 'Debes crear entre 1 y 3 usuarios.';
+                errEl.style.display = 'block';
+            }
+            return;
+        }
+
+        for (let i = 0; i < this._demoUserRows.length; i++) {
+            const u = this._demoUserRows[i];
+            if (!u.name || !u.email || !u.password) {
+                if (errEl) {
+                    errEl.textContent = `Por favor completa todos los campos del Usuario #${i + 1}.`;
+                    errEl.style.display = 'block';
+                }
+                return;
+            }
+        }
+
+        if (submitBtn) {
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<span class="spinner" style="width:14px;height:14px;"></span> Generando Demo...';
+        }
+
+        try {
+            const res = await this.api('demo/provision', {
+                method: 'POST',
+                body: {
+                    company_name: companyName,
+                    users: this._demoUserRows
+                }
+            });
+
+            if (res.success) {
+                this.renderDemoProvisionContent(res);
+                this.showToast('¡Acceso demo configurado con éxito!', 'success');
+            } else {
+                throw new Error(res.error || 'Error al configurar el acceso demo');
+            }
+        } catch (err) {
+            if (errEl) {
+                errEl.textContent = err.message || 'Error al generar el acceso demo';
+                errEl.style.display = 'block';
+            }
+            if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<span>Crear Acceso Demo (72h)</span>';
+            }
+        }
+    },
+
+    copyDemoCredentials() {
+        if (!window._lastDemoCreds) return;
+        navigator.clipboard.writeText(window._lastDemoCreds)
+            .then(() => this.showToast('¡Credenciales copiadas al portapapeles!', 'success'))
+            .catch(() => this.showToast('No se pudo copiar automáticamente', 'error'));
+    },
+
+    loginWithProvisionedUser() {
+        if (!window._primaryDemoUser) {
+            this.closeDemoProvisionModal();
+            return;
+        }
+        const user = window._primaryDemoUser;
+        this.closeDemoProvisionModal();
+        this.login(user.email, user.password);
     }
 };
 

@@ -181,7 +181,7 @@ class DemoDataSeeder extends Seeder
         $q1 = Quote::create([
             'quote_number' => 'COT-1001',
             'client_id' => $bhd->id,
-            'status' => 'approved',
+            'status' => 'accepted',
             'issue_date' => '2026-08-15',
             'expiry_date' => '2026-09-15',
             'subtotal' => 120000.00,

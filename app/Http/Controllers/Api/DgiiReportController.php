@@ -613,4 +613,24 @@ class DgiiReportController extends Controller
             'Cache-Control' => 'max-age=0',
         ]);
     }
+
+    /**
+     * Pre-validate DGII format data (606, 607, 608) using native DGII validation engine
+     */
+    public function prevalidate(Request $request, string $type, \App\Services\DgiiPrevalidatorService $validator)
+    {
+        $request->validate([
+            'period' => 'required|string|size:6',
+            'records' => 'required|array',
+        ]);
+
+        $period = $request->input('period');
+        $records = $request->input('records');
+        $companyTaxId = $request->input('rnc') ?: (Setting::where('setting_key', 'company_tax_id')->value('setting_value') ?? '131000000');
+        $companyTaxId = preg_replace('/[^0-9]/', '', $companyTaxId);
+
+        $result = $validator->validateData($type, $companyTaxId, $period, $records);
+
+        return response()->json($result);
+    }
 }

@@ -58,6 +58,10 @@ const ReportsModule = {
                     <button class="segment-item ${this._currentTab === '608' ? 'active' : ''}" data-tab="608">Anulaciones (608)</button>
                 </div>
                 <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+                    <button class="btn" id="btn-prevalidate" style="display:flex;align-items:center;gap:8px;background:#0284c7;border-color:#0284c7;color:#fff;font-weight:600;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+                        Pre-validar (DGII)
+                    </button>
                     <button class="btn" id="btn-export-excel" style="display:flex;align-items:center;gap:8px;background:#107c41;border-color:#107c41;color:#fff;font-weight:600;">
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="8" y1="13" x2="16" y2="13"></line><line x1="8" y1="17" x2="16" y2="17"></line><line x1="10" y1="9" x2="8" y2="9"></line></svg>
                         Descargar Plantilla Excel (.xls)
@@ -107,6 +111,11 @@ const ReportsModule = {
                 this.renderGrid();
             });
         });
+
+        const btnPrevalidate = document.getElementById('btn-prevalidate');
+        if (btnPrevalidate) {
+            btnPrevalidate.addEventListener('click', () => this.prevalidate());
+        }
 
         const btnExportExcel = document.getElementById('btn-export-excel');
         if (btnExportExcel) {
@@ -395,6 +404,136 @@ const ReportsModule = {
         if (this._currentTab === '606') return this._records606;
         if (this._currentTab === '608') return this._records608;
         return [];
+    },
+
+    async prevalidate() {
+        const periodStr = `${this._year}${String(this._month).padStart(2, '0')}`;
+        const records = this.getCurrentRecords();
+
+        if (records.length === 0) {
+            App.showToast(`No hay registros de ${this._currentTab} para pre-validar en este período`, 'info');
+            return;
+        }
+
+        App.showToast(`Ejecutando motor de pre-validación DGII para Formato ${this._currentTab}...`, 'info');
+
+        try {
+            const token = App.state.token || localStorage.getItem('token');
+            const response = await fetch(`/api/dgii/reports/${this._currentTab}/prevalidate`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                    period: periodStr,
+                    rnc: App.state.settings?.company_tax_id ? App.state.settings.company_tax_id.replace(/[^0-9]/g, '') : undefined,
+                    records: records
+                }),
+                credentials: 'same-origin'
+            });
+
+            const res = await response.json();
+            this.showPrevalidationModal(res);
+        } catch (e) {
+            console.error('Prevalidation error:', e);
+            App.showToast('Error al ejecutar la pre-validación DGII', 'error');
+        }
+    },
+
+    showPrevalidationModal(res) {
+        const isValid = res.valid;
+        const errCount = (res.errors || []).length;
+        const warnCount = (res.warnings || []).length;
+
+        let badgeHtml = '';
+        if (isValid) {
+            badgeHtml = `
+                <div style="background:#ecfdf5;border:1px solid #10b981;border-radius:8px;padding:16px;display:flex;align-items:center;gap:12px;margin-bottom:16px;">
+                    <div style="background:#10b981;color:#fff;border-radius:50%;width:32px;height:32px;display:flex;align-items:center;justify-content:center;font-weight:bold;font-size:18px;">✓</div>
+                    <div>
+                        <h4 style="margin:0;color:#065f46;font-size:15px;font-weight:700;">¡Documento 100% Válido para DGII!</h4>
+                        <p style="margin:2px 0 0 0;color:#047857;font-size:12px;">Cumple con el 100% de las normas, algoritmos de dígito verificador y estructuras de comprobantes de la DGII.</p>
+                    </div>
+                </div>
+            `;
+        } else {
+            badgeHtml = `
+                <div style="background:#fef2f2;border:1px solid #ef4444;border-radius:8px;padding:16px;display:flex;align-items:center;gap:12px;margin-bottom:16px;">
+                    <div style="background:#ef4444;color:#fff;border-radius:50%;width:32px;height:32px;display:flex;align-items:center;justify-content:center;font-weight:bold;font-size:18px;">✕</div>
+                    <div>
+                        <h4 style="margin:0;color:#991b1b;font-size:15px;font-weight:700;">Se encontraron ${errCount} errores en el reporte</h4>
+                        <p style="margin:2px 0 0 0;color:#b91c1c;font-size:12px;">La DGII rechazará este archivo. Revise el detalle a continuación para corregirlos.</p>
+                    </div>
+                </div>
+            `;
+        }
+
+        let errorsHtml = '';
+        if (errCount > 0) {
+            errorsHtml = `
+                <div style="margin-bottom:16px;">
+                    <h5 style="color:#ef4444;font-size:13px;font-weight:700;margin-bottom:8px;">Errores que bloquean el envío (${errCount}):</h5>
+                    <ul style="margin:0;padding-left:20px;font-size:12px;color:#b91c1c;line-height:1.6;max-height:180px;overflow-y:auto;">
+                        ${res.errors.map(err => `<li>${err}</li>`).join('')}
+                    </ul>
+                </div>
+            `;
+        }
+
+        let warningsHtml = '';
+        if (warnCount > 0) {
+            warningsHtml = `
+                <div style="margin-bottom:16px;">
+                    <h5 style="color:#d97706;font-size:13px;font-weight:700;margin-bottom:8px;">Advertencias informativas (${warnCount}):</h5>
+                    <ul style="margin:0;padding-left:20px;font-size:12px;color:#b45309;line-height:1.6;max-height:120px;overflow-y:auto;">
+                        ${res.warnings.map(w => `<li>${w}</li>`).join('')}
+                    </ul>
+                </div>
+            `;
+        }
+
+        const modalHtml = `
+            <div id="modal-prevalidation" style="position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.6);z-index:9999;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(3px);">
+                <div style="background:var(--bg-card, #fff);border-radius:12px;box-shadow:0 20px 25px -5px rgba(0,0,0,0.2);width:90%;max-width:620px;max-height:90vh;display:flex;flex-direction:column;overflow:hidden;border:1px solid var(--border-color, #e2e8f0);">
+                    <div style="padding:16px 20px;border-bottom:1px solid var(--border-color, #e2e8f0);display:flex;align-items:center;justify-content:space-between;">
+                        <div style="display:flex;align-items:center;gap:10px;">
+                            <span style="background:#0284c7;color:#fff;padding:4px 8px;border-radius:6px;font-size:11px;font-weight:700;">DGII ${res.format}</span>
+                            <h3 style="margin:0;font-size:16px;font-weight:700;">Resultado de Pre-validación Fiscal</h3>
+                        </div>
+                        <button id="btn-close-preval-x" style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--color-text-muted, #64748b);">&times;</button>
+                    </div>
+                    <div style="padding:20px;overflow-y:auto;flex:1;">
+                        ${badgeHtml}
+                        <div style="display:grid;grid-template-columns:repeat(3, 1fr);gap:12px;background:var(--bg-hover, #f8fafc);padding:12px;border-radius:8px;margin-bottom:16px;font-size:12px;">
+                            <div><span style="color:var(--color-text-muted, #64748b);display:block;">RNC Contribuyente:</span><strong>${res.rnc}</strong></div>
+                            <div><span style="color:var(--color-text-muted, #64748b);display:block;">Período Fiscal:</span><strong>${res.period}</strong></div>
+                            <div><span style="color:var(--color-text-muted, #64748b);display:block;">Comprobantes:</span><strong>${res.record_count} líneas</strong></div>
+                        </div>
+                        ${errorsHtml}
+                        ${warningsHtml}
+                    </div>
+                    <div style="padding:12px 20px;border-top:1px solid var(--border-color, #e2e8f0);background:var(--bg-hover, #f8fafc);display:flex;justify-content:flex-end;gap:10px;">
+                        <button class="btn btn-secondary" id="btn-close-preval">Cerrar</button>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        const existingModal = document.getElementById('modal-prevalidation');
+        if (existingModal) existingModal.remove();
+
+        document.body.insertAdjacentHTML('beforeend', modalHtml);
+
+        const close = () => {
+            const m = document.getElementById('modal-prevalidation');
+            if (m) m.remove();
+        };
+
+        document.getElementById('btn-close-preval-x')?.addEventListener('click', close);
+        document.getElementById('btn-close-preval')?.addEventListener('click', close);
     },
 
     async exportExcel() {

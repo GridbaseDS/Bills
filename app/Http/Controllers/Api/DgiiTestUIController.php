@@ -298,6 +298,16 @@ class DgiiTestUIController extends Controller
     {
         try {
             $settings = Setting::getAll();
+
+            if (config('app.demo_mode')) {
+                return response()->json([
+                    'status' => 'connected',
+                    'label' => 'DGII Conectado',
+                    'env' => $settings['dgii_env'] ?? 'production',
+                    'is_demo' => true
+                ]);
+            }
+
             $certPath = $settings['dgii_certificate_path'] ?? '';
             $certPass = $settings['dgii_certificate_password'] ?? '';
             $env = $settings['dgii_env'] ?? 'testing';

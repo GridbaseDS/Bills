@@ -25,6 +25,7 @@ use App\Http\Controllers\Api\External\ExternalClientController;
 use App\Http\Controllers\Api\CertificationController;
 use App\Http\Controllers\Api\DgiiLogController;
 use App\Http\Controllers\Api\POSController;
+use App\Http\Controllers\Api\DemoController;
 
 // Public Auth
 Route::post('/auth/login', [AuthController::class, 'login']);
@@ -33,6 +34,11 @@ Route::post('/auth/pin-login', [AuthController::class, 'pinLogin']);
 Route::match(['get', 'post'], '/auth/webauthn/login-options', [AuthController::class, 'webauthnLoginOptions']);
 Route::post('/auth/webauthn/login', [AuthController::class, 'webauthnLogin']);
 Route::get('/settings/public', [SettingController::class, 'publicSettings']);
+
+// Demo Management
+Route::get('/demo/status', [DemoController::class, 'status']);
+Route::post('/demo/extend', [DemoController::class, 'extend']);
+Route::post('/demo/reset', [DemoController::class, 'reset']);
 
 // Lookups (Public or Protected, placing them here as public, but could be protected)
 Route::get('/lookup/rnc/{rnc}', [LookupController::class, 'rnc']);
@@ -199,6 +205,14 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::match(['get', 'post'], '/dgii/reports/dss/export-excel', [DgiiReportController::class, 'exportDssExcel']);
         Route::get('/dgii/reports/daf/summary', [DgiiReportController::class, 'getDafSummary']);
         Route::match(['get', 'post'], '/dgii/reports/daf/export-excel', [DgiiReportController::class, 'exportDafExcel']);
+        Route::get('/dgii/reports/rs1/summary', [DgiiReportController::class, 'getRs1Summary']);
+        Route::match(['get', 'post'], '/dgii/reports/rs1/export-excel', [DgiiReportController::class, 'exportRs1Excel']);
+        Route::get('/dgii/reports/rs2/summary', [DgiiReportController::class, 'getRs2Summary']);
+        Route::match(['get', 'post'], '/dgii/reports/rs2/export-excel', [DgiiReportController::class, 'exportRs2Excel']);
+        Route::get('/dgii/reports/rs3/summary', [DgiiReportController::class, 'getRs3Summary']);
+        Route::match(['get', 'post'], '/dgii/reports/rs3/export-excel', [DgiiReportController::class, 'exportRs3Excel']);
+        Route::get('/dgii/reports/rs4/summary', [DgiiReportController::class, 'getRs4Summary']);
+        Route::match(['get', 'post'], '/dgii/reports/rs4/export-excel', [DgiiReportController::class, 'exportRs4Excel']);
     });
 
     // Received Invoices (Aprobaciones Comerciales - Admin, Gerente and Contador)

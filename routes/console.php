@@ -10,3 +10,4 @@ Artisan::command('inspire', function () {
 use Illuminate\Support\Facades\Schedule;
 Schedule::command('bills:process-recurring')->hourly();
 Schedule::command('bills:send-reminders')->dailyAt('08:00');
+Schedule::command('demo:check-expiration')->everyFifteenMinutes();

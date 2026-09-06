@@ -910,5 +910,117 @@ class DgiiReportController extends Controller
             'Cache-Control' => 'max-age=0',
         ]);
     }
+
+    /**
+     * RS1 (RST Basado en Ingresos Personas Físicas)
+     */
+    public function getRs1Summary(Request $request, ?\App\Services\DgiiDeclarationService $declarationService = null)
+    {
+        $declarationService = $declarationService ?? app(\App\Services\DgiiDeclarationService::class);
+        $year = $request->query('year') ?: $request->input('year') ?: date('Y');
+        $summary = $declarationService->calculateRs1Data((string)$year);
+        return response()->json(['success' => true, 'data' => $summary]);
+    }
+
+    public function exportRs1Excel(Request $request, ?\App\Services\DgiiDeclarationService $declarationService = null)
+    {
+        $declarationService = $declarationService ?? app(\App\Services\DgiiDeclarationService::class);
+        $year = $request->input('year') ?: $request->query('year') ?: date('Y');
+        $spreadsheet = $declarationService->generateRs1Excel((string)$year);
+        $companyTaxId = preg_replace('/[^0-9]/', '', Setting::where('setting_key', 'company_tax_id')->value('setting_value') ?? '132456785');
+        $filename = "DGII_RS1_{$companyTaxId}_{$year}.xlsx";
+
+        return response()->streamDownload(function () use ($spreadsheet) {
+            $writer = new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($spreadsheet);
+            $writer->save('php://output');
+        }, $filename, [
+            'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'Cache-Control' => 'max-age=0',
+        ]);
+    }
+
+    /**
+     * RS2 (RST Basado en Ingresos Personas Jurídicas)
+     */
+    public function getRs2Summary(Request $request, ?\App\Services\DgiiDeclarationService $declarationService = null)
+    {
+        $declarationService = $declarationService ?? app(\App\Services\DgiiDeclarationService::class);
+        $year = $request->query('year') ?: $request->input('year') ?: date('Y');
+        $summary = $declarationService->calculateRs2Data((string)$year);
+        return response()->json(['success' => true, 'data' => $summary]);
+    }
+
+    public function exportRs2Excel(Request $request, ?\App\Services\DgiiDeclarationService $declarationService = null)
+    {
+        $declarationService = $declarationService ?? app(\App\Services\DgiiDeclarationService::class);
+        $year = $request->input('year') ?: $request->query('year') ?: date('Y');
+        $spreadsheet = $declarationService->generateRs2Excel((string)$year);
+        $companyTaxId = preg_replace('/[^0-9]/', '', Setting::where('setting_key', 'company_tax_id')->value('setting_value') ?? '132456785');
+        $filename = "DGII_RS2_{$companyTaxId}_{$year}.xlsx";
+
+        return response()->streamDownload(function () use ($spreadsheet) {
+            $writer = new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($spreadsheet);
+            $writer->save('php://output');
+        }, $filename, [
+            'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'Cache-Control' => 'max-age=0',
+        ]);
+    }
+
+    /**
+     * RS3 (RST Basado en Compras)
+     */
+    public function getRs3Summary(Request $request, ?\App\Services\DgiiDeclarationService $declarationService = null)
+    {
+        $declarationService = $declarationService ?? app(\App\Services\DgiiDeclarationService::class);
+        $year = $request->query('year') ?: $request->input('year') ?: date('Y');
+        $summary = $declarationService->calculateRs3Data((string)$year);
+        return response()->json(['success' => true, 'data' => $summary]);
+    }
+
+    public function exportRs3Excel(Request $request, ?\App\Services\DgiiDeclarationService $declarationService = null)
+    {
+        $declarationService = $declarationService ?? app(\App\Services\DgiiDeclarationService::class);
+        $year = $request->input('year') ?: $request->query('year') ?: date('Y');
+        $spreadsheet = $declarationService->generateRs3Excel((string)$year);
+        $companyTaxId = preg_replace('/[^0-9]/', '', Setting::where('setting_key', 'company_tax_id')->value('setting_value') ?? '132456785');
+        $filename = "DGII_RS3_{$companyTaxId}_{$year}.xlsx";
+
+        return response()->streamDownload(function () use ($spreadsheet) {
+            $writer = new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($spreadsheet);
+            $writer->save('php://output');
+        }, $filename, [
+            'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'Cache-Control' => 'max-age=0',
+        ]);
+    }
+
+    /**
+     * RS4 (RST Sector Agropecuario)
+     */
+    public function getRs4Summary(Request $request, ?\App\Services\DgiiDeclarationService $declarationService = null)
+    {
+        $declarationService = $declarationService ?? app(\App\Services\DgiiDeclarationService::class);
+        $year = $request->query('year') ?: $request->input('year') ?: date('Y');
+        $summary = $declarationService->calculateRs4Data((string)$year);
+        return response()->json(['success' => true, 'data' => $summary]);
+    }
+
+    public function exportRs4Excel(Request $request, ?\App\Services\DgiiDeclarationService $declarationService = null)
+    {
+        $declarationService = $declarationService ?? app(\App\Services\DgiiDeclarationService::class);
+        $year = $request->input('year') ?: $request->query('year') ?: date('Y');
+        $spreadsheet = $declarationService->generateRs4Excel((string)$year);
+        $companyTaxId = preg_replace('/[^0-9]/', '', Setting::where('setting_key', 'company_tax_id')->value('setting_value') ?? '132456785');
+        $filename = "DGII_RS4_{$companyTaxId}_{$year}.xlsx";
+
+        return response()->streamDownload(function () use ($spreadsheet) {
+            $writer = new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($spreadsheet);
+            $writer->save('php://output');
+        }, $filename, [
+            'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'Cache-Control' => 'max-age=0',
+        ]);
+    }
 }
 

@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use PhpOffice\PhpSpreadsheet\Reader\Xls as XlsReader;
+use PhpOffice\PhpSpreadsheet\Reader\Xlsx as XlsxReader;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use App\Models\Invoice;
 use App\Models\ReceivedInvoice;
@@ -1243,6 +1244,340 @@ class DgiiDeclarationService
         }
 
         // Fórmulas nativas en AC14, AC15, AC16, AC19, AC20, AC25, AC26, AC29 se preservan intactas
+
+        return $spreadsheet;
+    }
+
+    /**
+     * Helper to compute annual sales and expenses for RST declarations.
+     */
+    protected function getAnnualRstBaseData(string $year): array
+    {
+        $year = (int)$year;
+        $startDate = "{$year}-01-01";
+        $endDate = "{$year}-12-31";
+        $deadlineDate = "28/02/" . ($year + 1);
+
+        $settings = Setting::all()->pluck('setting_value', 'setting_key')->toArray();
+        $taxId = preg_replace('/[^0-9]/', '', $settings['company_tax_id'] ?? '132456785');
+        $companyName = $settings['company_name'] ?? 'Gridbase';
+        $commercialName = $settings['company_commercial_name'] ?? $companyName;
+        $phone = $settings['company_phone'] ?? '';
+        $email = $settings['company_email'] ?? '';
+
+        $invoices = Invoice::with(['client', 'items'])
+            ->whereBetween('issue_date', [$startDate, $endDate])
+            ->whereNotIn('status', ['draft', 'cancelled'])
+            ->where(function ($q) {
+                $q->whereNull('ecf_type')
+                  ->orWhereNotIn('ecf_type', [41, 43, 47]);
+            })
+            ->orderBy('issue_date', 'asc')
+            ->get();
+
+        $ventasBienes = 0.0;
+        $servicios = 0.0;
+        $alquileres = 0.0;
+        $honorarios = 0.0;
+        $creditNotes = 0.0;
+
+        foreach ($invoices as $inv) {
+            $sub = (float)($inv->subtotal ?? 0.0);
+            if ($inv->isCreditNote()) {
+                $creditNotes += $sub;
+                continue;
+            }
+
+            $tipoIngreso = (string)($inv->tipo_ingresos ?? '01');
+            if ($tipoIngreso === '04') {
+                $alquileres += $sub;
+            } else {
+                $hasService = false;
+                foreach ($inv->items as $it) {
+                    $desc = strtolower($it->description ?? '');
+                    if (preg_match('/(servicio|asesoria|consultoria|soporte|mantenimiento|honorario|software|desarrollo)/i', $desc)) {
+                        $hasService = true;
+                        break;
+                    }
+                }
+                if ($hasService) {
+                    $servicios += $sub;
+                } else {
+                    $ventasBienes += $sub;
+                }
+            }
+        }
+
+        if ($creditNotes > 0) {
+            if ($ventasBienes >= $creditNotes) {
+                $ventasBienes -= $creditNotes;
+            } else {
+                $rem = $creditNotes - $ventasBienes;
+                $ventasBienes = 0.0;
+                $servicios = max(0.0, $servicios - $rem);
+            }
+        }
+
+        $totalIngresos = $ventasBienes + $servicios + $alquileres + $honorarios;
+
+        // Annual 606 purchases
+        $compras = (float)ReceivedInvoice::whereBetween('fecha_comprobante', [$startDate, $endDate])->sum('monto_facturado')
+                 + (float)Expense::whereBetween('expense_date', [$startDate, $endDate])->sum('amount');
+
+        return [
+            'year' => (string)$year,
+            'deadline' => $deadlineDate,
+            'tax_id' => $taxId,
+            'company_name' => $companyName,
+            'commercial_name' => $commercialName,
+            'phone' => $phone,
+            'email' => $email,
+            'ventas_bienes' => round($ventasBienes, 2),
+            'servicios' => round($servicios, 2),
+            'alquileres' => round($alquileres, 2),
+            'honorarios' => round($honorarios, 2),
+            'total_ingresos' => round($totalIngresos, 2),
+            'compras' => round($compras, 2),
+        ];
+    }
+
+    /**
+     * Compute RS1 (RST Basado en Ingresos para Personas Físicas) summary data.
+     */
+    public function calculateRs1Data(string $year): array
+    {
+        $base = $this->getAnnualRstBaseData($year);
+        $totalIngresos = $base['total_ingresos'];
+        $rentaEstimada = round($totalIngresos * 0.60, 2);
+
+        // Escala progresiva de ISR Persona Física (Tramos DGII)
+        $impuestoEstimado = 0.0;
+        if ($rentaEstimada > 867123) {
+            $impuestoEstimado = 142208.15 + (($rentaEstimada - 867123) * 0.25);
+        } elseif ($rentaEstimada > 624329) {
+            $impuestoEstimado = 93649.35 + (($rentaEstimada - 624329) * 0.20);
+        } elseif ($rentaEstimada > 416220) {
+            $impuestoEstimado = ($rentaEstimada - 416220) * 0.15;
+        }
+
+        return array_merge($base, [
+            'rs1' => [
+                'casilla_1_ventas' => $base['ventas_bienes'],
+                'casilla_2_servicios' => $base['servicios'],
+                'casilla_3_alquileres' => $base['alquileres'],
+                'casilla_4_honorarios' => $base['honorarios'],
+                'casilla_5_total_ingresos' => $totalIngresos,
+                'casilla_8_renta_estimada' => $rentaEstimada,
+                'casilla_11_impuesto_liquidado' => round($impuestoEstimado, 2),
+                'casilla_16_total_a_pagar' => round($impuestoEstimado, 2),
+            ]
+        ]);
+    }
+
+    /**
+     * Generate RS1 Excel workbook (.xlsx).
+     */
+    public function generateRs1Excel(string $year): Spreadsheet
+    {
+        $data = $this->calculateRs1Data($year);
+        $templatePath = resource_path('templates/dgii/RS1-2021.xlsx');
+
+        if (!file_exists($templatePath)) {
+            throw new \RuntimeException("La plantilla oficial RS1-2021.xlsx no fue encontrada en: {$templatePath}");
+        }
+
+        $reader = new XlsxReader();
+        $spreadsheet = $reader->load($templatePath);
+        $sheet = $spreadsheet->getSheetByName('RS1') ?: $spreadsheet->getActiveSheet();
+
+        $sheet->setCellValue('U7', "{$data['year']}12");
+        $sheet->setCellValue('F11', $data['tax_id']);
+        $sheet->setCellValue('P11', $data['company_name']);
+        $sheet->setCellValue('F13', $data['phone']);
+        $sheet->setCellValue('P13', $data['email']);
+        $sheet->setCellValue('F15', 'NORMAL');
+        $sheet->setCellValue('P16', '28');
+        $sheet->setCellValue('Q16', '02');
+        $sheet->setCellValue('R16', (string)((int)$data['year'] + 1));
+
+        $rs1 = $data['rs1'];
+        $sheet->setCellValue('T19', $rs1['casilla_1_ventas']);
+        $sheet->setCellValue('T20', $rs1['casilla_2_servicios']);
+        $sheet->setCellValue('T21', $rs1['casilla_3_alquileres']);
+        $sheet->setCellValue('T22', $rs1['casilla_4_honorarios']);
+
+        return $spreadsheet;
+    }
+
+    /**
+     * Compute RS2 (RST Basado en Ingresos para Personas Jurídicas) summary data.
+     */
+    public function calculateRs2Data(string $year): array
+    {
+        $base = $this->getAnnualRstBaseData($year);
+        $totalIngresos = $base['total_ingresos'];
+        $tet = 0.07; // Tasa Efectiva de Tributación típica para comercio/servicios
+        $impuestoLiquidado = round($totalIngresos * $tet, 2);
+
+        return array_merge($base, [
+            'rs2' => [
+                'casilla_1_ventas' => $base['ventas_bienes'],
+                'casilla_2_servicios' => $base['servicios'],
+                'casilla_3_alquileres' => $base['alquileres'],
+                'casilla_5_total_ingresos' => $totalIngresos,
+                'casilla_8_impuesto_liquidado' => $impuestoLiquidado,
+                'casilla_14_total_a_pagar' => $impuestoLiquidado,
+            ]
+        ]);
+    }
+
+    /**
+     * Generate RS2 Excel workbook (.xlsx).
+     */
+    public function generateRs2Excel(string $year): Spreadsheet
+    {
+        $data = $this->calculateRs2Data($year);
+        $templatePath = resource_path('templates/dgii/RS2-2021.xlsx');
+
+        if (!file_exists($templatePath)) {
+            throw new \RuntimeException("La plantilla oficial RS2-2021.xlsx no fue encontrada en: {$templatePath}");
+        }
+
+        $reader = new XlsxReader();
+        $spreadsheet = $reader->load($templatePath);
+        $sheet = $spreadsheet->getSheetByName('RS2') ?: $spreadsheet->getActiveSheet();
+
+        $sheet->setCellValue('U7', "{$data['year']}12");
+        $sheet->setCellValue('F11', $data['tax_id']);
+        $sheet->setCellValue('P11', $data['company_name']);
+        $sheet->setCellValue('F13', $data['phone']);
+        $sheet->setCellValue('P13', $data['email']);
+        $sheet->setCellValue('F15', 'NORMAL');
+        $sheet->setCellValue('P16', '28');
+        $sheet->setCellValue('Q16', '02');
+        $sheet->setCellValue('R16', (string)((int)$data['year'] + 1));
+
+        $rs2 = $data['rs2'];
+        $sheet->setCellValue('T19', $rs2['casilla_1_ventas']);
+        $sheet->setCellValue('T20', $rs2['casilla_2_servicios']);
+        $sheet->setCellValue('T21', $rs2['casilla_3_alquileres']);
+        if (!$sheet->getCell('L39')->getValue()) {
+            $sheet->setCellValue('L39', 0.07);
+        }
+
+        return $spreadsheet;
+    }
+
+    /**
+     * Compute RS3 (RST Basado en Compras) summary data.
+     */
+    public function calculateRs3Data(string $year): array
+    {
+        $base = $this->getAnnualRstBaseData($year);
+        $compras = $base['compras'];
+        $margen = 0.0653; // Margen minorista promedio
+        $ventasEstimadas = round($compras * (1 + $margen), 2);
+        $margenBruto = round($ventasEstimadas - $compras, 2);
+        $isr = round($margenBruto * 0.27, 2);
+        $itbis = round($margenBruto * 0.60 * 0.18, 2);
+        $totalPagar = round($isr + $itbis, 2);
+
+        return array_merge($base, [
+            'rs3' => [
+                'casilla_1_compras' => $compras,
+                'casilla_3_total_compras' => $compras,
+                'casilla_5_ventas_estimadas' => $ventasEstimadas,
+                'casilla_7_margen_bruto' => $margenBruto,
+                'casilla_10_isr_liquidado' => $isr,
+                'casilla_11_itbis_liquidado' => $itbis,
+                'casilla_16_total_a_pagar' => $totalPagar,
+            ]
+        ]);
+    }
+
+    /**
+     * Generate RS3 Excel workbook (.xlsx).
+     */
+    public function generateRs3Excel(string $year): Spreadsheet
+    {
+        $data = $this->calculateRs3Data($year);
+        $templatePath = resource_path('templates/dgii/RS3-2021.xlsx');
+
+        if (!file_exists($templatePath)) {
+            throw new \RuntimeException("La plantilla oficial RS3-2021.xlsx no fue encontrada en: {$templatePath}");
+        }
+
+        $reader = new XlsxReader();
+        $spreadsheet = $reader->load($templatePath);
+        $sheet = $spreadsheet->getSheetByName('RS3') ?: $spreadsheet->getActiveSheet();
+
+        $sheet->setCellValue('U7', "{$data['year']}12");
+        $sheet->setCellValue('F11', $data['tax_id']);
+        $sheet->setCellValue('P11', $data['company_name']);
+        $sheet->setCellValue('F13', $data['phone']);
+        $sheet->setCellValue('P13', $data['email']);
+        $sheet->setCellValue('F15', 'Jurídica');
+        $sheet->setCellValue('P15', 'COLMADOS');
+        $sheet->setCellValue('F17', 'NORMAL');
+        $sheet->setCellValue('P18', '28');
+        $sheet->setCellValue('Q18', '02');
+        $sheet->setCellValue('R18', (string)((int)$data['year'] + 1));
+
+        $rs3 = $data['rs3'];
+        $sheet->setCellValue('T21', $rs3['casilla_1_compras']);
+
+        return $spreadsheet;
+    }
+
+    /**
+     * Compute RS4 (RST Sector Agropecuario) summary data.
+     */
+    public function calculateRs4Data(string $year): array
+    {
+        $base = $this->getAnnualRstBaseData($year);
+        $totalIngresos = $base['total_ingresos'];
+        $tet = 0.061; // TET Agropecuario promedio
+        $impuestoLiquidado = round($totalIngresos * $tet, 2);
+
+        return array_merge($base, [
+            'rs4' => [
+                'casilla_1_ingresos_agropecuarios' => $totalIngresos,
+                'casilla_6_total_ingresos' => $totalIngresos,
+                'casilla_7_impuesto_liquidado' => $impuestoLiquidado,
+                'casilla_15_total_a_pagar' => $impuestoLiquidado,
+            ]
+        ]);
+    }
+
+    /**
+     * Generate RS4 Excel workbook (.xlsx).
+     */
+    public function generateRs4Excel(string $year): Spreadsheet
+    {
+        $data = $this->calculateRs4Data($year);
+        $templatePath = resource_path('templates/dgii/RS4-2021.xlsx');
+
+        if (!file_exists($templatePath)) {
+            throw new \RuntimeException("La plantilla oficial RS4-2021.xlsx no fue encontrada en: {$templatePath}");
+        }
+
+        $reader = new XlsxReader();
+        $spreadsheet = $reader->load($templatePath);
+        $sheet = $spreadsheet->getSheetByName('RS4') ?: $spreadsheet->getActiveSheet();
+
+        $sheet->setCellValue('U7', "{$data['year']}12");
+        $sheet->setCellValue('F11', $data['tax_id']);
+        $sheet->setCellValue('P11', $data['company_name']);
+        $sheet->setCellValue('F13', $data['phone']);
+        $sheet->setCellValue('P13', $data['email']);
+        $sheet->setCellValue('F15', 'Jurídica');
+        $sheet->setCellValue('F17', 'NORMAL');
+        $sheet->setCellValue('P18', '28');
+        $sheet->setCellValue('Q18', '02');
+        $sheet->setCellValue('R18', (string)((int)$data['year'] + 1));
+
+        $rs4 = $data['rs4'];
+        $sheet->setCellValue('T21', $rs4['casilla_1_ingresos_agropecuarios']);
 
         return $spreadsheet;
     }

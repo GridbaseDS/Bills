@@ -78,6 +78,14 @@ class EcfManagerService
                 DgiiLog::logStep('encf_reused', "eNCF ya existente: {$invoice->encf}", $invoice->id, $invoice->encf, $invoice->ecf_type);
             }
 
+            // Modo Demo: Simular respuesta exitosa de la DGII si no hay certificado real
+            if (config('app.demo_mode')) {
+                $p12Path = storage_path('app/secure/' . ($settings['dgii_certificate_path'] ?? ''));
+                if (!file_exists($p12Path) || empty($settings['dgii_certificate_password'])) {
+                    return $this->processDemoInvoice($invoice, $settings);
+                }
+            }
+
             // 2. Generate raw unsigned XML
             Log::info("[EcfManagerService] Generando XML para Factura ID: {$invoice->id}, eNCF: {$invoice->encf}");
             $rawXml = $this->builderService->buildInvoiceXml($invoice, $settings);
@@ -691,5 +699,47 @@ class EcfManagerService
         }
 
         return $audit;
+    }
+
+    /**
+     * Simulates full DGII acceptance for Demo environments without requiring a physical certificate.
+     */
+    protected function processDemoInvoice(Invoice $invoice, array $settings): array
+    {
+        $secCode = strtoupper(substr(md5($invoice->encf . $invoice->total . time()), 0, 6));
+        $trackId = 'TRK-DEMO-' . strtoupper(substr(uniqid(), -8));
+
+        // Generate synthetic signed XML
+        $rawXml = "<?xml version=\"1.0\" encoding=\"utf-8\"?><ECF><Encabezado><IdDoc><TipoeCF>{$invoice->ecf_type}</TipoeCF><eNCF>{$invoice->encf}</eNCF><FechaEmision>{$invoice->issue_date}</FechaEmision></IdDoc><Totales><MontoTotal>{$invoice->total}</MontoTotal></Totales></Encabezado><SignatureValue>{$secCode}DEMOSIGNATUREVALUEXX==</SignatureValue></ECF>";
+        $fileName = "signed_ecf/{$invoice->encf}.xml";
+        Storage::put($fileName, $rawXml);
+
+        // Update invoice as accepted
+        $invoice->update([
+            'dgii_status' => 'accepted',
+            'signed_xml_path' => $fileName,
+            'security_code' => $secCode,
+            'signed_at' => now(),
+            'dgii_track_id' => $trackId,
+            'dgii_error_messages' => null,
+        ]);
+
+        // Log steps for the DGII audit view
+        DgiiLog::logStep('process_start', "Iniciando procesamiento de factura (Modo Demo)", $invoice->id, $invoice->encf, $invoice->ecf_type);
+        DgiiLog::logStep('encf_assigned', "eNCF asignado: {$invoice->encf}", $invoice->id, $invoice->encf, $invoice->ecf_type);
+        DgiiLog::logStep('xml_built', "XML e-CF generado ({$invoice->encf})", $invoice->id, $invoice->encf, $invoice->ecf_type);
+        DgiiLog::logStep('xml_signed', "XML firmado digitalmente (Simulación Demo). Código: {$secCode}", $invoice->id, $invoice->encf, $invoice->ecf_type);
+        DgiiLog::logStep('auth_token_obtained', "Token DGII autenticado (Simulación Demo)", $invoice->id, $invoice->encf, $invoice->ecf_type);
+        DgiiLog::logStep('api_submit_success', "e-CF recibido y aprobado por DGII. TrackID: {$trackId}", $invoice->id, $invoice->encf, $invoice->ecf_type);
+        DgiiLog::logStep('verified_status', "DGII consultaresultado: ACEPTADO", $invoice->id, $invoice->encf, $invoice->ecf_type);
+
+        return [
+            'success' => true,
+            'status' => 'accepted',
+            'track_id' => $trackId,
+            'security_code' => $secCode,
+            'encf' => $invoice->encf,
+            'errors' => null,
+        ];
     }
 }

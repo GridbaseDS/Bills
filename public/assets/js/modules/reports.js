@@ -61,6 +61,10 @@ const ReportsModule = {
                     <button class="segment-item ${this._currentTab === 'itc' ? 'active' : ''}" data-tab="itc" style="display:flex;align-items:center;gap:6px;"><span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#0284c7;"></span>ISC Telecom (ITC-01)</button>
                     <button class="segment-item ${this._currentTab === 'dss' ? 'active' : ''}" data-tab="dss" style="display:flex;align-items:center;gap:6px;"><span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#ea580c;"></span>Seguros (DSS-07)</button>
                     <button class="segment-item ${this._currentTab === 'daf' ? 'active' : ''}" data-tab="daf" style="display:flex;align-items:center;gap:6px;"><span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#0d9488;"></span>Activos Financieros (DAF)</button>
+                    <button class="segment-item ${this._currentTab === 'rs1' ? 'active' : ''}" data-tab="rs1" style="display:flex;align-items:center;gap:6px;"><span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#4f46e5;"></span>RST Físicas (RS1)</button>
+                    <button class="segment-item ${this._currentTab === 'rs2' ? 'active' : ''}" data-tab="rs2" style="display:flex;align-items:center;gap:6px;"><span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#7c3aed;"></span>RST Jurídicas (RS2)</button>
+                    <button class="segment-item ${this._currentTab === 'rs3' ? 'active' : ''}" data-tab="rs3" style="display:flex;align-items:center;gap:6px;"><span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#d97706;"></span>RST Compras (RS3)</button>
+                    <button class="segment-item ${this._currentTab === 'rs4' ? 'active' : ''}" data-tab="rs4" style="display:flex;align-items:center;gap:6px;"><span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#65a30d;"></span>RST Agropecuario (RS4)</button>
                 </div>
                 <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
                     <button class="btn" id="btn-prevalidate" style="display:flex;align-items:center;gap:8px;background:#0284c7;border-color:#0284c7;color:#fff;font-weight:600;">
@@ -138,7 +142,7 @@ const ReportsModule = {
         if (tbody) tbody.innerHTML = `<tr><td colspan="100" class="text-center py-24"><span class="spinner mx-auto"></span><br><small style="color:var(--color-text-muted)">Cargando registros fiscales del período...</small></td></tr>`;
 
         try {
-            const [res607, res606, res608, resIt1, resIr2, resItc, resDss, resDaf] = await Promise.all([
+            const [res607, res606, res608, resIt1, resIr2, resItc, resDss, resDaf, resRs1, resRs2, resRs3, resRs4] = await Promise.all([
                 App.api(`dgii/reports/607?year=${this._year}&month=${this._month}`),
                 App.api(`dgii/reports/606?year=${this._year}&month=${this._month}`),
                 App.api(`dgii/reports/608?year=${this._year}&month=${this._month}`),
@@ -146,7 +150,11 @@ const ReportsModule = {
                 App.api(`dgii/reports/ir2/summary?year=${this._year}`),
                 App.api(`dgii/reports/itc/summary?year=${this._year}&month=${this._month}`),
                 App.api(`dgii/reports/dss/summary?year=${this._year}&month=${this._month}`),
-                App.api(`dgii/reports/daf/summary?year=${this._year}`)
+                App.api(`dgii/reports/daf/summary?year=${this._year}`),
+                App.api(`dgii/reports/rs1/summary?year=${this._year}`),
+                App.api(`dgii/reports/rs2/summary?year=${this._year}`),
+                App.api(`dgii/reports/rs3/summary?year=${this._year}`),
+                App.api(`dgii/reports/rs4/summary?year=${this._year}`)
             ]);
 
             this._records607 = res607.data || [];
@@ -157,6 +165,10 @@ const ReportsModule = {
             this._dataItc = resItc.data || null;
             this._dataDss = resDss.data || null;
             this._dataDaf = resDaf.data || null;
+            this._dataRs1 = resRs1.data || null;
+            this._dataRs2 = resRs2.data || null;
+            this._dataRs3 = resRs3.data || null;
+            this._dataRs4 = resRs4.data || null;
 
             this.renderGrid();
         } catch (e) {
@@ -220,6 +232,42 @@ const ReportsModule = {
                 btnExportExcel.innerHTML = `
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="8" y1="13" x2="16" y2="13"></line><line x1="8" y1="17" x2="16" y2="17"></line><line x1="10" y1="9" x2="8" y2="9"></line></svg>
                     Descargar Formulario Oficial DAF (.xls)
+                `;
+            }
+        } else if (this._currentTab === 'rs1') {
+            if (btnPrevalidate) btnPrevalidate.style.display = 'none';
+            if (btnExportTxt) btnExportTxt.style.display = 'none';
+            if (btnExportExcel) {
+                btnExportExcel.innerHTML = `
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="8" y1="13" x2="16" y2="13"></line><line x1="8" y1="17" x2="16" y2="17"></line><line x1="10" y1="9" x2="8" y2="9"></line></svg>
+                    Descargar Formulario Oficial RS1 (.xlsx)
+                `;
+            }
+        } else if (this._currentTab === 'rs2') {
+            if (btnPrevalidate) btnPrevalidate.style.display = 'none';
+            if (btnExportTxt) btnExportTxt.style.display = 'none';
+            if (btnExportExcel) {
+                btnExportExcel.innerHTML = `
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="8" y1="13" x2="16" y2="13"></line><line x1="8" y1="17" x2="16" y2="17"></line><line x1="10" y1="9" x2="8" y2="9"></line></svg>
+                    Descargar Formulario Oficial RS2 (.xlsx)
+                `;
+            }
+        } else if (this._currentTab === 'rs3') {
+            if (btnPrevalidate) btnPrevalidate.style.display = 'none';
+            if (btnExportTxt) btnExportTxt.style.display = 'none';
+            if (btnExportExcel) {
+                btnExportExcel.innerHTML = `
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="8" y1="13" x2="16" y2="13"></line><line x1="8" y1="17" x2="16" y2="17"></line><line x1="10" y1="9" x2="8" y2="9"></line></svg>
+                    Descargar Formulario Oficial RS3 (.xlsx)
+                `;
+            }
+        } else if (this._currentTab === 'rs4') {
+            if (btnPrevalidate) btnPrevalidate.style.display = 'none';
+            if (btnExportTxt) btnExportTxt.style.display = 'none';
+            if (btnExportExcel) {
+                btnExportExcel.innerHTML = `
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="8" y1="13" x2="16" y2="13"></line><line x1="8" y1="17" x2="16" y2="17"></line><line x1="10" y1="9" x2="8" y2="9"></line></svg>
+                    Descargar Formulario Oficial RS4 (.xlsx)
                 `;
             }
         } else {
@@ -435,6 +483,14 @@ const ReportsModule = {
             this.renderDssDeclaration(headers, tbody, summary, refBox);
         } else if (this._currentTab === 'daf') {
             this.renderDafDeclaration(headers, tbody, summary, refBox);
+        } else if (this._currentTab === 'rs1') {
+            this.renderRs1Declaration(headers, tbody, summary, refBox);
+        } else if (this._currentTab === 'rs2') {
+            this.renderRs2Declaration(headers, tbody, summary, refBox);
+        } else if (this._currentTab === 'rs3') {
+            this.renderRs3Declaration(headers, tbody, summary, refBox);
+        } else if (this._currentTab === 'rs4') {
+            this.renderRs4Declaration(headers, tbody, summary, refBox);
         }
     },
 
@@ -1009,6 +1065,18 @@ const ReportsModule = {
         if (this._currentTab === 'daf') {
             return this.exportDafExcel();
         }
+        if (this._currentTab === 'rs1') {
+            return this.exportRs1Excel();
+        }
+        if (this._currentTab === 'rs2') {
+            return this.exportRs2Excel();
+        }
+        if (this._currentTab === 'rs3') {
+            return this.exportRs3Excel();
+        }
+        if (this._currentTab === 'rs4') {
+            return this.exportRs4Excel();
+        }
 
         const periodStr = `${this._year}${String(this._month).padStart(2, '0')}`;
         const records = this.getCurrentRecords();
@@ -1547,6 +1615,419 @@ const ReportsModule = {
         } catch (e) {
             console.error('DAF Excel Export error:', e);
             App.showToast('Error al generar el formulario oficial DAF', 'error');
+        }
+    },
+
+    renderRs1Declaration(headers, tbody, summary, refBox) {
+        const d = this._dataRs1;
+        if (!d) {
+            tbody.innerHTML = `<tr><td colspan="4" class="text-center text-muted py-24">No se pudo cargar la declaración RS1 para este año.</td></tr>`;
+            return;
+        }
+
+        const rs1 = d.rs1 || {};
+
+        headers.innerHTML = `
+            <th style="width:130px;">Casilla Oficial</th>
+            <th>Descripción / Concepto (Decreto 265-19)</th>
+            <th class="text-right" style="width:200px;">Monto Declarado (DOP)</th>
+            <th style="width:280px;">Fórmula DGII / Origen</th>
+        `;
+
+        const row = (casilla, desc, val, formula, isHeader = false, isBold = false, isHighlight = false) => `
+            <tr style="${isHighlight ? 'background:rgba(79,70,229,0.08);' : ''}">
+                <td style="font-family:'JetBrains Mono',monospace;font-weight:700;color:var(--color-primary);">${casilla}</td>
+                <td style="${isBold ? 'font-weight:700;' : ''}">${desc}</td>
+                <td class="text-right ${isBold ? 'font-bold' : ''}" style="font-family:'JetBrains Mono',monospace;${isHighlight ? 'color:#4f46e5;font-size:15px;' : ''}">${App.formatCurrency(val || 0, 'DOP')}</td>
+                <td style="font-size:12px;color:var(--color-text-muted);">${formula}</td>
+            </tr>
+        `;
+
+        tbody.innerHTML = `
+            ${row('Casilla 1', 'Ingresos por Ventas de Bienes', rs1.casilla_1_ventas, 'Celda T19 (Facturación 607 Ventas)', false, false)}
+            ${row('Casilla 2', 'Ingresos por Prestación de Servicios', rs1.casilla_2_servicios, 'Celda T20 (Facturación 607 Servicios)', false, false)}
+            ${row('Casilla 3', 'Ingresos por Alquileres de Inmuebles', rs1.casilla_3_alquileres, 'Celda T21 (Tipo de Ingreso 04)', false, false)}
+            ${row('Casilla 4', 'Honorarios Profesionales', rs1.casilla_4_honorarios, 'Celda T22', false, false)}
+            ${row('Casilla 5', 'TOTAL INGRESOS BRUTOS ANUALES', rs1.casilla_5_total_ingresos, 'Fórmula Nativa DGII: =SUM(T19:T25)', false, true)}
+            ${row('Casilla 8', 'Renta Neta Estimada (Base Gravable 60%)', rs1.casilla_8_renta_estimada, 'Fórmula Nativa DGII: =T26*0.60 (Exención 40% de Gastos)', false, true)}
+            ${row('Casilla 11', 'Impuesto Sobre la Renta Liquidado', rs1.casilla_11_impuesto_liquidado, 'Fórmula Nativa DGII: Escala Progresiva Personas Físicas', false, true, true)}
+            ${row('Casilla 16', 'TOTAL A PAGAR AL FISCO (DGII)', rs1.casilla_16_total_a_pagar, 'Fórmula Nativa DGII: Celda T57', false, true, true)}
+        `;
+
+        summary.innerHTML = `
+            <div>
+                <span>Ejercicio Fiscal: <strong>${d.year}</strong></span> &bull; 
+                <span>Fecha Límite: <strong style="color:var(--color-danger-icon);">${d.deadline}</strong></span> &bull; 
+                <span>Contribuyente: <strong>${d.company_name}</strong> (RNC/Cédula: ${d.tax_id})</span>
+            </div>
+            <div>
+                Total Impuesto a Pagar (RS1): <strong style="color:#4f46e5;font-size:18px;margin-left:8px;">${App.formatCurrency(rs1.casilla_16_total_a_pagar || 0, 'DOP')}</strong>
+            </div>
+        `;
+
+        if (refBox) {
+            refBox.innerHTML = `
+                <div class="table-outer" style="padding:18px;background:var(--bg-card);border:1px solid var(--color-border);border-radius:8px;">
+                    <h4 style="font-size:13px;font-weight:700;margin-bottom:10px;color:var(--color-text-primary);display:flex;align-items:center;justify-content:space-between;">
+                        <span>Marco Legal: Régimen Simplificado de Tributación (RS1 - Personas Físicas Ingresos)</span>
+                        <span class="badge" style="background:#4f46e5;color:#fff;font-size:10px;">Formulario Oficial RS1 (.xlsx)</span>
+                    </h4>
+                    <p style="font-size:12px;color:var(--color-text-muted);margin:0;line-height:1.6;">
+                        El Formulario RS1 (Decreto 265-19) calcula el impuesto para personas físicas con actividades comerciales y de servicios. Determina automáticamente la renta neta imponible deduciendo el 40% de gastos presuntos exentos y aplicando la escala progresiva del ISR. La plantilla oficial .xlsx mantiene intactas todas las fórmulas nativas de la DGII.
+                    </p>
+                </div>
+            `;
+        }
+    },
+
+    async exportRs1Excel() {
+        App.showToast('Generando Formulario Oficial RS1 en Excel DGII (.xlsx)...', 'info');
+
+        try {
+            const token = App.state.token || localStorage.getItem('token');
+            const response = await fetch(`/api/dgii/reports/rs1/export-excel?year=${this._year}`, {
+                method: 'GET',
+                headers: {
+                    'Accept': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/octet-stream',
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Authorization': `Bearer ${token}`
+                },
+                credentials: 'same-origin'
+            });
+
+            if (!response.ok) {
+                const errText = await response.text();
+                throw new Error(`Error del servidor (${response.status}): ${errText}`);
+            }
+
+            const blob = await response.blob();
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.target = '_blank';
+
+            const rnc = (this._dataRs1 && this._dataRs1.tax_id)
+                ? this._dataRs1.tax_id
+                : (App.state.settings?.company_tax_id ? App.state.settings.company_tax_id.replace(/[^0-9]/g, '') : '131000000');
+
+            a.download = `DGII_RS1_${rnc}_${this._year}.xlsx`;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            URL.revokeObjectURL(url);
+
+            App.showToast('¡Formulario Oficial RS1 (Excel DGII) descargado con éxito!', 'success');
+        } catch (e) {
+            console.error('RS1 Excel Export error:', e);
+            App.showToast('Error al generar el formulario oficial RS1', 'error');
+        }
+    },
+
+    renderRs2Declaration(headers, tbody, summary, refBox) {
+        const d = this._dataRs2;
+        if (!d) {
+            tbody.innerHTML = `<tr><td colspan="4" class="text-center text-muted py-24">No se pudo cargar la declaración RS2 para este año.</td></tr>`;
+            return;
+        }
+
+        const rs2 = d.rs2 || {};
+
+        headers.innerHTML = `
+            <th style="width:130px;">Casilla Oficial</th>
+            <th>Descripción / Concepto (Decreto 265-19)</th>
+            <th class="text-right" style="width:200px;">Monto Declarado (DOP)</th>
+            <th style="width:280px;">Fórmula DGII / Origen</th>
+        `;
+
+        const row = (casilla, desc, val, formula, isHeader = false, isBold = false, isHighlight = false) => `
+            <tr style="${isHighlight ? 'background:rgba(124,58,237,0.08);' : ''}">
+                <td style="font-family:'JetBrains Mono',monospace;font-weight:700;color:var(--color-primary);">${casilla}</td>
+                <td style="${isBold ? 'font-weight:700;' : ''}">${desc}</td>
+                <td class="text-right ${isBold ? 'font-bold' : ''}" style="font-family:'JetBrains Mono',monospace;${isHighlight ? 'color:#7c3aed;font-size:15px;' : ''}">${App.formatCurrency(val || 0, 'DOP')}</td>
+                <td style="font-size:12px;color:var(--color-text-muted);">${formula}</td>
+            </tr>
+        `;
+
+        tbody.innerHTML = `
+            ${row('Casilla 1', 'Ingresos por Ventas de Bienes', rs2.casilla_1_ventas, 'Celda T19 (Facturación 607 Ventas)', false, false)}
+            ${row('Casilla 2', 'Ingresos por Prestación de Servicios', rs2.casilla_2_servicios, 'Celda T20 (Facturación 607 Servicios)', false, false)}
+            ${row('Casilla 3', 'Ingresos por Alquileres', rs2.casilla_3_alquileres, 'Celda T21', false, false)}
+            ${row('Casilla 5', 'TOTAL INGRESOS BRUTOS DEL EJERCICIO', rs2.casilla_5_total_ingresos, 'Fórmula Nativa DGII: =SUM(T19:T24)', false, true)}
+            ${row('Casilla 8', 'Impuesto Liquidado (Tasa Efectiva TET 7%)', rs2.casilla_8_impuesto_liquidado, 'Fórmula Nativa DGII: =L39*T25 (Celda L39 = 7.00%)', false, true, true)}
+            ${row('Casilla 14', 'TOTAL A PAGAR AL FISCO (DGII)', rs2.casilla_14_total_a_pagar, 'Fórmula Nativa DGII: Celda T50', false, true, true)}
+        `;
+
+        summary.innerHTML = `
+            <div>
+                <span>Ejercicio Fiscal: <strong>${d.year}</strong></span> &bull; 
+                <span>Fecha Límite: <strong style="color:var(--color-danger-icon);">${d.deadline}</strong></span> &bull; 
+                <span>Contribuyente: <strong>${d.company_name}</strong> (RNC: ${d.tax_id})</span>
+            </div>
+            <div>
+                Total Impuesto a Pagar (RS2): <strong style="color:#7c3aed;font-size:18px;margin-left:8px;">${App.formatCurrency(rs2.casilla_14_total_a_pagar || 0, 'DOP')}</strong>
+            </div>
+        `;
+
+        if (refBox) {
+            refBox.innerHTML = `
+                <div class="table-outer" style="padding:18px;background:var(--bg-card);border:1px solid var(--color-border);border-radius:8px;">
+                    <h4 style="font-size:13px;font-weight:700;margin-bottom:10px;color:var(--color-text-primary);display:flex;align-items:center;justify-content:space-between;">
+                        <span>Marco Legal: Régimen Simplificado de Tributación (RS2 - Personas Jurídicas Ingresos)</span>
+                        <span class="badge" style="background:#7c3aed;color:#fff;font-size:10px;">Formulario Oficial RS2 (.xlsx)</span>
+                    </h4>
+                    <p style="font-size:12px;color:var(--color-text-muted);margin:0;line-height:1.6;">
+                        El Formulario RS2 (Decreto 265-19) aplica a personas jurídicas de servicios y comercio elegibles. Aplica directamente una Tasa Efectiva de Tributación (TET) establecida por la DGII sobre el total de ingresos brutos, prescindiendo del formato de balance general y estado de resultados ordinario de IR-2.
+                    </p>
+                </div>
+            `;
+        }
+    },
+
+    async exportRs2Excel() {
+        App.showToast('Generando Formulario Oficial RS2 en Excel DGII (.xlsx)...', 'info');
+
+        try {
+            const token = App.state.token || localStorage.getItem('token');
+            const response = await fetch(`/api/dgii/reports/rs2/export-excel?year=${this._year}`, {
+                method: 'GET',
+                headers: {
+                    'Accept': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/octet-stream',
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Authorization': `Bearer ${token}`
+                },
+                credentials: 'same-origin'
+            });
+
+            if (!response.ok) {
+                const errText = await response.text();
+                throw new Error(`Error del servidor (${response.status}): ${errText}`);
+            }
+
+            const blob = await response.blob();
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.target = '_blank';
+
+            const rnc = (this._dataRs2 && this._dataRs2.tax_id)
+                ? this._dataRs2.tax_id
+                : (App.state.settings?.company_tax_id ? App.state.settings.company_tax_id.replace(/[^0-9]/g, '') : '131000000');
+
+            a.download = `DGII_RS2_${rnc}_${this._year}.xlsx`;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            URL.revokeObjectURL(url);
+
+            App.showToast('¡Formulario Oficial RS2 (Excel DGII) descargado con éxito!', 'success');
+        } catch (e) {
+            console.error('RS2 Excel Export error:', e);
+            App.showToast('Error al generar el formulario oficial RS2', 'error');
+        }
+    },
+
+    renderRs3Declaration(headers, tbody, summary, refBox) {
+        const d = this._dataRs3;
+        if (!d) {
+            tbody.innerHTML = `<tr><td colspan="4" class="text-center text-muted py-24">No se pudo cargar la declaración RS3 para este año.</td></tr>`;
+            return;
+        }
+
+        const rs3 = d.rs3 || {};
+
+        headers.innerHTML = `
+            <th style="width:130px;">Casilla Oficial</th>
+            <th>Descripción / Concepto (Decreto 265-19)</th>
+            <th class="text-right" style="width:200px;">Monto Declarado (DOP)</th>
+            <th style="width:280px;">Fórmula DGII / Origen</th>
+        `;
+
+        const row = (casilla, desc, val, formula, isHeader = false, isBold = false, isHighlight = false) => `
+            <tr style="${isHighlight ? 'background:rgba(217,119,6,0.08);' : ''}">
+                <td style="font-family:'JetBrains Mono',monospace;font-weight:700;color:var(--color-primary);">${casilla}</td>
+                <td style="${isBold ? 'font-weight:700;' : ''}">${desc}</td>
+                <td class="text-right ${isBold ? 'font-bold' : ''}" style="font-family:'JetBrains Mono',monospace;${isHighlight ? 'color:#d97706;font-size:15px;' : ''}">${App.formatCurrency(val || 0, 'DOP')}</td>
+                <td style="font-size:12px;color:var(--color-text-muted);">${formula}</td>
+            </tr>
+        `;
+
+        tbody.innerHTML = `
+            ${row('Casilla 1', 'Compras Locales e Importadas Registradas', rs3.casilla_1_compras, 'Celda T21 (Compras Formato 606 + Gastos)', false, false)}
+            ${row('Casilla 3', 'TOTAL COMPRAS DEL EJERCICIO', rs3.casilla_3_total_compras, 'Fórmula Nativa DGII: =SUM(T21:T26)', false, true)}
+            ${row('Casilla 5', 'Ventas Estimadas según Margen Comercial', rs3.casilla_5_ventas_estimadas, 'Fórmula Nativa DGII: =T27*(1+T30) (Margen colmados/comercio)', false, true)}
+            ${row('Casilla 7', 'Margen Bruto de Comercialización', rs3.casilla_7_margen_bruto, 'Fórmula Nativa DGII: =T33-T27', false, true)}
+            ${row('Casilla 10', 'Impuesto Sobre la Renta (ISR) Liquidado', rs3.casilla_10_isr_liquidado, 'Fórmula Nativa DGII: Celda T48 (Tasa 27% sobre margen)', false, true)}
+            ${row('Casilla 11', 'ITBIS Estimado a Liquidar', rs3.casilla_11_itbis_liquidado, 'Fórmula Nativa DGII: Celda T49 (Margen x Coeficiente x 18%)', false, true)}
+            ${row('Casilla 16', 'TOTAL A PAGAR AL FISCO (ISR + ITBIS)', rs3.casilla_16_total_a_pagar, 'Fórmula Nativa DGII: Celda T58', false, true, true)}
+        `;
+
+        summary.innerHTML = `
+            <div>
+                <span>Ejercicio Fiscal: <strong>${d.year}</strong></span> &bull; 
+                <span>Fecha Límite: <strong style="color:var(--color-danger-icon);">${d.deadline}</strong></span> &bull; 
+                <span>Contribuyente: <strong>${d.company_name}</strong> (RNC: ${d.tax_id})</span>
+            </div>
+            <div>
+                Total Impuesto a Pagar (RS3): <strong style="color:#d97706;font-size:18px;margin-left:8px;">${App.formatCurrency(rs3.casilla_16_total_a_pagar || 0, 'DOP')}</strong>
+            </div>
+        `;
+
+        if (refBox) {
+            refBox.innerHTML = `
+                <div class="table-outer" style="padding:18px;background:var(--bg-card);border:1px solid var(--color-border);border-radius:8px;">
+                    <h4 style="font-size:13px;font-weight:700;margin-bottom:10px;color:var(--color-text-primary);display:flex;align-items:center;justify-content:space-between;">
+                        <span>Marco Legal: Régimen Simplificado de Tributación (RS3 - Basado en Compras)</span>
+                        <span class="badge" style="background:#d97706;color:#fff;font-size:10px;">Formulario Oficial RS3 (.xlsx)</span>
+                    </h4>
+                    <p style="font-size:12px;color:var(--color-text-muted);margin:0;line-height:1.6;">
+                        El Formulario RS3 (Decreto 265-19) está diseñado para pequeños comerciantes y colmados. Calcula automáticamente los ingresos presuntos a partir del total de compras anuales registradas en el 606 y liquida en una única declaración simplificada el ISR anual y el ITBIS anual estimado sin necesidad de contabilidad organizada compleja.
+                    </p>
+                </div>
+            `;
+        }
+    },
+
+    async exportRs3Excel() {
+        App.showToast('Generando Formulario Oficial RS3 en Excel DGII (.xlsx)...', 'info');
+
+        try {
+            const token = App.state.token || localStorage.getItem('token');
+            const response = await fetch(`/api/dgii/reports/rs3/export-excel?year=${this._year}`, {
+                method: 'GET',
+                headers: {
+                    'Accept': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/octet-stream',
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Authorization': `Bearer ${token}`
+                },
+                credentials: 'same-origin'
+            });
+
+            if (!response.ok) {
+                const errText = await response.text();
+                throw new Error(`Error del servidor (${response.status}): ${errText}`);
+            }
+
+            const blob = await response.blob();
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.target = '_blank';
+
+            const rnc = (this._dataRs3 && this._dataRs3.tax_id)
+                ? this._dataRs3.tax_id
+                : (App.state.settings?.company_tax_id ? App.state.settings.company_tax_id.replace(/[^0-9]/g, '') : '131000000');
+
+            a.download = `DGII_RS3_${rnc}_${this._year}.xlsx`;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            URL.revokeObjectURL(url);
+
+            App.showToast('¡Formulario Oficial RS3 (Excel DGII) descargado con éxito!', 'success');
+        } catch (e) {
+            console.error('RS3 Excel Export error:', e);
+            App.showToast('Error al generar el formulario oficial RS3', 'error');
+        }
+    },
+
+    renderRs4Declaration(headers, tbody, summary, refBox) {
+        const d = this._dataRs4;
+        if (!d) {
+            tbody.innerHTML = `<tr><td colspan="4" class="text-center text-muted py-24">No se pudo cargar la declaración RS4 para este año.</td></tr>`;
+            return;
+        }
+
+        const rs4 = d.rs4 || {};
+
+        headers.innerHTML = `
+            <th style="width:130px;">Casilla Oficial</th>
+            <th>Descripción / Concepto (Decreto 265-19)</th>
+            <th class="text-right" style="width:200px;">Monto Declarado (DOP)</th>
+            <th style="width:280px;">Fórmula DGII / Origen</th>
+        `;
+
+        const row = (casilla, desc, val, formula, isHeader = false, isBold = false, isHighlight = false) => `
+            <tr style="${isHighlight ? 'background:rgba(101,163,13,0.08);' : ''}">
+                <td style="font-family:'JetBrains Mono',monospace;font-weight:700;color:var(--color-primary);">${casilla}</td>
+                <td style="${isBold ? 'font-weight:700;' : ''}">${desc}</td>
+                <td class="text-right ${isBold ? 'font-bold' : ''}" style="font-family:'JetBrains Mono',monospace;${isHighlight ? 'color:#65a30d;font-size:15px;' : ''}">${App.formatCurrency(val || 0, 'DOP')}</td>
+                <td style="font-size:12px;color:var(--color-text-muted);">${formula}</td>
+            </tr>
+        `;
+
+        tbody.innerHTML = `
+            ${row('Casilla 1', 'Ingresos Agropecuarios del Ejercicio', rs4.casilla_1_ingresos_agropecuarios, 'Celda T21 (Facturación 607 Agropecuaria)', false, false)}
+            ${row('Casilla 6', 'TOTAL INGRESOS BRUTOS AGROPECUARIOS', rs4.casilla_6_total_ingresos, 'Fórmula Nativa DGII: =SUM(T21:T25)', false, true)}
+            ${row('Casilla 7', 'Impuesto Liquidado (Tasa Efectiva TET ~6.1%)', rs4.casilla_7_impuesto_liquidado, 'Fórmula Nativa DGII: =T26*L44/100 (Celda L44)', false, true, true)}
+            ${row('Casilla 15', 'TOTAL A PAGAR AL FISCO (DGII)', rs4.casilla_15_total_a_pagar, 'Fórmula Nativa DGII: Celda T58', false, true, true)}
+        `;
+
+        summary.innerHTML = `
+            <div>
+                <span>Ejercicio Fiscal: <strong>${d.year}</strong></span> &bull; 
+                <span>Fecha Límite: <strong style="color:var(--color-danger-icon);">${d.deadline}</strong></span> &bull; 
+                <span>Contribuyente: <strong>${d.company_name}</strong> (RNC: ${d.tax_id})</span>
+            </div>
+            <div>
+                Total Impuesto a Pagar (RS4): <strong style="color:#65a30d;font-size:18px;margin-left:8px;">${App.formatCurrency(rs4.casilla_15_total_a_pagar || 0, 'DOP')}</strong>
+            </div>
+        `;
+
+        if (refBox) {
+            refBox.innerHTML = `
+                <div class="table-outer" style="padding:18px;background:var(--bg-card);border:1px solid var(--color-border);border-radius:8px;">
+                    <h4 style="font-size:13px;font-weight:700;margin-bottom:10px;color:var(--color-text-primary);display:flex;align-items:center;justify-content:space-between;">
+                        <span>Marco Legal: Régimen Simplificado de Tributación (RS4 - Sector Agropecuario)</span>
+                        <span class="badge" style="background:#65a30d;color:#fff;font-size:10px;">Formulario Oficial RS4 (.xlsx)</span>
+                    </h4>
+                    <p style="font-size:12px;color:var(--color-text-muted);margin:0;line-height:1.6;">
+                        El Formulario RS4 (Decreto 265-19) aplica a productores del sector agropecuario dominicano. Determina el impuesto anual a pagar liquidando la Tasa Efectiva de Tributación del sector directamente sobre los ingresos brutos anuales, simplificando radicalmente las obligaciones fiscales para el campo dominicano.
+                    </p>
+                </div>
+            `;
+        }
+    },
+
+    async exportRs4Excel() {
+        App.showToast('Generando Formulario Oficial RS4 en Excel DGII (.xlsx)...', 'info');
+
+        try {
+            const token = App.state.token || localStorage.getItem('token');
+            const response = await fetch(`/api/dgii/reports/rs4/export-excel?year=${this._year}`, {
+                method: 'GET',
+                headers: {
+                    'Accept': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/octet-stream',
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Authorization': `Bearer ${token}`
+                },
+                credentials: 'same-origin'
+            });
+
+            if (!response.ok) {
+                const errText = await response.text();
+                throw new Error(`Error del servidor (${response.status}): ${errText}`);
+            }
+
+            const blob = await response.blob();
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.target = '_blank';
+
+            const rnc = (this._dataRs4 && this._dataRs4.tax_id)
+                ? this._dataRs4.tax_id
+                : (App.state.settings?.company_tax_id ? App.state.settings.company_tax_id.replace(/[^0-9]/g, '') : '131000000');
+
+            a.download = `DGII_RS4_${rnc}_${this._year}.xlsx`;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            URL.revokeObjectURL(url);
+
+            App.showToast('¡Formulario Oficial RS4 (Excel DGII) descargado con éxito!', 'success');
+        } catch (e) {
+            console.error('RS4 Excel Export error:', e);
+            App.showToast('Error al generar el formulario oficial RS4', 'error');
         }
     }
 };

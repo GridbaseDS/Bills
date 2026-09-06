@@ -13,7 +13,7 @@ import RecurringModule from './modules/recurring.js?v=201';
 import DgiiTestsModule from './modules/dgii-tests.js?v=201';
 import DgiiLogsModule from './modules/dgii-logs.js?v=201';
 import ReceivedInvoicesModule from './modules/received-invoices.js?v=201';
-import ReportsModule from './modules/reports.js?v=205';
+import ReportsModule from './modules/reports.js?v=206';
 import SetupModule from './modules/setup.js?v=201';
 import ExpensesModule from './modules/expenses.js?v=201';
 import UsersModule from './modules/users.js?v=204';
@@ -132,6 +132,9 @@ window.App = {
         try {
             const publicSettings = await this.api('settings/public', { silent: true });
             this.state.settings = { ...this.state.settings, ...publicSettings };
+            this.state.is_demo = Boolean(publicSettings.is_demo || window.location.hostname.includes('bdemo'));
+            this.state.demo_expires_at = publicSettings.demo_expires_at || null;
+            this.state.demo_remaining_seconds = publicSettings.demo_remaining_seconds || 0;
             if (publicSettings.company_logo) localStorage.setItem('company_logo', publicSettings.company_logo);
             if (publicSettings.login_logo) localStorage.setItem('login_logo', publicSettings.login_logo);
             if (publicSettings.company_favicon) localStorage.setItem('company_favicon', publicSettings.company_favicon);
@@ -524,6 +527,17 @@ window.App = {
                         <h1 class="login-title">Bienvenido</h1>
                         <p class="login-subtitle">Inicia sesi\u00f3n para acceder a tu cuenta</p>
                         <div id="login-error" class="login-error"></div>
+
+                        ${(this.state.is_demo || window.location.hostname.includes('bdemo')) ? `
+                            <div class="demo-login-callout">
+                                <div class="demo-login-badge"><span class="demo-pulse" style="display:inline-block;margin-right:4px;"></span> ACCESO DEMO</div>
+                                <div class="demo-login-desc">Explora todas las funciones de facturación y facturación electrónica DGII con datos de prueba:</div>
+                                <button type="button" class="btn-demo-quick-login" onclick="App.loginWithDemo()">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
+                                    Ingresar como Demo (1 Clic)
+                                </button>
+                            </div>
+                        ` : ''}
 
                         <form id="login-form">
                             <div class="login-field">
@@ -1038,6 +1052,33 @@ window.App = {
                     </div>
                 </aside>
                 <main class="main-content">
+                    ${(this.state.is_demo || window.location.hostname.includes('bdemo')) ? `
+                        <div id="demo-banner" class="demo-banner">
+                            <div class="demo-banner-content">
+                                <div class="demo-banner-tag">
+                                    <span class="demo-pulse"></span>
+                                    MODO DEMO
+                                </div>
+                                <div class="demo-banner-text">
+                                    Esta es una instancia de demostración. Los datos se restablecen automáticamente cada 72 horas.
+                                </div>
+                                <div class="demo-banner-timer" title="Tiempo restante para el próximo reinicio de datos">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                                    <span id="demo-countdown">Calculando tiempo...</span>
+                                </div>
+                            </div>
+                            <div class="demo-banner-actions">
+                                <button type="button" class="btn-demo-extend" onclick="App.openDemoExtendModal()">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="16"></line><line x1="8" y1="12" x2="16" y2="12"></line></svg>
+                                    Extender Tiempo
+                                </button>
+                                <button type="button" class="btn-demo-reset" onclick="App.confirmDemoReset()" title="Restablecer datos demo ahora">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"></polyline><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path></svg>
+                                    Reiniciar Datos
+                                </button>
+                            </div>
+                        </div>
+                    ` : ''}
                     <div class="topbar">
                         <div style="display:flex;align-items:center;gap:12px">
                             <button class="btn-icon sidebar-toggle" id="sidebar-toggle" onclick="App.toggleSidebar()">
@@ -1101,6 +1142,9 @@ window.App = {
         this.updateThemeButton();
         this.loadNotifications();
         this.check2faReminder();
+        if (this.state.is_demo || window.location.hostname.includes('bdemo')) {
+            this.initDemoCountdown();
+        }
     },
 
     check2faReminder() {
@@ -1889,6 +1933,136 @@ window.App = {
         if (hour < 12) return 'Buenos Días';
         if (hour < 18) return 'Buenas Tardes';
         return 'Buenas Noches';
+    },
+
+    loginWithDemo() {
+        const emailEl = document.getElementById('login-email');
+        const passEl = document.getElementById('login-password');
+        if (emailEl) emailEl.value = 'admin@gridbase.com.do';
+        if (passEl) passEl.value = 'admin123';
+        this.login('admin@gridbase.com.do', 'admin123');
+    },
+
+    async initDemoCountdown() {
+        const cdEl = document.getElementById('demo-countdown');
+        if (!cdEl) return;
+
+        try {
+            const res = await this.api('demo/status', { silent: true });
+            if (res && res.expires_at) {
+                this.state.demo_expires_at = res.expires_at;
+            }
+        } catch (e) {}
+
+        if (this._demoTimer) clearInterval(this._demoTimer);
+
+        const updateTimer = () => {
+            if (!this.state.demo_expires_at) {
+                cdEl.textContent = '72 horas activas';
+                return;
+            }
+            const targetTime = new Date(this.state.demo_expires_at).getTime();
+            const now = Date.now();
+            const diff = targetTime - now;
+
+            if (diff <= 0) {
+                cdEl.textContent = 'Reiniciando datos...';
+                clearInterval(this._demoTimer);
+                setTimeout(() => window.location.reload(), 2000);
+                return;
+            }
+
+            const hours = Math.floor(diff / (1000 * 60 * 60));
+            const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+
+            cdEl.textContent = `${hours}h ${minutes}m ${seconds}s`;
+        };
+
+        updateTimer();
+        this._demoTimer = setInterval(updateTimer, 1000);
+    },
+
+    openDemoExtendModal() {
+        let modal = document.getElementById('demo-extend-modal');
+        if (!modal) {
+            modal = document.createElement('div');
+            modal.id = 'demo-extend-modal';
+            modal.className = 'demo-modal-overlay';
+            modal.innerHTML = `
+                <div class="demo-modal-card">
+                    <div class="demo-modal-header">
+                        <h3 class="demo-modal-title">⏳ Extender Período de Demostración</h3>
+                        <button type="button" class="demo-modal-close" onclick="App.closeDemoExtendModal()">&times;</button>
+                    </div>
+                    <p class="demo-modal-desc">¿Necesitas más tiempo para evaluar Gridbase Bills con tu equipo o clientes? Selecciona la duración adicional que deseas asignar:</p>
+                    <div class="demo-options-grid">
+                        <button type="button" class="demo-opt-btn" onclick="App.extendDemo(24)">
+                            <span class="demo-opt-hours">+24h</span>
+                            <span class="demo-opt-days">1 Día extra</span>
+                        </button>
+                        <button type="button" class="demo-opt-btn" onclick="App.extendDemo(48)">
+                            <span class="demo-opt-hours">+48h</span>
+                            <span class="demo-opt-days">2 Días extra</span>
+                        </button>
+                        <button type="button" class="demo-opt-btn" onclick="App.extendDemo(72)">
+                            <span class="demo-opt-hours">+72h</span>
+                            <span class="demo-opt-days">3 Días extra</span>
+                        </button>
+                    </div>
+                    <div style="display:flex;justify-content:flex-end;gap:10px;">
+                        <button type="button" class="btn btn-secondary" onclick="App.closeDemoExtendModal()">Cerrar</button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(modal);
+        } else {
+            modal.style.display = 'flex';
+        }
+    },
+
+    closeDemoExtendModal() {
+        const modal = document.getElementById('demo-extend-modal');
+        if (modal) modal.style.display = 'none';
+    },
+
+    async extendDemo(hours) {
+        try {
+            this.showToast('Extendiendo período de prueba...', 'info');
+            const res = await this.api('demo/extend', {
+                method: 'POST',
+                body: { hours }
+            });
+            if (res.success) {
+                this.state.demo_expires_at = res.expires_at;
+                this.closeDemoExtendModal();
+                this.showToast(res.message || `Período extendido con éxito (+${hours}h)`, 'success');
+                this.initDemoCountdown();
+            } else {
+                this.showToast('No se pudo extender el tiempo', 'error');
+            }
+        } catch (e) {
+            this.showToast('Error al extender demo: ' + e.message, 'error');
+        }
+    },
+
+    async confirmDemoReset() {
+        if (!confirm('¿Seguro que deseas restablecer todos los datos demo a su estado inicial? Se borrarán los datos creados durante esta sesión y se recargarán los clientes y facturas oficiales de prueba.')) {
+            return;
+        }
+
+        try {
+            this.showToast('Restableciendo datos de prueba...', 'info');
+            const res = await this.api('demo/reset', { method: 'POST' });
+            if (res.success) {
+                this.showToast('¡Datos restablecidos con éxito!', 'success');
+                setTimeout(() => window.location.reload(), 1000);
+            } else {
+                this.showToast('Error al restablecer: ' + (res.error || 'Error desconocido'), 'error');
+            }
+        } catch (e) {
+            this.showToast('Error al restablecer demo: ' + e.message, 'error');
+        }
     }
 };
 

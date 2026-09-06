@@ -403,6 +403,9 @@ class SettingController extends Controller
             'sidebar_logo_height' => $all['sidebar_logo_height'] ?? '45',
             'login_logo_height' => $all['login_logo_height'] ?? '79',
             'is_installed' => $all['is_installed'] ?? '0',
+            'is_demo' => (bool) config('app.demo_mode', false),
+            'demo_expires_at' => $all['demo_expires_at'] ?? null,
+            'demo_remaining_seconds' => !empty($all['demo_expires_at']) ? max(0, now()->diffInSeconds(\Carbon\Carbon::parse($all['demo_expires_at']), false)) : 0,
             'system_version' => $changelog['version'] ?? '1.0.0',
             'system_changelog' => $changelog['changes'] ?? [],
         ]);

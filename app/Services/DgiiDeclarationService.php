@@ -1353,6 +1353,25 @@ class DgiiDeclarationService
         $spreadsheet = $reader->load($templatePath);
         $sheet = $spreadsheet->getSheetByName('DSS') ?: $spreadsheet->getActiveSheet();
 
+        // Inyectar el banner oficial DGII (Logo ii, Títulos, Líneas y DSS)
+        // ya que el lector BIFF8 de XLS no preserva objetos OfficeArt de tipo textbox
+        $bannerPath = resource_path('templates/dgii/dss_header_banner.png');
+        if (file_exists($bannerPath)) {
+            $drawing = new \PhpOffice\PhpSpreadsheet\Worksheet\Drawing();
+            $drawing->setName('DGII_DSS_Header');
+            $drawing->setDescription('Dirección General de Impuestos Internos - DSS-07');
+            $drawing->setPath($bannerPath);
+            $drawing->setCoordinates('B1');
+            $drawing->setOffsetX(8);
+            $drawing->setOffsetY(4);
+            $drawing->setWidth(820);
+            $drawing->setHeight(72);
+            $drawing->setWorksheet($sheet);
+
+            // Limpiar texto plano residual de versión en B5 para evitar solapamiento
+            $sheet->setCellValue('B5', '');
+        }
+
         // Encabezados
         $sheet->setCellValue('D9', $data['month']);
         $sheet->setCellValue('E9', $data['year']);

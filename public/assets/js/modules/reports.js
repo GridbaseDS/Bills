@@ -786,8 +786,9 @@ const ReportsModule = {
             </div>
         `;
 
-        // Render Anexo B-1 and Anexo J reference in refBox
+        // Render Anexo B-1, Anexo J, Anexo A-1 and Activo in refBox
         if (refBox) {
+            const act = d.activo || {};
             refBox.innerHTML = `
                 <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(340px, 1fr));gap:16px;">
                     <!-- Card 1: Anexo B-1 Estado de Resultados -->
@@ -799,36 +800,52 @@ const ReportsModule = {
                         <table style="width:100%;font-size:12px;border-collapse:collapse;">
                             <tbody>
                                 <tr style="border-bottom:1px solid var(--color-border);">
-                                    <td style="padding:6px 0;">1.1 Ventas Locales Facturadas:</td>
-                                    <td class="text-right font-semibold" style="padding:6px 0;">${App.formatCurrency(b1.ventas_locales || 0, 'DOP')}</td>
+                                    <td style="padding:5px 0;">1.1 Ventas Locales (607):</td>
+                                    <td class="text-right font-semibold" style="padding:5px 0;">${App.formatCurrency(b1.ventas_locales || 0, 'DOP')}</td>
                                 </tr>
                                 <tr style="border-bottom:1px solid var(--color-border);">
-                                    <td style="padding:6px 0;">1.3 Devoluciones / Notas Crédito:</td>
-                                    <td class="text-right font-semibold" style="padding:6px 0;color:#dc2626;">-${App.formatCurrency(b1.devoluciones_ventas || 0, 'DOP')}</td>
+                                    <td style="padding:5px 0;">1.3 Devoluciones / Notas Crédito:</td>
+                                    <td class="text-right font-semibold" style="padding:5px 0;color:#dc2626;">-${App.formatCurrency(b1.devoluciones_ventas || 0, 'DOP')}</td>
                                 </tr>
                                 <tr style="background:var(--bg-hover);font-weight:700;border-bottom:1px solid var(--color-border);">
                                     <td style="padding:6px 0;">Total Ingresos Netos (Casilla 4):</td>
                                     <td class="text-right" style="padding:6px 0;color:var(--color-primary);">${App.formatCurrency(b1.total_ingresos_netos || 0, 'DOP')}</td>
                                 </tr>
                                 <tr style="border-bottom:1px solid var(--color-border);">
-                                    <td style="padding:6px 0;">6. Gastos de Personal (01):</td>
-                                    <td class="text-right font-semibold" style="padding:6px 0;">${App.formatCurrency(b1.gastos_personal || 0, 'DOP')}</td>
+                                    <td style="padding:5px 0;">6.1 Sueldos y Personal (01):</td>
+                                    <td class="text-right font-semibold" style="padding:5px 0;">${App.formatCurrency(b1.gastos_personal || 0, 'DOP')}</td>
                                 </tr>
                                 <tr style="border-bottom:1px solid var(--color-border);">
-                                    <td style="padding:6px 0;">7. Trabajos, Suministros, Servicios (02):</td>
-                                    <td class="text-right font-semibold" style="padding:6px 0;">${App.formatCurrency(b1.gastos_servicios || 0, 'DOP')}</td>
+                                    <td style="padding:5px 0;">7.1 Honorarios Personas Físicas (02):</td>
+                                    <td class="text-right font-semibold" style="padding:5px 0;">${App.formatCurrency(b1.honorarios_fisicas || 0, 'DOP')}</td>
                                 </tr>
                                 <tr style="border-bottom:1px solid var(--color-border);">
-                                    <td style="padding:6px 0;">8. Arrendamientos (03):</td>
-                                    <td class="text-right font-semibold" style="padding:6px 0;">${App.formatCurrency(b1.arrendamientos || 0, 'DOP')}</td>
+                                    <td style="padding:5px 0;">7.2 Honorarios Personas Morales (02):</td>
+                                    <td class="text-right font-semibold" style="padding:5px 0;">${App.formatCurrency(b1.honorarios_morales || 0, 'DOP')}</td>
                                 </tr>
                                 <tr style="border-bottom:1px solid var(--color-border);">
-                                    <td style="padding:6px 0;">9. Activos Fijos / Mantenimiento (04):</td>
-                                    <td class="text-right font-semibold" style="padding:6px 0;">${App.formatCurrency(b1.gastos_activos_fijos || 0, 'DOP')}</td>
+                                    <td style="padding:5px 0;">7.7 Suministros y Otros Servicios:</td>
+                                    <td class="text-right font-semibold" style="padding:5px 0;">${App.formatCurrency(b1.otros_servicios || 0, 'DOP')}</td>
                                 </tr>
                                 <tr style="border-bottom:1px solid var(--color-border);">
-                                    <td style="padding:6px 0;">10. Gastos de Representación (05):</td>
-                                    <td class="text-right font-semibold" style="padding:6px 0;">${App.formatCurrency(b1.gastos_representacion || 0, 'DOP')}</td>
+                                    <td style="padding:5px 0;">8. Arrendamientos (03):</td>
+                                    <td class="text-right font-semibold" style="padding:5px 0;">${App.formatCurrency(b1.arrendamientos || 0, 'DOP')}</td>
+                                </tr>
+                                <tr style="border-bottom:1px solid var(--color-border);">
+                                    <td style="padding:5px 0;">9. Activos Fijos / Reparaciones (04):</td>
+                                    <td class="text-right font-semibold" style="padding:5px 0;">${App.formatCurrency(b1.gastos_activos_fijos || 0, 'DOP')}</td>
+                                </tr>
+                                <tr style="border-bottom:1px solid var(--color-border);">
+                                    <td style="padding:5px 0;">10. Publicidad y Representación (05):</td>
+                                    <td class="text-right font-semibold" style="padding:5px 0;">${App.formatCurrency(b1.gastos_representacion || 0, 'DOP')}</td>
+                                </tr>
+                                <tr style="border-bottom:1px solid var(--color-border);">
+                                    <td style="padding:5px 0;">11. Primas de Seguros (06):</td>
+                                    <td class="text-right font-semibold" style="padding:5px 0;">${App.formatCurrency(b1.seguros || 0, 'DOP')}</td>
+                                </tr>
+                                <tr style="border-bottom:1px solid var(--color-border);">
+                                    <td style="padding:5px 0;">12. Gastos Financieros (07):</td>
+                                    <td class="text-right font-semibold" style="padding:5px 0;">${App.formatCurrency(b1.gastos_financieros || 0, 'DOP')}</td>
                                 </tr>
                                 <tr style="background:var(--bg-hover);font-weight:700;">
                                     <td style="padding:8px 0;">Beneficio Neto Antes Impuesto (Casilla 14):</td>
@@ -838,46 +855,139 @@ const ReportsModule = {
                         </table>
                     </div>
 
-                    <!-- Card 2: Anexo J Resumen 607 y 606 -->
+                    <!-- Card 2: Anexo A-1 Balance General Oficial Cuadrado -->
                     <div class="table-outer" style="padding:18px;background:var(--bg-card);border:1px solid var(--color-border);border-radius:8px;">
                         <h4 style="font-size:13px;font-weight:700;margin-bottom:12px;color:var(--color-text-primary);display:flex;align-items:center;justify-content:space-between;">
-                            <span>Anexo J: Resumen Anual Comprobantes DGII</span>
+                            <span>Anexo A-1: Balance General Oficial</span>
+                            <span class="badge" style="background:#059669;color:#fff;font-size:10px;">Balance Cuadrado ✓</span>
+                        </h4>
+                        <table style="width:100%;font-size:12px;border-collapse:collapse;">
+                            <tbody>
+                                <tr style="background:rgba(2,132,199,0.06);font-weight:700;">
+                                    <td colspan="2" style="padding:4px 6px;color:var(--color-primary);">I. ACTIVOS</td>
+                                </tr>
+                                <tr style="border-bottom:1px solid var(--color-border);">
+                                    <td style="padding:4px 6px;">1.1 Cajas y Bancos:</td>
+                                    <td class="text-right font-semibold" style="padding:4px 6px;">${App.formatCurrency(a1.caja_bancos || 0, 'DOP')}</td>
+                                </tr>
+                                <tr style="border-bottom:1px solid var(--color-border);">
+                                    <td style="padding:4px 6px;">1.2 Cuentas por Cobrar Clientes:</td>
+                                    <td class="text-right font-semibold" style="padding:4px 6px;">${App.formatCurrency(a1.cuentas_por_cobrar || 0, 'DOP')}</td>
+                                </tr>
+                                <tr style="background:var(--bg-hover);font-weight:700;border-bottom:1px solid var(--color-border);">
+                                    <td style="padding:5px 6px;">6. TOTAL ACTIVOS:</td>
+                                    <td class="text-right" style="padding:5px 6px;color:var(--color-primary);">${App.formatCurrency(a1.total_activos || 0, 'DOP')}</td>
+                                </tr>
+                                <tr style="background:rgba(217,119,6,0.06);font-weight:700;">
+                                    <td colspan="2" style="padding:4px 6px;color:#d97706;">II. PASIVOS</td>
+                                </tr>
+                                <tr style="border-bottom:1px solid var(--color-border);">
+                                    <td style="padding:4px 6px;">7.2 Cuentas por Pagar Proveedores:</td>
+                                    <td class="text-right font-semibold" style="padding:4px 6px;">${App.formatCurrency(a1.cuentas_por_pagar || 0, 'DOP')}</td>
+                                </tr>
+                                <tr style="border-bottom:1px solid var(--color-border);">
+                                    <td style="padding:4px 6px;">7.3 Impuestos por Pagar (ITBIS/ISR):</td>
+                                    <td class="text-right font-semibold" style="padding:4px 6px;">${App.formatCurrency(a1.impuestos_por_pagar || 0, 'DOP')}</td>
+                                </tr>
+                                <tr style="background:var(--bg-hover);font-weight:700;border-bottom:1px solid var(--color-border);">
+                                    <td style="padding:5px 6px;">Total Pasivos Corrientes:</td>
+                                    <td class="text-right" style="padding:5px 6px;color:#d97706;">${App.formatCurrency(a1.total_pasivos || 0, 'DOP')}</td>
+                                </tr>
+                                <tr style="background:rgba(124,58,237,0.06);font-weight:700;">
+                                    <td colspan="2" style="padding:4px 6px;color:#7c3aed;">III. PATRIMONIO NETO</td>
+                                </tr>
+                                <tr style="border-bottom:1px solid var(--color-border);">
+                                    <td style="padding:4px 6px;">10.1 Capital Suscrito y Pagado:</td>
+                                    <td class="text-right font-semibold" style="padding:4px 6px;">${App.formatCurrency(a1.capital_social || 0, 'DOP')}</td>
+                                </tr>
+                                <tr style="border-bottom:1px solid var(--color-border);">
+                                    <td style="padding:4px 6px;">10.2 Reserva Legal (5%):</td>
+                                    <td class="text-right font-semibold" style="padding:4px 6px;">${App.formatCurrency(a1.reserva_legal || 0, 'DOP')}</td>
+                                </tr>
+                                <tr style="border-bottom:1px solid var(--color-border);">
+                                    <td style="padding:4px 6px;">10.5 Beneficio del Ejercicio:</td>
+                                    <td class="text-right font-semibold" style="padding:4px 6px;">${App.formatCurrency(a1.beneficio_ejercicio || 0, 'DOP')}</td>
+                                </tr>
+                                <tr style="background:var(--bg-hover);font-weight:700;border-top:1px solid var(--color-border);">
+                                    <td style="padding:6px 6px;">11. TOTAL PASIVOS Y PATRIMONIO:</td>
+                                    <td class="text-right" style="padding:6px 6px;color:#059669;font-size:13px;">${App.formatCurrency(a1.total_pasivos_patrimonio || 0, 'DOP')}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Card 3: Anexo J Resumen 607 y 606 -->
+                    <div class="table-outer" style="padding:18px;background:var(--bg-card);border:1px solid var(--color-border);border-radius:8px;">
+                        <h4 style="font-size:13px;font-weight:700;margin-bottom:12px;color:var(--color-text-primary);display:flex;align-items:center;justify-content:space-between;">
+                            <span>Anexo J: Resumen Anual Comprobantes</span>
                             <span class="badge" style="background:var(--bg-hover);font-size:10px;">Ventas 607 & Compras 606</span>
                         </h4>
                         <table style="width:100%;font-size:12px;border-collapse:collapse;">
                             <tbody>
                                 <tr style="border-bottom:1px solid var(--color-border);">
-                                    <td style="padding:6px 0;">Crédito Fiscal Emitidos (01 / 31):</td>
-                                    <td class="text-right" style="padding:6px 0;font-family:'JetBrains Mono',monospace;"><strong>${(jV.counts && jV.counts['01_31']) || 0}</strong> doc(s)</td>
-                                    <td class="text-right font-semibold" style="padding:6px 0;">${App.formatCurrency((jV.amounts && jV.amounts['01_31']) || 0, 'DOP')}</td>
+                                    <td style="padding:5px 0;">Crédito Fiscal Emitidos (01 / 31):</td>
+                                    <td class="text-right" style="padding:5px 0;font-family:'JetBrains Mono',monospace;"><strong>${(jV.counts && jV.counts['01_31']) || 0}</strong> doc(s)</td>
+                                    <td class="text-right font-semibold" style="padding:5px 0;">${App.formatCurrency((jV.amounts && jV.amounts['01_31']) || 0, 'DOP')}</td>
                                 </tr>
                                 <tr style="border-bottom:1px solid var(--color-border);">
-                                    <td style="padding:6px 0;">Consumo Final Emitidos (02 / 32):</td>
-                                    <td class="text-right" style="padding:6px 0;font-family:'JetBrains Mono',monospace;"><strong>${(jV.counts && jV.counts['02_32']) || 0}</strong> doc(s)</td>
-                                    <td class="text-right font-semibold" style="padding:6px 0;">${App.formatCurrency((jV.amounts && jV.amounts['02_32']) || 0, 'DOP')}</td>
+                                    <td style="padding:5px 0;">Consumo Final Emitidos (02 / 32):</td>
+                                    <td class="text-right" style="padding:5px 0;font-family:'JetBrains Mono',monospace;"><strong>${(jV.counts && jV.counts['02_32']) || 0}</strong> doc(s)</td>
+                                    <td class="text-right font-semibold" style="padding:5px 0;">${App.formatCurrency((jV.amounts && jV.amounts['02_32']) || 0, 'DOP')}</td>
                                 </tr>
                                 <tr style="border-bottom:1px solid var(--color-border);">
-                                    <td style="padding:6px 0;">Notas Crédito Emitidas (04 / 34):</td>
-                                    <td class="text-right" style="padding:6px 0;font-family:'JetBrains Mono',monospace;color:#dc2626;"><strong>${(jV.counts && jV.counts['04_34']) || 0}</strong> doc(s)</td>
-                                    <td class="text-right font-semibold" style="padding:6px 0;color:#dc2626;">-${App.formatCurrency((jV.amounts && jV.amounts['04_34']) || 0, 'DOP')}</td>
+                                    <td style="padding:5px 0;">Notas Crédito Emitidas (04 / 34):</td>
+                                    <td class="text-right" style="padding:5px 0;font-family:'JetBrains Mono',monospace;color:#dc2626;"><strong>${(jV.counts && jV.counts['04_34']) || 0}</strong> doc(s)</td>
+                                    <td class="text-right font-semibold" style="padding:5px 0;color:#dc2626;">-${App.formatCurrency((jV.amounts && jV.amounts['04_34']) || 0, 'DOP')}</td>
                                 </tr>
                                 <tr style="border-bottom:1px solid var(--color-border);">
-                                    <td style="padding:6px 0;">Compras con Crédito Fiscal (606):</td>
-                                    <td class="text-right" style="padding:6px 0;font-family:'JetBrains Mono',monospace;"><strong>${(jG.counts && jG.counts['01_31']) || 0}</strong> doc(s)</td>
-                                    <td class="text-right font-semibold" style="padding:6px 0;">${App.formatCurrency((jG.amounts && jG.amounts['01_31']) || 0, 'DOP')}</td>
+                                    <td style="padding:5px 0;">Compras con Crédito Fiscal (606):</td>
+                                    <td class="text-right" style="padding:5px 0;font-family:'JetBrains Mono',monospace;"><strong>${(jG.counts && jG.counts['01_31']) || 0}</strong> doc(s)</td>
+                                    <td class="text-right font-semibold" style="padding:5px 0;">${App.formatCurrency((jG.amounts && jG.amounts['01_31']) || 0, 'DOP')}</td>
                                 </tr>
                                 <tr style="border-bottom:1px solid var(--color-border);">
-                                    <td style="padding:6px 0;">Balance Cuentas por Cobrar (A-1):</td>
-                                    <td class="text-right" style="padding:6px 0;">—</td>
-                                    <td class="text-right font-semibold" style="padding:6px 0;color:var(--color-primary);">${App.formatCurrency(a1.cuentas_por_cobrar || 0, 'DOP')}</td>
+                                    <td style="padding:5px 0;">Compras a Proveedores Informales (11):</td>
+                                    <td class="text-right" style="padding:5px 0;font-family:'JetBrains Mono',monospace;"><strong>${(jG.counts && jG.counts['11_41']) || 0}</strong> doc(s)</td>
+                                    <td class="text-right font-semibold" style="padding:5px 0;">${App.formatCurrency((jG.amounts && jG.amounts['11_41']) || 0, 'DOP')}</td>
                                 </tr>
                                 <tr style="background:var(--bg-hover);font-weight:700;">
-                                    <td style="padding:8px 0;">Total Ventas Netas Anuales:</td>
-                                    <td class="text-right" style="padding:8px 0;">—</td>
+                                    <td style="padding:8px 0;" colspan="2">Total Ventas Netas Facturadas:</td>
                                     <td class="text-right" style="padding:8px 0;color:#7c3aed;">${App.formatCurrency(jV.total || 0, 'DOP')}</td>
                                 </tr>
                             </tbody>
                         </table>
+                    </div>
+
+                    <!-- Card 4: Liquidación Impuesto a los Activos (1%) -->
+                    <div class="table-outer" style="padding:18px;background:var(--bg-card);border:1px solid var(--color-border);border-radius:8px;">
+                        <h4 style="font-size:13px;font-weight:700;margin-bottom:12px;color:var(--color-text-primary);display:flex;align-items:center;justify-content:space-between;">
+                            <span>Hoja Activo: Impuesto Sobre los Activos</span>
+                            <span class="badge" style="background:var(--bg-hover);font-size:10px;">1% Art. 401 Ley 11-92</span>
+                        </h4>
+                        <table style="width:100%;font-size:12px;border-collapse:collapse;">
+                            <tbody>
+                                <tr style="border-bottom:1px solid var(--color-border);">
+                                    <td style="padding:6px 0;">Base Imponible de Activos (A-1):</td>
+                                    <td class="text-right font-semibold" style="padding:6px 0;">${App.formatCurrency(act.total_activos || 0, 'DOP')}</td>
+                                </tr>
+                                <tr style="border-bottom:1px solid var(--color-border);">
+                                    <td style="padding:6px 0;">Impuesto Liquidado 1% Activos:</td>
+                                    <td class="text-right font-semibold" style="padding:6px 0;">${App.formatCurrency(act.impuesto_1pct || 0, 'DOP')}</td>
+                                </tr>
+                                <tr style="border-bottom:1px solid var(--color-border);">
+                                    <td style="padding:6px 0;">Impuesto Liquidado de ISR (Casilla 12):</td>
+                                    <td class="text-right font-semibold" style="padding:6px 0;color:#7c3aed;">${App.formatCurrency(act.isr_liquidado || 0, 'DOP')}</td>
+                                </tr>
+                                <tr style="background:var(--bg-hover);font-weight:700;">
+                                    <td style="padding:8px 0;">Impuesto Adicional a Pagar por Activos:</td>
+                                    <td class="text-right font-bold" style="padding:8px 0;color:${(act.diferencia_pagar || 0) > 0 ? '#dc2626' : '#059669'};">
+                                        ${App.formatCurrency(act.diferencia_pagar || 0, 'DOP')}
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <div style="margin-top:10px;font-size:11px;color:var(--color-text-muted);line-height:1.4;">
+                            * El Impuesto sobre los Activos actúa como pago mínimo de ISR. Si el 27% de ISR supera el 1% de activos, no se genera diferencia adicional.
+                        </div>
                     </div>
                 </div>
             `;

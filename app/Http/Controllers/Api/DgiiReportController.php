@@ -18,8 +18,15 @@ class DgiiReportController extends Controller
      */
     public function report607(Request $request)
     {
-        $year = $request->query('year', date('Y'));
-        $month = str_pad($request->query('month', date('m')), 2, '0', STR_PAD_LEFT);
+        $year = $request->query('year');
+        $month = $request->query('month');
+        if ($request->filled('period')) {
+            $p = str_replace('-', '', $request->input('period'));
+            $year = substr($p, 0, 4);
+            $month = substr($p, 4, 2);
+        }
+        $year = $year ?: date('Y');
+        $month = str_pad($month ?: date('m'), 2, '0', STR_PAD_LEFT);
         
         $startDate = "{$year}-{$month}-01";
         $endDate = Carbon::parse($startDate)->endOfMonth()->toDateString();
@@ -128,8 +135,15 @@ class DgiiReportController extends Controller
      */
     public function report606(Request $request)
     {
-        $year = $request->query('year', date('Y'));
-        $month = str_pad($request->query('month', date('m')), 2, '0', STR_PAD_LEFT);
+        $year = $request->query('year');
+        $month = $request->query('month');
+        if ($request->filled('period')) {
+            $p = str_replace('-', '', $request->input('period'));
+            $year = substr($p, 0, 4);
+            $month = substr($p, 4, 2);
+        }
+        $year = $year ?: date('Y');
+        $month = str_pad($month ?: date('m'), 2, '0', STR_PAD_LEFT);
         
         $startDate = "{$year}-{$month}-01";
         $endDate = Carbon::parse($startDate)->endOfMonth()->toDateString();
@@ -452,8 +466,15 @@ class DgiiReportController extends Controller
      */
     public function report608(Request $request)
     {
-        $year = $request->query('year', date('Y'));
-        $month = str_pad($request->query('month', date('m')), 2, '0', STR_PAD_LEFT);
+        $year = $request->query('year');
+        $month = $request->query('month');
+        if ($request->filled('period')) {
+            $p = str_replace('-', '', $request->input('period'));
+            $year = substr($p, 0, 4);
+            $month = substr($p, 4, 2);
+        }
+        $year = $year ?: date('Y');
+        $month = str_pad($month ?: date('m'), 2, '0', STR_PAD_LEFT);
 
         $startDate = "{$year}-{$month}-01";
         $endDate = Carbon::parse($startDate)->endOfMonth()->toDateString();

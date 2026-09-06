@@ -10,6 +10,9 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use App\Models\Setting;
 use App\Models\User;
+use App\Models\Invoice;
+use App\Models\Quote;
+use App\Models\Expense;
 use Carbon\Carbon;
 
 class DemoController extends Controller
@@ -206,8 +209,11 @@ class DemoController extends Controller
                 }
             }
 
-            // 4. Iniciar sesión automática con el usuario principal
+            // Reasignar autoría de datos demo al usuario cliente principal
             if ($firstUser) {
+                Invoice::query()->update(['created_by' => $firstUser->id]);
+                Quote::query()->update(['created_by' => $firstUser->id]);
+                Expense::query()->update(['created_by' => $firstUser->id]);
                 Auth::login($firstUser);
             }
 

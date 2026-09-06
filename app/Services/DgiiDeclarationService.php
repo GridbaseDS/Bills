@@ -366,6 +366,11 @@ class DgiiDeclarationService
             if ($ti['05'] > 0) $sA->setCellValue('W42', $ti['05']);
             if ($ti['06'] > 0) $sA->setCellValue('W43', $ti['06']);
 
+            // Renglón V: Retenciones Percibidas
+            if (!empty($data['anexo_a']['retenciones']) && $data['anexo_a']['retenciones'] > 0) {
+                $sA->setCellValue('W47', $data['anexo_a']['retenciones']);
+            }
+
             // Renglón IX: ITBIS Pagado en Compras Deducible
             $itbisPagado = $data['anexo_a']['itbis_pagado'];
             if ($itbisPagado['bienes'] > 0) {
@@ -1054,6 +1059,7 @@ class DgiiDeclarationService
         // 6. Llenar Hoja: Activo (Formulario de Liquidación Impuesto a los Activos)
         $sAct = $spreadsheet->getSheetByName('Activo');
         if ($sAct) {
+            $sAct->setCellValue('Z5', (int)$data['year']);
             $sAct->setCellValue('E9', 'NORMAL');
             $sAct->setCellValue('C11', $data['tax_id']);
             $sAct->setCellValue('L11', $data['company_name']);
@@ -1062,12 +1068,13 @@ class DgiiDeclarationService
             $sAct->setCellValue('O15', $data['email']);
             $sAct->setCellValue('E17', '01/01/' . $data['year']);
             $sAct->setCellValue('Q17', '01/01/' . $data['year']);
-            $sAct->setCellValue('W17', '31/12/' . $data['year']);
+            $sAct->setCellValue('U17', '31/12/' . $data['year']);
         }
 
         // 7. Llenar Hoja: E (Datos Complementarios y Anticipos)
         $sE = $spreadsheet->getSheetByName('E');
         if ($sE) {
+            $sE->setCellValue('Z6', (int)$data['year']);
             $sE->setCellValue('E11', $data['tax_id']);
             $sE->setCellValue('L11', $data['company_name']);
         }
@@ -1075,10 +1082,60 @@ class DgiiDeclarationService
         // 8. Llenar Hoja: D (Datos Informativos y Costo de Venta)
         $sD = $spreadsheet->getSheetByName('D');
         if ($sD) {
-            $sD->setCellValue('B10', $data['tax_id']);
-            $sD->setCellValue('H10', $data['company_name']);
+            $sD->setCellValue('P5', (int)$data['year']);
+            $sD->setCellValue('C10', $data['tax_id']);
+            $sD->setCellValue('I10', $data['company_name']);
             if ($data['b1']['costo_venta'] > 0) {
                 $sD->setCellValue('L57', $data['b1']['costo_venta']);
+            }
+        }
+
+        // 9. Llenar Hoja: D-1 (Depreciación y Activos)
+        $sD1 = $spreadsheet->getSheetByName('D-1');
+        if ($sD1) {
+            $sD1->setCellValue('W5', (int)$data['year']);
+            $sD1->setCellValue('F9', $data['tax_id']);
+            $sD1->setCellValue('O9', $data['company_name']);
+        }
+
+        // 10. Llenar Hoja: D-2 (Ajuste Fiscal por Inflación)
+        $sD2 = $spreadsheet->getSheetByName('D-2');
+        if ($sD2) {
+            $sD2->setCellValue('N5', (int)$data['year']);
+            $sD2->setCellValue('H8', $data['tax_id']);
+            $sD2->setCellValue('L8', $data['company_name']);
+        }
+
+        // 11. Llenar Hoja: G (Ajustes Fiscales)
+        $sG = $spreadsheet->getSheetByName('G');
+        if ($sG) {
+            $sG->setCellValue('M5', (int)$data['year']);
+            $sG->setCellValue('D10', $data['tax_id']);
+            $sG->setCellValue('G10', $data['company_name']);
+        }
+
+        // 12. Llenar Hoja: H-1 (Beneficiario Final y Actualización)
+        $sH1 = $spreadsheet->getSheetByName('H-1');
+        if ($sH1) {
+            $sH1->setCellValue('K9', (int)$data['year']);
+            $sH1->setCellValue('C9', $data['tax_id']);
+            $sH1->setCellValue('H9', $data['company_name']);
+        }
+
+        // 13. Llenar Encabezados de Otros Anexos Sectoriales (para integridad visual total)
+        $sectorSheets = [
+            'A-2' => ['year' => 'P6', 'tax_id' => 'D10', 'name' => 'I10'],
+            'A-3' => ['year' => 'O7', 'tax_id' => 'D12', 'name' => 'I12'],
+            'B-2' => ['year' => 'N5', 'tax_id' => 'C10', 'name' => 'I10'],
+            'B-3' => ['year' => 'N5', 'tax_id' => 'C9',  'name' => 'I9'],
+            'B-4' => ['year' => 'N6', 'tax_id' => 'C10', 'name' => 'J10'],
+        ];
+        foreach ($sectorSheets as $sheetName => $coords) {
+            $sSec = $spreadsheet->getSheetByName($sheetName);
+            if ($sSec) {
+                $sSec->setCellValue($coords['year'], (int)$data['year']);
+                $sSec->setCellValue($coords['tax_id'], $data['tax_id']);
+                $sSec->setCellValue($coords['name'], $data['company_name']);
             }
         }
 
@@ -1489,6 +1546,11 @@ class DgiiDeclarationService
         $sheet->setCellValue('H9', $data['commercial_name']);
         $sheet->setCellValue('I10', $data['phone']);
         $sheet->setCellValue('U10', $data['email']);
+
+        // Inicio de Actividad (01/01/YYYY)
+        $sheet->setCellValue('G12', '01');
+        $sheet->setCellValue('I12', '01');
+        $sheet->setCellValue('J12', $data['year']);
 
         // Fechas del período (01/01/YYYY - 31/12/YYYY)
         $sheet->setCellValue('P12', '01');

@@ -254,7 +254,7 @@ class DgiiPrevalidatorService
         $permuta = (float)($r['permuta'] ?? 0);
         $otras = (float)($r['otras_formas'] ?? 0);
 
-        $totalPagos = round($efectivo + $bancos + $tarjeta + credito + $bonos + $permuta + $otras, 2);
+        $totalPagos = round($efectivo + $bancos + $tarjeta + $credito + $bonos + $permuta + $otras, 2);
         if (abs($totalPagos - $totalEsperado) > 0.05) {
             $warnings[] = "Línea {$line} (NCF {$ncf}): La suma de formas de pago (RD$ " . number_format($totalPagos, 2) . ") no coincide con el total facturado (RD$ " . number_format($totalEsperado, 2) . ").";
         }

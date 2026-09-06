@@ -1321,8 +1321,8 @@ class DgiiDeclarationService
         $totalIngresos = $ventasBienes + $servicios + $alquileres + $honorarios;
 
         // Annual 606 purchases
-        $compras = (float)ReceivedInvoice::whereBetween('fecha_comprobante', [$startDate, $endDate])->sum('monto_facturado')
-                 + (float)Expense::whereBetween('expense_date', [$startDate, $endDate])->sum('amount');
+        $compras = (float)ReceivedInvoice::whereBetween('fecha_emision', [$startDate, $endDate])->sum('monto_total')
+                 + (float)Expense::whereBetween('expense_date', [$startDate, $endDate])->sum('total');
 
         return [
             'year' => (string)$year,

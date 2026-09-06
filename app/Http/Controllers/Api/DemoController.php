@@ -49,10 +49,36 @@ class DemoController extends Controller
     }
 
     /**
+     * Check if the request is authorized by Gridbase Master Admin.
+     */
+    private function isAuthorizedDemoAdmin(Request $request): bool
+    {
+        if (Auth::check() && Auth::user()->email === 'soporte@gridbase.com.do') {
+            return true;
+        }
+
+        $providedKey = $request->input('admin_key') ?? $request->header('X-Demo-Admin-Key');
+        $masterKey = env('DEMO_ADMIN_KEY', 'SamDP_9903');
+
+        if ($providedKey && hash_equals((string)$masterKey, (string)$providedKey)) {
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
      * Extend demo expiration time by N hours.
      */
     public function extend(Request $request)
     {
+        if (!$this->isAuthorizedDemoAdmin($request)) {
+            return response()->json([
+                'success' => false,
+                'error' => 'No autorizado. Solo el personal de Gridbase puede extender el período de demostración.',
+            ], 403);
+        }
+
         $hours = (int) $request->input('hours', 24);
         if ($hours < 1 || $hours > 720) {
             $hours = 24;
@@ -90,6 +116,13 @@ class DemoController extends Controller
      */
     public function reset(Request $request)
     {
+        if (!$this->isAuthorizedDemoAdmin($request)) {
+            return response()->json([
+                'success' => false,
+                'error' => 'No autorizado. Solo el personal de Gridbase puede restablecer los datos de demostración.',
+            ], 403);
+        }
+
         try {
             Artisan::call('demo:reset', ['--force' => true]);
 
@@ -117,6 +150,13 @@ class DemoController extends Controller
      */
     public function provision(Request $request)
     {
+        if (!$this->isAuthorizedDemoAdmin($request)) {
+            return response()->json([
+                'success' => false,
+                'error' => 'No autorizado. Solo el personal de Gridbase puede otorgar accesos demo.',
+            ], 403);
+        }
+
         $request->validate([
             'company_name' => 'required|string|max:150',
             'users' => 'required|array|min:1|max:3',

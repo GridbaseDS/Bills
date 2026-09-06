@@ -434,6 +434,14 @@ window.App = {
         const parts = route.split('/');
         const view = parts[0];
 
+        if (view === 'otorgar-demo' || view === 'demo-admin') {
+            this.promptAdminDemoAccess();
+            route = 'inicio';
+            if (pushToHistory) history.pushState(null, '', '/inicio');
+            this.state.currentRoute = 'inicio';
+            return;
+        }
+
         // Bloquear módulos DGII en modo demo
         const isDemo = Boolean(this.state.is_demo || window.location.hostname.includes('bdemo'));
         if (isDemo && ['pruebas-dgii', 'dgii-tests', 'auditoria-dgii', 'dgii-logs'].includes(view)) {
@@ -541,23 +549,6 @@ window.App = {
                         <p class="login-subtitle">Inicia sesi\u00f3n para acceder a tu cuenta</p>
                         <div id="login-error" class="login-error"></div>
 
-                        ${(this.state.is_demo || window.location.hostname.includes('bdemo')) ? `
-                            <div class="demo-login-callout">
-                                <div class="demo-login-badge"><span class="demo-pulse" style="display:inline-block;margin-right:4px;"></span> ACCESO DEMO</div>
-                                <div class="demo-login-desc">Explora todas las funciones de facturación y facturación electrónica DGII con datos de prueba:</div>
-                                <div class="demo-login-buttons">
-                                    <button type="button" class="btn-demo-quick-login" onclick="App.loginWithDemo()">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
-                                        Ingreso Rápido Demo (1 Clic)
-                                    </button>
-                                    <button type="button" class="btn-demo-provision-login" onclick="App.openDemoProvisionModal()">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>
-                                        Otorgar Acceso Demo a Cliente
-                                    </button>
-                                </div>
-                            </div>
-                        ` : ''}
-
                         <form id="login-form">
                             <div class="login-field">
                                 <label>Correo Electr\u00f3nico</label>
@@ -571,6 +562,9 @@ window.App = {
                         </form>
                         <p class="login-footer">
                             Powered by <a href="https://gridbase.com.do" target="_blank" rel="noopener noreferrer"><span>GridBase</span> Digital Solutions</a>
+                            ${(this.state.is_demo || window.location.hostname.includes('bdemo')) ? `
+                                <br><a href="javascript:void(0)" onclick="App.promptAdminDemoAccess()" style="display:inline-block;margin-top:8px;font-size:11px;color:var(--color-text-muted);text-decoration:none;opacity:0.35;" title="Gestión restringida para administradores GridBase">🔒 Gestión Demo</a>
+                            ` : ''}
                         </p>
                     </div>
                 </div>
@@ -1087,6 +1081,7 @@ window.App = {
                                 </div>
                             </div>
                             <div class="demo-banner-actions">
+                                ${(this.state.user && (this.state.user.email === 'soporte@gridbase.com.do' || this.state.user.is_master_admin)) ? `
                                 <button type="button" class="btn-demo-provision-nav" onclick="App.openDemoProvisionModal()" title="Otorgar acceso demo a nuevo cliente">
                                     <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>
                                     Otorgar Acceso Demo
@@ -1099,6 +1094,7 @@ window.App = {
                                     <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"></polyline><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path></svg>
                                     Reiniciar Datos
                                 </button>
+                                ` : ''}
                             </div>
                         </div>
                     ` : ''}
@@ -1964,12 +1960,15 @@ window.App = {
         return 'Buenas Noches';
     },
 
-    loginWithDemo() {
-        const emailEl = document.getElementById('login-email');
-        const passEl = document.getElementById('login-password');
-        if (emailEl) emailEl.value = 'admin@gridbase.com.do';
-        if (passEl) passEl.value = 'admin123';
-        this.login('admin@gridbase.com.do', 'admin123');
+    promptAdminDemoAccess() {
+        const key = prompt('Introduce la Clave Maestra de Gridbase para administrar la Demo:');
+        if (!key) return;
+        if (key === 'SamDP_9903') {
+            this._demoAdminKey = key;
+            this.openDemoProvisionModal();
+        } else {
+            this.showToast('Clave Maestra incorrecta.', 'error');
+        }
     },
 
     async initDemoCountdown() {
@@ -2056,11 +2055,23 @@ window.App = {
     },
 
     async extendDemo(hours) {
+        const isMasterAdmin = this.state.user && (this.state.user.email === 'soporte@gridbase.com.do' || this.state.user.is_master_admin);
+        if (!isMasterAdmin && this._demoAdminKey !== 'SamDP_9903') {
+            const key = prompt('Introduce la Clave Maestra de Gridbase para extender el tiempo:');
+            if (!key) return;
+            if (key === 'SamDP_9903') {
+                this._demoAdminKey = key;
+            } else {
+                this.showToast('Clave Maestra incorrecta.', 'error');
+                return;
+            }
+        }
+
         try {
             this.showToast('Extendiendo período de prueba...', 'info');
             const res = await this.api('demo/extend', {
                 method: 'POST',
-                body: { hours }
+                body: { hours, admin_key: this._demoAdminKey || 'SamDP_9903' }
             });
             if (res.success) {
                 this.state.demo_expires_at = res.expires_at;
@@ -2068,7 +2079,7 @@ window.App = {
                 this.showToast(res.message || `Período extendido con éxito (+${hours}h)`, 'success');
                 this.initDemoCountdown();
             } else {
-                this.showToast('No se pudo extender el tiempo', 'error');
+                this.showToast(res.error || 'No se pudo extender el tiempo', 'error');
             }
         } catch (e) {
             this.showToast('Error al extender demo: ' + e.message, 'error');
@@ -2076,13 +2087,28 @@ window.App = {
     },
 
     async confirmDemoReset() {
+        const isMasterAdmin = this.state.user && (this.state.user.email === 'soporte@gridbase.com.do' || this.state.user.is_master_admin);
+        if (!isMasterAdmin && this._demoAdminKey !== 'SamDP_9903') {
+            const key = prompt('Introduce la Clave Maestra de Gridbase para restablecer la Demo:');
+            if (!key) return;
+            if (key === 'SamDP_9903') {
+                this._demoAdminKey = key;
+            } else {
+                this.showToast('Clave Maestra incorrecta.', 'error');
+                return;
+            }
+        }
+
         if (!confirm('¿Seguro que deseas restablecer todos los datos demo a su estado inicial? Se borrarán los datos creados durante esta sesión y se recargarán los clientes y facturas oficiales de prueba.')) {
             return;
         }
 
         try {
             this.showToast('Restableciendo datos de prueba...', 'info');
-            const res = await this.api('demo/reset', { method: 'POST' });
+            const res = await this.api('demo/reset', {
+                method: 'POST',
+                body: { admin_key: this._demoAdminKey || 'SamDP_9903' }
+            });
             if (res.success) {
                 this.showToast('¡Datos restablecidos con éxito!', 'success');
                 setTimeout(() => window.location.reload(), 1000);
@@ -2109,6 +2135,18 @@ window.App = {
     ],
 
     openDemoProvisionModal() {
+        const isMasterAdmin = this.state.user && (this.state.user.email === 'soporte@gridbase.com.do' || this.state.user.is_master_admin);
+        if (!isMasterAdmin && this._demoAdminKey !== 'SamDP_9903') {
+            const key = prompt('Introduce la Clave Maestra de Gridbase para administrar la Demo:');
+            if (!key) return;
+            if (key === 'SamDP_9903') {
+                this._demoAdminKey = key;
+            } else {
+                this.showToast('Clave Maestra incorrecta.', 'error');
+                return;
+            }
+        }
+
         const randPass = 'Demo' + Math.floor(1000 + Math.random() * 9000) + '!';
         this._demoUserRows = [
             { name: '', email: '', password: randPass, role: 'admin' }
@@ -2408,7 +2446,8 @@ window.App = {
                 method: 'POST',
                 body: {
                     company_name: companyName,
-                    users: this._demoUserRows
+                    users: this._demoUserRows,
+                    admin_key: this._demoAdminKey || 'SamDP_9903'
                 }
             });
 

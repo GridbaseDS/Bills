@@ -1065,39 +1065,6 @@ window.App = {
                     </div>
                 </aside>
                 <main class="main-content">
-                    ${(this.state.is_demo || window.location.hostname.includes('bdemo')) ? `
-                        <div id="demo-banner" class="demo-banner">
-                            <div class="demo-banner-content">
-                                <div class="demo-banner-tag">
-                                    <span class="demo-pulse"></span>
-                                    MODO DEMO
-                                </div>
-                                <div class="demo-banner-text">
-                                    Esta es una instancia de demostración. Los datos se restablecen automáticamente cada 72 horas.
-                                </div>
-                                <div class="demo-banner-timer" title="Tiempo restante para el próximo reinicio de datos">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
-                                    <span id="demo-countdown">Calculando tiempo...</span>
-                                </div>
-                            </div>
-                            <div class="demo-banner-actions">
-                                ${(this.state.user && (this.state.user.email === 'soporte@gridbase.com.do' || this.state.user.is_master_admin)) ? `
-                                <button type="button" class="btn-demo-provision-nav" onclick="App.openDemoProvisionModal()" title="Otorgar acceso demo a nuevo cliente">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>
-                                    Otorgar Acceso Demo
-                                </button>
-                                <button type="button" class="btn-demo-extend" onclick="App.openDemoExtendModal()">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="16"></line><line x1="8" y1="12" x2="16" y2="12"></line></svg>
-                                    Extender Tiempo
-                                </button>
-                                <button type="button" class="btn-demo-reset" onclick="App.confirmDemoReset()" title="Restablecer datos demo ahora">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"></polyline><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path></svg>
-                                    Reiniciar Datos
-                                </button>
-                                ` : ''}
-                            </div>
-                        </div>
-                    ` : ''}
                     <div class="topbar">
                         <div style="display:flex;align-items:center;gap:12px">
                             <button class="btn-icon sidebar-toggle" id="sidebar-toggle" onclick="App.toggleSidebar()">
@@ -1117,6 +1084,61 @@ window.App = {
                                 <span id="dgii-status-dot" style="width:7px;height:7px;border-radius:50%;background:currentColor;flex-shrink:0;"></span>
                                 <span id="dgii-status-label">DGII...</span>
                             </div>
+                            ${(this.state.is_demo || window.location.hostname.includes('bdemo')) ? `
+                            <div style="position:relative;">
+                                <button type="button" id="demo-status-pill" class="demo-topbar-pill" onclick="App.toggleDemoDropdown(event)" title="Entorno Demo: haz clic para ver detalles y tiempo">
+                                    <span class="demo-pulse-dot"></span>
+                                    <span class="demo-pill-tag">DEMO</span>
+                                    <span id="demo-countdown-pill" class="demo-pill-time">72h</span>
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                                </button>
+                                <div id="demo-dropdown" class="demo-dropdown-menu" style="display:none;">
+                                    <div class="demo-dropdown-header">
+                                        <div class="demo-dropdown-title-row">
+                                            <div class="demo-dropdown-icon">
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                                            </div>
+                                            <div>
+                                                <div class="demo-dropdown-title">Instancia Demo Bills</div>
+                                                <div class="demo-dropdown-sub">Reinicio cada 72 horas</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="demo-dropdown-body">
+                                        <div class="demo-timer-box">
+                                            <span class="demo-timer-label">Tiempo Restante:</span>
+                                            <span id="demo-countdown-dropdown" class="demo-timer-value">Calculando...</span>
+                                        </div>
+                                        <p class="demo-dropdown-desc">
+                                            Entorno de prueba con datos simulados y conexión DGII verificada. Los datos se reinician al expirar.
+                                        </p>
+                                        ${(this.state.user && (this.state.user.email === 'soporte@gridbase.com.do' || this.state.user.is_master_admin)) ? `
+                                        <div class="demo-dropdown-admin">
+                                            <div class="demo-dropdown-admin-title">Acciones Gridbase</div>
+                                            <div class="demo-admin-btns">
+                                                <button type="button" class="demo-admin-btn" onclick="App.openDemoProvisionModal(); App.closeDemoDropdown();">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>
+                                                    Otorgar Acceso Demo a Cliente
+                                                </button>
+                                                <button type="button" class="demo-admin-btn" onclick="App.openDemoExtendModal(); App.closeDemoDropdown();">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="16"></line><line x1="8" y1="12" x2="16" y2="12"></line></svg>
+                                                    Extender Tiempo (+72h)
+                                                </button>
+                                                <button type="button" class="demo-admin-btn danger" onclick="App.confirmDemoReset(); App.closeDemoDropdown();">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"></polyline><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path></svg>
+                                                    Restablecer Datos Ahora
+                                                </button>
+                                            </div>
+                                        </div>
+                                        ` : `
+                                        <div class="demo-dropdown-client-info">
+                                            ¿Necesitas más tiempo? Contacta a <a href="mailto:soporte@gridbase.com.do">soporte@gridbase.com.do</a>
+                                        </div>
+                                        `}
+                                    </div>
+                                </div>
+                            </div>
+                            ` : ''}
                             <button class="btn-icon" id="theme-toggle" onclick="App.toggleTheme()" title="Cambiar Tema" style="display:inline-flex;align-items:center;justify-content:center;"></button>
                             <div style="position:relative;">
                                  <button class="btn-icon" id="notification-toggle" onclick="App.toggleNotifications(event)" title="Notificaciones" style="position:relative; display:inline-flex;align-items:center;justify-content:center;">
@@ -1261,6 +1283,7 @@ window.App = {
 
     toggleNotifications(event) {
         if (event) event.stopPropagation();
+        this.closeDemoDropdown();
         const dropdown = document.getElementById('notification-dropdown');
         if (!dropdown) return;
         const isOpen = dropdown.style.display === 'block';
@@ -1972,8 +1995,9 @@ window.App = {
     },
 
     async initDemoCountdown() {
-        const cdEl = document.getElementById('demo-countdown');
-        if (!cdEl) return;
+        const pillCd = document.getElementById('demo-countdown-pill');
+        const dropCd = document.getElementById('demo-countdown-dropdown');
+        if (!pillCd && !dropCd) return;
 
         try {
             const res = await this.api('demo/status', { silent: true });
@@ -1986,7 +2010,8 @@ window.App = {
 
         const updateTimer = () => {
             if (!this.state.demo_expires_at) {
-                cdEl.textContent = '72 horas activas';
+                if (pillCd) pillCd.textContent = '72h';
+                if (dropCd) dropCd.textContent = '72 horas activas';
                 return;
             }
             const targetTime = new Date(this.state.demo_expires_at).getTime();
@@ -1994,7 +2019,8 @@ window.App = {
             const diff = targetTime - now;
 
             if (diff <= 0) {
-                cdEl.textContent = 'Reiniciando datos...';
+                if (pillCd) pillCd.textContent = '0h 0m';
+                if (dropCd) dropCd.textContent = 'Reiniciando datos...';
                 clearInterval(this._demoTimer);
                 setTimeout(() => window.location.reload(), 2000);
                 return;
@@ -2004,11 +2030,38 @@ window.App = {
             const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
             const seconds = Math.floor((diff % (1000 * 60)) / 1000);
 
-            cdEl.textContent = `${hours}h ${minutes}m ${seconds}s`;
+            if (pillCd) pillCd.textContent = `${hours}h ${minutes}m`;
+            if (dropCd) dropCd.textContent = `${hours}h ${minutes}m ${seconds}s`;
         };
 
         updateTimer();
         this._demoTimer = setInterval(updateTimer, 1000);
+    },
+
+    toggleDemoDropdown(event) {
+        if (event) event.stopPropagation();
+        const notifDropdown = document.getElementById('notification-dropdown');
+        if (notifDropdown) notifDropdown.style.display = 'none';
+
+        const dropdown = document.getElementById('demo-dropdown');
+        if (!dropdown) return;
+        const isOpen = dropdown.style.display === 'block';
+        dropdown.style.display = isOpen ? 'none' : 'block';
+
+        if (!isOpen) {
+            const closeHandler = (e) => {
+                if (!dropdown.contains(e.target) && !e.target.closest('#demo-status-pill')) {
+                    dropdown.style.display = 'none';
+                    document.removeEventListener('click', closeHandler);
+                }
+            };
+            setTimeout(() => document.addEventListener('click', closeHandler), 10);
+        }
+    },
+
+    closeDemoDropdown() {
+        const dropdown = document.getElementById('demo-dropdown');
+        if (dropdown) dropdown.style.display = 'none';
     },
 
     openDemoExtendModal() {

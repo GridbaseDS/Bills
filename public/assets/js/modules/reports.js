@@ -119,17 +119,17 @@ const ReportsModule = {
                         <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2Zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2"/><path d="M18 14h-8"/><path d="M15 18h-5"/><path d="M10 6h8v4h-8V6Z"/></svg>
                         Régimen / Categoría:
                     </span>
-                    <div class="report-category-group" style="display:inline-flex;background:var(--bg-card);border:1px solid var(--color-border);padding:3px;border-radius:var(--radius-md);gap:3px;box-shadow:0 1px 2px rgba(0,0,0,0.03);">
-                        <button type="button" class="btn-category-pill ${this._currentCategory === 'general' ? 'active' : ''}" data-category="general" style="padding:5px 12px;font-size:12px;font-weight:${this._currentCategory === 'general' ? '600' : '500'};border-radius:var(--radius-sm);border:none;background:${this._currentCategory === 'general' ? 'var(--color-primary)' : 'transparent'};color:${this._currentCategory === 'general' ? '#fff' : 'var(--color-text-secondary)'};cursor:pointer;display:inline-flex;align-items:center;gap:6px;transition:all 0.15s ease;">
-                            <span class="cat-dot" data-orig-color="#16a34a" style="width:7px;height:7px;border-radius:50%;background:${this._currentCategory === 'general' ? '#fff' : '#16a34a'};"></span>
+                    <div class="segmented-control" id="report-category-tabs" style="margin-bottom:0;padding:3px;gap:2px;display:inline-flex;border:1px solid var(--color-border);">
+                        <button class="segment-item ${this._currentCategory === 'general' ? 'active' : ''}" data-category="general" style="padding:6px 14px;font-size:12px;display:flex;align-items:center;gap:7px;">
+                            <span style="width:8px;height:8px;border-radius:50%;background:#16a34a;display:inline-block;flex-shrink:0;"></span>
                             Régimen General / Obligatorios (5)
                         </button>
-                        <button type="button" class="btn-category-pill ${this._currentCategory === 'rst' ? 'active' : ''}" data-category="rst" style="padding:5px 12px;font-size:12px;font-weight:${this._currentCategory === 'rst' ? '600' : '500'};border-radius:var(--radius-sm);border:none;background:${this._currentCategory === 'rst' ? 'var(--color-primary)' : 'transparent'};color:${this._currentCategory === 'rst' ? '#fff' : 'var(--color-text-secondary)'};cursor:pointer;display:inline-flex;align-items:center;gap:6px;transition:all 0.15s ease;">
-                            <span class="cat-dot" data-orig-color="#7c3aed" style="width:7px;height:7px;border-radius:50%;background:${this._currentCategory === 'rst' ? '#fff' : '#7c3aed'};"></span>
+                        <button class="segment-item ${this._currentCategory === 'rst' ? 'active' : ''}" data-category="rst" style="padding:6px 14px;font-size:12px;display:flex;align-items:center;gap:7px;">
+                            <span style="width:8px;height:8px;border-radius:50%;background:#8b5cf6;display:inline-block;flex-shrink:0;"></span>
                             Régimen Simplificado - RST (4)
                         </button>
-                        <button type="button" class="btn-category-pill ${this._currentCategory === 'sectoriales' ? 'active' : ''}" data-category="sectoriales" style="padding:5px 12px;font-size:12px;font-weight:${this._currentCategory === 'sectoriales' ? '600' : '500'};border-radius:var(--radius-sm);border:none;background:${this._currentCategory === 'sectoriales' ? 'var(--color-primary)' : 'transparent'};color:${this._currentCategory === 'sectoriales' ? '#fff' : 'var(--color-text-secondary)'};cursor:pointer;display:inline-flex;align-items:center;gap:6px;transition:all 0.15s ease;">
-                            <span class="cat-dot" data-orig-color="#0d9488" style="width:7px;height:7px;border-radius:50%;background:${this._currentCategory === 'sectoriales' ? '#fff' : '#0d9488'};"></span>
+                        <button class="segment-item ${this._currentCategory === 'sectoriales' ? 'active' : ''}" data-category="sectoriales" style="padding:6px 14px;font-size:12px;display:flex;align-items:center;gap:7px;">
+                            <span style="width:8px;height:8px;border-radius:50%;background:#0d9488;display:inline-block;flex-shrink:0;"></span>
                             Sectoriales Especiales (2)
                         </button>
                     </div>
@@ -189,22 +189,16 @@ const ReportsModule = {
             });
         }
 
-        const catPills = document.querySelectorAll('.btn-category-pill');
-        catPills.forEach(pill => {
-            pill.addEventListener('click', () => {
-                const category = pill.dataset.category;
+        const catTabs = document.querySelectorAll('#report-category-tabs .segment-item');
+        catTabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                const category = tab.dataset.category;
                 if (this._currentCategory === category) return;
                 this._currentCategory = category;
                 const catConfig = this._categories[category];
 
-                catPills.forEach(p => {
-                    const isActive = p.dataset.category === category;
-                    p.classList.toggle('active', isActive);
-                    p.style.fontWeight = isActive ? '600' : '500';
-                    p.style.background = isActive ? 'var(--color-primary)' : 'transparent';
-                    p.style.color = isActive ? '#fff' : 'var(--color-text-secondary)';
-                    const dot = p.querySelector('.cat-dot');
-                    if (dot) dot.style.background = isActive ? '#fff' : dot.dataset.origColor;
+                catTabs.forEach(t => {
+                    t.classList.toggle('active', t.dataset.category === category);
                 });
 
                 const hint = document.getElementById('category-description-hint');

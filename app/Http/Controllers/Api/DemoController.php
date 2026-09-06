@@ -11,8 +11,17 @@ use Illuminate\Support\Facades\Log;
 use App\Models\Setting;
 use App\Models\User;
 use App\Models\Invoice;
+use App\Models\InvoiceItem;
 use App\Models\Quote;
+use App\Models\QuoteItem;
+use App\Models\RecurringInvoice;
+use App\Models\RecurringInvoiceItem;
 use App\Models\Expense;
+use App\Models\ReceivedInvoice;
+use App\Models\Item;
+use App\Models\Client;
+use App\Models\Payment;
+use Database\Seeders\DemoDataSeeder;
 use Carbon\Carbon;
 
 class DemoController extends Controller
@@ -40,6 +49,8 @@ class DemoController extends Controller
         $remainingSeconds = max(0, $now->diffInSeconds($expiresAt, false));
         $remainingHours = round($remainingSeconds / 3600, 1);
 
+        $hasDemoData = Invoice::count() > 0 || Item::count() > 0;
+
         return response()->json([
             'is_demo' => $isDemo,
             'expires_at' => $expiresAt->toDateTimeString(),
@@ -47,6 +58,7 @@ class DemoController extends Controller
             'remaining_seconds' => $remainingSeconds,
             'remaining_hours' => $remainingHours,
             'is_expired' => $isExpired,
+            'has_demo_data' => $hasDemoData,
             'message' => 'Entorno Demo de Gridbase Bills activo',
         ]);
     }
@@ -127,7 +139,11 @@ class DemoController extends Controller
         }
 
         try {
-            Artisan::call('demo:reset', ['--force' => true]);
+            $withDemoData = $request->boolean('with_demo_data', true);
+            Artisan::call('demo:reset', [
+                '--force' => true,
+                '--clean' => !$withDemoData,
+            ]);
 
             $expiresAtStr = Setting::get('demo_expires_at');
             $expiresAt = $expiresAtStr ? Carbon::parse($expiresAtStr) : now()->addHours(72);
@@ -135,9 +151,12 @@ class DemoController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => 'Los datos de prueba han sido restablecidos con éxito.',
+                'message' => $withDemoData
+                    ? 'Los datos de prueba han sido restablecidos con éxito.'
+                    : 'La instancia ha sido restablecida en modo limpio.',
                 'expires_at' => $expiresAt->toDateTimeString(),
                 'remaining_seconds' => $remainingSeconds,
+                'has_demo_data' => $withDemoData,
             ]);
         } catch (\Throwable $e) {
             Log::error("[DemoController] Error reiniciando demo: " . $e->getMessage());
@@ -170,8 +189,13 @@ class DemoController extends Controller
         ]);
 
         try {
-            // 1. Limpieza y siembra de datos de prueba
-            Artisan::call('demo:reset', ['--force' => true]);
+            $withDemoData = $request->boolean('with_demo_data', true);
+
+            // 1. Limpieza y siembra condicional de datos de prueba
+            Artisan::call('demo:reset', [
+                '--force' => true,
+                '--clean' => !$withDemoData,
+            ]);
 
             // 2. Asignar el nombre de la empresa solicitada
             $companyName = trim($request->input('company_name'));
@@ -209,11 +233,13 @@ class DemoController extends Controller
                 }
             }
 
-            // Reasignar autoría de datos demo al usuario cliente principal
+            // Reasignar autoría de datos demo al usuario cliente principal si se sembraron datos
             if ($firstUser) {
-                Invoice::query()->update(['created_by' => $firstUser->id]);
-                Quote::query()->update(['created_by' => $firstUser->id]);
-                Expense::query()->update(['created_by' => $firstUser->id]);
+                if ($withDemoData) {
+                    Invoice::query()->update(['created_by' => $firstUser->id]);
+                    Quote::query()->update(['created_by' => $firstUser->id]);
+                    Expense::query()->update(['created_by' => $firstUser->id]);
+                }
                 Auth::login($firstUser);
             }
 
@@ -226,12 +252,13 @@ class DemoController extends Controller
 
             Cache::flush();
 
-            Log::info("[DemoController] Acceso Demo otorgado a '{$companyName}' con " . count($createdUsers) . " usuario(s).");
+            Log::info("[DemoController] Acceso Demo otorgado a '{$companyName}' con " . count($createdUsers) . " usuario(s) (Con datos: " . ($withDemoData ? 'Sí' : 'No') . ").");
 
             return response()->json([
                 'success' => true,
                 'message' => "Acceso Demo otorgado con éxito para {$companyName}.",
                 'company_name' => $companyName,
+                'with_demo_data' => $withDemoData,
                 'expires_at' => $expiresAt->toDateTimeString(),
                 'users' => $createdUsers,
                 'authenticated_user' => $firstUser ? [
@@ -246,6 +273,102 @@ class DemoController extends Controller
             return response()->json([
                 'success' => false,
                 'error' => 'Error al otorgar acceso demo: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Insert demo data into an existing session.
+     */
+    public function seedData(Request $request)
+    {
+        if (!Auth::check() && !$this->isAuthorizedDemoAdmin($request)) {
+            return response()->json([
+                'success' => false,
+                'error' => 'Debes iniciar sesión para modificar los datos de prueba.',
+            ], 401);
+        }
+
+        try {
+            \Illuminate\Support\Facades\DB::statement('SET FOREIGN_KEY_CHECKS=0;');
+            Payment::truncate();
+            InvoiceItem::truncate();
+            Invoice::truncate();
+            QuoteItem::truncate();
+            Quote::truncate();
+            RecurringInvoiceItem::truncate();
+            RecurringInvoice::truncate();
+            Expense::truncate();
+            ReceivedInvoice::truncate();
+            Item::truncate();
+            Client::truncate();
+            \Illuminate\Support\Facades\DB::statement('SET FOREIGN_KEY_CHECKS=1;');
+
+            $seeder = new DemoDataSeeder();
+            $seeder->run();
+
+            $currentUserId = Auth::id() ?? User::where('role', 'admin')->value('id');
+            if ($currentUserId) {
+                Invoice::query()->update(['created_by' => $currentUserId]);
+                Quote::query()->update(['created_by' => $currentUserId]);
+                Expense::query()->update(['created_by' => $currentUserId]);
+            }
+
+            Cache::flush();
+
+            return response()->json([
+                'success' => true,
+                'has_demo_data' => true,
+                'message' => '¡Datos de demostración cargados exitosamente!',
+            ]);
+        } catch (\Throwable $e) {
+            Log::error("[DemoController] Error sembrando datos demo: " . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'error' => 'Error al cargar datos de prueba: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Clear all demo transactional data (leave instance clean).
+     */
+    public function clearData(Request $request)
+    {
+        if (!Auth::check() && !$this->isAuthorizedDemoAdmin($request)) {
+            return response()->json([
+                'success' => false,
+                'error' => 'Debes iniciar sesión para modificar los datos de prueba.',
+            ], 401);
+        }
+
+        try {
+            \Illuminate\Support\Facades\DB::statement('SET FOREIGN_KEY_CHECKS=0;');
+            Payment::truncate();
+            InvoiceItem::truncate();
+            Invoice::truncate();
+            QuoteItem::truncate();
+            Quote::truncate();
+            RecurringInvoiceItem::truncate();
+            RecurringInvoice::truncate();
+            Expense::truncate();
+            ReceivedInvoice::truncate();
+            Item::truncate();
+            Client::truncate();
+            \Illuminate\Support\Facades\DB::statement('SET FOREIGN_KEY_CHECKS=1;');
+
+            Cache::flush();
+
+            return response()->json([
+                'success' => true,
+                'has_demo_data' => false,
+                'message' => '¡Instancia limpiada con éxito! Ahora puedes ingresar tus propios datos.',
+            ]);
+        } catch (\Throwable $e) {
+            Log::error("[DemoController] Error limpiando datos demo: " . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'error' => 'Error al limpiar datos de prueba: ' . $e->getMessage(),
             ], 500);
         }
     }

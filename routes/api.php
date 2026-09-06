@@ -40,6 +40,8 @@ Route::get('/demo/status', [DemoController::class, 'status']);
 Route::post('/demo/extend', [DemoController::class, 'extend']);
 Route::post('/demo/reset', [DemoController::class, 'reset']);
 Route::post('/demo/provision', [DemoController::class, 'provision']);
+Route::post('/demo/seed-data', [DemoController::class, 'seedData']);
+Route::post('/demo/clear-data', [DemoController::class, 'clearData']);
 
 // Lookups (Public or Protected, placing them here as public, but could be protected)
 Route::get('/lookup/rnc/{rnc}', [LookupController::class, 'rnc']);

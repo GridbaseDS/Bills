@@ -19,7 +19,7 @@ class DemoResetCommand extends Command
      *
      * @var string
      */
-    protected $signature = 'demo:reset {--force : Forzar reinicio ignorando si ya expiró}';
+    protected $signature = 'demo:reset {--force : Forzar reinicio ignorando si ya expiró} {--clean : Iniciar instancia limpia sin datos de prueba}';
 
     /**
      * The console command description.
@@ -157,11 +157,15 @@ class DemoResetCommand extends Command
                 ['setting_value' => 'DOP', 'setting_group' => 'invoice']
             );
 
-            // 5. Sembrar datos demo transaccionales ricos
-            $this->info("  → Sembrando datos transaccionales demo (clientes, facturas e-CF, compras 606, pagos)...");
-            $demoSeeder = new DemoDataSeeder();
-            $demoSeeder->run();
-            $this->info("  ✓ Datos demo sembrados con éxito");
+            // 5. Sembrar datos demo transaccionales ricos si no se especificó --clean
+            if ($this->option('clean')) {
+                $this->info("  ✨ Modo limpio activo: No se insertaron datos de demostración.");
+            } else {
+                $this->info("  → Sembrando datos transaccionales demo (clientes, facturas e-CF, compras 606, pagos)...");
+                $demoSeeder = new DemoDataSeeder();
+                $demoSeeder->run();
+                $this->info("  ✓ Datos demo sembrados con éxito");
+            }
 
             // 6. Limpiar cachés
             Cache::flush();

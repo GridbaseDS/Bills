@@ -406,6 +406,7 @@ class SettingController extends Controller
             'is_demo' => (bool) config('app.demo_mode', false),
             'demo_expires_at' => $all['demo_expires_at'] ?? null,
             'demo_remaining_seconds' => !empty($all['demo_expires_at']) ? max(0, now()->diffInSeconds(\Carbon\Carbon::parse($all['demo_expires_at']), false)) : 0,
+            'has_demo_data' => \App\Models\Invoice::count() > 0 || \App\Models\Item::count() > 0,
             'system_version' => $changelog['version'] ?? '1.0.0',
             'system_changelog' => $changelog['changes'] ?? [],
         ]);

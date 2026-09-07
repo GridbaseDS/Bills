@@ -702,8 +702,6 @@ hr { border: 0; border-top: 1px solid var(--color-border); margin: var(--spacing
 
    TOPBAR HEADER
 
-   ═══════════════════════════════════════════════════════════ */
-
 .topbar {
 
   display: flex;
@@ -716,13 +714,55 @@ hr { border: 0; border-top: 1px solid var(--color-border); margin: var(--spacing
 
   flex-shrink: 0;
 
+  position: relative;
+
+  gap: var(--spacing-md);
+
 }
 
+.topbar-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+  min-width: 0;
+}
 
+.topbar-search {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  display: inline-flex;
+  align-items: center;
+  z-index: 10;
+}
 
-.topbar-actions { display: flex; align-items: center; gap: var(--spacing-sm); }
+.topbar-search .search-input {
+  width: 360px;
+  max-width: 440px;
+  cursor: pointer;
+}
 
+@media (max-width: 1100px) {
+  .topbar-search .search-input {
+    width: 280px;
+  }
+}
 
+@media (max-width: 860px) {
+  .topbar-search {
+    position: static;
+    transform: none;
+  }
+}
+
+.topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  flex: 1;
+  justify-content: flex-end;
+}
 
 /* ── Search Wrapper ── */
 
@@ -760,7 +800,7 @@ hr { border: 0; border-top: 1px solid var(--color-border); margin: var(--spacing
 
 .search-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); width: 16px; height: 16px; color: var(--color-text-muted); pointer-events: none; }
 
-.search-shortcuts { position: absolute; right: 8px; display: flex; gap: 3px; pointer-events: none; align-items: center; }
+.search-shortcuts { position: absolute; right: 8px; top: 50%; transform: translateY(-50%); display: flex; gap: 3px; pointer-events: none; align-items: center; }
 
 .keycap {
 

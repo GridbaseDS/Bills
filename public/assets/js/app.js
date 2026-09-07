@@ -1203,18 +1203,18 @@ window.App = {
                 </aside>
                 <main class="main-content">
                     <div class="topbar">
-                        <div style="display:flex;align-items:center;gap:12px">
+                        <div class="topbar-left" style="display:flex;align-items:center;gap:12px">
                             <button class="btn-icon sidebar-toggle" id="sidebar-toggle" onclick="App.toggleSidebar()">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
                             </button>
                             <div id="greeting-text" style="font-size:14px;font-weight:600;color:var(--color-text);white-space:nowrap;">
                                 ${this.getGreeting()}, <span style="color:var(--color-primary)">${this.state.user.name.split(' ')[0]}</span>
                             </div>
-                            <div class="search-wrapper" id="search-wrapper">
-                                <svg class="search-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-                                <input class="search-input" type="text" placeholder="Buscar facturas, clientes..." id="global-search-input">
-                                <div class="search-shortcuts"><span class="keycap">⌘</span><span class="keycap">K</span></div>
-                            </div>
+                        </div>
+                        <div class="search-wrapper topbar-search" id="search-wrapper">
+                            <svg class="search-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                            <input class="search-input" type="text" placeholder="Buscar facturas, clientes..." id="global-search-input">
+                            <div class="search-shortcuts"><span class="keycap">⌘</span><span class="keycap">K</span></div>
                         </div>
                         <div class="topbar-actions">
                             <div id="dgii-status-pill" style="display:inline-flex;align-items:center;gap:6px;padding:4px 12px;border-radius:var(--radius-full);font-size:11px;font-weight:600;letter-spacing:0.3px;cursor:pointer;transition:all .2s ease;background:var(--color-border);color:var(--color-text-muted);" onclick="${(this.state.is_demo || window.location.hostname.includes('bdemo')) ? "App.showToast('Conexión con la DGII activa y verificada (Entorno Demo)', 'success')" : "App.navigate('pruebas-dgii')"}" title="Estado de conexión DGII">

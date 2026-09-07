@@ -408,7 +408,7 @@ const AuditTrailModule = {
 
                             <!-- Modifying Documents Nodes (Credit Notes / Debit Notes) -->
                             ${modifyingDocs.map(doc => `
-                                <div class="node-card ${doc.is_credit_note ? 'node-credit' : 'node-payment'}" id="node-doc-${doc.id}" data-node-type="modifier">
+                                <div class="node-card ${doc.is_credit_note ? 'node-credit' : 'node-debit'}" id="node-doc-${doc.id}" data-node-type="modifier">
                                     <div class="node-port port-in" title="Entrada"></div>
                                     <div class="node-port port-out" title="Salida"></div>
                                     <div class="node-header" style="background:${doc.is_credit_note ? 'rgba(239,68,68,0.08)' : 'rgba(245,158,11,0.08)'};color:${doc.is_credit_note ? '#dc2626' : '#d97706'};">
@@ -422,7 +422,7 @@ const AuditTrailModule = {
                                     </div>
                                     <div class="node-body">
                                         <div class="node-code">${doc.encf || doc.invoice_number}</div>
-                                        <div class="node-amount" style="color:${doc.is_credit_note ? 'var(--color-danger-icon)' : 'var(--color-text-primary)'};">
+                                        <div class="node-amount" style="color:${doc.is_credit_note ? 'var(--color-danger-icon)' : 'var(--color-warning-text, #f59e0b)'};">
                                             ${doc.is_credit_note ? '-' : '+'}${App.formatCurrency(doc.total, doc.currency)}
                                         </div>
                                         <div class="node-meta">
@@ -433,7 +433,7 @@ const AuditTrailModule = {
                                         </div>
                                     </div>
                                     <div class="node-footer">
-                                        <a href="#facturas/${doc.id}" class="btn btn-secondary btn-sm" style="font-size:11px;padding:3px 8px;">Ver NC</a>
+                                        <a href="#facturas/${doc.id}" class="btn btn-secondary btn-sm" style="font-size:11px;padding:3px 8px;">Ver ${doc.is_credit_note ? 'NC' : 'ND'}</a>
                                     </div>
                                 </div>
                             `).join('')}
@@ -685,6 +685,9 @@ const AuditTrailModule = {
                 <marker id="arrow-credit" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
                     <path d="M 0 1 L 10 5 L 0 9 z" fill="#ef4444" />
                 </marker>
+                <marker id="arrow-debit" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                    <path d="M 0 1 L 10 5 L 0 9 z" fill="#f59e0b" />
+                </marker>
                 <marker id="arrow-payment" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
                     <path d="M 0 1 L 10 5 L 0 9 z" fill="#10b981" />
                 </marker>
@@ -724,9 +727,12 @@ const AuditTrailModule = {
         // 2. Root Invoice to each Modifying Document (Credit / Debit Notes)
         const modifyingNodes = container.querySelectorAll('[data-node-type="modifier"]');
         modifyingNodes.forEach(m => {
-            drawCurve('node-root', m.id, 'path-credit', 'arrow-credit');
+            const isDebit = m.classList.contains('node-debit');
+            const pathClass = isDebit ? 'path-debit' : 'path-credit';
+            const markerId = isDebit ? 'arrow-debit' : 'arrow-credit';
+            drawCurve('node-root', m.id, pathClass, markerId);
             // And from modifier to outcome
-            drawCurve(m.id, 'node-outcome', 'path-credit', 'arrow-outcome');
+            drawCurve(m.id, 'node-outcome', pathClass, 'arrow-outcome');
         });
 
         // 3. Root Invoice to each Payment

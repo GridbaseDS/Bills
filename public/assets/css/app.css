@@ -3740,6 +3740,27 @@ tr:hover .row-actions { opacity: 1; }
   stroke-dasharray: 6 4;
 }
 
+.node-connector-path.path-debit {
+  stroke: #f59e0b;
+  stroke-dasharray: 6 4;
+}
+
+[data-theme='dark'] .node-connector-path.path-debit {
+  stroke: #fbbf24;
+}
+
+.node-card.node-debit {
+  border-color: rgba(245, 158, 11, 0.4);
+}
+
+.node-card.node-debit .node-port {
+  border-color: #f59e0b;
+}
+
+[data-theme='dark'] .node-card.node-debit {
+  border-color: rgba(245, 158, 11, 0.5);
+}
+
 .node-connector-path.path-payment {
   stroke: #10b981;
 }

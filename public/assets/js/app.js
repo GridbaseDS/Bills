@@ -17,7 +17,7 @@ import ReportsModule from './modules/reports.js?v=207';
 import SetupModule from './modules/setup.js?v=201';
 import ExpensesModule from './modules/expenses.js?v=201';
 import UsersModule from './modules/users.js?v=204';
-import AuditTrailModule from './modules/audit-trail.js?v=224';
+import AuditTrailModule from './modules/audit-trail.js?v=225';
 import { WebAuthnHelper } from './helpers/webauthn-helper.js?v=207';
 
 

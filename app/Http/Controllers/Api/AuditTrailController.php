@@ -140,27 +140,48 @@ class AuditTrailController extends Controller
 
         $effectiveInvoicedTotal = max(0, $originalTotal - $creditNotesTotal + $debitNotesTotal);
         $paymentsTotal = (float)$payments->sum('amount');
-        $netBalance = max(0, $effectiveInvoicedTotal - $paymentsTotal);
+        $rawDiff = $effectiveInvoicedTotal - $paymentsTotal;
 
         // Status Determination
         $isCancelled = $rootInvoice->status === 'cancelled';
         $isFullyCredited = ($creditNotesTotal >= $originalTotal && $originalTotal > 0);
 
+        $netBalance = 0;
+        $creditBalance = 0;
         $financialStatus = 'pending';
         $financialStatusLabel = 'Pendiente de Pago';
 
         if ($isCancelled) {
             $financialStatus = 'cancelled';
             $financialStatusLabel = 'Anulada';
-        } elseif ($isFullyCredited) {
+            $netBalance = 0;
+            $creditBalance = 0;
+        } elseif ($rawDiff < -0.009) {
+            // Customer overpaid or Credit Note reduced invoiced amount after payment
+            $financialStatus = 'credit_in_favor';
+            $financialStatusLabel = 'Saldo a Favor del Cliente';
+            $netBalance = 0;
+            $creditBalance = round(abs($rawDiff), 2);
+        } elseif ($isFullyCredited && $paymentsTotal <= 0.009) {
             $financialStatus = 'credited';
             $financialStatusLabel = 'Anulada por Nota de Crédito';
-        } elseif ($netBalance <= 0.01 && ($paymentsTotal > 0 || $creditNotesTotal > 0)) {
+            $netBalance = 0;
+            $creditBalance = 0;
+        } elseif (abs($rawDiff) <= 0.009) {
             $financialStatus = 'settled';
             $financialStatusLabel = 'Saldada Totalmente';
-        } elseif ($paymentsTotal > 0 || $creditNotesTotal > 0) {
-            $financialStatus = 'partial';
-            $financialStatusLabel = 'Saldo Parcial';
+            $netBalance = 0;
+            $creditBalance = 0;
+        } elseif ($rawDiff > 0.009) {
+            $netBalance = round($rawDiff, 2);
+            $creditBalance = 0;
+            if ($paymentsTotal > 0.009 || $creditNotesTotal > 0.009) {
+                $financialStatus = 'partial';
+                $financialStatusLabel = 'Saldo Parcial';
+            } else {
+                $financialStatus = 'pending';
+                $financialStatusLabel = 'Pendiente de Pago';
+            }
         }
 
         // 6. Assemble Timeline Events
@@ -416,6 +437,8 @@ class AuditTrailController extends Controller
                 'effective_invoiced_total' => $effectiveInvoicedTotal,
                 'payments_total' => $paymentsTotal,
                 'net_balance' => $netBalance,
+                'credit_balance' => $creditBalance,
+                'raw_diff' => $rawDiff,
                 'financial_status' => $financialStatus,
                 'financial_status_label' => $financialStatusLabel,
                 'is_fully_credited' => $isFullyCredited,

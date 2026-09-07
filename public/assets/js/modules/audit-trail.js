@@ -258,6 +258,7 @@ const AuditTrailModule = {
 
         const statusColors = {
             settled: { bg: 'rgba(16,185,129,0.08)', border: '#10b981', text: '#059669', badge: 'badge-active', label: 'Saldada Totalmente' },
+            credit_in_favor: { bg: 'rgba(14,165,233,0.08)', border: '#0ea5e9', text: '#0284c7', badge: 'badge-info', label: 'Saldo a Favor' },
             credited: { bg: 'rgba(239,68,68,0.08)', border: '#ef4444', text: '#dc2626', badge: 'badge-overdue', label: 'Anulada por Nota de Crédito' },
             cancelled: { bg: 'rgba(239,68,68,0.08)', border: '#ef4444', text: '#dc2626', badge: 'badge-overdue', label: 'Factura Anulada' },
             partial: { bg: 'rgba(245,158,11,0.08)', border: '#f59e0b', text: '#d97706', badge: 'badge-sent', label: 'Saldo Parcial' },
@@ -450,7 +451,7 @@ const AuditTrailModule = {
                                     <div class="node-body">
                                         <div class="node-code" style="text-transform:capitalize;">${p.payment_method || 'Pago'}</div>
                                         <div class="node-amount" style="color:var(--color-success-icon);">
-                                            -${App.formatCurrency(p.amount, root.currency)}
+                                            +${App.formatCurrency(p.amount, root.currency)}
                                         </div>
                                         <div class="node-meta">
                                             <div>Fecha: ${App.formatDate(p.payment_date)}</div>
@@ -489,28 +490,70 @@ const AuditTrailModule = {
                                     <span class="badge ${currentStatus.badge}" style="font-size:9px;">${currentStatus.label}</span>
                                 </div>
                                 <div class="node-body">
-                                    <div style="font-size:11px;color:var(--color-text-muted);text-transform:uppercase;font-weight:600;">Saldo Efectivo Pendiente</div>
-                                    <div class="node-amount" style="font-size:24px;color:${currentStatus.text};">
-                                        ${App.formatCurrency(fin.net_balance, root.currency)}
-                                    </div>
+                                    ${fin.credit_balance > 0 ? `
+                                        <div style="font-size:11px;color:#0284c7;text-transform:uppercase;font-weight:700;letter-spacing:0.5px;">Crédito a Favor del Cliente</div>
+                                        <div class="node-amount" style="font-size:24px;color:#0284c7;">
+                                            +${App.formatCurrency(fin.credit_balance, root.currency)}
+                                        </div>
+                                    ` : `
+                                        <div style="font-size:11px;color:var(--color-text-muted);text-transform:uppercase;font-weight:600;">Saldo Efectivo Pendiente</div>
+                                        <div class="node-amount" style="font-size:24px;color:${currentStatus.text};">
+                                            ${App.formatCurrency(fin.net_balance, root.currency)}
+                                        </div>
+                                    `}
+
                                     <div style="font-size:12px;color:var(--color-text-muted);background:var(--color-bg-primary);padding:10px 12px;border-radius:var(--radius-md);border:1px solid var(--color-border);margin-top:8px;">
-                                        <div style="display:flex;justify-content:space-between;margin-bottom:3px;">
+                                        <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
                                             <span>Original Facturado:</span>
                                             <strong>${App.formatCurrency(fin.original_total, root.currency)}</strong>
                                         </div>
                                         ${fin.credit_notes_total > 0 ? `
-                                            <div style="display:flex;justify-content:space-between;margin-bottom:3px;color:var(--color-danger-icon);">
+                                            <div style="display:flex;justify-content:space-between;margin-bottom:4px;color:var(--color-danger-icon);">
                                                 <span>(-) Notas de Crédito:</span>
                                                 <strong>-${App.formatCurrency(fin.credit_notes_total, root.currency)}</strong>
                                             </div>
                                         ` : ''}
+                                        ${fin.debit_notes_total > 0 ? `
+                                            <div style="display:flex;justify-content:space-between;margin-bottom:4px;color:var(--color-warning-text);">
+                                                <span>(+) Notas de Débito:</span>
+                                                <strong>+${App.formatCurrency(fin.debit_notes_total, root.currency)}</strong>
+                                            </div>
+                                        ` : ''}
+                                        ${(fin.credit_notes_total > 0 || fin.debit_notes_total > 0) ? `
+                                            <div style="display:flex;justify-content:space-between;padding-top:4px;margin-bottom:4px;border-top:1px dashed var(--color-border);font-weight:600;color:var(--color-text-primary);">
+                                                <span>(=) Facturado Neto Ajustado:</span>
+                                                <span>${App.formatCurrency(fin.effective_invoiced_total, root.currency)}</span>
+                                            </div>
+                                        ` : ''}
                                         ${fin.payments_total > 0 ? `
-                                            <div style="display:flex;justify-content:space-between;color:var(--color-success-icon);">
+                                            <div style="display:flex;justify-content:space-between;margin-bottom:4px;color:var(--color-success-icon);">
                                                 <span>(-) Total Pagado:</span>
                                                 <strong>-${App.formatCurrency(fin.payments_total, root.currency)}</strong>
                                             </div>
                                         ` : ''}
+                                        ${fin.credit_balance > 0 ? `
+                                            <div style="display:flex;justify-content:space-between;padding-top:6px;margin-top:4px;border-top:1px solid var(--color-border);font-weight:700;color:#0284c7;">
+                                                <span>(=) Saldo a Favor del Cliente:</span>
+                                                <span>+${App.formatCurrency(fin.credit_balance, root.currency)}</span>
+                                            </div>
+                                        ` : (fin.net_balance > 0 ? `
+                                            <div style="display:flex;justify-content:space-between;padding-top:6px;margin-top:4px;border-top:1px solid var(--color-border);font-weight:700;color:${currentStatus.text};">
+                                                <span>(=) Saldo Pendiente por Cobrar:</span>
+                                                <span>${App.formatCurrency(fin.net_balance, root.currency)}</span>
+                                            </div>
+                                        ` : `
+                                            <div style="display:flex;justify-content:space-between;padding-top:6px;margin-top:4px;border-top:1px solid var(--color-border);font-weight:700;color:var(--color-success-icon);">
+                                                <span>(=) Balance Pendiente:</span>
+                                                <span>${App.formatCurrency(0, root.currency)}</span>
+                                            </div>
+                                        `)}
                                     </div>
+
+                                    ${fin.credit_balance > 0 ? `
+                                        <div style="margin-top:8px;padding:8px 10px;background:rgba(14,165,233,0.08);border:1px solid rgba(14,165,233,0.2);border-radius:var(--radius-md);font-size:11px;color:#0369a1;line-height:1.4;">
+                                            <strong>Aviso Contable:</strong> El pago se registró antes de la Nota de Crédito. El cliente dispone de <strong>${App.formatCurrency(fin.credit_balance, root.currency)}</strong> a su favor.
+                                        </div>
+                                    ` : ''}
                                 </div>
                             </div>
                         </div>

@@ -64,7 +64,7 @@ Route::get('/dgii-fc250k', function () {
     $html = '<h2>Archivos FC&lt;250k para subir al portal DGII</h2><ul>';
     foreach ($files as $f) {
         $name = basename($f);
-        $html .= "<li><a href='/dgii-fc250k/$name' download>📥 $name</a></li>";
+        $html .= "<li><a href='/dgii-fc250k/$name' download>$name</a></li>";
     }
     $html .= '</ul><p>Descarga todos y súbelos al portal DGII → "Facturas de consumo &lt; 250Mil"</p>';
     return $html;

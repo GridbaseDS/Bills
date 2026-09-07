@@ -703,23 +703,33 @@ hr { border: 0; border-top: 1px solid var(--color-border); margin: var(--spacing
    ═══════════════════════════════════════════════════════════ */
 
 .topbar {
-  display: flex !important;
+  display: grid !important;
+  grid-template-columns: 1fr auto 1fr;
   align-items: center !important;
-  justify-content: space-between !important;
   margin-bottom: var(--spacing-xl);
   flex-shrink: 0;
   gap: var(--spacing-md);
-  flex-wrap: nowrap !important;
   min-height: 48px;
 }
 
 .topbar-left {
   display: flex !important;
   align-items: center !important;
-  gap: 14px;
+  gap: 12px;
   min-width: 0;
-  flex: 1;
+  justify-self: start;
+  white-space: nowrap;
   flex-wrap: nowrap !important;
+}
+
+.topbar-center {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  justify-self: center;
+  width: 100%;
+  max-width: 380px;
+  min-width: 180px;
 }
 
 .topbar-actions {
@@ -727,13 +737,17 @@ hr { border: 0; border-top: 1px solid var(--color-border); margin: var(--spacing
   align-items: center !important;
   gap: var(--spacing-sm);
   justify-content: flex-end;
+  justify-self: end;
   flex-shrink: 0;
   flex-wrap: nowrap !important;
 }
 
-@media (max-width: 1024px) {
+@media (max-width: 1100px) {
   #greeting-text {
     display: none !important;
+  }
+  .topbar-center {
+    max-width: 280px;
   }
 }
 
@@ -743,9 +757,8 @@ hr { border: 0; border-top: 1px solid var(--color-border); margin: var(--spacing
   position: relative;
   display: inline-flex;
   align-items: center;
-  flex: 0 1 280px;
-  max-width: 320px;
-  min-width: 150px;
+  width: 100%;
+  max-width: 380px;
 }
 
 .search-input {
@@ -2472,9 +2485,9 @@ button .spinner:not(:only-child) {
 
 
 
-  .topbar { flex-direction: row !important; gap: 8px; align-items: center !important; justify-content: space-between !important; margin-bottom: var(--spacing-md); }
+  .topbar { display: flex !important; flex-direction: row !important; gap: 8px; align-items: center !important; justify-content: space-between !important; margin-bottom: var(--spacing-md); }
 
-  .search-wrapper { display: none !important; }
+  .topbar-center, .search-wrapper { display: none !important; }
 
   #greeting-text { display: none !important; }
 

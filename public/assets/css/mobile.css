@@ -80,7 +80,8 @@ input, select, textarea {
 
 .topbar .search-wrapper,
 .topbar .search-shortcuts,
-.topbar .vertical-divider {
+.topbar .vertical-divider,
+.topbar-center {
   display: none !important;
 }
 

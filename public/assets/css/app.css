@@ -4356,6 +4356,21 @@ tr:hover .row-actions { opacity: 1; }
   color: inherit !important;
 }
 
+/* ═══════════════════════════════════════════════════════════
+   SIDEBAR SECONDARY / SUPPORT SECTION
+   ═══════════════════════════════════════════════════════════ */
+.sidebar-help-section {
+  flex-shrink: 0;
+  background: transparent;
+}
+.sidebar-help-section .sidebar-menu {
+  gap: 2px;
+}
+.hover-row:hover {
+  background-color: var(--bg-hover) !important;
+}
+
+
 
 
 

@@ -18,6 +18,7 @@ import SetupModule from './modules/setup.js?v=201';
 import ExpensesModule from './modules/expenses.js?v=201';
 import UsersModule from './modules/users.js?v=204';
 import AuditTrailModule from './modules/audit-trail.js?v=228';
+import SupportModule from './modules/support.js?v=201';
 import { WebAuthnHelper } from './helpers/webauthn-helper.js?v=207';
 
 
@@ -657,6 +658,9 @@ window.App = {
                 case 'seguimiento': case 'seguimiento-comprobantes': case 'seguimiento-comprobante': case 'audit-trail':
                     AuditTrailModule.render(appContent, subId);
                     break;
+                case 'soporte': case 'support': case 'tickets':
+                    SupportModule.render(appContent, subId);
+                    break;
                 default:
                     history.replaceState(null, '', '/inicio');
                     DashboardModule.render(appContent);
@@ -1190,6 +1194,27 @@ window.App = {
                             </ul>
                         ` : ''}
                     </nav>
+                    <div class="sidebar-help-section" style="padding: 10px 14px 12px; border-top: 1px solid var(--color-border); margin-top: auto;">
+                        <ul class="sidebar-menu">
+                            <li>
+                                <a href="/soporte" class="sidebar-link">
+                                    <span class="sidebar-link-content">
+                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+                                        Soporte
+                                    </span>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="https://docs.gridbase.com.do/index.php?doc=gridbase-bills" target="_blank" rel="noopener noreferrer" class="sidebar-link" title="Documentación oficial">
+                                    <span class="sidebar-link-content">
+                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path></svg>
+                                        Documentación
+                                    </span>
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="opacity:0.6;"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
                     <div class="sidebar-footer">
                         <div class="profile-card" onclick="App.logout()" title="Cerrar Sesión">
                             <div class="profile-avatar">${userInitial}</div>
@@ -1618,6 +1643,17 @@ window.App = {
                     Pruebas DGII
                 </button>
                 `}
+                <div class="action-sheet-divider"></div>
+                <div class="action-sheet-title">Asistencia</div>
+                <button class="action-sheet-item" onclick="App.closeMoreMenu();App.navigate('soporte')">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+                    Soporte
+                </button>
+                <a href="https://docs.gridbase.com.do/index.php?doc=gridbase-bills" target="_blank" rel="noopener noreferrer" class="action-sheet-item" onclick="App.closeMoreMenu()" style="text-decoration:none;">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path></svg>
+                    Documentación
+                </a>
+                <div class="action-sheet-divider"></div>
                 <button class="action-sheet-item" onclick="App.closeMoreMenu();App.toggleTheme()">
                     ${themeIcon}
                     ${themeText}

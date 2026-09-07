@@ -27,6 +27,7 @@ use App\Http\Controllers\Api\DgiiLogController;
 use App\Http\Controllers\Api\POSController;
 use App\Http\Controllers\Api\DemoController;
 use App\Http\Controllers\Api\AuditTrailController;
+use App\Http\Controllers\Api\SupportTicketController;
 
 // Public Auth
 Route::post('/auth/login', [AuthController::class, 'login']);
@@ -230,8 +231,14 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/received-invoices/summary', [ReceivedInvoiceController::class, 'summary']);
         Route::get('/received-invoices/{id}', [ReceivedInvoiceController::class, 'show']);
         Route::post('/received-invoices/{id}/approve', [ReceivedInvoiceController::class, 'approve']);
-        Route::post('/received-invoices/{id}/reject', [ReceivedInvoiceController::class, 'reject']);
     });
+
+    // Support Tickets (Accessible to all authenticated users)
+    Route::get('/support/tickets', [SupportTicketController::class, 'index']);
+    Route::post('/support/tickets', [SupportTicketController::class, 'store']);
+    Route::get('/support/tickets/{id}', [SupportTicketController::class, 'show']);
+    Route::post('/support/tickets/{id}/reply', [SupportTicketController::class, 'reply']);
+    Route::patch('/support/tickets/{id}/status', [SupportTicketController::class, 'updateStatus']);
 });
 
 // ═══════════════════════════════════════════════════════════════════════

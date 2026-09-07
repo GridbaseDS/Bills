@@ -1232,7 +1232,7 @@ window.App = {
                             <button class="btn-icon sidebar-toggle" id="sidebar-toggle" onclick="App.toggleSidebar()">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
                             </button>
-                            <div id="greeting-text" style="font-size:14px;font-weight:600;color:var(--color-text);white-space:nowrap;">
+                            <div id="greeting-text" style="font-size:14px;font-weight:600;color:var(--color-text);white-space:nowrap;flex-shrink:0;">
                                 ${this.getGreeting()}, <span style="color:var(--color-primary)">${this.state.user.name.split(' ')[0]}</span>
                             </div>
                             <div class="search-wrapper" id="search-wrapper">

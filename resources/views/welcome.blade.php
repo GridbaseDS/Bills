@@ -40,7 +40,7 @@
                             newWorker.addEventListener('statechange', () => {
                                 if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
                                     if (window.App && typeof window.App.showToast === 'function') {
-                                        window.App.showToast('🚀 Nueva versión instalada. Recargando...', 'success', 4000);
+                                        window.App.showToast('Nueva versión instalada. Recargando...', 'success', 4000);
                                     }
                                     setTimeout(() => window.location.reload(), 1200);
                                 }

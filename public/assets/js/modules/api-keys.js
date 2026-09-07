@@ -289,9 +289,11 @@ export default {
                 </div>
                 <h3 style="margin:0;font-size:17px;font-weight:700;">API Key Creada: ${name}</h3>
             </div>
-            <div style="background:#fef3c7;border:1px solid #f59e0b;border-radius:var(--radius-md);padding:14px;margin-bottom:20px;">
-                <div style="font-size:12px;font-weight:700;color:#92400e;margin-bottom:6px;">IMPORTANTE — Copia este token ahora</div>
-                <div style="font-size:12px;color:#92400e;">Este token no se mostrará de nuevo. Si lo pierdes, tendrás que regenerarlo.</div>
+            <div class="notice-banner notice-warning" style="margin-bottom:20px;padding:12px 16px;">
+                <div class="notice-content">
+                    <div class="notice-title" style="font-size:12px;margin-bottom:4px;">IMPORTANTE — Copia este token ahora</div>
+                    <div class="notice-sub" style="font-size:12px;margin:0;">Este token no se mostrará de nuevo. Si lo pierdes, tendrás que regenerarlo.</div>
+                </div>
             </div>
             <div style="position:relative;margin-bottom:20px;">
                 <input type="text" id="token-display" value="${token}" readonly style="width:100%;font-family:monospace;font-size:13px;padding:12px;background:#1e1e2e;color:#cdd6f4;border:1px solid var(--color-border);border-radius:var(--radius-md);padding-right:80px;">

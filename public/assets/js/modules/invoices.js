@@ -325,7 +325,7 @@ const InvoicesModule = {
                             </p>
                             ${inv.dgii_track_id ? `<p style="margin:4px 0 0 0;font-size:12px;color:var(--color-text-muted);"><strong>DGII Track ID:</strong> <code>${inv.dgii_track_id}</code></p>` : ''}
                             ${inv.dgii_status === 'portal_pending' ? `
-                                <div style="margin-top:12px;padding:10px;background:#f5f3ff;border:1px solid #ddd6fe;border-radius:var(--radius-md);font-size:12px;color:#6d28d9;">
+                                <div class="notice-banner notice-purple" style="margin-top:12px;padding:10px 14px;font-size:12px;">
                                     <strong>FC<250k:</strong> Esta factura debe subirse manualmente al portal DGII → "Facturas de consumo < 250Mil"
                                 </div>
                             ` : ''}

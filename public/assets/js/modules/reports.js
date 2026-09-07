@@ -381,10 +381,10 @@ const ReportsModule = {
             // e-CF informational banner
             const bannerHtml = `
                 <tr><td colspan="10" style="padding:0;border:none;">
-                    <div style="background:linear-gradient(135deg,#eff6ff,#dbeafe);border:1px solid #93c5fd;border-radius:8px;padding:16px 20px;margin:12px 0;display:flex;align-items:flex-start;gap:12px;">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2" style="flex-shrink:0;margin-top:2px;"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
-                        <div style="font-size:13px;color:#1e40af;line-height:1.5;">
-                            <strong>Formato 607 - Ventas de Bienes y Servicios (Norma 07-2018)</strong><br>
+                    <div class="notice-banner notice-info">
+                        <svg class="notice-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+                        <div class="notice-content">
+                            <strong class="notice-title">Formato 607 - Ventas de Bienes y Servicios (Norma 07-2018)</strong><br>
                             Los emisores electrónicos (e-CF) reportan sus ventas en tiempo real a la DGII. Esta plantilla prellenada en Excel refleja los 23 campos oficiales requeridos por la DGII, incluyendo el desglose de formas de pago.
                         </div>
                     </div>
@@ -506,10 +506,10 @@ const ReportsModule = {
             // Formato 608 Banner
             const bannerHtml = `
                 <tr><td colspan="7" style="padding:0;border:none;">
-                    <div style="background:linear-gradient(135deg,#fef2f2,#fee2e2);border:1px solid #fca5a5;border-radius:8px;padding:16px 20px;margin:12px 0;display:flex;align-items:flex-start;gap:12px;">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#dc2626" stroke-width="2" style="flex-shrink:0;margin-top:2px;"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
-                        <div style="font-size:13px;color:#991b1b;line-height:1.5;">
-                            <strong>Formato 608 - Comprobantes Fiscales Anulados</strong><br>
+                    <div class="notice-banner notice-danger">
+                        <svg class="notice-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+                        <div class="notice-content">
+                            <strong class="notice-title">Formato 608 - Comprobantes Fiscales Anulados</strong><br>
                             Reporta los comprobantes fiscales y e-NCF anulados durante este período indicando el motivo oficial de anulación (códigos 01 al 09 de la DGII).
                         </div>
                     </div>
@@ -628,16 +628,16 @@ const ReportsModule = {
         // Banner informativo
         const bannerHtml = `
             <tr><td colspan="4" style="padding:0;border:none;">
-                <div style="background:linear-gradient(135deg,#f0fdf4,#dcfce7);border:1px solid #86efac;border-radius:8px;padding:16px 20px;margin:12px 0;display:flex;align-items:flex-start;gap:14px;">
-                    <div style="width:36px;height:36px;border-radius:8px;background:#16a34a;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:bold;font-size:14px;flex-shrink:0;">
+                <div class="notice-banner notice-success">
+                    <div class="notice-badge">
                         IT-1
                     </div>
-                    <div style="font-size:13px;color:#166534;line-height:1.5;flex:1;">
+                    <div class="notice-content">
                         <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
-                            <strong>Declaración Jurada y Pago de ITBIS (Formulario IT-1 y Anexo A Oficial)</strong>
+                            <strong class="notice-title">Declaración Jurada y Pago de ITBIS (Formulario IT-1 y Anexo A Oficial)</strong>
                             <span class="badge" style="background:#16a34a;color:#fff;font-size:11px;padding:3px 8px;border-radius:4px;">Plantilla Oficial DGII IT-1-2020.xls</span>
                         </div>
-                        <div style="margin-top:4px;color:#14532d;">
+                        <div class="notice-sub">
                             Contribuyente: <strong>${d.company_name}</strong> (RNC: <code>${d.tax_id}</code>) &bull; Período: <strong>${d.period_formatted}</strong> &bull; Fecha Límite de Pago: <strong>${d.deadline}</strong>
                         </div>
                     </div>
@@ -801,16 +801,16 @@ const ReportsModule = {
         // Banner informativo
         const bannerHtml = `
             <tr><td colspan="4" style="padding:0;border:none;">
-                <div style="background:linear-gradient(135deg,#f5f3ff,#ede9fe);border:1px solid #c4b5fd;border-radius:8px;padding:16px 20px;margin:12px 0;display:flex;align-items:flex-start;gap:14px;">
-                    <div style="width:36px;height:36px;border-radius:8px;background:#7c3aed;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:bold;font-size:14px;flex-shrink:0;">
+                <div class="notice-banner notice-purple">
+                    <div class="notice-badge">
                         IR-2
                     </div>
-                    <div style="font-size:13px;color:#5b21b6;line-height:1.5;flex:1;">
+                    <div class="notice-content">
                         <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
-                            <strong>Declaración Jurada Anual del Impuesto Sobre la Renta de Sociedades (Formulario IR-2 Versión 2026)</strong>
+                            <strong class="notice-title">Declaración Jurada Anual del Impuesto Sobre la Renta de Sociedades (Formulario IR-2 Versión 2026)</strong>
                             <span class="badge" style="background:#7c3aed;color:#fff;font-size:11px;padding:3px 8px;border-radius:4px;">Plantilla Oficial DGII (17 Hojas y Anexos)</span>
                         </div>
-                        <div style="margin-top:4px;color:#4c1d95;">
+                        <div class="notice-sub">
                             Contribuyente: <strong>${d.company_name}</strong> (RNC: <code>${d.tax_id}</code>) &bull; Ejercicio Fiscal: <strong>${d.period_formatted}</strong> &bull; Fecha Límite Legal: <strong>${d.deadline}</strong>
                         </div>
                     </div>
@@ -1168,21 +1168,21 @@ const ReportsModule = {
         let badgeHtml = '';
         if (isValid) {
             badgeHtml = `
-                <div style="background:#ecfdf5;border:1px solid #10b981;border-radius:8px;padding:16px;display:flex;align-items:center;gap:12px;margin-bottom:16px;">
-                    <div style="background:#10b981;color:#fff;border-radius:50%;width:32px;height:32px;display:flex;align-items:center;justify-content:center;font-weight:bold;font-size:18px;">✓</div>
-                    <div>
-                        <h4 style="margin:0;color:#065f46;font-size:15px;font-weight:700;">¡Documento 100% Válido para DGII!</h4>
-                        <p style="margin:2px 0 0 0;color:#047857;font-size:12px;">Cumple con el 100% de las normas, algoritmos de dígito verificador y estructuras de comprobantes de la DGII.</p>
+                <div class="notice-banner notice-success" style="margin-bottom:16px;">
+                    <div class="notice-badge" style="border-radius:50%;width:32px;height:32px;font-size:18px;">✓</div>
+                    <div class="notice-content">
+                        <h4 class="notice-title" style="margin:0;font-size:15px;">¡Documento 100% Válido para DGII!</h4>
+                        <p class="notice-sub" style="margin:2px 0 0 0;font-size:12px;">Cumple con el 100% de las normas, algoritmos de dígito verificador y estructuras de comprobantes de la DGII.</p>
                     </div>
                 </div>
             `;
         } else {
             badgeHtml = `
-                <div style="background:#fef2f2;border:1px solid #ef4444;border-radius:8px;padding:16px;display:flex;align-items:center;gap:12px;margin-bottom:16px;">
-                    <div style="background:#ef4444;color:#fff;border-radius:50%;width:32px;height:32px;display:flex;align-items:center;justify-content:center;font-weight:bold;font-size:18px;">✕</div>
-                    <div>
-                        <h4 style="margin:0;color:#991b1b;font-size:15px;font-weight:700;">Se encontraron ${errCount} errores en el reporte</h4>
-                        <p style="margin:2px 0 0 0;color:#b91c1c;font-size:12px;">La DGII rechazará este archivo. Revise el detalle a continuación para corregirlos.</p>
+                <div class="notice-banner notice-danger" style="margin-bottom:16px;">
+                    <div class="notice-badge" style="border-radius:50%;width:32px;height:32px;font-size:18px;">✕</div>
+                    <div class="notice-content">
+                        <h4 class="notice-title" style="margin:0;font-size:15px;">Se encontraron ${errCount} errores en el reporte</h4>
+                        <p class="notice-sub" style="margin:2px 0 0 0;font-size:12px;">La DGII rechazará este archivo. Revise el detalle a continuación para corregirlos.</p>
                     </div>
                 </div>
             `;
@@ -1192,8 +1192,8 @@ const ReportsModule = {
         if (errCount > 0) {
             errorsHtml = `
                 <div style="margin-bottom:16px;">
-                    <h5 style="color:#ef4444;font-size:13px;font-weight:700;margin-bottom:8px;">Errores que bloquean el envío (${errCount}):</h5>
-                    <ul style="margin:0;padding-left:20px;font-size:12px;color:#b91c1c;line-height:1.6;max-height:180px;overflow-y:auto;">
+                    <h5 style="color:var(--color-danger-icon, #ef4444);font-size:13px;font-weight:700;margin-bottom:8px;">Errores que bloquean el envío (${errCount}):</h5>
+                    <ul style="margin:0;padding-left:20px;font-size:12px;color:var(--color-danger-text, #f87171);line-height:1.6;max-height:180px;overflow-y:auto;">
                         ${res.errors.map(err => `<li>${err}</li>`).join('')}
                     </ul>
                 </div>
@@ -1204,8 +1204,8 @@ const ReportsModule = {
         if (warnCount > 0) {
             warningsHtml = `
                 <div style="margin-bottom:16px;">
-                    <h5 style="color:#d97706;font-size:13px;font-weight:700;margin-bottom:8px;">Advertencias informativas (${warnCount}):</h5>
-                    <ul style="margin:0;padding-left:20px;font-size:12px;color:#b45309;line-height:1.6;max-height:120px;overflow-y:auto;">
+                    <h5 style="color:var(--color-warning-text, #f59e0b);font-size:13px;font-weight:700;margin-bottom:8px;">Advertencias informativas (${warnCount}):</h5>
+                    <ul style="margin:0;padding-left:20px;font-size:12px;color:var(--color-warning-text, #fbbf24);line-height:1.6;max-height:120px;overflow-y:auto;">
                         ${res.warnings.map(w => `<li>${w}</li>`).join('')}
                     </ul>
                 </div>

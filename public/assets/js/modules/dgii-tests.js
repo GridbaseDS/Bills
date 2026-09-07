@@ -392,9 +392,7 @@ export default {
             // Overall status
             const allOk = res.log.every(e => e.status === 'ok' || e.status === 'skip');
             html += `
-                <div style="margin-top:16px;padding:16px;border-radius:var(--radius-md);text-align:center;font-weight:700;font-size:15px;${
-                    allOk ? 'background:#f0fdf4;color:#16a34a;border:1px solid #bbf7d0;' : 'background:#fef2f2;color:#dc2626;border:1px solid #fecaca;'
-                }">
+                <div class="notice-banner ${allOk ? 'notice-success' : 'notice-danger'}" style="margin-top:16px;text-align:center;font-weight:700;font-size:14px;justify-content:center;">
                     ${allOk ? 'TODOS LOS PASOS COMPLETADOS — El sistema está listo para producción' : 'HAY ERRORES — Revisa los pasos marcados en rojo'}
                 </div>
             `;

@@ -625,12 +625,12 @@ export default {
                             <p style="color:var(--color-text-muted);font-size:13px;margin:0 0 24px;">Datos fiscales del emisor, certificado digital y secuencias e-NCF para facturación electrónica.</p>
 
                             <!-- Preset: Datos de Prueba DGII -->
-                            <div id="dgii_preset_banner" style="background:rgba(245,158,11,0.06);border:1px solid rgba(245,158,11,0.25);border-radius:var(--radius-lg);padding:14px 20px;margin-bottom:20px;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;">
-                                <div>
-                                    <div style="font-size:13px;font-weight:600;color:#b45309;">Preset de Certificación DGII</div>
-                                    <div style="font-size:12px;color:var(--color-text-muted);margin-top:2px;">Carga automáticamente los datos del emisor y secuencias del set de pruebas oficial (RNC 40214827087).</div>
+                            <div id="dgii_preset_banner" class="notice-banner notice-warning" style="align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:20px;">
+                                <div class="notice-content">
+                                    <div class="notice-title" style="font-size:13px;">Preset de Certificación DGII</div>
+                                    <div class="notice-sub" style="margin-top:2px;">Carga automáticamente los datos del emisor y secuencias del set de pruebas oficial (RNC 40214827087).</div>
                                 </div>
-                                <button type="button" id="btn_dgii_load_preset" class="btn btn-secondary" style="white-space:nowrap;display:inline-flex;align-items:center;gap:6px;border-color:rgba(245,158,11,0.4);color:#b45309;font-weight:600;">
+                                <button type="button" id="btn_dgii_load_preset" class="btn btn-secondary" style="white-space:nowrap;display:inline-flex;align-items:center;gap:6px;font-weight:600;">
                                     <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
                                     Cargar Datos de Prueba
                                 </button>
@@ -862,7 +862,7 @@ export default {
                                     <li>Configuraciones de la empresa (se restaurarán las de fábrica)</li>
                                 </ul>
                                 <p style="font-size:13px;font-weight:600;margin:0 0 20px;color:var(--color-text);">
-                                    🔑 Tu usuario actual, tu contraseña y tu rol de administrador se conservarán para que puedas seguir accediendo al sistema vacío.
+                                    Tu usuario actual, tu contraseña y tu rol de administrador se conservarán para que puedas seguir accediendo al sistema vacío.
                                 </p>
                                 <div class="form-group" style="margin-bottom:20px;">
                                     <label class="form-label" style="font-weight:600;">Escribe tu correo de usuario para confirmar:</label>
@@ -2226,7 +2226,7 @@ export default {
                     if (tab.dataset.tab === 'apikeys' && !apiKeysLoaded) {
                         apiKeysLoaded = true;
                         try {
-                            const mod = await import('./api-keys.js?v=58');
+                            const mod = await import('./api-keys.js?v=59');
                             mod.default.render(document.getElementById('api-keys-container'));
                         } catch (e) {
                             document.getElementById('api-keys-container').innerHTML = '<div class="text-red">Error al cargar módulo de API Keys</div>';

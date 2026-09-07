@@ -236,8 +236,13 @@ class InvoiceController extends Controller
         ];
 
         $htmlBody = view('emails.document', $emailData)->render();
-        \Illuminate\Support\Facades\Mail::html($htmlBody, function ($message) use ($invoice, $subject, $pdfContent, $filename) {
-            $message->to($invoice->client->email)->subject($subject)
+        $fromEmail = config('mail.from.address') ?: 'bills@gridbase.com.do';
+        $fromName  = config('mail.from.name') ?: 'Gridbase Bills';
+
+        \Illuminate\Support\Facades\Mail::html($htmlBody, function ($message) use ($invoice, $subject, $pdfContent, $filename, $fromEmail, $fromName) {
+            $message->from($fromEmail, $fromName)
+                    ->to($invoice->client->email)
+                    ->subject($subject)
                     ->attachData($pdfContent, $filename, ['mime' => 'application/pdf']);
         });
 
@@ -478,9 +483,12 @@ class InvoiceController extends Controller
         ];
 
         $htmlBody = view('emails.document', $emailData)->render();
+        $fromEmail = config('mail.from.address') ?: 'bills@gridbase.com.do';
+        $fromName  = config('mail.from.name') ?: 'Gridbase Bills';
 
-        \Illuminate\Support\Facades\Mail::html($htmlBody, function ($message) use ($invoice, $subject, $pdfContent, $filename) {
-            $message->to($invoice->client->email)
+        \Illuminate\Support\Facades\Mail::html($htmlBody, function ($message) use ($invoice, $subject, $pdfContent, $filename, $fromEmail, $fromName) {
+            $message->from($fromEmail, $fromName)
+                    ->to($invoice->client->email)
                     ->subject($subject)
                     ->attachData($pdfContent, $filename, ['mime' => 'application/pdf']);
         });
@@ -632,9 +640,12 @@ class InvoiceController extends Controller
             ];
 
             $htmlBody = view('emails.document', $emailData)->render();
+            $fromEmail = config('mail.from.address') ?: 'bills@gridbase.com.do';
+            $fromName  = config('mail.from.name') ?: 'Gridbase Bills';
 
-            \Illuminate\Support\Facades\Mail::html($htmlBody, function ($message) use ($invoice, $subject, $pdfContent, $filename) {
-                $message->to($invoice->client->email)
+            \Illuminate\Support\Facades\Mail::html($htmlBody, function ($message) use ($invoice, $subject, $pdfContent, $filename, $fromEmail, $fromName) {
+                $message->from($fromEmail, $fromName)
+                        ->to($invoice->client->email)
                         ->subject($subject)
                         ->attachData($pdfContent, $filename, ['mime' => 'application/pdf']);
             });

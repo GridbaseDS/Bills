@@ -34,15 +34,25 @@ class SettingController extends Controller
         ]);
 
         try {
+            $fromEmail = trim($request->input('from_email') ?? '');
+            if (empty($fromEmail)) {
+                $fromEmail = Setting::get('smtp_from_email') ?: (Setting::get('company_email') ?: 'bills@gridbase.com.do');
+            }
+
+            $fromName = trim($request->input('from_name') ?? '');
+            if (empty($fromName)) {
+                $fromName = Setting::get('smtp_from_name') ?: (Setting::get('company_name') ?: 'Gridbase Bills');
+            }
+
             // Use input() to avoid collision with the HTTP Host header
             $smtpSettings = [
-                'host'       => $request->input('host', 'localhost'),
-                'port'       => $request->input('port', 25),
+                'host'       => trim($request->input('host') ?? '') ?: 'localhost',
+                'port'       => (int)($request->input('port') ?? 25) ?: 25,
                 'encryption' => $request->input('encryption', null),
                 'username'   => $request->input('username', ''),
                 'password'   => $request->input('password', ''),
-                'from_email' => $request->input('from_email', 'bills@gridbase.com.do'),
-                'from_name'  => $request->input('from_name', 'Gridbase Bills'),
+                'from_email' => $fromEmail,
+                'from_name'  => $fromName,
             ];
 
             // Use the centralized config method
@@ -55,9 +65,10 @@ class SettingController extends Controller
                 : "SMTP ({$host}:" . config('mail.mailers.smtp.port') . ($encryption ? "/{$encryption}" : '') . ")";
 
             \Illuminate\Support\Facades\Mail::raw(
-                "¡Felicidades! Tu configuración de correo está funcionando perfectamente en Gridbase Bills.\n\nMétodo: {$method}\nHost: " . config('mail.mailers.smtp.host') . "\nPuerto: " . config('mail.mailers.smtp.port') . "\nCifrado: " . (config('mail.mailers.smtp.encryption') ?: 'Ninguno'),
-                function ($message) use ($request) {
-                    $message->to($request->input('test_email'))
+                "¡Felicidades! Tu configuración de correo está funcionando perfectamente en Gridbase Bills.\n\nMétodo: {$method}\nHost: " . config('mail.mailers.smtp.host') . "\nPuerto: " . config('mail.mailers.smtp.port') . "\nCifrado: " . (config('mail.mailers.smtp.encryption') ?: 'Ninguno') . "\nRemitente: {$fromEmail} ({$fromName})",
+                function ($message) use ($request, $fromEmail, $fromName) {
+                    $message->from($fromEmail, $fromName)
+                            ->to($request->input('test_email'))
                             ->subject('✅ Prueba de Conexión Exitosa - Gridbase Bills');
                 }
             );

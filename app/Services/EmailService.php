@@ -13,14 +13,17 @@ class EmailService
     {
         $settings = Setting::getAll();
         
+        $fromEmail = trim($settings['smtp_from_email'] ?? '') ?: (trim($settings['company_email'] ?? '') ?: 'bills@gridbase.com.do');
+        $fromName  = trim($settings['smtp_from_name'] ?? '') ?: (trim($settings['company_name'] ?? '') ?: 'Gridbase Bills');
+
         $this->config = [
-            'host'       => $settings['smtp_host'] ?? 'localhost',
-            'port'       => (int)($settings['smtp_port'] ?? 25),
+            'host'       => trim($settings['smtp_host'] ?? '') ?: 'localhost',
+            'port'       => (int)($settings['smtp_port'] ?? 25) ?: 25,
             'username'   => $settings['smtp_username'] ?? '',
             'password'   => $settings['smtp_password'] ?? '',
             'encryption' => $settings['smtp_encryption'] ?? null,
-            'from_name'  => $settings['smtp_from_name'] ?? 'Gridbase Bills',
-            'from_email' => $settings['smtp_from_email'] ?? 'bills@gridbase.com.do',
+            'from_name'  => $fromName,
+            'from_email' => $fromEmail,
         ];
 
         // Apply config through the centralized method
@@ -38,8 +41,24 @@ class EmailService
         $encryption = $smtpSettings['encryption'] ?? $smtpSettings['smtp_encryption'] ?? null;
         $username = $smtpSettings['username'] ?? $smtpSettings['smtp_username'] ?? null;
         $password = $smtpSettings['password'] ?? $smtpSettings['smtp_password'] ?? null;
-        $fromEmail = $smtpSettings['from_email'] ?? $smtpSettings['smtp_from_email'] ?? 'bills@gridbase.com.do';
-        $fromName = $smtpSettings['from_name'] ?? $smtpSettings['smtp_from_name'] ?? 'Gridbase Bills';
+
+        // Resolve From address with safe fallbacks (never allow empty string)
+        $fromEmail = trim($smtpSettings['from_email'] ?? $smtpSettings['smtp_from_email'] ?? '');
+        if (empty($fromEmail)) {
+            $fromEmail = trim($smtpSettings['company_email'] ?? '') ?: (config('mail.from.address') ?: 'bills@gridbase.com.do');
+        }
+        if (empty($fromEmail)) {
+            $fromEmail = 'bills@gridbase.com.do';
+        }
+
+        // Resolve From name with safe fallbacks
+        $fromName = trim($smtpSettings['from_name'] ?? $smtpSettings['smtp_from_name'] ?? '');
+        if (empty($fromName)) {
+            $fromName = trim($smtpSettings['company_name'] ?? '') ?: (config('mail.from.name') ?: 'Gridbase Bills');
+        }
+        if (empty($fromName)) {
+            $fromName = 'Gridbase Bills';
+        }
 
         // Normalize encryption: treat empty strings and 'none' as null
         if (empty($encryption) || $encryption === 'none' || $encryption === 'null') {
@@ -273,8 +292,13 @@ class EmailService
                 'smtp_encryption' => config('mail.mailers.smtp.encryption'),
             ]);
 
-            Mail::html($htmlBody, function ($message) use ($toEmail, $toName, $subject, $attachPath, $attachName) {
-                $message->to($toEmail, $toName)->subject($subject);
+            $fromAddress = config('mail.from.address') ?: 'bills@gridbase.com.do';
+            $fromName    = config('mail.from.name') ?: 'Gridbase Bills';
+
+            Mail::html($htmlBody, function ($message) use ($toEmail, $toName, $subject, $attachPath, $attachName, $fromAddress, $fromName) {
+                $message->from($fromAddress, $fromName)
+                        ->to($toEmail, $toName)
+                        ->subject($subject);
                 if ($attachPath && file_exists($attachPath)) {
                     $message->attach($attachPath, ['as' => $attachName ?? basename($attachPath)]);
                 }

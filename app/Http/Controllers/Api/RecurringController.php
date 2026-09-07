@@ -252,9 +252,12 @@ class RecurringController extends Controller
             ];
 
             $htmlBody = view('emails.document', $emailData)->render();
+            $fromEmail = config('mail.from.address') ?: 'bills@gridbase.com.do';
+            $fromName  = config('mail.from.name') ?: 'Gridbase Bills';
 
-            Mail::html($htmlBody, function ($message) use ($invoice, $subject, $pdfContent, $filename) {
-                $message->to($invoice->client->email)
+            Mail::html($htmlBody, function ($message) use ($invoice, $subject, $pdfContent, $filename, $fromEmail, $fromName) {
+                $message->from($fromEmail, $fromName)
+                        ->to($invoice->client->email)
                         ->subject($subject)
                         ->attachData($pdfContent, $filename, ['mime' => 'application/pdf']);
             });

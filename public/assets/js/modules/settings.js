@@ -376,8 +376,8 @@ export default {
                                     </select>
                                     <div style="font-size:11px;color:var(--color-text-muted);margin-top:4px;">Para localhost usa "Ninguno"</div>
                                 </div>
-                                <div class="form-group"><label class="form-label">Nombre de Remitente</label><input type="text" id="s_smtp_from_name" class="form-control" value="${s.smtp_from_name || ''}"></div>
-                                <div class="form-group"><label class="form-label">Email de Remitente (From)</label><input type="email" id="s_smtp_from_email" class="form-control" value="${s.smtp_from_email || ''}"></div>
+                                <div class="form-group"><label class="form-label">Nombre de Remitente</label><input type="text" id="s_smtp_from_name" class="form-control" placeholder="${s.company_name || 'Gridbase Digital Solutions'}" value="${s.smtp_from_name || ''}"></div>
+                                <div class="form-group"><label class="form-label">Email de Remitente (From)</label><input type="email" id="s_smtp_from_email" class="form-control" placeholder="${s.company_email || 'facturacion@gridbase.com.do'}" value="${s.smtp_from_email || ''}"></div>
                             </div>
                             <div style="margin-top:24px;background:var(--bg-hover);border:1px solid var(--color-border);border-radius:var(--radius-lg);padding:20px;">
                                 <h4 style="font-size:13px;font-weight:600;margin:0 0 12px;">Probar Conexión</h4>
@@ -1771,8 +1771,8 @@ export default {
                     username: document.getElementById('s_smtp_username').value,
                     password: document.getElementById('s_smtp_password').value,
                     encryption: encryptionVal === 'none' ? null : encryptionVal,
-                    from_name: document.getElementById('s_smtp_from_name').value,
-                    from_email: document.getElementById('s_smtp_from_email').value
+                    from_name: document.getElementById('s_smtp_from_name').value || document.getElementById('s_company_name')?.value || 'Gridbase Digital Solutions',
+                    from_email: document.getElementById('s_smtp_from_email').value || document.getElementById('s_company_email')?.value || 'facturacion@gridbase.com.do'
                 };
                 const originalText = btn.innerHTML;
                 btn.innerHTML = '<span class="spinner" style="width:14px;height:14px;border-width:2px;"></span> Probando...';

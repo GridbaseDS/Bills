@@ -3917,4 +3917,126 @@ tr:hover .row-actions { opacity: 1; }
   background-color: #1a1a1a;
 }
 
+/* Child doc notice banner */
+.trail-child-doc-banner {
+  padding: 12px 18px;
+  background: var(--color-success-bg);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  border-radius: var(--radius-lg);
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.trail-child-doc-banner .banner-message {
+  font-size: 13px;
+  color: var(--color-text-primary);
+}
+
+.trail-child-doc-banner .banner-message strong {
+  color: var(--color-success-text);
+}
+
+[data-theme='dark'] .trail-child-doc-banner {
+  background: rgba(16, 185, 129, 0.1) !important;
+  border-color: rgba(16, 185, 129, 0.25) !important;
+}
+
+[data-theme='dark'] .trail-child-doc-banner .banner-message strong {
+  color: #34d399 !important;
+}
+
+/* Node Outcome Breakdown box */
+.node-breakdown-box {
+  font-size: 12px;
+  color: var(--color-text-muted);
+  background: var(--color-bg-secondary);
+  padding: 10px 12px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+  margin-top: 8px;
+}
+
+[data-theme='dark'] .node-breakdown-box {
+  background: #121212 !important;
+  border-color: #262626 !important;
+}
+
+/* Accounting Notice inside Outcome Node */
+.trail-credit-notice {
+  margin-top: 8px;
+  padding: 8px 10px;
+  background: rgba(14, 165, 233, 0.08);
+  border: 1px solid rgba(14, 165, 233, 0.2);
+  border-radius: var(--radius-md);
+  font-size: 11px;
+  color: #0369a1;
+  line-height: 1.4;
+}
+
+[data-theme='dark'] .trail-credit-notice {
+  background: rgba(14, 165, 233, 0.12) !important;
+  border-color: rgba(14, 165, 233, 0.25) !important;
+  color: #38bdf8 !important;
+}
+
+.trail-credit-text {
+  color: #0284c7;
+}
+
+[data-theme='dark'] .trail-credit-text {
+  color: #38bdf8 !important;
+}
+
+/* Node headers dark mode styling */
+[data-theme='dark'] .node-card.node-root .node-header {
+  color: #60a5fa !important;
+  background-color: rgba(59, 130, 246, 0.12) !important;
+}
+
+[data-theme='dark'] .node-card.node-quote .node-header {
+  color: #a78bfa !important;
+  background-color: rgba(139, 92, 246, 0.12) !important;
+}
+
+[data-theme='dark'] .node-card.node-credit .node-header {
+  color: #f87171 !important;
+  background-color: rgba(239, 68, 68, 0.12) !important;
+}
+
+[data-theme='dark'] .node-card.node-payment .node-header {
+  color: #34d399 !important;
+  background-color: rgba(16, 185, 129, 0.12) !important;
+}
+
+[data-theme='dark'] .node-card.status-settled .node-header {
+  color: #34d399 !important;
+  background-color: rgba(16, 185, 129, 0.12) !important;
+}
+
+[data-theme='dark'] .node-card.status-credit_in_favor .node-header {
+  color: #38bdf8 !important;
+  background-color: rgba(14, 165, 233, 0.12) !important;
+}
+
+[data-theme='dark'] .node-card.status-credited .node-header,
+[data-theme='dark'] .node-card.status-cancelled .node-header {
+  color: #f87171 !important;
+  background-color: rgba(239, 68, 68, 0.12) !important;
+}
+
+[data-theme='dark'] .node-card.status-partial .node-header {
+  color: #fbbf24 !important;
+  background-color: rgba(245, 158, 11, 0.12) !important;
+}
+
+[data-theme='dark'] .node-card.status-pending .node-header {
+  color: #60a5fa !important;
+  background-color: rgba(59, 130, 246, 0.12) !important;
+}
+
+
 

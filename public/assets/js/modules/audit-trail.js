@@ -257,26 +257,26 @@ const AuditTrailModule = {
         const timeline = data.timeline || [];
 
         const statusColors = {
-            settled: { bg: 'rgba(16,185,129,0.08)', border: '#10b981', text: '#059669', badge: 'badge-active', label: 'Saldada Totalmente' },
-            credit_in_favor: { bg: 'rgba(14,165,233,0.08)', border: '#0ea5e9', text: '#0284c7', badge: 'badge-info', label: 'Saldo a Favor' },
-            credited: { bg: 'rgba(239,68,68,0.08)', border: '#ef4444', text: '#dc2626', badge: 'badge-overdue', label: 'Anulada por Nota de Crédito' },
-            cancelled: { bg: 'rgba(239,68,68,0.08)', border: '#ef4444', text: '#dc2626', badge: 'badge-overdue', label: 'Factura Anulada' },
-            partial: { bg: 'rgba(245,158,11,0.08)', border: '#f59e0b', text: '#d97706', badge: 'badge-sent', label: 'Saldo Parcial' },
-            pending: { bg: 'rgba(59,130,246,0.08)', border: '#3b82f6', text: '#2563eb', badge: 'badge-primary', label: 'Pendiente de Pago' },
+            settled: { bg: 'rgba(16,185,129,0.08)', border: '#10b981', text: 'var(--color-success-text, #10b981)', badge: 'badge-active', label: 'Saldada Totalmente' },
+            credit_in_favor: { bg: 'rgba(14,165,233,0.08)', border: '#0ea5e9', text: 'var(--color-info-text, #38bdf8)', badge: 'badge-info', label: 'Saldo a Favor' },
+            credited: { bg: 'rgba(239,68,68,0.08)', border: '#ef4444', text: 'var(--color-danger-text, #f87171)', badge: 'badge-overdue', label: 'Anulada por Nota de Crédito' },
+            cancelled: { bg: 'rgba(239,68,68,0.08)', border: '#ef4444', text: 'var(--color-danger-text, #f87171)', badge: 'badge-overdue', label: 'Factura Anulada' },
+            partial: { bg: 'rgba(245,158,11,0.08)', border: '#f59e0b', text: 'var(--color-warning-text, #fbbf24)', badge: 'badge-sent', label: 'Saldo Parcial' },
+            pending: { bg: 'rgba(59,130,246,0.08)', border: '#3b82f6', text: 'var(--color-primary-text, #60a5fa)', badge: 'badge-primary', label: 'Pendiente de Pago' },
         };
         const currentStatus = statusColors[fin.financial_status] || statusColors.pending;
 
         container.innerHTML = `
             <!-- Child doc notification banner if user searched for a Credit Note directly -->
             ${data.is_child_doc ? `
-                <div style="padding:12px 18px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:var(--radius-lg);margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
+                <div class="trail-child-doc-banner">
                     <div style="display:flex;align-items:center;gap:10px;">
                         <span style="font-size:18px;">💡</span>
-                        <div style="font-size:13px;color:#166534;">
+                        <div class="banner-message">
                             Consultaste una <strong>Nota de Crédito/Débito modificatoria</strong>. El sistema ubicó su <strong>Factura Base (${root.encf || root.invoice_number})</strong> y armó el grafo de nodos a partir de ella.
                         </div>
                     </div>
-                    <a href="#facturas/${root.id}" class="btn btn-secondary btn-sm" style="font-size:11px;background:#ffffff;">Ver Factura Base</a>
+                    <a href="#facturas/${root.id}" class="btn btn-secondary btn-sm" style="font-size:11px;">Ver Factura Base</a>
                 </div>
             ` : ''}
 
@@ -480,7 +480,7 @@ const AuditTrailModule = {
                                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 14 10"/></svg>
                                 ${quote ? '4.' : '3.'} Liquidación & Balance
                             </div>
-                            <div class="node-card node-outcome" id="node-outcome" style="border-color:${currentStatus.border};">
+                            <div class="node-card node-outcome status-${fin.financial_status || 'pending'}" id="node-outcome" style="border-color:${currentStatus.border};">
                                 <div class="node-port port-in" title="Entrada"></div>
                                 <div class="node-header" style="background:${currentStatus.bg};color:${currentStatus.text};">
                                     <div style="font-size:11px;font-weight:700;display:flex;align-items:center;gap:6px;">
@@ -491,8 +491,8 @@ const AuditTrailModule = {
                                 </div>
                                 <div class="node-body">
                                     ${fin.credit_balance > 0 ? `
-                                        <div style="font-size:11px;color:#0284c7;text-transform:uppercase;font-weight:700;letter-spacing:0.5px;">Crédito a Favor del Cliente</div>
-                                        <div class="node-amount" style="font-size:24px;color:#0284c7;">
+                                        <div class="trail-credit-text" style="font-size:11px;text-transform:uppercase;font-weight:700;letter-spacing:0.5px;">Crédito a Favor del Cliente</div>
+                                        <div class="node-amount trail-credit-text" style="font-size:24px;">
                                             +${App.formatCurrency(fin.credit_balance, root.currency)}
                                         </div>
                                     ` : `
@@ -502,7 +502,7 @@ const AuditTrailModule = {
                                         </div>
                                     `}
 
-                                    <div style="font-size:12px;color:var(--color-text-muted);background:var(--color-bg-primary);padding:10px 12px;border-radius:var(--radius-md);border:1px solid var(--color-border);margin-top:8px;">
+                                    <div class="node-breakdown-box">
                                         <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
                                             <span>Original Facturado:</span>
                                             <strong>${App.formatCurrency(fin.original_total, root.currency)}</strong>
@@ -532,7 +532,7 @@ const AuditTrailModule = {
                                             </div>
                                         ` : ''}
                                         ${fin.credit_balance > 0 ? `
-                                            <div style="display:flex;justify-content:space-between;padding-top:6px;margin-top:4px;border-top:1px solid var(--color-border);font-weight:700;color:#0284c7;">
+                                            <div class="trail-credit-text" style="display:flex;justify-content:space-between;padding-top:6px;margin-top:4px;border-top:1px solid var(--color-border);font-weight:700;">
                                                 <span>(=) Saldo a Favor del Cliente:</span>
                                                 <span>+${App.formatCurrency(fin.credit_balance, root.currency)}</span>
                                             </div>
@@ -550,7 +550,7 @@ const AuditTrailModule = {
                                     </div>
 
                                     ${fin.credit_balance > 0 ? `
-                                        <div style="margin-top:8px;padding:8px 10px;background:rgba(14,165,233,0.08);border:1px solid rgba(14,165,233,0.2);border-radius:var(--radius-md);font-size:11px;color:#0369a1;line-height:1.4;">
+                                        <div class="trail-credit-notice">
                                             <strong>Aviso Contable:</strong> El pago se registró antes de la Nota de Crédito. El cliente dispone de <strong>${App.formatCurrency(fin.credit_balance, root.currency)}</strong> a su favor.
                                         </div>
                                     ` : ''}

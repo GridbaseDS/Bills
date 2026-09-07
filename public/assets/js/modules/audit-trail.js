@@ -463,7 +463,7 @@ const AuditTrailModule = {
 
                             <!-- If no modifiers and no payments, show direct bypass node -->
                             ${modifyingDocs.length === 0 && payments.length === 0 ? `
-                                <div class="node-card" style="border-style:dashed;background:var(--color-bg-secondary);opacity:0.85;text-align:center;padding:24px 18px;">
+                                <div class="node-card" style="border-style:dashed;text-align:center;padding:24px 18px;">
                                     <div style="width:36px;height:36px;border-radius:50%;background:rgba(100,116,139,0.1);color:var(--color-text-muted);display:flex;align-items:center;justify-content:center;margin:0 auto 10px auto;">
                                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
                                     </div>

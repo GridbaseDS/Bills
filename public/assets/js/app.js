@@ -17,6 +17,7 @@ import ReportsModule from './modules/reports.js?v=207';
 import SetupModule from './modules/setup.js?v=201';
 import ExpensesModule from './modules/expenses.js?v=201';
 import UsersModule from './modules/users.js?v=204';
+import AuditTrailModule from './modules/audit-trail.js?v=222';
 import { WebAuthnHelper } from './helpers/webauthn-helper.js?v=207';
 
 
@@ -653,6 +654,9 @@ window.App = {
                     break;
                 case 'facturas-recibidas': case 'received-invoices': ReceivedInvoicesModule.render(appContent); break;
                 case 'reportes': case 'reports': ReportsModule.render(appContent); break;
+                case 'seguimiento': case 'seguimiento-comprobantes': case 'seguimiento-comprobante': case 'audit-trail':
+                    AuditTrailModule.render(appContent, subId);
+                    break;
                 default:
                     history.replaceState(null, '', '/inicio');
                     DashboardModule.render(appContent);
@@ -1161,6 +1165,7 @@ window.App = {
                         <ul class="sidebar-menu">
                             <li><a href="/inicio" class="sidebar-link active"><span class="sidebar-link-content"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>Panel</span></a></li>
                             <li><a href="/facturas" class="sidebar-link"><span class="sidebar-link-content"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>Facturas</span><span id="overdue-badge" style="display:none;background:var(--color-danger-bg);color:var(--color-danger-text);font-size:11px;padding:2px 8px;border-radius:var(--radius-full);font-weight:600;"></span></a></li>
+                            <li><a href="/seguimiento" class="sidebar-link"><span class="sidebar-link-content"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>Seguimiento</span></a></li>
                             ${this.state.user.role !== 'vendedor' ? `<li><a href="/recurrentes" class="sidebar-link"><span class="sidebar-link-content"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>Recurrentes</span></a></li>` : ''}
                             <li><a href="/cotizaciones" class="sidebar-link"><span class="sidebar-link-content"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="12" y1="18" x2="12" y2="12"></line><line x1="9" y1="15" x2="15" y2="15"></line></svg>Cotizaciones</span></a></li>
                             <li><a href="/clientes" class="sidebar-link"><span class="sidebar-link-content"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>Clientes</span></a></li>
@@ -2125,6 +2130,7 @@ window.App = {
             { title: 'Nueva Cotización', sub: 'Generar cotización para cliente', icon: '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/>', action: 'route', value: 'cotizaciones/new', badge: 'Acción' },
             { title: 'Nuevo Cliente', sub: 'Registrar un nuevo cliente o empresa', icon: '<path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/>', action: 'route', value: 'clientes/new', badge: 'Acción' },
             { title: 'Registrar Gasto', sub: 'Añadir un egreso o factura de proveedor', icon: '<line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>', action: 'route', value: 'gastos', badge: 'Acción' },
+            { title: 'Seguimiento de Comprobante', sub: 'Trazabilidad y árbol de linaje fiscal', icon: '<circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>', action: 'route', value: 'seguimiento', badge: 'Trazabilidad' },
             { title: 'Auditoría & Logs DGII', sub: 'Ver respuestas e-CF y trackId DGII', icon: '<polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>', action: 'route', value: 'auditoria-dgii', badge: 'DGII' },
             { title: 'Configuración del Sistema', sub: 'Branding, empresa, 2FA y sensores biométricos', icon: '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>', action: 'route', value: 'configuracion', badge: 'Ajustes' },
             { title: 'Cambiar Modo Claro / Oscuro', sub: 'Alternar tema de la interfaz', icon: '<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>', action: 'theme', value: '', badge: 'Tema' }

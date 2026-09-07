@@ -253,6 +253,10 @@ const InvoicesModule = {
                                 <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
                                 Descargar Ticket
                             </a>
+                            <a href="#seguimiento/${inv.encf || inv.invoice_number}" class="btn btn-secondary btn-sm" style="display:inline-flex; align-items:center; gap:6px; text-decoration:none;" title="Ver árbol de linaje, notas de crédito y pagos">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                                Seguimiento
+                            </a>
                             ${inv.status !== 'cancelled' ? `
                                 <button class="btn btn-secondary btn-sm" onclick="InvoicesModule.sendEmail(${id})">
                                     <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
@@ -277,6 +281,24 @@ const InvoicesModule = {
                         </div>
                     </div>
                 </div>
+
+                ${inv.modified_ncf ? `
+                    <div style="padding:12px 18px;background:rgba(239,68,68,0.06);border:1px solid rgba(239,68,68,0.2);border-radius:var(--radius-lg);margin-bottom:18px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
+                        <div style="display:flex;align-items:center;gap:10px;">
+                            <div style="width:28px;height:28px;border-radius:var(--radius-md);background:rgba(239,68,68,0.12);color:var(--color-danger-icon);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 14 4 9 9 4"/><path d="M20 20v-7a4 4 0 0 0-4-4H4"/></svg>
+                            </div>
+                            <div style="font-size:13px;color:var(--color-text-primary);">
+                                Este documento modifica a la <strong>Factura Base (${inv.modified_ncf})</strong>
+                                ${inv.modification_reason ? ` · <span style="color:var(--color-text-muted);font-style:italic;">"${inv.modification_reason}"</span>` : ''}
+                            </div>
+                        </div>
+                        <a href="#seguimiento/${inv.modified_ncf}" class="btn btn-secondary btn-sm" style="font-size:11px;display:inline-flex;align-items:center;gap:4px;">
+                            Ver Trazabilidad Completa
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                        </a>
+                    </div>
+                ` : ''}
 
                 ${inv.is_ecf ? `
                 <div class="table-outer mb-24 ecf-status-card">

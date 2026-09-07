@@ -26,6 +26,7 @@ use App\Http\Controllers\Api\CertificationController;
 use App\Http\Controllers\Api\DgiiLogController;
 use App\Http\Controllers\Api\POSController;
 use App\Http\Controllers\Api\DemoController;
+use App\Http\Controllers\Api\AuditTrailController;
 
 // Public Auth
 Route::post('/auth/login', [AuthController::class, 'login']);
@@ -97,6 +98,11 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/invoices/{id}/process-ecf', [InvoiceController::class, 'processEcf']);
     Route::get('/invoices/{id}/ecf-status', [InvoiceController::class, 'checkEcfStatus']);
     Route::get('/invoices/{id}/download-xml', [InvoiceController::class, 'downloadXml']);
+
+    // Document Lineage & Audit Trail (Seguimiento de Comprobante)
+    Route::get('/audit-trail/trace', [AuditTrailController::class, 'trace']);
+    Route::get('/audit-trail/search', [AuditTrailController::class, 'search']);
+    Route::get('/audit-trail/recent', [AuditTrailController::class, 'recent']);
 
     // Quotes
     Route::get('/quotes/export/csv', [QuoteController::class, 'exportCsv']);

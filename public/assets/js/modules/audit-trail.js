@@ -159,7 +159,7 @@ const AuditTrailModule = {
                         <div style="display:flex;align-items:center;gap:8px;">
                             <span style="font-family:'JetBrains Mono',monospace;font-weight:700;font-size:13px;color:var(--color-text-primary);">${r.encf || r.invoice_number}</span>
                             <span class="badge ${r.type_label.includes('Crédito') ? 'badge-danger' : (r.type_label.includes('Débito') ? 'badge-warning' : 'badge-primary')}" style="font-size:10px;padding:2px 6px;">${r.type_label}</span>
-                            ${r.modified_ncf ? `<span style="font-size:11px;color:var(--color-text-muted);">➜ Modifica: <code>${r.modified_ncf}</code></span>` : ''}
+                            ${r.modified_ncf ? `<span style="font-size:11px;color:var(--color-text-muted);">&rarr; Modifica: <code>${r.modified_ncf}</code></span>` : ''}
                         </div>
                         <div style="font-size:12px;color:var(--color-text-muted);margin-top:2px;">
                             ${r.client_name} ${r.client_rnc ? `· RNC/Cédula: ${r.client_rnc}` : ''} · ${r.issue_date}
@@ -271,7 +271,9 @@ const AuditTrailModule = {
             ${data.is_child_doc ? `
                 <div class="trail-child-doc-banner">
                     <div style="display:flex;align-items:center;gap:10px;">
-                        <span style="font-size:18px;">💡</span>
+                        <div style="color:var(--color-success-text);display:flex;align-items:center;">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                        </div>
                         <div class="banner-message">
                             Consultaste una <strong>Nota de Crédito/Débito modificatoria</strong>. El sistema ubicó su <strong>Factura Base (${root.encf || root.invoice_number})</strong> y armó el grafo de nodos a partir de ella.
                         </div>

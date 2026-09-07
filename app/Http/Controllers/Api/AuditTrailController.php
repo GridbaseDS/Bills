@@ -205,7 +205,7 @@ class AuditTrailController extends Controller
                 'encf' => $rootInvoice->encf,
                 'ecf_type' => $rootInvoice->ecf_type,
                 'client_name' => $rootInvoice->client->name ?? '—',
-                'client_rnc' => $rootInvoice->client->rnc ?? $rootInvoice->client->cedula ?? null,
+                'client_rnc' => $rootInvoice->client->tax_id ?? null,
                 'subtotal' => (float)$rootInvoice->subtotal,
                 'tax_amount' => (float)$rootInvoice->tax_amount,
             ],
@@ -380,7 +380,7 @@ class AuditTrailController extends Controller
                 'client' => $rootInvoice->client ? [
                     'id' => $rootInvoice->client->id,
                     'name' => $rootInvoice->client->name,
-                    'rnc' => $rootInvoice->client->rnc ?? $rootInvoice->client->cedula ?? null,
+                    'rnc' => $rootInvoice->client->tax_id ?? null,
                     'email' => $rootInvoice->client->email,
                     'phone' => $rootInvoice->client->phone,
                 ] : null,
@@ -441,9 +441,9 @@ class AuditTrailController extends Controller
                     ->orWhere('encf', 'like', "%{$q}%")
                     ->orWhere('modified_ncf', 'like', "%{$q}%")
                     ->orWhereHas('client', function ($clientQuery) use ($q) {
-                        $clientQuery->where('name', 'like', "%{$q}%")
-                            ->orWhere('rnc', 'like', "%{$q}%")
-                            ->orWhere('cedula', 'like', "%{$q}%");
+                        $clientQuery->where('company_name', 'like', "%{$q}%")
+                            ->orWhere('contact_name', 'like', "%{$q}%")
+                            ->orWhere('tax_id', 'like', "%{$q}%");
                     });
             })
             ->orderByDesc('id')
@@ -461,7 +461,7 @@ class AuditTrailController extends Controller
                 'encf' => $inv->encf,
                 'type_label' => $typeLabel,
                 'client_name' => $inv->client->name ?? 'Consumidor Final',
-                'client_rnc' => $inv->client->rnc ?? $inv->client->cedula ?? null,
+                'client_rnc' => $inv->client->tax_id ?? null,
                 'total' => (float)$inv->total,
                 'currency' => $inv->currency ?? 'DOP',
                 'issue_date' => $inv->issue_date ? $inv->issue_date->format('d/m/Y') : null,

@@ -41,7 +41,7 @@ const InvoicesModule = {
                         <svg class="search-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
                         <input class="search-input" type="text" id="inv-search" placeholder="Buscar factura...">
                     </div>
-                    <div class="segmented-control" id="inv-status-tabs">
+                    <div class="segmented-control" id="inv-status-tabs" style="margin-bottom:0;">
                         <button class="segment-item active" data-status="">Todas <span style="opacity:.5;margin-left:4px;" id="inv-count">${allInvoices.length}</span></button>
                         <button class="segment-item" data-status="draft">Borrador</button>
                         <button class="segment-item" data-status="sent">Pendiente</button>

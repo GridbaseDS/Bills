@@ -4,8 +4,8 @@
  */
 
 import DashboardModule from './modules/dashboard.js?v=201';
-import InvoicesModule from './modules/invoices.js?v=229';
-import QuotesModule from './modules/quotes.js?v=229';
+import InvoicesModule from './modules/invoices.js?v=230';
+import QuotesModule from './modules/quotes.js?v=230';
 import ClientsModule from './modules/clients.js?v=201';
 import ItemsModule from './modules/items.js?v=201';
 import SettingsModule from './modules/settings.js?v=221';

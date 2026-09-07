@@ -726,11 +726,15 @@ hr { border: 0; border-top: 1px solid var(--color-border); margin: var(--spacing
 
 /* ── Search Wrapper ── */
 
-.search-wrapper { position: relative; display: flex; align-items: center; }
+.search-wrapper { position: relative; display: inline-flex; align-items: center; }
 
 .search-input {
 
   width: 260px;
+
+  height: 38px;
+
+  box-sizing: border-box;
 
   background-color: var(--bg-card);
 
@@ -738,9 +742,11 @@ hr { border: 0; border-top: 1px solid var(--color-border); margin: var(--spacing
 
   border-radius: var(--radius-md);
 
-  padding: 8px 12px 8px 36px;
+  padding: 0 12px 0 36px;
 
   font-size: 13px;
+
+  line-height: 38px;
 
   color: var(--color-text-primary);
 
@@ -752,7 +758,7 @@ hr { border: 0; border-top: 1px solid var(--color-border); margin: var(--spacing
 
 .search-input:focus { border-color: var(--color-border-hover); box-shadow: 0 0 0 2px rgba(17,24,39,0.05); }
 
-.search-icon { position: absolute; left: 12px; width: 16px; height: 16px; color: var(--color-text-muted); pointer-events: none; }
+.search-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); width: 16px; height: 16px; color: var(--color-text-muted); pointer-events: none; }
 
 .search-shortcuts { position: absolute; right: 8px; display: flex; gap: 3px; pointer-events: none; align-items: center; }
 
@@ -1070,13 +1076,13 @@ hr { border: 0; border-top: 1px solid var(--color-border); margin: var(--spacing
 }
 
 .segmented-control {
-  display: flex;
+  display: inline-flex;
   align-items: center;
   background-color: var(--bg-hover);
-  padding: 4px;
+  padding: 3px;
   border-radius: var(--radius-lg);
-  gap: 4px;
-  margin-bottom: var(--spacing-lg);
+  gap: 3px;
+  margin-bottom: 0;
   max-width: 100%;
   overflow-x: auto;
   overflow-y: hidden;
@@ -1086,6 +1092,7 @@ hr { border: 0; border-top: 1px solid var(--color-border); margin: var(--spacing
   -ms-overflow-style: none;
   box-sizing: border-box;
   cursor: grab;
+  height: 38px;
 }
 
 .segmented-control.is-dragging {
@@ -1104,7 +1111,11 @@ hr { border: 0; border-top: 1px solid var(--color-border); margin: var(--spacing
 
 .segment-item {
   flex-shrink: 0;
-  padding: 8px 16px;
+  height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 14px;
   font-size: 13px;
   font-weight: 500;
   color: var(--color-text-secondary);
@@ -1115,6 +1126,7 @@ hr { border: 0; border-top: 1px solid var(--color-border); margin: var(--spacing
   border: none;
   background: none;
   white-space: nowrap;
+  box-sizing: border-box;
 }
 
 .segment-item:hover { color: var(--color-text-primary); }

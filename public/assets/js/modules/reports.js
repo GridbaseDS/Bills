@@ -246,7 +246,7 @@ const ReportsModule = {
 
     async loadData() {
         const tbody = document.getElementById('report-tbody');
-        if (tbody) tbody.innerHTML = `<tr><td colspan="100" class="text-center py-24"><span class="spinner mx-auto"></span><br><small style="color:var(--color-text-muted)">Cargando registros fiscales del período...</small></td></tr>`;
+        if (tbody) tbody.innerHTML = `<tr><td colspan="100" class="text-center py-24"><div class="spinner mx-auto" style="margin-bottom:8px;"></div><small style="color:var(--color-text-muted)">Cargando registros fiscales del período...</small></td></tr>`;
 
         try {
             const [res607, res606, res608, resIt1, resIr2, resDss, resDaf, resRs1, resRs2, resRs3, resRs4] = await Promise.all([

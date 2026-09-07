@@ -2069,7 +2069,58 @@ textarea.form-control { resize: vertical; min-height: 80px; }
 
 @keyframes spin { to { transform: rotate(360deg); } }
 
-.spinner { width: 20px; height: 20px; border: 2px solid var(--color-border); border-top-color: var(--color-primary); border-radius: 50%; animation: spin .6s linear infinite; }
+.spinner {
+  display: inline-block;
+  width: 22px;
+  height: 22px;
+  aspect-ratio: 1 / 1;
+  border: 2.5px solid var(--color-border);
+  border-top-color: var(--color-primary);
+  border-radius: 50%;
+  animation: spin 0.65s linear infinite;
+  box-sizing: border-box;
+  flex-shrink: 0;
+  vertical-align: middle;
+}
+
+.spinner.mx-auto,
+.mx-auto.spinner {
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.spinner.spinner-sm {
+  width: 14px;
+  height: 14px;
+  border-width: 2px;
+}
+
+.spinner.spinner-lg {
+  width: 32px;
+  height: 32px;
+  border-width: 3px;
+}
+
+/* Spinner inside buttons */
+.btn .spinner,
+button .spinner {
+  width: 14px;
+  height: 14px;
+  border-width: 2px;
+  vertical-align: -2px;
+}
+
+.btn .spinner:not(:only-child),
+button .spinner:not(:only-child) {
+  margin-right: 6px;
+}
+
+.btn-primary .spinner,
+.btn-danger .spinner {
+  border-color: rgba(255, 255, 255, 0.35);
+  border-top-color: #ffffff;
+}
 
 .mx-auto { margin-left: auto; margin-right: auto; }
 

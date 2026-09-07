@@ -1,5 +1,5 @@
-// GridBase Bills — Service Worker v66
-const CACHE_NAME = 'gridbase-bills-v66';
+// GridBase Bills — Service Worker v67
+const CACHE_NAME = 'gridbase-bills-v67';
 const STATIC_ASSETS = [
   '/',
   '/manifest.json',

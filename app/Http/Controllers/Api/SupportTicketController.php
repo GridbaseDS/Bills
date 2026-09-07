@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\SupportTicket;
 use App\Models\SupportTicketMessage;
 use App\Models\Setting;
+use App\Services\EmailService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -274,6 +275,7 @@ class SupportTicketController extends Controller
     private function notifySupportNewTicket(SupportTicket $ticket, SupportTicketMessage $message, $user): void
     {
         try {
+            EmailService::applySmtpConfig([]);
             $settings = Setting::getAll();
             $companyName = trim($settings['company_name'] ?? '') ?: 'Gridbase Bills';
             $rnc = trim($settings['tax_id'] ?? '') ?: 'N/D';
@@ -319,6 +321,7 @@ class SupportTicketController extends Controller
     private function notifyUserTicketCreated(SupportTicket $ticket, $user): void
     {
         try {
+            EmailService::applySmtpConfig([]);
             $subject = "[{$ticket->ticket_number}] Hemos recibido tu solicitud de soporte: {$ticket->subject}";
             $html = "
             <div style='font-family:-apple-system,BlinkMacSystemFont,\"Segoe UI\",Roboto,sans-serif;max-width:600px;margin:0 auto;padding:24px;border:1px solid #e2e8f0;border-radius:10px;background:#ffffff;color:#1e293b;'>
@@ -357,6 +360,7 @@ class SupportTicketController extends Controller
     private function notifyUserSupportReply(SupportTicket $ticket, SupportTicketMessage $message): void
     {
         try {
+            EmailService::applySmtpConfig([]);
             $user = $ticket->user;
             if (!$user || empty($user->email)) return;
 
@@ -398,6 +402,7 @@ class SupportTicketController extends Controller
     private function notifySupportUserReply(SupportTicket $ticket, SupportTicketMessage $message, $user): void
     {
         try {
+            EmailService::applySmtpConfig([]);
             $subject = "[{$ticket->ticket_number}] Nueva respuesta del cliente ({$user->name}): {$ticket->subject}";
             $html = "
             <div style='font-family:-apple-system,BlinkMacSystemFont,\"Segoe UI\",Roboto,sans-serif;max-width:600px;margin:0 auto;padding:24px;border:1px solid #e2e8f0;border-radius:10px;background:#ffffff;color:#1e293b;'>

@@ -703,65 +703,28 @@ hr { border: 0; border-top: 1px solid var(--color-border); margin: var(--spacing
    TOPBAR HEADER
 
 .topbar {
-
   display: flex;
-
   align-items: center;
-
   justify-content: space-between;
-
   margin-bottom: var(--spacing-xl);
-
   flex-shrink: 0;
-
-  position: relative;
-
   gap: var(--spacing-md);
-
 }
 
 .topbar-left {
   display: flex;
   align-items: center;
-  gap: 12px;
-  flex: 1;
+  gap: 16px;
   min-width: 0;
-}
-
-.topbar-search {
-  position: absolute;
-  left: 50%;
-  transform: translateX(-50%);
-  display: inline-flex;
-  align-items: center;
-  z-index: 10;
-}
-
-.topbar-search .search-input {
-  width: 360px;
-  max-width: 440px;
-  cursor: pointer;
-}
-
-@media (max-width: 1100px) {
-  .topbar-search .search-input {
-    width: 280px;
-  }
-}
-
-@media (max-width: 860px) {
-  .topbar-search {
-    position: static;
-    transform: none;
-  }
+  flex-wrap: wrap;
 }
 
 .topbar-actions {
   display: flex;
   align-items: center;
   gap: var(--spacing-sm);
-  flex: 1;
   justify-content: flex-end;
+  flex-shrink: 0;
 }
 
 /* ── Search Wrapper ── */

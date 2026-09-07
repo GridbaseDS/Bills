@@ -103,9 +103,12 @@ class EmailService
         app()->forgetInstance('mail.manager');
         app()->forgetInstance('mailer');
 
-        // Force Symfony transport to pick up SSL stream options
+        // Force Symfony transport to pick up SSL stream options and handle auto-tls
         try {
             $transport = app('mailer')->getSymfonyTransport();
+            if (empty($encryption) && method_exists($transport, 'setAutoTls')) {
+                $transport->setAutoTls(false);
+            }
             if (method_exists($transport, 'getStream')) {
                 $stream = $transport->getStream();
                 if (method_exists($stream, 'setStreamOptions')) {

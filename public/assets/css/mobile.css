@@ -242,6 +242,13 @@ button.tab-link {
 /* ═══════════════════════════════════════════════════════════
    SEGMENTED CONTROL — Scrollable on Mobile
    ═══════════════════════════════════════════════════════════ */
+.segmented-control-wrapper {
+  gap: 0 !important;
+  margin-bottom: 12px !important;
+}
+.segmented-arrow {
+  display: none !important;
+}
 .segmented-control {
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;

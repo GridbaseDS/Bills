@@ -15,7 +15,11 @@ export default {
                     </div>
                 </div>
 
-                <div class="segmented-control mb-24" id="settings-tabs">
+                <div class="segmented-control-wrapper mb-24">
+                    <button type="button" class="segmented-arrow segmented-arrow-prev" aria-label="Desplazar a la izquierda" title="Desplazar a la izquierda">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+                    </button>
+                    <div class="segmented-control" id="settings-tabs">
                     <button class="segment-item active" data-tab="general" style="display:inline-flex; align-items:center; gap:6.5px;">
                         <svg xmlns="http://www.w3.org/2000/svg" width="13.5" height="13.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--color-text-primary);"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
                         General
@@ -59,6 +63,9 @@ export default {
                     <button class="segment-item" data-tab="support" style="display:inline-flex; align-items:center; gap:6.5px; color:var(--color-danger);">
                         <svg xmlns="http://www.w3.org/2000/svg" width="13.5" height="13.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--color-danger);"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="4"/><line x1="4.93" y1="4.93" x2="9.17" y2="9.17"/><line x1="14.83" y1="9.17" x2="19.07" y2="4.93"/><line x1="14.83" y1="19.07" x2="9.17" y2="14.83"/></svg>
                         Soporte
+                    </div>
+                    <button type="button" class="segmented-arrow segmented-arrow-next" aria-label="Desplazar a la derecha" title="Desplazar a la derecha">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
                     </button>
                 </div>
 
@@ -878,12 +885,18 @@ export default {
             // Tab navigation
             const tabs = container.querySelectorAll('#settings-tabs .segment-item');
             const contents = container.querySelectorAll('.tab-content');
+            const tabsWrapper = container.querySelector('.segmented-control-wrapper');
+            if (tabsWrapper && window.App?.updateSegmentedArrows) {
+                setTimeout(() => window.App.updateSegmentedArrows(tabsWrapper), 60);
+            }
+
             tabs.forEach(tab => {
                 tab.addEventListener('click', (e) => {
                     e.preventDefault();
                     tabs.forEach(t => t.classList.remove('active'));
                     contents.forEach(c => c.style.display = 'none');
                     tab.classList.add('active');
+                    tab.scrollIntoView({ behavior: 'smooth', inline: 'nearest', block: 'nearest' });
                     const target = container.querySelector('#tab-' + tab.dataset.tab);
                     if (target) target.style.display = 'block';
                     if (tab.dataset.tab === 'security') {
@@ -891,6 +904,9 @@ export default {
                     }
                     if (tab.dataset.tab === 'integrations') {
                         loadBridgeLogs();
+                    }
+                    if (tabsWrapper && window.App?.updateSegmentedArrows) {
+                        setTimeout(() => window.App.updateSegmentedArrows(tabsWrapper), 300);
                     }
                 });
             });

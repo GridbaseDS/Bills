@@ -8,7 +8,7 @@ import InvoicesModule from './modules/invoices.js?v=213';
 import QuotesModule from './modules/quotes.js?v=201';
 import ClientsModule from './modules/clients.js?v=201';
 import ItemsModule from './modules/items.js?v=201';
-import SettingsModule from './modules/settings.js?v=220';
+import SettingsModule from './modules/settings.js?v=221';
 import RecurringModule from './modules/recurring.js?v=201';
 import DgiiTestsModule from './modules/dgii-tests.js?v=201';
 import DgiiLogsModule from './modules/dgii-logs.js?v=201';
@@ -66,6 +66,7 @@ window.App = {
 
         this.checkAuth();
         this.setupRouter();
+        this.initHorizontalScroll();
     },
 
     async api(endpoint, options = {}) {
@@ -421,6 +422,136 @@ window.App = {
             else if (route.startsWith('/')) route = route.substring(1);
             this.navigate(route || 'dashboard');
         });
+    },
+
+    initHorizontalScroll() {
+        // 1. Mouse wheel translation: vertical mouse wheel -> horizontal scroll
+        document.addEventListener('wheel', (e) => {
+            const scroller = e.target.closest('.segmented-control, [data-horizontal-scroll]');
+            if (!scroller) return;
+
+            // Only intervene if content actually overflows horizontally
+            if (scroller.scrollWidth > scroller.clientWidth) {
+                // If native horizontal gesture (trackpad deltaX), let browser handle it
+                if (Math.abs(e.deltaX) > Math.abs(e.deltaY)) return;
+
+                if (e.deltaY !== 0) {
+                    e.preventDefault();
+                    scroller.scrollLeft += e.deltaY;
+                    const wrapper = scroller.closest('.segmented-control-wrapper');
+                    if (wrapper) {
+                        this.updateSegmentedArrows(wrapper);
+                    }
+                }
+            }
+        }, { passive: false });
+
+        // 2. Mouse click & drag to scroll
+        let isDown = false;
+        let startX = 0;
+        let scrollLeft = 0;
+        let activeScroller = null;
+        let hasDragged = false;
+
+        document.addEventListener('mousedown', (e) => {
+            if (e.button !== 0) return; // Left click only
+            const scroller = e.target.closest('.segmented-control, [data-horizontal-scroll]');
+            if (!scroller) return;
+            if (scroller.scrollWidth <= scroller.clientWidth) return;
+
+            isDown = true;
+            hasDragged = false;
+            activeScroller = scroller;
+            startX = e.pageX;
+            scrollLeft = scroller.scrollLeft;
+        });
+
+        document.addEventListener('mousemove', (e) => {
+            if (!isDown || !activeScroller) return;
+            const walk = e.pageX - startX;
+            if (Math.abs(walk) > 5) {
+                hasDragged = true;
+                activeScroller.classList.add('is-dragging');
+                activeScroller.scrollLeft = scrollLeft - walk;
+                const wrapper = activeScroller.closest('.segmented-control-wrapper');
+                if (wrapper) {
+                    this.updateSegmentedArrows(wrapper);
+                }
+            }
+        });
+
+        const endDrag = () => {
+            if (activeScroller) {
+                activeScroller.classList.remove('is-dragging');
+            }
+            isDown = false;
+            activeScroller = null;
+            setTimeout(() => { hasDragged = false; }, 60);
+        };
+
+        document.addEventListener('mouseup', endDrag);
+
+        // Suppress click on items if the user was dragging
+        document.addEventListener('click', (e) => {
+            if (hasDragged) {
+                const scroller = e.target.closest('.segmented-control, [data-horizontal-scroll]');
+                if (scroller) {
+                    e.preventDefault();
+                    e.stopImmediatePropagation();
+                }
+            }
+        }, true);
+
+        // 3. Arrow buttons click delegation
+        document.addEventListener('click', (e) => {
+            const btn = e.target.closest('.segmented-arrow');
+            if (!btn) return;
+            const wrapper = btn.closest('.segmented-control-wrapper');
+            if (!wrapper) return;
+            const scroller = wrapper.querySelector('.segmented-control');
+            if (!scroller) return;
+
+            const distance = btn.classList.contains('segmented-arrow-prev') ? -240 : 240;
+            scroller.scrollBy({ left: distance, behavior: 'smooth' });
+            setTimeout(() => this.updateSegmentedArrows(wrapper), 320);
+        });
+
+        // 4. Update arrow states on scroll
+        document.addEventListener('scroll', (e) => {
+            if (e.target && e.target.classList && e.target.classList.contains('segmented-control')) {
+                const wrapper = e.target.closest('.segmented-control-wrapper');
+                if (wrapper) {
+                    this.updateSegmentedArrows(wrapper);
+                }
+            }
+        }, true);
+
+        // 5. Window resize
+        window.addEventListener('resize', () => {
+            document.querySelectorAll('.segmented-control-wrapper').forEach(w => {
+                this.updateSegmentedArrows(w);
+            });
+        });
+    },
+
+    updateSegmentedArrows(wrapper) {
+        if (!wrapper) return;
+        const scroller = wrapper.querySelector('.segmented-control');
+        const prevBtn = wrapper.querySelector('.segmented-arrow-prev');
+        const nextBtn = wrapper.querySelector('.segmented-arrow-next');
+        if (!scroller || !prevBtn || !nextBtn) return;
+
+        const maxScroll = Math.max(0, scroller.scrollWidth - scroller.clientWidth);
+        if (maxScroll <= 2) {
+            prevBtn.style.display = 'none';
+            nextBtn.style.display = 'none';
+            return;
+        }
+
+        prevBtn.style.display = 'inline-flex';
+        nextBtn.style.display = 'inline-flex';
+        prevBtn.disabled = scroller.scrollLeft <= 3;
+        nextBtn.disabled = scroller.scrollLeft >= maxScroll - 3;
     },
 
     navigate(route, pushToHistory = true) {

@@ -1,12 +1,16 @@
 /**
  * GridBase Digital Solutions — Bills System
- * Módulo: Seguimiento de Comprobante (Document Lineage & Smart Audit Trail)
- * Permite rastrear el ciclo de vida documental: Cotización -> Factura -> e-CF -> Pagos -> Notas de Crédito/Débito -> Anulación
+ * Módulo: Seguimiento de Comprobante (Document Lineage & Interactive Node Graph)
+ * Permite visualizar el ciclo de vida fiscal como un grafo de nodos interactivo:
+ * [Cotización] ➔ [Factura Base] ➔ [Notas de Crédito / Débito & Pagos] ➔ [Balance Consolidado]
  */
 
 const AuditTrailModule = {
     currentQuery: null,
     searchDebounceTimer: null,
+    activeViewMode: 'nodes', // 'nodes' or 'timeline'
+    resizeHandler: null,
+    lastData: null,
 
     async render(container, voucherParam = null) {
         container.innerHTML = `
@@ -14,9 +18,9 @@ const AuditTrailModule = {
                 <div>
                     <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px;">
                         <h1 class="page-title" style="margin:0;">Seguimiento de Comprobante</h1>
-                        <span class="badge badge-primary" style="font-size:11px;font-weight:700;letter-spacing:0.5px;">TRAZABILIDAD FISCAL</span>
+                        <span class="badge badge-primary" style="font-size:11px;font-weight:700;letter-spacing:0.5px;">GRAFO DE NODOS</span>
                     </div>
-                    <p class="page-subtitle" style="margin:0;">Historial inteligente y linaje entre facturas, cotizaciones, notas de crédito, pagos y acuses DGII</p>
+                    <p class="page-subtitle" style="margin:0;">Visualizador interactivo de linaje documental y auditoría de eventos fiscales</p>
                 </div>
             </div>
 
@@ -54,10 +58,10 @@ const AuditTrailModule = {
             <div id="trail-content">
                 <div class="text-center" style="padding:60px 20px;color:var(--color-text-muted);">
                     <div style="width:64px;height:64px;border-radius:50%;background:rgba(99,102,241,0.08);color:var(--color-primary);margin:0 auto 16px auto;display:flex;align-items:center;justify-content:center;">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
                     </div>
                     <h3 style="font-size:16px;font-weight:600;color:var(--color-text-primary);margin:0 0 6px 0;">Ingresa o selecciona un comprobante</h3>
-                    <p style="font-size:13px;max-width:440px;margin:0 auto;">Escribe un e-NCF (ej. E3100000001, E3400000001), número de factura o nombre de cliente para ver su árbol completo de linaje, notas de crédito, pagos y balance neto.</p>
+                    <p style="font-size:13px;max-width:440px;margin:0 auto;">Escribe un e-NCF (ej. E3100000001, E3400000001), número de factura o cliente para visualizar el <strong>Grafo de Nodos</strong> con su cadena de notas de crédito, pagos y balance real.</p>
                 </div>
             </div>
         `;
@@ -216,7 +220,7 @@ const AuditTrailModule = {
         content.innerHTML = `
             <div class="text-center" style="padding:60px 20px;">
                 <div class="spinner mx-auto" style="margin-bottom:16px;"></div>
-                <div style="font-size:13px;color:var(--color-text-muted);">Rastreando linaje del comprobante y conciliando historial...</div>
+                <div style="font-size:13px;color:var(--color-text-muted);">Generando grafo de nodos y trazabilidad documental...</div>
             </div>
         `;
 
@@ -224,6 +228,7 @@ const AuditTrailModule = {
             const endpoint = isId ? `audit-trail/trace?id=${identifier}` : `audit-trail/trace?query=${encodeURIComponent(identifier)}`;
             const data = await App.api(endpoint);
 
+            this.lastData = data;
             this.renderTraceDetails(content, data);
             
             // Push route without reload
@@ -251,13 +256,12 @@ const AuditTrailModule = {
         const fin = data.financial_summary || {};
         const timeline = data.timeline || [];
 
-        // Financial status banner color scheme
         const statusColors = {
-            settled: { bg: 'rgba(16,185,129,0.08)', border: 'rgba(16,185,129,0.25)', text: '#059669', badge: 'badge-active', label: 'Saldada Totalmente' },
-            credited: { bg: 'rgba(239,68,68,0.08)', border: 'rgba(239,68,68,0.25)', text: '#dc2626', badge: 'badge-overdue', label: 'Anulada por Nota de Crédito' },
-            cancelled: { bg: 'rgba(239,68,68,0.08)', border: 'rgba(239,68,68,0.25)', text: '#dc2626', badge: 'badge-overdue', label: 'Factura Anulada' },
-            partial: { bg: 'rgba(245,158,11,0.08)', border: 'rgba(245,158,11,0.25)', text: '#d97706', badge: 'badge-sent', label: 'Saldo Parcial' },
-            pending: { bg: 'rgba(59,130,246,0.08)', border: 'rgba(59,130,246,0.25)', text: '#2563eb', badge: 'badge-primary', label: 'Pendiente de Pago' },
+            settled: { bg: 'rgba(16,185,129,0.08)', border: '#10b981', text: '#059669', badge: 'badge-active', label: 'Saldada Totalmente' },
+            credited: { bg: 'rgba(239,68,68,0.08)', border: '#ef4444', text: '#dc2626', badge: 'badge-overdue', label: 'Anulada por Nota de Crédito' },
+            cancelled: { bg: 'rgba(239,68,68,0.08)', border: '#ef4444', text: '#dc2626', badge: 'badge-overdue', label: 'Factura Anulada' },
+            partial: { bg: 'rgba(245,158,11,0.08)', border: '#f59e0b', text: '#d97706', badge: 'badge-sent', label: 'Saldo Parcial' },
+            pending: { bg: 'rgba(59,130,246,0.08)', border: '#3b82f6', text: '#2563eb', badge: 'badge-primary', label: 'Pendiente de Pago' },
         };
         const currentStatus = statusColors[fin.financial_status] || statusColors.pending;
 
@@ -268,271 +272,268 @@ const AuditTrailModule = {
                     <div style="display:flex;align-items:center;gap:10px;">
                         <span style="font-size:18px;">💡</span>
                         <div style="font-size:13px;color:#166534;">
-                            Consultaste una <strong>Nota de Crédito/Débito modificatoria</strong>. El sistema identificó y vinculó automáticamente su <strong>Factura Base (${root.encf || root.invoice_number})</strong> para mostrar la trazabilidad completa.
+                            Consultaste una <strong>Nota de Crédito/Débito modificatoria</strong>. El sistema ubicó su <strong>Factura Base (${root.encf || root.invoice_number})</strong> y armó el grafo de nodos a partir de ella.
                         </div>
                     </div>
                     <a href="#facturas/${root.id}" class="btn btn-secondary btn-sm" style="font-size:11px;background:#ffffff;">Ver Factura Base</a>
                 </div>
             ` : ''}
 
-            <!-- Header Card & Quick Actions -->
-            <div class="table-outer" style="padding:var(--spacing-xl);margin-bottom:var(--spacing-xl);">
-                <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:16px;">
-                    <div>
-                        <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;flex-wrap:wrap;">
-                            <span style="font-size:12px;font-weight:700;color:var(--color-text-muted);text-transform:uppercase;letter-spacing:0.5px;">Documento Base</span>
-                            <span class="badge ${currentStatus.badge}">${currentStatus.label}</span>
-                            ${root.is_ecf ? `
-                                <span class="badge badge-active" style="display:inline-flex;align-items:center;gap:4px;">
-                                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
-                                    ${root.dgii_status === 'accepted' ? 'DGII Aprobado' : (root.dgii_status || 'e-CF')}
-                                </span>
+            <!-- Header Action & Mode Switcher Bar -->
+            <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px;margin-bottom:18px;">
+                <div style="display:flex;align-items:center;gap:12px;">
+                    <div style="display:flex;background:var(--color-bg-secondary);border:1px solid var(--color-border);border-radius:var(--radius-lg);padding:3px;">
+                        <button type="button" id="tab-btn-nodes" class="btn btn-sm ${this.activeViewMode === 'nodes' ? 'btn-primary' : 'btn-ghost'}" style="font-size:12px;display:inline-flex;align-items:center;gap:6px;border-radius:var(--radius-md);" onclick="window.AuditTrailModule.switchView('nodes')">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+                            Grafo de Nodos
+                        </button>
+                        <button type="button" id="tab-btn-timeline" class="btn btn-sm ${this.activeViewMode === 'timeline' ? 'btn-primary' : 'btn-ghost'}" style="font-size:12px;display:inline-flex;align-items:center;gap:6px;border-radius:var(--radius-md);" onclick="window.AuditTrailModule.switchView('timeline')">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                            Historial Cronológico
+                        </button>
+                    </div>
+                    <span style="font-size:12px;color:var(--color-text-muted);">
+                        Mostrando comprobante: <strong style="color:var(--color-text-primary);font-family:'JetBrains Mono',monospace;">${root.encf || root.invoice_number}</strong>
+                    </span>
+                </div>
+
+                <!-- Quick Action Buttons -->
+                <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+                    <a href="#facturas/${root.id}" class="btn btn-secondary btn-sm" style="display:inline-flex;align-items:center;gap:6px;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                        Ver Factura
+                    </a>
+                    <button type="button" class="btn btn-secondary btn-sm" onclick="InvoicesModule.printInvoice(${root.id}, 'thermal')" style="display:inline-flex;align-items:center;gap:6px;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+                        Ticket
+                    </button>
+                    <button type="button" class="btn btn-secondary btn-sm" onclick="InvoicesModule.printInvoice(${root.id}, 'normal')" style="display:inline-flex;align-items:center;gap:6px;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+                        A4
+                    </button>
+                    ${root.is_ecf && root.encf && root.status !== 'cancelled' && !fin.is_fully_credited ? `
+                        <button type="button" class="btn btn-secondary btn-sm" style="color:var(--color-danger-icon);border-color:rgba(239,68,68,0.25);" onclick="InvoicesModule.issueCreditNote(${root.id})">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:middle;margin-right:4px;"><path d="M9 14L4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5v0a5.5 5.5 0 0 1-5.5 5.5H11"/></svg>
+                            Emitir Nota de Crédito
+                        </button>
+                    ` : ''}
+                </div>
+            </div>
+
+            <!-- VIEW 1: INTERACTIVE NODE GRAPH VIEW -->
+            <div id="view-nodes-wrapper" style="display:${this.activeViewMode === 'nodes' ? 'block' : 'none'};">
+                <div class="node-graph-viewport" id="nodes-viewport">
+                    <div class="node-graph-canvas" id="nodes-canvas">
+                        <!-- Dynamic SVG Connection Layer -->
+                        <svg class="node-svg-layer" id="nodes-svg-layer"></svg>
+
+                        <!-- STAGE 1: ORIGIN (QUOTE) -->
+                        ${quote ? `
+                            <div class="node-column" id="col-origin">
+                                <div class="node-column-header">
+                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                                    1. Origen
+                                </div>
+                                <div class="node-card node-quote" id="node-quote">
+                                    <div class="node-port port-out" title="Conector Salida"></div>
+                                    <div class="node-header" style="background:rgba(139,92,246,0.08);color:#7c3aed;">
+                                        <div style="font-size:11px;font-weight:700;display:flex;align-items:center;gap:6px;">
+                                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                                            COTIZACIÓN ORIGEN
+                                        </div>
+                                        <span class="badge badge-info" style="font-size:9px;">Aprobada</span>
+                                    </div>
+                                    <div class="node-body">
+                                        <div class="node-code">#${quote.quote_number}</div>
+                                        <div class="node-amount" style="color:var(--color-text-primary);">${App.formatCurrency(quote.total, quote.currency)}</div>
+                                        <div class="node-meta">
+                                            <div>Emitida: ${App.formatDate(quote.issue_date)}</div>
+                                            <div style="color:var(--color-text-secondary);margin-top:2px;">Convertida a factura</div>
+                                        </div>
+                                    </div>
+                                    <div class="node-footer">
+                                        <a href="#cotizaciones/${quote.id}" class="btn btn-secondary btn-sm" style="font-size:11px;padding:3px 8px;">Ver Cotización</a>
+                                    </div>
+                                </div>
+                            </div>
+                        ` : ''}
+
+                        <!-- STAGE 2: ROOT INVOICE (CENTRAL ANCHOR) -->
+                        <div class="node-column" id="col-root">
+                            <div class="node-column-header">
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/></svg>
+                                ${quote ? '2.' : '1.'} Documento Base
+                            </div>
+                            <div class="node-card node-root" id="node-root">
+                                ${quote ? '<div class="node-port port-in" title="Conector Entrada"></div>' : ''}
+                                <div class="node-port port-out" title="Conector Salida"></div>
+                                <div class="node-header" style="background:rgba(37,99,235,0.08);color:#2563eb;">
+                                    <div style="font-size:11px;font-weight:700;display:flex;align-items:center;gap:6px;">
+                                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/></svg>
+                                        ${root.is_ecf ? 'e-CF BASE' : 'FACTURA BASE'}
+                                    </div>
+                                    <span class="badge ${root.dgii_status === 'accepted' ? 'badge-active' : 'badge-primary'}" style="font-size:9px;">
+                                        ${root.dgii_status === 'accepted' ? 'DGII Aprobada' : (root.dgii_status || 'Emitida')}
+                                    </span>
+                                </div>
+                                <div class="node-body">
+                                    <div class="node-code" style="font-size:15px;color:var(--color-primary);">${root.encf || root.invoice_number}</div>
+                                    <div class="node-amount" style="color:var(--color-text-primary);">${App.formatCurrency(root.total, root.currency)}</div>
+                                    <div class="node-meta">
+                                        <div><strong>Cliente:</strong> ${root.client?.name || 'Consumidor Final'}</div>
+                                        ${root.client?.rnc ? `<div><strong>RNC/Céd:</strong> <code>${root.client.rnc}</code></div>` : ''}
+                                        <div><strong>Emisión:</strong> ${App.formatDate(root.issue_date)}</div>
+                                        ${root.dgii_track_id ? `<div style="color:var(--color-success-text);font-weight:600;margin-top:2px;">TrackID: <code>${root.dgii_track_id}</code></div>` : ''}
+                                    </div>
+                                    <div style="margin-top:10px;padding-top:8px;border-top:1px dashed var(--color-border);display:flex;justify-content:space-between;font-size:11px;color:var(--color-text-muted);">
+                                        <span>Subtotal: ${App.formatCurrency(root.subtotal, root.currency)}</span>
+                                        <span>ITBIS: ${App.formatCurrency(root.tax_amount, root.currency)}</span>
+                                    </div>
+                                </div>
+                                <div class="node-footer">
+                                    <a href="#facturas/${root.id}" class="btn btn-secondary btn-sm" style="font-size:11px;padding:3px 8px;">Ver Detalle</a>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- STAGE 3: BRANCHES (MODIFIERS & PAYMENTS) -->
+                        <div class="node-column" id="col-branches">
+                            <div class="node-column-header">
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 14 4 9 9 4"/><path d="M20 20v-7a4 4 0 0 0-4-4H4"/></svg>
+                                ${quote ? '3.' : '2.'} Modificaciones & Pagos
+                            </div>
+
+                            <!-- Modifying Documents Nodes (Credit Notes / Debit Notes) -->
+                            ${modifyingDocs.map(doc => `
+                                <div class="node-card ${doc.is_credit_note ? 'node-credit' : 'node-payment'}" id="node-doc-${doc.id}" data-node-type="modifier">
+                                    <div class="node-port port-in" title="Entrada"></div>
+                                    <div class="node-port port-out" title="Salida"></div>
+                                    <div class="node-header" style="background:${doc.is_credit_note ? 'rgba(239,68,68,0.08)' : 'rgba(245,158,11,0.08)'};color:${doc.is_credit_note ? '#dc2626' : '#d97706'};">
+                                        <div style="font-size:11px;font-weight:700;display:flex;align-items:center;gap:6px;">
+                                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 14 4 9 9 4"/><path d="M20 20v-7a4 4 0 0 0-4-4H4"/></svg>
+                                            ${doc.type_label.toUpperCase()}
+                                        </div>
+                                        <span class="badge ${doc.is_credit_note ? 'badge-danger' : 'badge-warning'}" style="font-size:9px;">
+                                            ${doc.dgii_status === 'accepted' ? 'Aprobada' : 'Emitida'}
+                                        </span>
+                                    </div>
+                                    <div class="node-body">
+                                        <div class="node-code">${doc.encf || doc.invoice_number}</div>
+                                        <div class="node-amount" style="color:${doc.is_credit_note ? 'var(--color-danger-icon)' : 'var(--color-text-primary)'};">
+                                            ${doc.is_credit_note ? '-' : '+'}${App.formatCurrency(doc.total, doc.currency)}
+                                        </div>
+                                        <div class="node-meta">
+                                            <div><strong>Motivo DGII (Cód. ${doc.modification_code || '1'}):</strong></div>
+                                            <div style="color:var(--color-text-secondary);font-size:11px;">${doc.modification_code_desc}</div>
+                                            ${doc.modification_reason ? `<div style="font-style:italic;color:var(--color-text-muted);margin-top:2px;">"${doc.modification_reason}"</div>` : ''}
+                                            <div style="margin-top:4px;">Fecha: ${App.formatDate(doc.issue_date)}</div>
+                                        </div>
+                                    </div>
+                                    <div class="node-footer">
+                                        <a href="#facturas/${doc.id}" class="btn btn-secondary btn-sm" style="font-size:11px;padding:3px 8px;">Ver NC</a>
+                                    </div>
+                                </div>
+                            `).join('')}
+
+                            <!-- Payment Nodes -->
+                            ${payments.map(p => `
+                                <div class="node-card node-payment" id="node-pay-${p.id}" data-node-type="payment">
+                                    <div class="node-port port-in" title="Entrada"></div>
+                                    <div class="node-port port-out" title="Salida"></div>
+                                    <div class="node-header" style="background:rgba(16,185,129,0.08);color:#059669;">
+                                        <div style="font-size:11px;font-weight:700;display:flex;align-items:center;gap:6px;">
+                                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+                                            PAGO REGISTRADO
+                                        </div>
+                                        <span class="badge badge-active" style="font-size:9px;">Abono</span>
+                                    </div>
+                                    <div class="node-body">
+                                        <div class="node-code" style="text-transform:capitalize;">${p.payment_method || 'Pago'}</div>
+                                        <div class="node-amount" style="color:var(--color-success-icon);">
+                                            -${App.formatCurrency(p.amount, root.currency)}
+                                        </div>
+                                        <div class="node-meta">
+                                            <div>Fecha: ${App.formatDate(p.payment_date)}</div>
+                                            ${p.reference ? `<div>Ref: <code>${p.reference}</code></div>` : ''}
+                                            ${p.notes ? `<div style="font-style:italic;color:var(--color-text-muted);">${p.notes}</div>` : ''}
+                                        </div>
+                                    </div>
+                                </div>
+                            `).join('')}
+
+                            <!-- If no modifiers and no payments, show direct bypass node -->
+                            ${modifyingDocs.length === 0 && payments.length === 0 ? `
+                                <div class="node-card" style="border-style:dashed;background:var(--color-bg-secondary);opacity:0.85;text-align:center;padding:24px 18px;">
+                                    <div style="width:36px;height:36px;border-radius:50%;background:rgba(100,116,139,0.1);color:var(--color-text-muted);display:flex;align-items:center;justify-content:center;margin:0 auto 10px auto;">
+                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+                                    </div>
+                                    <div style="font-size:13px;font-weight:600;color:var(--color-text-primary);">Sin modificaciones ni cobros</div>
+                                    <div style="font-size:11px;color:var(--color-text-muted);margin-top:4px;">No se han emitido notas de crédito ni registrado pagos parciales.</div>
+                                </div>
                             ` : ''}
                         </div>
-                        <h2 style="margin:0 0 6px 0;font-size:22px;font-family:'JetBrains Mono',monospace;font-weight:700;color:var(--color-text-primary);letter-spacing:-0.5px;">
-                            ${root.encf || root.invoice_number}
-                        </h2>
-                        <div style="font-size:13px;color:var(--color-text-muted);display:flex;align-items:center;gap:14px;flex-wrap:wrap;">
-                            <span><strong>Cliente:</strong> ${root.client?.name || 'Consumidor Final'}</span>
-                            ${root.client?.rnc ? `<span><strong>RNC/Cédula:</strong> <code style="font-family:inherit;">${root.client.rnc}</code></span>` : ''}
-                            <span><strong>Emisión:</strong> ${App.formatDate(root.issue_date)}</span>
-                            ${root.dgii_track_id ? `<span><strong>Track ID:</strong> <code>${root.dgii_track_id}</code></span>` : ''}
-                        </div>
-                    </div>
 
-                    <!-- Direct Action Buttons -->
-                    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-                        <a href="#facturas/${root.id}" class="btn btn-secondary btn-sm" style="display:inline-flex;align-items:center;gap:6px;text-decoration:none;">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-                            Ver Factura
-                        </a>
-                        <button type="button" class="btn btn-secondary btn-sm" onclick="InvoicesModule.printInvoice(${root.id}, 'thermal')" style="display:inline-flex;align-items:center;gap:6px;">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
-                            Ticket
-                        </button>
-                        <button type="button" class="btn btn-secondary btn-sm" onclick="InvoicesModule.printInvoice(${root.id}, 'normal')" style="display:inline-flex;align-items:center;gap:6px;">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
-                            A4
-                        </button>
-                        <a href="/api/invoices/${root.id}/pdf?template=normal&download=1" download class="btn btn-secondary btn-sm" style="display:inline-flex;align-items:center;gap:6px;text-decoration:none;">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
-                            PDF
-                        </a>
-                        ${root.is_ecf && root.encf && root.status !== 'cancelled' && !fin.is_fully_credited ? `
-                            <button type="button" class="btn btn-secondary btn-sm" style="color:var(--color-danger-icon);border-color:rgba(239,68,68,0.25);" onclick="InvoicesModule.issueCreditNote(${root.id})">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:middle;margin-right:4px;"><path d="M9 14L4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5v0a5.5 5.5 0 0 1-5.5 5.5H11"/></svg>
-                                Emitir Nota de Crédito
-                            </button>
-                        ` : ''}
+                        <!-- STAGE 4: TERMINAL OUTCOME NODE -->
+                        <div class="node-column" id="col-outcome">
+                            <div class="node-column-header">
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 14 10"/></svg>
+                                ${quote ? '4.' : '3.'} Liquidación & Balance
+                            </div>
+                            <div class="node-card node-outcome" id="node-outcome" style="border-color:${currentStatus.border};">
+                                <div class="node-port port-in" title="Entrada"></div>
+                                <div class="node-header" style="background:${currentStatus.bg};color:${currentStatus.text};">
+                                    <div style="font-size:11px;font-weight:700;display:flex;align-items:center;gap:6px;">
+                                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="9 12 11 14 15 10"/></svg>
+                                        BALANCE REAL CONCILIADO
+                                    </div>
+                                    <span class="badge ${currentStatus.badge}" style="font-size:9px;">${currentStatus.label}</span>
+                                </div>
+                                <div class="node-body">
+                                    <div style="font-size:11px;color:var(--color-text-muted);text-transform:uppercase;font-weight:600;">Saldo Efectivo Pendiente</div>
+                                    <div class="node-amount" style="font-size:24px;color:${currentStatus.text};">
+                                        ${App.formatCurrency(fin.net_balance, root.currency)}
+                                    </div>
+                                    <div style="font-size:12px;color:var(--color-text-muted);background:var(--color-bg-primary);padding:10px 12px;border-radius:var(--radius-md);border:1px solid var(--color-border);margin-top:8px;">
+                                        <div style="display:flex;justify-content:space-between;margin-bottom:3px;">
+                                            <span>Original Facturado:</span>
+                                            <strong>${App.formatCurrency(fin.original_total, root.currency)}</strong>
+                                        </div>
+                                        ${fin.credit_notes_total > 0 ? `
+                                            <div style="display:flex;justify-content:space-between;margin-bottom:3px;color:var(--color-danger-icon);">
+                                                <span>(-) Notas de Crédito:</span>
+                                                <strong>-${App.formatCurrency(fin.credit_notes_total, root.currency)}</strong>
+                                            </div>
+                                        ` : ''}
+                                        ${fin.payments_total > 0 ? `
+                                            <div style="display:flex;justify-content:space-between;color:var(--color-success-icon);">
+                                                <span>(-) Total Pagado:</span>
+                                                <strong>-${App.formatCurrency(fin.payments_total, root.currency)}</strong>
+                                            </div>
+                                        ` : ''}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
                     </div>
                 </div>
             </div>
 
-            <!-- Financial Reconciliation Metric Cards -->
-            <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(210px, 1fr));gap:16px;margin-bottom:var(--spacing-xl);">
-                <div class="table-outer" style="padding:18px 20px;border-left:4px solid var(--color-primary);">
-                    <div style="font-size:12px;font-weight:600;color:var(--color-text-muted);text-transform:uppercase;margin-bottom:4px;">1. Monto Facturado Base</div>
-                    <div style="font-size:20px;font-weight:700;color:var(--color-text-primary);">${App.formatCurrency(fin.original_total, root.currency)}</div>
-                    <div style="font-size:11px;color:var(--color-text-muted);margin-top:4px;">Comprobante original emitido</div>
-                </div>
-
-                <div class="table-outer" style="padding:18px 20px;border-left:4px solid ${fin.credit_notes_total > 0 ? 'var(--color-danger-icon)' : 'var(--color-border)'};">
-                    <div style="font-size:12px;font-weight:600;color:var(--color-text-muted);text-transform:uppercase;margin-bottom:4px;">2. Notas de Crédito</div>
-                    <div style="font-size:20px;font-weight:700;color:${fin.credit_notes_total > 0 ? 'var(--color-danger-icon)' : 'var(--color-text-primary)'};">
-                        ${fin.credit_notes_total > 0 ? '-' : ''}${App.formatCurrency(fin.credit_notes_total, root.currency)}
-                    </div>
-                    <div style="font-size:11px;color:var(--color-text-muted);margin-top:4px;">${modifyingDocs.length} nota(s) vinculada(s)</div>
-                </div>
-
-                <div class="table-outer" style="padding:18px 20px;border-left:4px solid ${fin.payments_total > 0 ? 'var(--color-success-icon)' : 'var(--color-border)'};">
-                    <div style="font-size:12px;font-weight:600;color:var(--color-text-muted);text-transform:uppercase;margin-bottom:4px;">3. Pagos Registrados</div>
-                    <div style="font-size:20px;font-weight:700;color:${fin.payments_total > 0 ? 'var(--color-success-icon)' : 'var(--color-text-primary)'};">
-                        ${fin.payments_total > 0 ? '-' : ''}${App.formatCurrency(fin.payments_total, root.currency)}
-                    </div>
-                    <div style="font-size:11px;color:var(--color-text-muted);margin-top:4px;">${payments.length} abono(s) recibido(s)</div>
-                </div>
-
-                <div class="table-outer" style="padding:18px 20px;border-left:4px solid ${currentStatus.text};background:${currentStatus.bg};">
-                    <div style="font-size:12px;font-weight:600;color:var(--color-text-muted);text-transform:uppercase;margin-bottom:4px;">4. Balance Neto Real</div>
-                    <div style="font-size:22px;font-weight:800;color:${currentStatus.text};">
-                        ${App.formatCurrency(fin.net_balance, root.currency)}
-                    </div>
-                    <div style="font-size:11px;font-weight:600;color:${currentStatus.text};margin-top:4px;">${currentStatus.label}</div>
-                </div>
-            </div>
-
-            <!-- Main Layout: Left: Lineage Tree & Documents / Right: Chronological Timeline -->
-            <div style="display:grid;grid-template-columns:1fr;gap:24px;margin-bottom:var(--spacing-xl);">
-                
-                <!-- Lineage Tree Card -->
-                <div class="table-outer" style="padding:var(--spacing-xl);">
-                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;border-bottom:1px solid var(--color-border);padding-bottom:12px;">
-                        <div>
-                            <h3 style="margin:0;font-size:16px;font-weight:700;color:var(--color-text-primary);">Árbol de Linaje Documental</h3>
-                            <p style="margin:2px 0 0 0;font-size:12px;color:var(--color-text-muted);">Estructura jerárquica y documentos vinculados a esta transacción</p>
-                        </div>
-                    </div>
-
-                    <div class="lineage-tree-wrapper" style="display:flex;flex-direction:column;gap:16px;">
-                        
-                        <!-- 1. Origin Quote (if exists) -->
-                        ${quote ? `
-                            <div class="lineage-node-card" style="display:flex;align-items:center;justify-content:space-between;padding:14px 18px;background:var(--color-bg-secondary);border:1px solid var(--color-border);border-radius:var(--radius-lg);border-left:4px solid #6366f1;">
-                                <div style="display:flex;align-items:center;gap:14px;">
-                                    <div style="width:36px;height:36px;border-radius:var(--radius-md);background:rgba(99,102,241,0.1);color:#6366f1;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
-                                    </div>
-                                    <div>
-                                        <div style="display:flex;align-items:center;gap:8px;">
-                                            <span style="font-weight:700;font-size:13px;color:var(--color-text-primary);">Cotización Origen: #${quote.quote_number}</span>
-                                            <span class="badge badge-info" style="font-size:10px;">Aprobada y Convertida</span>
-                                        </div>
-                                        <div style="font-size:12px;color:var(--color-text-muted);margin-top:2px;">
-                                            Fecha: ${App.formatDate(quote.issue_date)} · Monto: ${App.formatCurrency(quote.total, quote.currency)}
-                                        </div>
-                                    </div>
-                                </div>
-                                <a href="#cotizaciones/${quote.id}" class="btn btn-secondary btn-sm" style="font-size:11px;">Ver Cotización</a>
-                            </div>
-
-                            <!-- Visual Connector Arrow -->
-                            <div style="display:flex;align-items:center;justify-content:center;height:24px;color:var(--color-text-muted);">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/></svg>
-                            </div>
-                        ` : ''}
-
-                        <!-- 2. Root Invoice Node -->
-                        <div class="lineage-node-card" style="padding:18px 20px;background:var(--color-bg-primary);border:2px solid var(--color-primary);border-radius:var(--radius-lg);box-shadow:var(--shadow-sm);">
-                            <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px;">
-                                <div style="display:flex;align-items:center;gap:14px;">
-                                    <div style="width:40px;height:40px;border-radius:var(--radius-md);background:rgba(37,99,235,0.1);color:var(--color-primary);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>
-                                    </div>
-                                    <div>
-                                        <div style="display:flex;align-items:center;gap:8px;">
-                                            <span style="font-size:15px;font-weight:700;font-family:'JetBrains Mono',monospace;color:var(--color-text-primary);">${root.encf || root.invoice_number}</span>
-                                            <span class="badge badge-primary" style="font-size:10px;">Factura Base Principal</span>
-                                            ${root.status === 'cancelled' ? '<span class="badge badge-overdue" style="font-size:10px;">Anulada</span>' : ''}
-                                        </div>
-                                        <div style="font-size:12px;color:var(--color-text-muted);margin-top:4px;">
-                                            Subtotal: ${App.formatCurrency(root.subtotal, root.currency)} | ITBIS: ${App.formatCurrency(root.tax_amount, root.currency)} | Total: <strong>${App.formatCurrency(root.total, root.currency)}</strong>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div style="text-align:right;">
-                                    <div style="font-size:11px;color:var(--color-text-muted);">Emitida: ${App.formatDate(root.issue_date)}</div>
-                                    ${root.dgii_track_id ? `<div style="font-size:11px;color:var(--color-success-text);font-weight:600;margin-top:2px;">Track ID: ${root.dgii_track_id}</div>` : ''}
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- 3. Modifying Documents Section (Notas de Crédito / Débito) -->
-                        <div style="margin-top:8px;">
-                            <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
-                                <span style="font-size:13px;font-weight:700;color:var(--color-text-primary);">Documentos Modificatorios Vinculados</span>
-                                <span class="badge badge-secondary" style="font-size:11px;">${modifyingDocs.length}</span>
-                            </div>
-
-                            ${modifyingDocs.length === 0 ? `
-                                <div style="padding:20px;border:1px dashed var(--color-border);border-radius:var(--radius-lg);text-align:center;color:var(--color-text-muted);font-size:13px;">
-                                    <span>Esta factura no tiene Notas de Crédito ni de Débito vinculadas. Su monto original no ha sufrido modificaciones fiscales.</span>
-                                </div>
-                            ` : `
-                                <div style="display:flex;flex-direction:column;gap:12px;">
-                                    ${modifyingDocs.map(doc => `
-                                        <div style="padding:14px 18px;background:var(--color-bg-secondary);border:1px solid ${doc.is_credit_note ? 'rgba(239,68,68,0.3)' : 'rgba(245,158,11,0.3)'};border-radius:var(--radius-lg);border-left:4px solid ${doc.is_credit_note ? 'var(--color-danger-icon)' : '#d97706'};display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;">
-                                            <div style="display:flex;align-items:center;gap:14px;">
-                                                <div style="width:36px;height:36px;border-radius:var(--radius-md);background:${doc.is_credit_note ? 'rgba(239,68,68,0.1)' : 'rgba(245,158,11,0.1)'};color:${doc.is_credit_note ? 'var(--color-danger-icon)' : '#d97706'};display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-                                                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 14 4 9 9 4"/><path d="M20 20v-7a4 4 0 0 0-4-4H4"/></svg>
-                                                </div>
-                                                <div>
-                                                    <div style="display:flex;align-items:center;gap:8px;">
-                                                        <span style="font-family:'JetBrains Mono',monospace;font-weight:700;font-size:13px;color:var(--color-text-primary);">${doc.encf || doc.invoice_number}</span>
-                                                        <span class="badge ${doc.is_credit_note ? 'badge-danger' : 'badge-warning'}" style="font-size:10px;">${doc.type_label}</span>
-                                                        ${doc.dgii_status === 'accepted' ? '<span class="badge badge-active" style="font-size:10px;">DGII Aprobada</span>' : ''}
-                                                    </div>
-                                                    <div style="font-size:12px;color:var(--color-text-muted);margin-top:3px;">
-                                                        <strong>Motivo DGII (Cód. ${doc.modification_code || '1'}):</strong> ${doc.modification_code_desc}
-                                                        ${doc.modification_reason ? ` · <span style="font-style:italic;">"${doc.modification_reason}"</span>` : ''}
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <div style="display:flex;align-items:center;gap:14px;">
-                                                <div style="text-align:right;">
-                                                    <div style="font-weight:700;font-size:15px;color:${doc.is_credit_note ? 'var(--color-danger-icon)' : 'var(--color-text-primary)'};">
-                                                        ${doc.is_credit_note ? '-' : '+'}${App.formatCurrency(doc.total, doc.currency)}
-                                                    </div>
-                                                    <div style="font-size:11px;color:var(--color-text-muted);">${App.formatDate(doc.issue_date)}</div>
-                                                </div>
-                                                <a href="#facturas/${doc.id}" class="btn btn-secondary btn-sm" style="font-size:11px;">Ver Documento</a>
-                                            </div>
-                                        </div>
-                                    `).join('')}
-                                </div>
-                            `}
-                        </div>
-
-                        <!-- 4. Payments Applied Section -->
-                        <div style="margin-top:12px;">
-                            <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
-                                <span style="font-size:13px;font-weight:700;color:var(--color-text-primary);">Abonos y Pagos Registrados</span>
-                                <span class="badge badge-secondary" style="font-size:11px;">${payments.length}</span>
-                            </div>
-
-                            ${payments.length === 0 ? `
-                                <div style="padding:16px;border:1px dashed var(--color-border);border-radius:var(--radius-lg);text-align:center;color:var(--color-text-muted);font-size:12px;">
-                                    No se han registrado pagos en caja ni transferencias para este comprobante.
-                                </div>
-                            ` : `
-                                <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(240px, 1fr));gap:10px;">
-                                    ${payments.map(p => `
-                                        <div style="padding:12px 14px;background:var(--color-bg-secondary);border:1px solid var(--color-border);border-radius:var(--radius-md);display:flex;justify-content:space-between;align-items:center;">
-                                            <div>
-                                                <div style="font-size:12px;font-weight:600;color:var(--color-text-primary);text-transform:capitalize;">${p.payment_method || 'Pago'}</div>
-                                                <div style="font-size:11px;color:var(--color-text-muted);margin-top:2px;">
-                                                    ${App.formatDate(p.payment_date)} ${p.reference ? `· Ref: ${p.reference}` : ''}
-                                                </div>
-                                            </div>
-                                            <div style="font-weight:700;font-size:13px;color:var(--color-success-icon);">
-                                                +${App.formatCurrency(p.amount, root.currency)}
-                                            </div>
-                                        </div>
-                                    `).join('')}
-                                </div>
-                            `}
-                        </div>
-
-                    </div>
-                </div>
-
-                <!-- Chronological Smart Timeline -->
+            <!-- VIEW 2: DETAILED CHRONOLOGICAL TIMELINE (COLLAPSIBLE / SWITCHABLE) -->
+            <div id="view-timeline-wrapper" style="display:${this.activeViewMode === 'timeline' ? 'block' : 'none'};">
                 <div class="table-outer" style="padding:var(--spacing-xl);">
                     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;border-bottom:1px solid var(--color-border);padding-bottom:12px;">
                         <div>
                             <h3 style="margin:0;font-size:16px;font-weight:700;color:var(--color-text-primary);">Historial Cronológico Completo</h3>
-                            <p style="margin:2px 0 0 0;font-size:12px;color:var(--color-text-muted);">Registro ordenado en el tiempo de cada evento comercial y fiscal</p>
+                            <p style="margin:2px 0 0 0;font-size:12px;color:var(--color-text-muted);">Registro de eventos ordenados en el tiempo con acuses y pistas de auditoría</p>
                         </div>
                         <span class="badge badge-secondary" style="font-size:11px;font-weight:600;">${timeline.length} eventos</span>
                     </div>
 
                     <div class="smart-audit-timeline" style="position:relative;padding-left:32px;">
-                        <!-- Continuous Vertical Spine -->
                         <div style="position:absolute;left:13px;top:10px;bottom:10px;width:2px;background:var(--color-border);"></div>
 
-                        ${timeline.map((item, idx) => {
-                            const iconMap = {
-                                quote: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>',
-                                invoice: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/></svg>',
-                                'shield-check': '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg>',
-                                'shield-x': '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><line x1="9" y1="9" x2="15" y2="15"/><line x1="15" y1="9" x2="9" y2="15"/></svg>',
-                                shield: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>',
-                                send: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>',
-                                'credit-card': '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>',
-                                'corner-down-left': '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 10 4 15 9 20"/><path d="M20 4v7a4 4 0 0 1-4 4H4"/></svg>',
-                                'corner-up-right': '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 14 20 9 15 4"/><path d="M4 20v-7a4 4 0 0 1 4-4h12"/></svg>',
-                                'x-circle': '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>',
-                            };
-
+                        ${timeline.map(item => {
                             const badgeColors = {
                                 'badge-info': { dotBg: '#6366f1', dotColor: '#fff' },
                                 'badge-primary': { dotBg: 'var(--color-primary)', dotColor: '#fff' },
@@ -544,12 +545,9 @@ const AuditTrailModule = {
 
                             return `
                                 <div class="timeline-step" style="position:relative;margin-bottom:24px;">
-                                    <!-- Node Icon Dot -->
                                     <div style="position:absolute;left:-32px;top:0;width:28px;height:28px;border-radius:50%;background:${dotScheme.dotBg};color:${dotScheme.dotColor};display:flex;align-items:center;justify-content:center;box-shadow:0 0 0 4px var(--color-bg-primary);z-index:2;">
-                                        ${iconMap[item.icon] || iconMap.invoice}
+                                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
                                     </div>
-
-                                    <!-- Step Content -->
                                     <div style="background:var(--color-bg-secondary);border:1px solid var(--color-border);border-radius:var(--radius-lg);padding:14px 18px;">
                                         <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px;">
                                             <div>
@@ -582,9 +580,124 @@ const AuditTrailModule = {
                         }).join('')}
                     </div>
                 </div>
-
             </div>
         `;
+
+        // Render the SVG lines connecting the nodes
+        setTimeout(() => {
+            this.drawNodeConnectors();
+        }, 60);
+
+        // Bind resize listener to recompute node connection lines
+        if (this.resizeHandler) {
+            window.removeEventListener('resize', this.resizeHandler);
+        }
+        this.resizeHandler = () => this.drawNodeConnectors();
+        window.addEventListener('resize', this.resizeHandler);
+    },
+
+    switchView(mode) {
+        this.activeViewMode = mode;
+        const nodesWrap = document.getElementById('view-nodes-wrapper');
+        const timelineWrap = document.getElementById('view-timeline-wrapper');
+        const btnNodes = document.getElementById('tab-btn-nodes');
+        const btnTimeline = document.getElementById('tab-btn-timeline');
+
+        if (nodesWrap) nodesWrap.style.display = mode === 'nodes' ? 'block' : 'none';
+        if (timelineWrap) timelineWrap.style.display = mode === 'timeline' ? 'block' : 'none';
+
+        if (btnNodes) {
+            btnNodes.className = `btn btn-sm ${mode === 'nodes' ? 'btn-primary' : 'btn-ghost'}`;
+        }
+        if (btnTimeline) {
+            btnTimeline.className = `btn btn-sm ${mode === 'timeline' ? 'btn-primary' : 'btn-ghost'}`;
+        }
+
+        if (mode === 'nodes') {
+            setTimeout(() => this.drawNodeConnectors(), 40);
+        }
+    },
+
+    drawNodeConnectors() {
+        const svg = document.getElementById('nodes-svg-layer');
+        const container = document.getElementById('nodes-canvas');
+        if (!svg || !container) return;
+
+        const containerRect = container.getBoundingClientRect();
+        const scrollW = Math.max(container.scrollWidth, container.clientWidth);
+        const scrollH = Math.max(container.scrollHeight, container.clientHeight);
+
+        svg.setAttribute('width', scrollW);
+        svg.setAttribute('height', scrollH);
+        svg.style.width = scrollW + 'px';
+        svg.style.height = scrollH + 'px';
+
+        let pathsHtml = `
+            <defs>
+                <marker id="arrow-primary" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                    <path d="M 0 1 L 10 5 L 0 9 z" fill="#3b82f6" />
+                </marker>
+                <marker id="arrow-credit" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                    <path d="M 0 1 L 10 5 L 0 9 z" fill="#ef4444" />
+                </marker>
+                <marker id="arrow-payment" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                    <path d="M 0 1 L 10 5 L 0 9 z" fill="#10b981" />
+                </marker>
+                <marker id="arrow-outcome" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                    <path d="M 0 1 L 10 5 L 0 9 z" fill="#6366f1" />
+                </marker>
+            </defs>
+        `;
+
+        const getPortCenter = (nodeId, isOut) => {
+            const node = document.getElementById(nodeId);
+            if (!node) return null;
+            const port = node.querySelector(isOut ? '.port-out' : '.port-in');
+            const target = port || node;
+            const r = target.getBoundingClientRect();
+            return {
+                x: (r.left + r.width / 2) - containerRect.left + container.scrollLeft,
+                y: (r.top + r.height / 2) - containerRect.top + container.scrollTop
+            };
+        };
+
+        const drawCurve = (startId, endId, colorClass, markerId) => {
+            const p1 = getPortCenter(startId, true);
+            const p2 = getPortCenter(endId, false);
+            if (!p1 || !p2) return;
+
+            const dx = Math.max(35, Math.abs(p2.x - p1.x) * 0.45);
+            const d = `M ${p1.x} ${p1.y} C ${p1.x + dx} ${p1.y}, ${p2.x - dx} ${p2.y}, ${p2.x} ${p2.y}`;
+            pathsHtml += `<path class="node-connector-path ${colorClass}" d="${d}" marker-end="url(#${markerId})"/>`;
+        };
+
+        // 1. Quote to Root Invoice (if exists)
+        if (document.getElementById('node-quote')) {
+            drawCurve('node-quote', 'node-root', 'path-primary', 'arrow-primary');
+        }
+
+        // 2. Root Invoice to each Modifying Document (Credit / Debit Notes)
+        const modifyingNodes = container.querySelectorAll('[data-node-type="modifier"]');
+        modifyingNodes.forEach(m => {
+            drawCurve('node-root', m.id, 'path-credit', 'arrow-credit');
+            // And from modifier to outcome
+            drawCurve(m.id, 'node-outcome', 'path-credit', 'arrow-outcome');
+        });
+
+        // 3. Root Invoice to each Payment
+        const paymentNodes = container.querySelectorAll('[data-node-type="payment"]');
+        paymentNodes.forEach(p => {
+            drawCurve('node-root', p.id, 'path-payment', 'arrow-payment');
+            // And from payment to outcome
+            drawCurve(p.id, 'node-outcome', 'path-payment', 'arrow-outcome');
+        });
+
+        // If no modifiers and no payments, connect root directly to outcome
+        if (modifyingNodes.length === 0 && paymentNodes.length === 0) {
+            drawCurve('node-root', 'node-outcome', 'path-primary', 'arrow-outcome');
+        }
+
+        svg.innerHTML = pathsHtml;
     }
 };
 

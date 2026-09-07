@@ -3671,3 +3671,210 @@ tr:hover .row-actions { opacity: 1; }
   color: #0b484c;
 }
 
+/* ═══════════════════════════════════════════════════════════
+   SMART VOUCHER NODE GRAPH (SEGUIMIENTO POR NODOS)
+   ═══════════════════════════════════════════════════════════ */
+
+.node-graph-viewport {
+  position: relative;
+  width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  background-color: var(--color-bg-secondary);
+  background-image: radial-gradient(rgba(100, 116, 139, 0.16) 1.5px, transparent 1.5px);
+  background-size: 22px 22px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xl);
+  padding: 40px 30px;
+  min-height: 480px;
+  box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.02);
+  user-select: none;
+}
+
+[data-theme='dark'] .node-graph-viewport {
+  background-image: radial-gradient(rgba(255, 255, 255, 0.08) 1.5px, transparent 1.5px);
+}
+
+.node-graph-canvas {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 70px;
+  min-width: max-content;
+  padding: 20px 15px;
+}
+
+.node-svg-layer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 1;
+  overflow: visible;
+}
+
+.node-connector-path {
+  fill: none;
+  stroke: #94a3b8;
+  stroke-width: 2.5px;
+  stroke-linecap: round;
+  transition: stroke 0.25s ease, stroke-width 0.25s ease;
+}
+
+.node-connector-path.path-primary {
+  stroke: #3b82f6;
+}
+
+.node-connector-path.path-credit {
+  stroke: #ef4444;
+  stroke-dasharray: 6 4;
+}
+
+.node-connector-path.path-payment {
+  stroke: #10b981;
+}
+
+.node-column {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  position: relative;
+  z-index: 2;
+  align-items: center;
+  justify-content: center;
+}
+
+.node-column-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: var(--color-text-muted);
+  background: var(--color-bg-primary);
+  padding: 4px 10px;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--color-border);
+  box-shadow: var(--shadow-sm);
+  margin-bottom: -10px;
+}
+
+/* Node Card */
+.node-card {
+  position: relative;
+  width: 280px;
+  background: var(--color-bg-primary);
+  border: 1.5px solid var(--color-border);
+  border-radius: 14px;
+  box-shadow: 0 4px 16px -2px rgba(0,0,0,0.06), 0 2px 6px -1px rgba(0,0,0,0.03);
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  overflow: visible;
+}
+
+.node-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 28px -4px rgba(0,0,0,0.12), 0 4px 12px -2px rgba(0,0,0,0.05);
+}
+
+.node-card.node-root {
+  width: 310px;
+  border-color: #3b82f6;
+  box-shadow: 0 8px 24px -4px rgba(59, 130, 246, 0.2), 0 0 0 1px rgba(59, 130, 246, 0.3);
+}
+
+.node-card.node-quote {
+  border-color: #8b5cf6;
+}
+
+.node-card.node-credit {
+  border-color: rgba(239, 68, 68, 0.4);
+}
+
+.node-card.node-payment {
+  border-color: rgba(16, 185, 129, 0.4);
+}
+
+.node-card.node-outcome {
+  border-color: rgba(99, 102, 241, 0.4);
+  background: linear-gradient(180deg, var(--color-bg-primary) 0%, var(--color-bg-secondary) 100%);
+}
+
+/* Ports */
+.node-port {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  background: var(--color-bg-primary);
+  border: 2.5px solid #94a3b8;
+  z-index: 5;
+  box-shadow: 0 0 0 2px var(--color-bg-primary);
+  transition: all 0.2s ease;
+}
+
+.node-port.port-in {
+  left: -7px;
+}
+
+.node-port.port-out {
+  right: -7px;
+}
+
+.node-card.node-root .node-port {
+  border-color: #3b82f6;
+}
+
+.node-card.node-quote .node-port {
+  border-color: #8b5cf6;
+}
+
+.node-card.node-credit .node-port {
+  border-color: #ef4444;
+}
+
+.node-card.node-payment .node-port {
+  border-color: #10b981;
+}
+
+.node-card.node-outcome .node-port {
+  border-color: #6366f1;
+}
+
+.node-card:hover .node-port {
+  transform: translateY(-50%) scale(1.25);
+}
+
+.node-header {
+  padding: 10px 14px;
+  border-top-left-radius: 13px;
+  border-top-right-radius: 13px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.node-body {
+  padding: 14px;
+}
+
+.node-footer {
+  padding: 8px 14px;
+  border-top: 1px solid var(--color-border);
+  background: var(--color-bg-secondary);
+  border-bottom-left-radius: 13px;
+  border-bottom-right-radius: 13px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
+

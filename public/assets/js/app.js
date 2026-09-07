@@ -18,7 +18,7 @@ import SetupModule from './modules/setup.js?v=201';
 import ExpensesModule from './modules/expenses.js?v=201';
 import UsersModule from './modules/users.js?v=204';
 import AuditTrailModule from './modules/audit-trail.js?v=228';
-import SupportModule from './modules/support.js?v=201';
+import SupportModule from './modules/support.js?v=203';
 import { WebAuthnHelper } from './helpers/webauthn-helper.js?v=207';
 
 
@@ -71,7 +71,14 @@ window.App = {
         this.initHorizontalScroll();
     },
 
-    async api(endpoint, options = {}) {
+    async api(endpoint, options = {}, maybeBody = null) {
+        if (typeof options === 'string') {
+            options = {
+                method: options,
+                body: maybeBody
+            };
+        }
+
         const url = `/api/${endpoint}`;
         const headers = {
             'Content-Type': 'application/json',

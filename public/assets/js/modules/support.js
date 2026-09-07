@@ -341,9 +341,19 @@ const SupportModule = {
                     message: container.querySelector('#ticket-message').value.trim(),
                 };
 
-                const res = await window.App.api('support/tickets', 'POST', payload);
-                window.App.showToast(`Ticket ${res.data.ticket_number} creado con éxito.`, 'success');
-                window.App.navigate(`soporte/${res.data.ticket_number}`);
+                const res = await window.App.api('support/tickets', {
+                    method: 'POST',
+                    body: payload
+                });
+
+                const ticketNum = res?.data?.ticket_number || res?.ticket_number;
+                if (ticketNum) {
+                    window.App.showToast(`Ticket ${ticketNum} creado con éxito.`, 'success');
+                    window.App.navigate(`soporte/${ticketNum}`);
+                } else {
+                    window.App.showToast('Ticket de soporte creado con éxito.', 'success');
+                    window.App.navigate('soporte');
+                }
             } catch (err) {
                 window.App.showToast(err.message || 'Error al crear ticket', 'error');
                 btn.disabled = false;
@@ -463,7 +473,10 @@ const SupportModule = {
             statusSelect.addEventListener('change', async () => {
                 const newStatus = statusSelect.value;
                 try {
-                    await window.App.api(`support/tickets/${ticket.id}/status`, 'PATCH', { status: newStatus });
+                    await window.App.api(`support/tickets/${ticket.id}/status`, {
+                        method: 'PATCH',
+                        body: { status: newStatus }
+                    });
                     window.App.showToast(`Estado cambiado a ${newStatus}`, 'success');
                     this.renderTicketDetail(container, ticket.ticket_number);
                 } catch (err) {
@@ -484,9 +497,12 @@ const SupportModule = {
                 btn.textContent = 'Enviando...';
 
                 try {
-                    await window.App.api(`support/tickets/${ticket.id}/reply`, 'POST', {
-                        message: replyText,
-                        status: nextStatus
+                    await window.App.api(`support/tickets/${ticket.id}/reply`, {
+                        method: 'POST',
+                        body: {
+                            message: replyText,
+                            status: nextStatus
+                        }
                     });
                     window.App.showToast('Respuesta enviada correctamente', 'success');
                     this.renderTicketDetail(container, ticket.ticket_number);

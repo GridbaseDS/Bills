@@ -71,6 +71,21 @@ window.App = {
         this.initHorizontalScroll();
     },
 
+    dismissSplash() {
+        const splash = document.getElementById('app-splash');
+        if (!splash || splash.classList.contains('splash-hidden')) return;
+        const startTime = window.__splashStartTime || Date.now();
+        const elapsed = Date.now() - startTime;
+        const minDisplay = 450;
+        const delay = Math.max(0, minDisplay - elapsed);
+        setTimeout(() => {
+            splash.classList.add('splash-hidden');
+            setTimeout(() => {
+                if (splash.parentNode) splash.parentNode.removeChild(splash);
+            }, 350);
+        }, delay);
+    },
+
     async api(endpoint, options = {}, maybeBody = null) {
         if (typeof options === 'string') {
             options = {
@@ -187,6 +202,7 @@ window.App = {
                     const currentRoute = window.location.pathname.substring(1) || 'inicio';
                     this.navigate(currentRoute);
                 }
+                this.dismissSplash();
             } else {
                 const deviceToken = localStorage.getItem('device_token');
                 const savedEmail = localStorage.getItem('saved_email');
@@ -195,6 +211,7 @@ window.App = {
                 } else {
                     this.renderLogin();
                 }
+                this.dismissSplash();
             }
         } catch (error) {
             const deviceToken = localStorage.getItem('device_token');
@@ -204,6 +221,7 @@ window.App = {
             } else {
                 this.renderLogin();
             }
+            this.dismissSplash();
         }
     },
 
@@ -753,6 +771,7 @@ window.App = {
             e.preventDefault();
             this.login(document.getElementById('login-email').value, document.getElementById('login-password').value);
         });
+        this.dismissSplash();
     },
 
     render2FA(setupMode, tempSecret, qrUri) {
@@ -1379,6 +1398,7 @@ window.App = {
         if (this.state.is_demo || window.location.hostname.includes('bdemo')) {
             this.initDemoCountdown();
         }
+        this.dismissSplash();
     },
 
     check2faReminder() {

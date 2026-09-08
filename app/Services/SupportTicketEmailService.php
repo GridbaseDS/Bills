@@ -59,7 +59,7 @@ class SupportTicketEmailService
         $subject = "Re: [{$ticket->ticket_number}] [{$domain}] {$company['name']} - {$ticket->subject}";
 
         return self::dispatchToSupport($subject, [
-            'title' => 'Nueva Respuesta en Ticket de Soporte',
+            'title' => 'Nueva Respuesta en Ticket',
             'badge_type' => 'respuesta',
             'ticket' => $ticket,
             'message' => $message,
@@ -103,9 +103,9 @@ class SupportTicketEmailService
                 ->replyTo(new Address($replyToEmail, $replyToName ?: 'Cliente Bills'))
                 ->subject($subject);
 
-            // Embed Bills logo for flawless offline/inbox display
-            $logoPath = public_path('assets/img/bills-logo-white.png');
-            $logoSrc = "https://{$templateData['domain']}/assets/img/bills-logo-white.png";
+            // Use crisp dark-text logo on clean light background
+            $logoPath = public_path('assets/img/bills-logo.png');
+            $logoSrc = "https://{$templateData['domain']}/assets/img/bills-logo.png";
             if (file_exists($logoPath)) {
                 $email->embedFromPath($logoPath, 'bills_logo', 'image/png');
                 $logoSrc = 'cid:bills_logo';
@@ -220,7 +220,7 @@ class SupportTicketEmailService
     }
 
     /**
-     * Generate responsive HTML email template styled to match the Bills application UI.
+     * Generate clean, professional HTML email template matching modern SaaS standards and Bills branding.
      */
     private static function buildHtmlTemplate(array $data): string
     {
@@ -231,19 +231,18 @@ class SupportTicketEmailService
         $domain = $data['domain'];
         $company = $data['company'];
         $dateDR = $data['date_dr'];
-        $title = $data['title'];
-        $logoSrc = $data['logo_src'] ?? "https://{$domain}/assets/img/bills-logo-white.png";
+        $logoSrc = $data['logo_src'] ?? "https://{$domain}/assets/img/bills-logo.png";
         $isNew = ($data['badge_type'] ?? '') === 'nuevo';
 
         $baseUrl = self::resolveBaseUrl();
         $ticketUrl = "{$baseUrl}/#soporte/{$ticket->id}";
 
-        // Priority badge styling matching Bills Design System
+        // Priority colors
         $priorityColors = [
-            'urgente' => ['bg' => 'rgba(239, 68, 68, 0.12)', 'text' => '#DC2626', 'border' => 'rgba(239, 68, 68, 0.28)'],
-            'alta'    => ['bg' => 'rgba(249, 115, 22, 0.12)', 'text' => '#EA580C', 'border' => 'rgba(249, 115, 22, 0.28)'],
-            'media'   => ['bg' => 'rgba(245, 158, 11, 0.12)', 'text' => '#D97706', 'border' => 'rgba(245, 158, 11, 0.28)'],
-            'baja'    => ['bg' => 'rgba(16, 185, 129, 0.12)', 'text' => '#059669', 'border' => 'rgba(16, 185, 129, 0.28)'],
+            'urgente' => ['bg' => '#FEF2F2', 'text' => '#991B1B', 'border' => '#F87171'],
+            'alta'    => ['bg' => '#FFF7ED', 'text' => '#9A3412', 'border' => '#FDBA74'],
+            'media'   => ['bg' => '#FEFCE8', 'text' => '#854D0E', 'border' => '#FDE047'],
+            'baja'    => ['bg' => '#F0FDF4', 'text' => '#166534', 'border' => '#86EFAC'],
         ];
         $prio = strtolower($ticket->priority ?? 'media');
         $prioStyle = $priorityColors[$prio] ?? ['bg' => '#F1F5F9', 'text' => '#475569', 'border' => '#CBD5E1'];
@@ -264,223 +263,171 @@ class SupportTicketEmailService
 <head>
     <meta charset='UTF-8'>
     <meta name='viewport' content='width=device-width, initial-scale=1.0'>
-    <title>{$title} - GridBase Bills</title>
+    <title>[{$ticket->ticket_number}] {$ticket->subject}</title>
 </head>
-<body style='margin:0;padding:0;background-color:#0B131E;font-family:-apple-system,BlinkMacSystemFont,\"Segoe UI\",Roboto,Helvetica,Arial,sans-serif;color:#1E293B;'>
+<body style='margin:0;padding:0;background-color:#F8FAFC;font-family:-apple-system,BlinkMacSystemFont,\"Segoe UI\",Roboto,Helvetica,Arial,sans-serif;color:#1E293B;'>
     
-    <!-- Outer Wrapper -->
-    <table width='100%' cellpadding='0' cellspacing='0' border='0' style='background-color:#0B131E;padding:36px 12px;'>
+    <!-- Outer Wrapper Table -->
+    <table width='100%' cellpadding='0' cellspacing='0' border='0' style='background-color:#F8FAFC;padding:32px 12px;'>
         <tr>
             <td align='center'>
                 
                 <!-- Main Container Card -->
-                <table width='100%' cellpadding='0' cellspacing='0' border='0' style='max-width:640px;background-color:#FFFFFF;border-radius:14px;overflow:hidden;box-shadow:0 20px 25px -5px rgba(0,0,0,0.4),0 8px 10px -6px rgba(0,0,0,0.3);border:1px solid #1E293B;'>
+                <table width='100%' cellpadding='0' cellspacing='0' border='0' style='max-width:600px;background-color:#FFFFFF;border-radius:12px;border:1px solid #E2E8F0;box-shadow:0 4px 6px -1px rgba(0,0,0,0.05),0 2px 4px -2px rgba(0,0,0,0.03);overflow:hidden;'>
                     
-                    <!-- App Topbar (Bills UI Header) -->
+                    <!-- Clean Top Header -->
                     <tr>
-                        <td style='background:linear-gradient(180deg, #0A0F1D 0%, #080D1A 100%);padding:22px 28px;border-bottom:2px solid #00A460;'>
+                        <td style='padding:24px 30px 20px;border-bottom:1px solid #E2E8F0;'>
                             <table width='100%' cellpadding='0' cellspacing='0' border='0'>
                                 <tr>
-                                    <!-- Logo & Brand Title -->
+                                    <!-- Bills Logo & System Name -->
                                     <td style='vertical-align:middle;'>
                                         <table cellpadding='0' cellspacing='0' border='0'>
                                             <tr>
-                                                <td style='vertical-align:middle;padding-right:16px;'>
+                                                <td style='vertical-align:middle;padding-right:12px;'>
                                                     <a href='https://{$domain}' target='_blank' style='text-decoration:none;display:block;'>
-                                                        <img src='{$logoSrc}' alt='Bills' width='62' style='display:block;width:62px;height:auto;border:0;' />
+                                                        <img src='{$logoSrc}' alt='Bills' width='38' style='display:block;width:38px;height:auto;border:0;' />
                                                     </a>
                                                 </td>
                                                 <td style='vertical-align:middle;'>
-                                                    <div style='font-size:16px;font-weight:800;letter-spacing:-0.2px;color:#FFFFFF;'>
+                                                    <div style='font-size:17px;font-weight:800;color:#0F172A;letter-spacing:-0.3px;line-height:1.2;'>
                                                         GridBase Bills
                                                     </div>
-                                                    <div style='font-size:11px;font-weight:600;color:#94A3B8;letter-spacing:0.3px;margin-top:2px;'>
-                                                        Módulo de Soporte y Tickets
+                                                    <div style='font-size:11.5px;font-weight:600;color:#64748B;letter-spacing:0.2px;margin-top:2px;'>
+                                                        Centro de Soporte Técnico
                                                     </div>
                                                 </td>
                                             </tr>
                                         </table>
                                     </td>
 
-                                    <!-- Status Pill Badge -->
+                                    <!-- Ticket ID Pill Badge -->
                                     <td align='right' style='vertical-align:middle;'>
+                                        <span style='font-family:\"JetBrains Mono\",monospace,Consolas;font-size:13px;font-weight:800;color:#0F172A;background:#F1F5F9;border:1px solid #E2E8F0;padding:6px 12px;border-radius:6px;display:inline-block;letter-spacing:0.5px;'>
+                                            {$ticket->ticket_number}
+                                        </span>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+
+                    <!-- Card Body -->
+                    <tr>
+                        <td style='padding:28px 30px 32px;'>
+                            
+                            <!-- Status & Priority Row -->
+                            <table width='100%' cellpadding='0' cellspacing='0' border='0' style='margin-bottom:12px;'>
+                                <tr>
+                                    <td>
                                         " . ($isNew ? "
-                                        <span style='background:rgba(0,164,96,0.15);color:#00A460;font-size:11px;font-weight:800;padding:6px 14px;border-radius:9999px;letter-spacing:0.6px;text-transform:uppercase;border:1px solid rgba(0,164,96,0.35);display:inline-block;white-space:nowrap;'>
+                                        <span style='background:#ECFDF5;color:#059669;border:1px solid #A7F3D0;font-size:11px;font-weight:800;padding:4px 10px;border-radius:9999px;letter-spacing:0.5px;text-transform:uppercase;display:inline-block;'>
                                             ● Nuevo Ticket
                                         </span>
                                         " : "
-                                        <span style='background:rgba(59,130,246,0.15);color:#3B82F6;font-size:11px;font-weight:800;padding:6px 14px;border-radius:9999px;letter-spacing:0.6px;text-transform:uppercase;border:1px solid rgba(59,130,246,0.35);display:inline-block;white-space:nowrap;'>
+                                        <span style='background:#EFF6FF;color:#2563EB;border:1px solid #BFDBFE;font-size:11px;font-weight:800;padding:4px 10px;border-radius:9999px;letter-spacing:0.5px;text-transform:uppercase;display:inline-block;'>
                                             ● Respuesta de Cliente
                                         </span>
                                         ") . "
-                                    </td>
-                                </tr>
-                            </table>
-                        </td>
-                    </tr>
-
-                    <!-- Body Content Area -->
-                    <tr>
-                        <td style='padding:28px 30px 24px;background-color:#FFFFFF;'>
-                            
-                            <!-- Ticket Overview Header Bar -->
-                            <table width='100%' cellpadding='0' cellspacing='0' border='0' style='background-color:#F8FAFC;border:1px solid #E2E8F0;border-radius:10px;margin-bottom:24px;'>
-                                <tr>
-                                    <td style='padding:16px 20px;'>
-                                        <table width='100%' cellpadding='0' cellspacing='0' border='0'>
-                                            <tr>
-                                                <td style='vertical-align:middle;'>
-                                                    <span style='font-size:10px;font-weight:700;color:#64748B;text-transform:uppercase;letter-spacing:0.8px;'>
-                                                        Identificador de Ticket
-                                                    </span>
-                                                    <div style='font-size:19px;font-weight:800;color:#0F172A;font-family:\"JetBrains Mono\",monospace;letter-spacing:0.5px;margin-top:2px;'>
-                                                        {$ticket->ticket_number}
-                                                    </div>
-                                                </td>
-                                                <td align='right' style='vertical-align:middle;'>
-                                                    <span style='background:{$prioStyle['bg']};color:{$prioStyle['text']};border:1px solid {$prioStyle['border']};font-size:11px;font-weight:800;padding:5px 12px;border-radius:6px;text-transform:uppercase;letter-spacing:0.5px;display:inline-block;'>
-                                                        Prioridad: " . htmlspecialchars($ticket->priority) . "
-                                                    </span>
-                                                </td>
-                                            </tr>
-                                        </table>
                                         
-                                        <!-- Subject Heading -->
-                                        <div style='margin-top:12px;padding-top:12px;border-top:1px solid #E2E8F0;'>
-                                            <div style='font-size:11px;font-weight:700;color:#64748B;text-transform:uppercase;letter-spacing:0.5px;'>Asunto:</div>
-                                            <div style='font-size:16px;font-weight:700;color:#0F172A;line-height:1.4;margin-top:3px;'>
-                                                " . htmlspecialchars($ticket->subject) . "
+                                        <span style='background:{$prioStyle['bg']};color:{$prioStyle['text']};border:1px solid {$prioStyle['border']};font-size:11px;font-weight:800;padding:4px 10px;border-radius:9999px;letter-spacing:0.5px;text-transform:uppercase;display:inline-block;margin-left:6px;'>
+                                            Prioridad: " . htmlspecialchars($ticket->priority) . "
+                                        </span>
+
+                                        <span style='background:#F8FAFC;color:#64748B;border:1px solid #E2E8F0;font-size:11px;font-weight:700;padding:4px 10px;border-radius:9999px;text-transform:capitalize;display:inline-block;margin-left:6px;'>
+                                            " . htmlspecialchars($ticket->category) . "
+                                        </span>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <!-- Subject Title -->
+                            <h2 style='margin:12px 0 20px;font-size:19px;font-weight:800;color:#0F172A;line-height:1.35;letter-spacing:-0.2px;'>
+                                " . htmlspecialchars($ticket->subject) . "
+                            </h2>
+
+                            <!-- User Message Box (Hero Content) -->
+                            <div style='background-color:#F8FAFC;border:1px solid #E2E8F0;border-left:4px solid #00A460;border-radius:8px;padding:20px;margin-bottom:26px;'>
+                                
+                                <!-- User Identity Row -->
+                                <table cellpadding='0' cellspacing='0' border='0' style='margin-bottom:12px;'>
+                                    <tr>
+                                        <td style='vertical-align:middle;padding-right:10px;'>
+                                            <div style='width:32px;height:32px;border-radius:50%;background:#00A460;color:#FFFFFF;font-weight:800;font-size:12px;line-height:32px;text-align:center;'>
+                                                {$initials}
                                             </div>
-                                        </div>
-                                    </td>
-                                </tr>
-                            </table>
+                                        </td>
+                                        <td style='vertical-align:middle;'>
+                                            <div style='font-size:13.5px;font-weight:700;color:#0F172A;'>
+                                                " . htmlspecialchars($user->name) . "
+                                            </div>
+                                            <div style='font-size:11.5px;color:#64748B;'>
+                                                " . htmlspecialchars($user->email) . "
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </table>
 
-                            <!-- System Specifications Grid (4 Cards in Bills Style) -->
-                            <div style='font-size:12px;font-weight:700;color:#0F172A;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:12px;'>
-                                Especificaciones del Sistema y Origen
+                                <!-- Message Text -->
+                                <div style='font-size:14.5px;line-height:1.65;color:#334155;white-space:pre-wrap;font-family:-apple-system,BlinkMacSystemFont,\"Segoe UI\",Roboto,sans-serif;'>{$safeMessage}</div>
                             </div>
 
-                            <table width='100%' cellpadding='0' cellspacing='0' border='0' style='margin-bottom:24px;'>
+                            <!-- Primary Action CTA -->
+                            <table width='100%' cellpadding='0' cellspacing='0' border='0' style='margin-bottom:28px;'>
                                 <tr>
-                                    <!-- Card 1: Distribution / Domain -->
-                                    <td width='48%' style='vertical-align:top;background-color:#F8FAFC;border:1px solid #E2E8F0;border-radius:8px;padding:12px 14px;'>
-                                        <div style='font-size:10px;font-weight:700;color:#64748B;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;'>
-                                            Distribución de Bills
-                                        </div>
-                                        <div style='font-size:13px;font-weight:700;color:#00A460;'>
-                                            <a href='https://{$domain}' target='_blank' style='color:#00A460;text-decoration:none;'>
-                                                {$domain} &rarr;
-                                            </a>
-                                        </div>
-                                        <div style='font-size:11px;color:#94A3B8;margin-top:2px;'>
-                                            Instancia Cloud Activa
-                                        </div>
-                                    </td>
+                                    <td>
+                                        <a href='{$ticketUrl}' target='_blank' style='background-color:#00A460;color:#FFFFFF;font-size:14px;font-weight:700;text-decoration:none;padding:12px 24px;border-radius:8px;display:inline-block;box-shadow:0 2px 4px rgba(0,164,96,0.25);letter-spacing:0.2px;'>
+                                            Abrir Ticket en Bills &rarr;
+                                        </a>
 
-                                    <td width='4%'>&nbsp;</td>
-
-                                    <!-- Card 2: Company & Tax ID -->
-                                    <td width='48%' style='vertical-align:top;background-color:#F8FAFC;border:1px solid #E2E8F0;border-radius:8px;padding:12px 14px;'>
-                                        <div style='font-size:10px;font-weight:700;color:#64748B;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;'>
-                                            Empresa Emisora
-                                        </div>
-                                        <div style='font-size:13px;font-weight:700;color:#0F172A;'>
-                                            " . htmlspecialchars($company['name']) . "
-                                        </div>
-                                        <div style='font-size:11px;color:#64748B;margin-top:2px;'>
-                                            RNC: <strong>" . htmlspecialchars($company['tax_id']) . "</strong>
-                                        </div>
-                                    </td>
-                                </tr>
-
-                                <tr><td colspan='3' height='10' style='font-size:1px;line-height:10px;'>&nbsp;</td></tr>
-
-                                <tr>
-                                    <!-- Card 3: User & Role -->
-                                    <td width='48%' style='vertical-align:top;background-color:#F8FAFC;border:1px solid #E2E8F0;border-radius:8px;padding:12px 14px;'>
-                                        <div style='font-size:10px;font-weight:700;color:#64748B;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;'>
-                                            Usuario y Rol
-                                        </div>
-                                        <div style='font-size:13px;font-weight:700;color:#0F172A;'>
-                                            " . htmlspecialchars($user->name) . "
-                                        </div>
-                                        <div style='font-size:11px;color:#64748B;margin-top:2px;'>
-                                            Rol: <span style='background:#E2E8F0;color:#334155;padding:1px 6px;border-radius:3px;font-weight:600;font-size:10.5px;'>{$userRole}</span>
-                                        </div>
-                                        <div style='font-size:11px;color:#94A3B8;margin-top:2px;'>
-                                            " . htmlspecialchars($user->email) . "
-                                        </div>
-                                    </td>
-
-                                    <td width='4%'>&nbsp;</td>
-
-                                    <!-- Card 4: Timestamp DR -->
-                                    <td width='48%' style='vertical-align:top;background-color:#F8FAFC;border:1px solid #E2E8F0;border-radius:8px;padding:12px 14px;'>
-                                        <div style='font-size:10px;font-weight:700;color:#64748B;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;'>
-                                            Fecha y Hora (REP DOM)
-                                        </div>
-                                        <div style='font-size:13px;font-weight:700;color:#0F172A;'>
-                                            {$dateDR}
-                                        </div>
-                                        <div style='font-size:11px;color:#64748B;margin-top:2px;'>
-                                            Categoría: <strong style='text-transform:capitalize;'>" . htmlspecialchars($ticket->category) . "</strong>
-                                        </div>
+                                        <a href='mailto:" . htmlspecialchars($user->email) . "' style='background-color:#FFFFFF;color:#334155;border:1px solid #CBD5E1;font-size:13.5px;font-weight:600;text-decoration:none;padding:11px 18px;border-radius:8px;display:inline-block;margin-left:8px;'>
+                                            Responder por Correo
+                                        </a>
                                     </td>
                                 </tr>
                             </table>
 
-                            <!-- Message Thread Bubble (Bills Chat Style) -->
-                            <div style='font-size:12px;font-weight:700;color:#0F172A;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:10px;'>
-                                Mensaje del Ticket
+                            <!-- Origin & Incident Details Table -->
+                            <div style='font-size:11px;font-weight:700;color:#64748B;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:10px;'>
+                                Información de Origen del Sistema
                             </div>
 
-                            <table width='100%' cellpadding='0' cellspacing='0' border='0' style='background-color:#FFFFFF;border:1px solid #E2E8F0;border-left:4px solid #00A460;border-radius:8px;box-shadow:0 1px 3px rgba(0,0,0,0.04);margin-bottom:26px;'>
+                            <table width='100%' cellpadding='0' cellspacing='0' border='0' style='background-color:#F8FAFC;border:1px solid #E2E8F0;border-radius:8px;font-size:13px;line-height:1.55;border-collapse:collapse;'>
                                 <tr>
-                                    <td style='padding:18px 20px;'>
-                                        <!-- User Header inside Message -->
-                                        <table cellpadding='0' cellspacing='0' border='0' style='margin-bottom:12px;'>
-                                            <tr>
-                                                <td style='vertical-align:middle;padding-right:10px;'>
-                                                    <div style='width:32px;height:32px;border-radius:50%;background:#0B484C;color:#FFFFFF;font-weight:700;font-size:12px;line-height:32px;text-align:center;'>
-                                                        {$initials}
-                                                    </div>
-                                                </td>
-                                                <td style='vertical-align:middle;'>
-                                                    <div style='font-size:13px;font-weight:700;color:#0F172A;'>
-                                                        " . htmlspecialchars($user->name) . "
-                                                    </div>
-                                                    <div style='font-size:11px;color:#64748B;'>
-                                                        " . htmlspecialchars($user->email) . "
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                        </table>
-
-                                        <!-- Message Text -->
-                                        <div style='font-size:14px;line-height:1.7;color:#334155;white-space:pre-wrap;font-family:-apple-system,BlinkMacSystemFont,\"Segoe UI\",Roboto,sans-serif;'>{$safeMessage}</div>
+                                    <td style='padding:10px 16px;border-bottom:1px solid #E2E8F0;color:#64748B;width:150px;font-weight:600;'>
+                                        Distribución de Bills:
+                                    </td>
+                                    <td style='padding:10px 16px;border-bottom:1px solid #E2E8F0;color:#0F172A;font-weight:700;'>
+                                        <a href='https://{$domain}' target='_blank' style='color:#00A460;text-decoration:none;'>
+                                            {$domain} &rarr;
+                                        </a>
                                     </td>
                                 </tr>
-                            </table>
-
-                            <!-- Action Buttons Bar (Bills Primary & Secondary Buttons) -->
-                            <table width='100%' cellpadding='0' cellspacing='0' border='0' style='margin-bottom:12px;'>
                                 <tr>
-                                    <td align='center'>
-                                        <table cellpadding='0' cellspacing='0' border='0'>
-                                            <tr>
-                                                <td style='padding:0 6px;'>
-                                                    <a href='{$ticketUrl}' target='_blank' style='background-color:#00A460;color:#FFFFFF;font-size:14px;font-weight:700;text-decoration:none;padding:12px 26px;border-radius:8px;display:inline-block;box-shadow:0 2px 4px rgba(0,164,96,0.3);letter-spacing:0.2px;'>
-                                                        Abrir Ticket en Bills &rarr;
-                                                    </a>
-                                                </td>
-                                                <td style='padding:0 6px;'>
-                                                    <a href='mailto:" . htmlspecialchars($user->email) . "' style='background-color:#F8FAFC;color:#334155;border:1px solid #CBD5E1;font-size:13.5px;font-weight:600;text-decoration:none;padding:11px 20px;border-radius:8px;display:inline-block;'>
-                                                        Responder por Correo
-                                                    </a>
-                                                </td>
-                                            </tr>
-                                        </table>
+                                    <td style='padding:10px 16px;border-bottom:1px solid #E2E8F0;color:#64748B;font-weight:600;'>
+                                        Empresa Emisora:
+                                    </td>
+                                    <td style='padding:10px 16px;border-bottom:1px solid #E2E8F0;color:#0F172A;'>
+                                        <strong>" . htmlspecialchars($company['name']) . "</strong>
+                                        <span style='color:#64748B;margin-left:6px;'>(RNC: " . htmlspecialchars($company['tax_id']) . ")</span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td style='padding:10px 16px;border-bottom:1px solid #E2E8F0;color:#64748B;font-weight:600;'>
+                                        Usuario y Rol:
+                                    </td>
+                                    <td style='padding:10px 16px;border-bottom:1px solid #E2E8F0;color:#0F172A;'>
+                                        <strong>" . htmlspecialchars($user->name) . "</strong>
+                                        <span style='color:#64748B;'>(" . htmlspecialchars($user->email) . ")</span>
+                                        &bull; <span style='background:#E2E8F0;color:#334155;font-size:11px;font-weight:600;padding:2px 7px;border-radius:4px;'>{$userRole}</span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td style='padding:10px 16px;color:#64748B;font-weight:600;'>
+                                        Fecha y Hora (REP DOM):
+                                    </td>
+                                    <td style='padding:10px 16px;color:#0F172A;font-weight:600;'>
+                                        {$dateDR}
                                     </td>
                                 </tr>
                             </table>
@@ -488,19 +435,19 @@ class SupportTicketEmailService
                         </td>
                     </tr>
 
-                    <!-- Footer (Bills UI Standard Footer) -->
+                    <!-- Footer -->
                     <tr>
-                        <td style='background-color:#F8FAFC;border-top:1px solid #E2E8F0;padding:22px 30px;color:#64748B;font-size:12px;line-height:1.6;text-align:center;'>
-                            <div style='margin-bottom:6px;color:#334155;font-weight:600;'>
-                                Canal Exclusivo de Soporte &bull; GridBase Bills
+                        <td style='background-color:#F8FAFC;border-top:1px solid #E2E8F0;padding:20px 30px;color:#64748B;font-size:12px;line-height:1.6;text-align:center;'>
+                            <div style='color:#334155;font-weight:600;margin-bottom:4px;'>
+                                Canal Técnico de Soporte &bull; GridBase Bills
                             </div>
                             <div style='color:#64748B;font-size:11.5px;'>
-                                Despachado por <code style='font-family:monospace;background:#E2E8F0;padding:2px 5px;border-radius:3px;color:#0F172A;'>billsticket@gridbase.com.do</code> exclusivamente hacia <a href='mailto:soporte@gridbase.com.do' style='color:#00A460;text-decoration:none;font-weight:600;'>soporte@gridbase.com.do</a>.
+                                Despachado automáticamente a <a href='mailto:soporte@gridbase.com.do' style='color:#00A460;text-decoration:none;font-weight:600;'>soporte@gridbase.com.do</a> vía <code style='font-family:monospace;background:#E2E8F0;padding:1px 5px;border-radius:3px;color:#0F172A;'>billsticket@gridbase.com.do</code>.
                             </div>
                             <div style='color:#94A3B8;font-size:11px;margin-top:4px;'>
-                                Al responder a este mensaje, la respuesta será enviada directamente al cliente (" . htmlspecialchars($user->email) . ").
+                                Al responder directamente a este correo, el mensaje será enviado al cliente (" . htmlspecialchars($user->email) . ").
                             </div>
-                            <div style='margin-top:14px;padding-top:12px;border-top:1px solid #E2E8F0;color:#94A3B8;font-size:11px;'>
+                            <div style='margin-top:12px;padding-top:12px;border-top:1px solid #E2E8F0;color:#94A3B8;font-size:11px;'>
                                 Copyright &copy; " . date('Y') . " <strong>GridBase Digital Solutions</strong>. Todos los derechos reservados.
                             </div>
                         </td>

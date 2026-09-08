@@ -1220,7 +1220,7 @@ window.App = {
                             </ul>
                         ` : ''}
                     </nav>
-                    <div class="sidebar-help-section" style="padding: 10px 14px 12px; border-top: 1px solid var(--color-border); margin-top: auto;">
+                    <div class="sidebar-help-section" style="padding: 10px 14px 12px; margin-top: auto;">
                         <ul class="sidebar-menu">
                             <li>
                                 <a href="/soporte" class="sidebar-link">

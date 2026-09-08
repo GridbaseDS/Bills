@@ -4338,6 +4338,7 @@ tr:hover .row-actions { opacity: 1; }
 .sidebar-help-section {
   flex-shrink: 0;
   background: transparent;
+  border-top: none;
 }
 .sidebar-help-section .sidebar-menu {
   gap: 2px;

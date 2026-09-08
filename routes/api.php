@@ -163,6 +163,8 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // User Management (Admin & Gerente)
     Route::middleware('role:admin,gerente')->group(function () {
+        Route::patch('/users/{id}/toggle-status', [UserController::class, 'toggleStatus']);
+        Route::post('/users/{id}/reset-password', [UserController::class, 'resetPassword']);
         Route::apiResource('users', UserController::class);
     });
 

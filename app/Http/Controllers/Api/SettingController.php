@@ -13,6 +13,8 @@ class SettingController extends Controller
     {
         $settings = Setting::getAll();
         $settings['server_date_dr'] = now('America/Santo_Domingo')->format('Y-m-d');
+        $changelog = config('changelog') ?? [];
+        $settings['system_version'] = $changelog['version'] ?? '3.7.2';
         return response()->json($settings);
     }
 

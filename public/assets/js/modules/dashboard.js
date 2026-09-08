@@ -325,21 +325,55 @@ const DashboardModule = {
                     }
                     .db-chart-legend {
                         display: flex;
-                        gap: 14px;
+                        align-items: center;
+                        gap: 8px;
                         margin-left: auto;
                         align-self: center;
                     }
-                    .db-lg-item {
-                        display: flex;
+                    .db-legend-btn {
+                        display: inline-flex;
                         align-items: center;
-                        gap: 5px;
-                        font-size: 12px;
-                        font-weight: 500;
+                        gap: 6px;
+                        padding: 4px 10px;
+                        border-radius: 9999px;
+                        border: 1px solid var(--color-border);
+                        background: var(--bg-hover);
+                        font-size: 11px;
+                        font-weight: 600;
                         color: var(--color-text-secondary);
+                        cursor: pointer;
+                        transition: all 0.15s ease;
+                        user-select: none;
+                        line-height: 1;
+                        outline: none;
                     }
-                    .db-lg-dot {
-                        width: 7px; height: 7px;
+                    .db-legend-btn:hover {
+                        background: var(--color-border);
+                        color: var(--color-text-primary);
+                        transform: translateY(-1px);
+                    }
+                    .db-legend-btn:active {
+                        transform: translateY(0);
+                    }
+                    .db-legend-btn.is-hidden {
+                        opacity: 0.45;
+                        background: transparent;
+                        border-style: dashed;
+                        color: var(--color-text-muted);
+                    }
+                    .db-legend-btn.is-hidden .db-legend-dot {
+                        filter: grayscale(1);
+                        opacity: 0.5;
+                    }
+                    .db-legend-dot {
+                        width: 8px;
+                        height: 8px;
                         border-radius: 50%;
+                        flex-shrink: 0;
+                        transition: transform 0.15s ease;
+                    }
+                    .db-legend-btn:hover .db-legend-dot {
+                        transform: scale(1.2);
                     }
 
                     /* ── Overdue Section ── */
@@ -935,8 +969,14 @@ const DashboardModule = {
                                             </span>
                                         ` : ''}
                                         <div class="db-chart-legend">
-                                            <span class="db-lg-item"><span class="db-lg-dot" style="background:#3B82F6"></span>Gastos</span>
-                                            <span class="db-lg-item"><span class="db-lg-dot" style="background:#F59E0B"></span>Ingresos</span>
+                                            <button type="button" class="db-legend-btn" data-series="Ingresos" title="Alternar Ingresos">
+                                                <span class="db-legend-dot" style="background:#10B981"></span>
+                                                <span>Ingresos</span>
+                                            </button>
+                                            <button type="button" class="db-legend-btn" data-series="Gastos" title="Alternar Gastos">
+                                                <span class="db-legend-dot" style="background:#3B82F6"></span>
+                                                <span>Gastos</span>
+                                            </button>
                                         </div>
                                     </div>
                                 </div>
@@ -1017,6 +1057,15 @@ const DashboardModule = {
             return;
         }
 
+        if (this.chartInstance) {
+            try {
+                this.chartInstance.destroy();
+            } catch (e) {
+                // Ignore destroy error
+            }
+            this.chartInstance = null;
+        }
+
         container.innerHTML = '';
         const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
 
@@ -1040,9 +1089,12 @@ const DashboardModule = {
                 borderColor: isDark ? '#1F2937' : '#F3F4F6',
                 padding: { left: 4, right: 4, top: 0, bottom: 0 }
             },
+            legend: {
+                show: false
+            },
             series: [
-                { name: 'Gastos', data: months.map(m => m.expense), color: '#3B82F6' },
-                { name: 'Ingresos', data: months.map(m => m.revenue), color: '#F59E0B' }
+                { name: 'Ingresos', data: months.map(m => m.revenue), color: '#10B981' },
+                { name: 'Gastos', data: months.map(m => m.expense), color: '#3B82F6' }
             ],
             xaxis: {
                 categories: months.map(m => m.label),
@@ -1081,8 +1133,37 @@ const DashboardModule = {
             dataLabels: { enabled: false }
         };
 
-        const chart = new ApexCharts(container, options);
-        chart.render();
+        this.chartInstance = new ApexCharts(container, options);
+        this.chartInstance.render();
+
+        this.bindChartLegendEvents();
+        this.initThemeObserver();
+    },
+
+    bindChartLegendEvents() {
+        const legendButtons = document.querySelectorAll('.db-legend-btn');
+        legendButtons.forEach(btn => {
+            btn.onclick = () => {
+                const seriesName = btn.getAttribute('data-series');
+                if (!this.chartInstance || !seriesName) return;
+                this.chartInstance.toggleSeries(seriesName);
+                btn.classList.toggle('is-hidden');
+            };
+        });
+    },
+
+    initThemeObserver() {
+        if (this._themeObserver) return;
+        this._themeObserver = new MutationObserver((mutations) => {
+            for (const m of mutations) {
+                if (m.type === 'attributes' && m.attributeName === 'data-theme') {
+                    if (document.getElementById('area-chart') && this.activeMonthsData) {
+                        this.drawApexChart();
+                    }
+                }
+            }
+        });
+        this._themeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
     }
 };
 

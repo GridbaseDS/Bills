@@ -3,7 +3,7 @@
  * Main Frontend Application Logic — Gridbase Design Kit v3
  */
 
-import DashboardModule from './modules/dashboard.js?v=201';
+import DashboardModule from './modules/dashboard.js?v=202';
 import InvoicesModule from './modules/invoices.js?v=231';
 import QuotesModule from './modules/quotes.js?v=230';
 import ClientsModule from './modules/clients.js?v=201';

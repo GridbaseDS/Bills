@@ -165,6 +165,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::middleware('role:admin,gerente')->group(function () {
         Route::patch('/users/{id}/toggle-status', [UserController::class, 'toggleStatus']);
         Route::post('/users/{id}/reset-password', [UserController::class, 'resetPassword']);
+        Route::post('/users/{id}/resend-credentials', [UserController::class, 'resendCredentials']);
         Route::apiResource('users', UserController::class);
     });
 

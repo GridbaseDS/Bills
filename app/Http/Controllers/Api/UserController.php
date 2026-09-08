@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\User;
 use App\Models\Setting;
+use App\Services\EmailService;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Log;
@@ -76,38 +77,29 @@ class UserController extends Controller
         $user = User::create($validated);
 
         $emailSent = false;
+        $emailError = null;
         if ($request->boolean('send_welcome_email') && !empty($user->email)) {
-            try {
-                $settings = Setting::getAll();
-                $company = $settings['company_name'] ?? 'GridBase Bills';
-                $loginUrl = url('/');
-                $subject = "Bienvenido a {$company} - Datos de Acceso";
-                $html = "
-                <div style='font-family:-apple-system,BlinkMacSystemFont,\"Segoe UI\",Roboto,sans-serif;max-width:560px;margin:0 auto;padding:24px;border:1px solid #e2e8f0;border-radius:10px;background:#ffffff;color:#1e293b;'>
-                    <h2 style='color:#0f172a;margin-top:0;'>Hola {$user->name},</h2>
-                    <p style='font-size:14px;line-height:1.5;color:#334155;'>Has sido registrado como usuario en la plataforma de <strong>{$company}</strong>.</p>
-                    <div style='background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:16px;margin:20px 0;'>
-                        <div style='font-size:13px;color:#64748b;'><strong>Usuario / Correo:</strong> {$user->email}</div>
-                        <div style='font-size:13px;color:#64748b;margin-top:6px;'><strong>Contraseña Temporal:</strong> <code style='background:#e2e8f0;padding:2px 6px;border-radius:4px;font-family:monospace;font-size:14px;color:#0f172a;'>{$plainPassword}</code></div>
-                        <div style='font-size:13px;color:#64748b;margin-top:6px;'><strong>Rol Asignado:</strong> " . ucfirst($user->role) . "</div>
-                    </div>
-                    <div style='text-align:center;margin-top:24px;'>
-                        <a href='{$loginUrl}' target='_blank' style='background:#00a460;color:#ffffff;text-decoration:none;padding:11px 24px;border-radius:6px;font-weight:700;font-size:14px;display:inline-block;'>Acceder a la Plataforma &rarr;</a>
-                    </div>
-                </div>";
+            $dispatchResult = EmailService::sendUserWelcomeEmail($user, $plainPassword);
+            $emailSent = $dispatchResult['success'];
+            if (!$emailSent) {
+                $emailError = $dispatchResult['error'] ?? 'Fallo de conexión SMTP';
+            }
+        }
 
-                Mail::html($html, function ($msg) use ($user, $subject) {
-                    $msg->to($user->email, $user->name)->subject($subject);
-                });
-                $emailSent = true;
-            } catch (\Throwable $e) {
-                Log::warning("Could not email welcome credentials to {$user->email}: " . $e->getMessage());
+        $message = 'Usuario creado exitosamente.';
+        if ($request->boolean('send_welcome_email')) {
+            if ($emailSent) {
+                $message .= " Se enviaron las credenciales de acceso a {$user->email}.";
+            } else {
+                $message .= " Advertencia: No se pudo entregar el correo ({$emailError}).";
             }
         }
 
         return response()->json([
             'success' => true,
-            'message' => 'Usuario creado exitosamente.' . ($emailSent ? ' Se envió correo de bienvenida.' : ''),
+            'message' => $message,
+            'email_sent' => $emailSent,
+            'email_error' => $emailError,
             'user' => $user
         ], 201);
     }
@@ -206,39 +198,67 @@ class UserController extends Controller
         $user->save();
 
         $emailSent = false;
+        $emailError = null;
         if ($request->boolean('send_email') && !empty($user->email)) {
-            try {
-                $settings = Setting::getAll();
-                $company = $settings['company_name'] ?? 'GridBase Bills';
-                $loginUrl = url('/');
-                $subject = "Credenciales de Acceso Actualizadas - {$company}";
-                $html = "
-                <div style='font-family:-apple-system,BlinkMacSystemFont,\"Segoe UI\",Roboto,sans-serif;max-width:560px;margin:0 auto;padding:24px;border:1px solid #e2e8f0;border-radius:10px;background:#ffffff;color:#1e293b;'>
-                    <h2 style='color:#0f172a;margin-top:0;'>Hola {$user->name},</h2>
-                    <p style='color:#334155;font-size:14px;line-height:1.5;'>Un administrador ha restablecido tu contraseña de acceso a <strong>{$company}</strong>.</p>
-                    <div style='background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:16px;margin:20px 0;'>
-                        <div style='font-size:13px;color:#64748b;'><strong>Usuario / Correo:</strong> {$user->email}</div>
-                        <div style='font-size:13px;color:#64748b;margin-top:6px;'><strong>Nueva Contraseña:</strong> <code style='background:#e2e8f0;padding:2px 6px;border-radius:4px;font-family:monospace;font-size:14px;color:#0f172a;'>{$newPassword}</code></div>
-                    </div>
-                    <div style='text-align:center;margin-top:24px;'>
-                        <a href='{$loginUrl}' target='_blank' style='background:#00a460;color:#ffffff;text-decoration:none;padding:11px 24px;border-radius:6px;font-weight:700;font-size:14px;display:inline-block;'>Iniciar Sesión &rarr;</a>
-                    </div>
-                </div>";
+            $dispatchResult = EmailService::sendUserPasswordReset($user, $newPassword);
+            $emailSent = $dispatchResult['success'];
+            if (!$emailSent) {
+                $emailError = $dispatchResult['error'] ?? 'Fallo de conexión SMTP';
+            }
+        }
 
-                Mail::html($html, function ($msg) use ($user, $subject) {
-                    $msg->to($user->email, $user->name)->subject($subject);
-                });
-                $emailSent = true;
-            } catch (\Throwable $e) {
-                Log::warning("Could not email password reset to {$user->email}: " . $e->getMessage());
+        $message = 'Contraseña restablecida exitosamente.';
+        if ($request->boolean('send_email')) {
+            if ($emailSent) {
+                $message .= " Se notificó la nueva contraseña a {$user->email}.";
+            } else {
+                $message .= " Advertencia: No se pudo entregar el correo ({$emailError}).";
             }
         }
 
         return response()->json([
             'success' => true,
-            'message' => 'Contraseña restablecida exitosamente.' . ($emailSent ? ' Se notificó al usuario por correo.' : ''),
-            'email_sent' => $emailSent
+            'message' => $message,
+            'email_sent' => $emailSent,
+            'email_error' => $emailError,
         ]);
+    }
+
+    /**
+     * Resend access credentials to user with a new secure temporary password.
+     */
+    public function resendCredentials(Request $request, $id)
+    {
+        $user = User::findOrFail($id);
+
+        if (empty($user->email)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'El usuario no cuenta con una dirección de correo válida configurada.'
+            ], 422);
+        }
+
+        $tempPassword = $request->input('password') ?: \Illuminate\Support\Str::random(10) . rand(10, 99);
+        $user->password = Hash::make($tempPassword);
+        $user->save();
+
+        $dispatchResult = EmailService::sendUserWelcomeEmail($user, $tempPassword);
+
+        if ($dispatchResult['success']) {
+            return response()->json([
+                'success' => true,
+                'message' => "Credenciales enviadas exitosamente a {$user->email}.",
+                'temporary_password' => $tempPassword,
+                'email_sent' => true,
+            ]);
+        }
+
+        return response()->json([
+            'success' => false,
+            'message' => "No se pudo entregar el correo a {$user->email}: " . ($dispatchResult['error'] ?? 'Error SMTP'),
+            'temporary_password' => $tempPassword,
+            'email_sent' => false,
+        ], 500);
     }
 
     /**

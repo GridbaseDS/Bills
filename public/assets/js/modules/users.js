@@ -427,6 +427,11 @@ const UsersModule = {
                     <td style="vertical-align:middle;text-align:right;">
                         <div class="row-actions" style="justify-content:flex-end;gap:4px;">
                             
+                            <!-- Reenviar Credenciales -->
+                            <button type="button" class="btn-icon" style="width:30px;height:30px;" onclick="UsersModule.resendCredentials(${user.id}, '${user.name}', '${user.email}')" title="Reenviar Credenciales por Correo">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
+                            </button>
+
                             <!-- Restablecer Contrasena -->
                             <button type="button" class="btn-icon" style="width:30px;height:30px;" onclick="UsersModule.showResetPasswordModal(${user.id}, '${user.name}', '${user.email}')" title="Restablecer Contraseña">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
@@ -493,7 +498,10 @@ const UsersModule = {
                     </div>
 
                     <!-- Mobile Action Buttons -->
-                    <div style="display:flex;gap:8px;justify-content:flex-end;">
+                    <div style="display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;">
+                        <button type="button" class="btn btn-secondary btn-sm" onclick="UsersModule.resendCredentials(${user.id}, '${user.name}', '${user.email}')" style="font-size:12px;" title="Reenviar Credenciales">
+                            Reenviar
+                        </button>
                         <button type="button" class="btn btn-secondary btn-sm" onclick="UsersModule.showResetPasswordModal(${user.id}, '${user.name}', '${user.email}')" style="font-size:12px;">
                             Contraseña
                         </button>
@@ -510,6 +518,23 @@ const UsersModule = {
                 </div>
             `;
         }).join('');
+    },
+
+    async resendCredentials(id, name, email) {
+        if (!confirm(`¿Deseas reenviar las credenciales de acceso a ${name} (${email})? Se generará una nueva contraseña temporal y se enviará por correo.`)) {
+            return;
+        }
+
+        window.App.showToast('Enviando credenciales por correo...', 'info');
+
+        try {
+            const res = await window.App.api(`users/${id}/resend-credentials`, { method: 'POST' });
+            if (res.success) {
+                window.App.showToast(res.message || 'Credenciales enviadas exitosamente');
+            } else {
+                window.App.showToast(res.message || 'Error al enviar credenciales', 'error');
+            }
+        } catch (e) {}
     },
 
     async toggleUserStatus(id, currentStatus) {
@@ -829,8 +854,12 @@ const UsersModule = {
                     await window.App.api(`users/${id}`, { method: 'PUT', body: payload });
                     window.App.showToast('Usuario actualizado con éxito');
                 } else {
-                    await window.App.api('users', { method: 'POST', body: payload });
-                    window.App.showToast('Usuario creado con éxito');
+                    const res = await window.App.api('users', { method: 'POST', body: payload });
+                    if (res && res.email_sent === false && payload.send_welcome_email) {
+                        window.App.showToast(res.message || 'Usuario creado, pero hubo un error al enviar el correo', 'warning');
+                    } else {
+                        window.App.showToast(res?.message || 'Usuario creado con éxito');
+                    }
                 }
                 window.App.navigate('usuarios');
             } catch (err) {}

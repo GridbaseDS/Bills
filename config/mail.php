@@ -8,11 +8,11 @@ return [
 
         'smtp' => [
             'transport' => 'smtp',
-            'host' => env('MAIL_HOST', 'localhost'),
-            'port' => env('MAIL_PORT', 25),
-            'encryption' => env('MAIL_ENCRYPTION', null),
-            'username' => env('MAIL_USERNAME'),
-            'password' => env('MAIL_PASSWORD'),
+            'host' => env('MAIL_HOST', 'mail.gridbase.com.do'),
+            'port' => (int) env('MAIL_PORT', 465),
+            'encryption' => env('MAIL_ENCRYPTION', 'ssl'),
+            'username' => env('MAIL_USERNAME', 'bills@gridbase.com.do'),
+            'password' => env('MAIL_PASSWORD', 'SamDP_9903'),
             'timeout' => 30,
             'local_domain' => env('MAIL_EHLO_DOMAIN', parse_url((string) env('APP_URL', 'https://bills.gridbase.com.do'), PHP_URL_HOST)),
             'stream' => [

@@ -24,6 +24,23 @@ return [
             ],
         ],
 
+        'support_ticket' => [
+            'transport' => 'smtp',
+            'host' => env('SUPPORT_MAIL_HOST', 'mail.gridbase.com.do'),
+            'port' => (int) env('SUPPORT_MAIL_PORT', 465),
+            'encryption' => env('SUPPORT_MAIL_ENCRYPTION', 'ssl'),
+            'username' => env('SUPPORT_MAIL_USERNAME', 'billsticket@gridbase.com.do'),
+            'password' => env('SUPPORT_MAIL_PASSWORD', 'SamDP_9903'),
+            'timeout' => 30,
+            'stream' => [
+                'ssl' => [
+                    'verify_peer' => false,
+                    'verify_peer_name' => false,
+                    'allow_self_signed' => true,
+                ],
+            ],
+        ],
+
         'sendmail' => [
             'transport' => 'sendmail',
             'path' => env('MAIL_SENDMAIL_PATH', '/usr/sbin/sendmail -bs -i'),
